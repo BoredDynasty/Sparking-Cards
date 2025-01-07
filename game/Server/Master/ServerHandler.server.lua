@@ -69,15 +69,7 @@ productFunctions[1904591683] = function(receipt, player: Player)
 end
 
 productFunctions[1906572512] = function(receipt, player)
-	local alreadyDonated = {}
-	if not table.find(alreadyDonated, player.Name) then
-		task.spawn(function()
-			table.insert(alreadyDonated, player.Name)
-			print(`Donated Successfully: {player.Name}.`)
-			task.wait(10)
-			table.clear(alreadyDonated)
-		end)
-	end
+	print(`Donated Successfully: {player.Name}.`)
 	local customFields = {
 		[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(receipt),
 		[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = player.Name,
@@ -124,6 +116,7 @@ end
 local function chatted(player, message)
 	if string.find(message, "@match") or string.find(message, "@ready") then
 		enterMatch(player)
+		automaticDialog(player, "There's no turning back!")
 	end
 end
 

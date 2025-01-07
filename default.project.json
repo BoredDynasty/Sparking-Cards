@@ -26,6 +26,11 @@
         "$className": "Folder",
         "$ignoreUnknownInstances": true,
         "$path": "Packages"
+      },
+      "RemoteEvents": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": false,
+        "$path": "Remotes/Remotes.rbxm"
       }
     },
     "ServerScriptService": {
@@ -41,7 +46,7 @@
     "StarterGui": {
       "$className": "StarterGui",
       "$ignoreUnknownInstances": true,
-      "$path": "game/StarterGui"
+      "$path": "game/UI"
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",

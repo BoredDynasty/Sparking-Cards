@@ -622,7 +622,7 @@ local function unloadProducts() -- to reset the products
 	end
 end
 
-task.spawn(function()
+task.spawn(function() -- run in its own thread
 	local timer = Timer.new()
 	timer:Start()
 	while true do
