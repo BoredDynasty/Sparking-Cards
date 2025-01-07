@@ -161,11 +161,13 @@ end
 
 local function onHover(imgButton: ImageButton)
 	local onHoverImg: Rect | string = imgButton:GetAttribute("OnHover")
-	if type(onHoverImg) == "string" then
-		imgButton.Image = onHoverImg
-	else
-		imgButton.ImageRectOffset = onHoverImg.Width
-		imgButton.ImageRectSize = onHoverImg.Height
+	if onHoverImg then
+		if type(onHoverImg) == "string" then
+			imgButton.Image = onHoverImg
+		else
+			imgButton.ImageRectOffset = onHoverImg.Width
+			imgButton.ImageRectSize = onHoverImg.Height
+		end
 	end
 end
 
