@@ -53,7 +53,7 @@
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
         "$ignoreUnknownInstances": true,
-        "$path": "Shared/Player"
+        "$path": "Shared/Client"
       },
       "$ignoreUnknownInstances": true
     },

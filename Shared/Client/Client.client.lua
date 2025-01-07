@@ -654,6 +654,7 @@ local function setCameraHost(otherPart)
 end
 
 local function windowReleased()
+	print("Window Released")
 	UIEffect.changeColor("Red", PlayerHud.Player.Design.Radial)
 	CameraService:ChangeFOV(70, false)
 	-- UIEffect:BlurEffect(true)
@@ -662,6 +663,7 @@ local function windowReleased()
 end
 
 local function windowFocused()
+	print("Window Focused")
 	UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
 	CameraService:ChangeFOV(60, false)
 	-- UIEffect:BlurEffect(false)

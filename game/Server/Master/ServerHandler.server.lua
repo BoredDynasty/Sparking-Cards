@@ -19,6 +19,7 @@ local FastTravelRE: RemoteEvent = ReplicatedStorage.RemoteEvents.FastTravel
 local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
 local DialogRE: RemoteEvent = ReplicatedStorage.RemoteEvents.NewDialogue
 local SendAnalytic: RemoteEvent = ReplicatedStorage.RemoteEvents.SendAnalytic
+local GetCards: RemoteFunction = ReplicatedStorage.RemoteEvents.GetCards
 
 local productFunctions = {}
 
@@ -266,13 +267,23 @@ local function catchAnalytic(player, topic, param1, customFields)
 	print(`New Analytic: `, topic, param1, customFields)
 end
 
+local function returnCards(player): number?
+	local value = player.leaderstats.Cards.Value
+	print(`{player.DisplayName} has: {value}`)
+	return value
+end
+
 -- Set the callback; this can only be done once by one server-side script
 MarketplaceService.ProcessReceipt = processReceipt
 DataStoreClass:StartBindToClose()
+--
 addDestinations()
 add_NPC_Interactions()
+--
 FastTravelRE.OnServerEvent:Connect(FastTravel)
 EnterMatchRE.OnServerEvent:Connect(enterMatch)
 SendAnalytic.OnServerEvent:Connect(catchAnalytic)
+GetCards.OnServerInvoke(returnCards)
+--
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
