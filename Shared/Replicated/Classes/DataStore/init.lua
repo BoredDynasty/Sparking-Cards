@@ -19,17 +19,9 @@ local RunService = game:GetService("RunService")
 
 local GlobalSettings = require(ReplicatedStorage.GlobalSettings)
 local Timer = require(ReplicatedStorage.Modules.Timer)
+local Util = require(script.Util)
 
 local DataSavedRE = ReplicatedStorage.RemoteEvents.DataSaved
-
--- Function to check if the player is eligible for a daily reward
-local function getDailyRewards(lastLogin)
-	local currentDate = os.date("*t") -- Get current date table
-	local lastDate = os.date("*t", lastLogin) -- Convert last login timestamp to date table
-
-	-- Check if the last login was on a different day
-	return currentDate.year ~= lastDate.year or currentDate.yday ~= lastDate.yday
-end
 
 --[[
 Multipliers
@@ -100,7 +92,7 @@ function DataStoreClass.PlayerAdded(player: Player) -- Setup DataSystem
 		data = { Cards = 0, lastLogin = 0 }
 	end
 
-	if getDailyRewards(data.lastLogin) then
+	if Util.getDailyRewards(data.lastLogin) then
 		-- Reset the daily streak
 		data.Cards = data.Cards + 5
 		player.leaderstats.Cards.Value = player.leaderstats.Cards.Value + data.Cards
@@ -114,6 +106,15 @@ function DataStoreClass.PlayerAdded(player: Player) -- Setup DataSystem
 		PlayerRelated:SetAsync(`player:{player.UserId}`, {
 			Cards = data.Cards,
 			lastLogin = data.lastLogin,
+			options = {
+				clockTime = 12,
+			},
+			combatBindings = {
+				attack = Enum.KeyCode.MouseLeftButton, -- melee
+				special_One = Enum.KeyCode.MouseRightButton, -- any
+				special_Two = Enum.KeyCode.Q, -- ultimate
+				special_Three = Enum.KeyCode.E, -- primary
+			},
 		})
 	end)
 
@@ -202,7 +203,7 @@ function DataStoreClass.StartBindToClose(custom: () -> ()) -- If the game is bei
 			game:BindToClose(saveAllData)
 		end
 	else
-		print("Game is in Studio Mode.")
+		print("Studio Mode")
 	end
 end
 

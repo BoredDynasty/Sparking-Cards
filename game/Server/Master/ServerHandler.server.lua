@@ -12,8 +12,7 @@ local AnalyticsService = game:GetService("AnalyticsService")
 
 local SafeTeleporter = require(ReplicatedStorage.Modules.SafeTeleporter)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
-local DataStoreClass = require(ReplicatedStorage.Classes.DataStoreClass)
--- local CameraService = require(ReplicatedStorage.Modules.CameraService)
+local DataStoreClass = require(ReplicatedStorage.Classes.DataStore)
 
 local FastTravelRE: RemoteEvent = ReplicatedStorage.RemoteEvents.FastTravel
 local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
