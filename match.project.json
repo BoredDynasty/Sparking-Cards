@@ -16,7 +16,17 @@
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
       "$ignoreUnknownInstances": true,
-      "$path": "Shared/Replicated"
+      "$path": "Shared/Replicated",
+      "Packages": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "Packages"
+      },
+      "RemoteEvents": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "Remotes/Remotes.rbxm"
+      }
     },
     "ServerScriptService": {
       "$className": "ServerScriptService",
@@ -38,14 +48,9 @@
       "StarterPlayerScripts": {
         "$className": "StarterPlayerScripts",
         "$ignoreUnknownInstances": true,
-        "$path": "Shared/Player"
+        "$path": "matchsrc/Client"
       },
       "$ignoreUnknownInstances": true
-    },
-    "Workspace": {
-      "$className": "Workspace",
-      "$ignoreUnknownInstances": true,
-      "$path": "matchsrc/Workspace"
     }
   }
 }
