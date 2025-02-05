@@ -282,7 +282,7 @@ add_NPC_Interactions()
 FastTravelRE.OnServerEvent:Connect(FastTravel)
 EnterMatchRE.OnServerEvent:Connect(enterMatch)
 SendAnalytic.OnServerEvent:Connect(catchAnalytic)
-GetCards.OnClientInvoke(returnCards)
+GetCards.OnClientInvoke = returnCards
 --
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
