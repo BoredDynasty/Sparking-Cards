@@ -75,9 +75,9 @@ end)
 
 local function bobble(humanoid: Humanoid)
 	if humanoid.MoveDirection.Magnitude > 0 then
-		local time = tick()
-		local x = math.cos(time * 5) * 0.25
-		local y = math.abs(math.sin(time * 5)) * 0.25
+		local currentTime = tick()
+		local x = math.cos(currentTime * 5) * 0.25
+		local y = math.abs(math.sin(currentTime * 5)) * 0.25
 		local offset = Vector3.new(x, y, 0)
 		humanoid.CameraOffset = humanoid.CameraOffset:Lerp(offset, 0.25)
 		-- print("bobbling")
@@ -109,16 +109,14 @@ local function roll(humanoid)
 	Camera.CFrame = Camera.CFrame * rotate
 end
 
-task.spawn(function()
-	RunService:BindToRenderStep("Tilt", RenderPriority, function()
-		-- print("tilting")
-		if character then
-			local humanoid = character:WaitForChild("Humanoid")
-			if humanoid then
-				roll(humanoid)
-			end
+RunService:BindToRenderStep("Tilt", RenderPriority, function()
+	-- print("tilting")
+	if character then
+		local humanoid = character:WaitForChild("Humanoid")
+		if humanoid then
+			roll(humanoid)
 		end
-	end)
+	end
 end)
 
 print("Camera has finished executing.")
@@ -360,6 +358,7 @@ local BuyCards = player.PlayerGui.DynamicUI.BuyCards
 
 local function promptPurchase(ID)
 	MarketPlaceService:PromptProductPurchase(player, ID)
+	print("Prompted Purchase for ID: ", ID)
 end
 
 BuyCards.Frame.Buy.MouseButton1Down:Connect(function()
@@ -482,105 +481,88 @@ end
 
 local products = getProducts()
 
+--[[
+-- Function to convert UDim2 to Vector2
+local function UDim2ToVector2(udim2: UDim2)
+	local x = udim2.X.Scale * workspace.CurrentCamera.ViewportSize.X + udim2.X.Offset
+	local y = udim2.Y.Scale * workspace.CurrentCamera.ViewportSize.Y + udim2.Y.Offset
+	return Vector2.new(x, y)
+end
+--]]
+
+local function getProductImg(product: Configuration)
+	local assetImgs = ReplicatedStorage.Assets.Images
+	if not product:GetAttribute("isProduct") or product:GetAttribute("isProduct") == false then
+		local assetName = `{product.Name}Img`
+		local offset = assetImgs[assetName]:GetAttribute("offset") :: Vector2
+		local size = assetImgs[assetName]:GetAttribute("size") :: Vector2
+		local id = assetImgs[assetName]:GetAttribute("id") :: string
+		return offset, size, id
+	end
+end
+
 local function newProductFrame(name, price, quantity, isGamePass, parent)
-	local Item = Instance.new("Frame")
+	-- Instances:
+
+	local Chip = Instance.new("Frame")
 	local UICorner = Instance.new("UICorner")
-	local Viewport = Instance.new("ViewportFrame")
-	local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
-	local robuxcoin1_xxlarge = Instance.new("ImageLabel")
-	local TextLabel = Instance.new("TextLabel")
-	local UITextSizeConstraint = Instance.new("UITextSizeConstraint")
-	local UIAspectRatioConstraint_2 = Instance.new("UIAspectRatioConstraint")
-	local Divider = Instance.new("Frame")
-	local UIAspectRatioConstraint_3 = Instance.new("UIAspectRatioConstraint")
-	local ShoppingCart = Instance.new("ImageButton")
-	local UIAspectRatioConstraint_4 = Instance.new("UIAspectRatioConstraint")
-	local UIAspectRatioConstraint_5 = Instance.new("UIAspectRatioConstraint")
+	local ImageLabel = Instance.new("ImageLabel")
+	local Element = Instance.new("TextLabel")
 
-	Item.Name = "Item"
-	Item.Parent = parent
-	Item.BackgroundColor3 = Color3.fromRGB(20, 18, 24)
-	Item.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Item.BorderSizePixel = 0
-	Item.Size = UDim2.new(0.16853933, 0, 0.517241359, 0)
+	local offset, size, id = getProductImg(products[name])
 
-	UICorner.CornerRadius = UDim.new(0.0533333346, 0)
-	UICorner.Parent = Item
+	--Properties:
 
-	Viewport.BackgroundTransparency = 1.000
-	Viewport.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Viewport.BorderSizePixel = 0
-	Viewport.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Viewport.Name = "Viewport"
-	Viewport.Parent = Item
+	Chip.Name = name
+	Chip.Parent = parent
+	Chip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Chip.BackgroundTransparency = 1.000
+	Chip.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Chip.BorderSizePixel = 0
+	Chip.Size = UDim2.new(0, 80, 0, 27)
 
-	UIAspectRatioConstraint.Parent = Viewport
-	UIAspectRatioConstraint.AspectRatio = 1.500
+	UICorner.Parent = Chip
 
-	robuxcoin1_xxlarge.Name = "robuxcoin1_xxlarge"
-	robuxcoin1_xxlarge.Parent = Viewport
-	robuxcoin1_xxlarge.AnchorPoint = Vector2.new(0.5, 0.5)
-	robuxcoin1_xxlarge.BackgroundTransparency = 1.000
-	robuxcoin1_xxlarge.Position = UDim2.new(0.5, 0, 0.5, 0)
-	robuxcoin1_xxlarge.Size = UDim2.new(0, 100, 0, 100)
-	robuxcoin1_xxlarge.Image = "rbxassetid://14976968451"
-	robuxcoin1_xxlarge.ImageRectOffset = Vector2.new(302, 0)
-	robuxcoin1_xxlarge.ImageRectSize = Vector2.new(193, 192)
+	ImageLabel.Parent = Chip
+	ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	ImageLabel.BackgroundTransparency = 1.000
+	ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ImageLabel.BorderSizePixel = 0
+	ImageLabel.Size = UDim2.new(0, 27, 0, 27)
+	ImageLabel.ImageColor3 = Color3.fromRGB(226, 224, 249)
+	ImageLabel.ImageTransparency = 0.200
+	if not isGamePass or isGamePass == false then
+		ImageLabel.Image = id
+		ImageLabel.ImageRectOffset = Vector2.new(offset.X, offset.Y)
+		ImageLabel.ImageRectSize = Vector2.new(size.X, size.Y)
+	elseif isGamePass == true then
+		ImageLabel.Image = "rbxassetid://14755021654"
+		ImageLabel.ImageRectOffset = Vector2.new(904, 218)
+		ImageLabel.ImageRectSize = Vector2.new(108, 108)
+	end
 
-	TextLabel.Parent = Item
-	TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	TextLabel.BackgroundTransparency = 1.000
-	TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	TextLabel.BorderSizePixel = 0
-	TextLabel.Position = UDim2.new(0, 0, 0.666666687, 0)
-	TextLabel.Size = UDim2.new(1, 0, 0.333333343, 0)
-	TextLabel.Font = Enum.Font.GothamBold
-	TextLabel.Text = `{string.upper(name)} %s%s x2<br></br><font color="#ccb6ff">{isGamePass}{price}</font>`
-	TextLabel.TextColor3 = Color3.fromRGB(226, 224, 249)
-	TextLabel.TextScaled = true
-	TextLabel.TextSize = 14.000
-	TextLabel.TextTransparency = 0.200
-	TextLabel.TextWrapped = true
+	Element.Name = "Element"
+	Element.Parent = Chip
+	Element.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Element.BackgroundTransparency = 1.000
+	Element.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Element.BorderSizePixel = 0
+	Element.Position = UDim2.new(0.216000363, 0, 0, 0)
+	Element.Size = UDim2.new(0, 60, 0, 27)
+	Element.Font = Enum.Font.GothamBold
+	Element.Text = string.upper(name)
+	Element.TextColor3 = Color3.fromRGB(234, 221, 255)
+	Element.TextSize = 14.000
 
-	TextLabel.Text = string.format(TextLabel.Text, "x", quantity)
-
-	UITextSizeConstraint.Parent = TextLabel
-	UITextSizeConstraint.MaxTextSize = 14
-
-	UIAspectRatioConstraint_2.Parent = TextLabel
-	UIAspectRatioConstraint_2.AspectRatio = 3.000
-
-	Divider.Name = "Divider"
-	Divider.Parent = Item
-	Divider.BackgroundColor3 = Color3.fromRGB(226, 224, 249)
-	Divider.BackgroundTransparency = 0.500
-	Divider.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Divider.BorderSizePixel = 0
-	Divider.Position = UDim2.new(0, 0, 0.666666687, 0)
-	Divider.Size = UDim2.new(1, 0, 0.00666666683, 0)
-
-	UIAspectRatioConstraint_3.Parent = Divider
-	UIAspectRatioConstraint_3.AspectRatio = 150.000
-
-	ShoppingCart.Name = "ShoppingCart"
-	ShoppingCart.Parent = Item
-	ShoppingCart.Active = false
-	ShoppingCart.BackgroundTransparency = 1.000
-	ShoppingCart.Position = UDim2.new(0.926666677, 0, 0.913333356, 0)
-	ShoppingCart.Rotation = 5.000
-	ShoppingCart.Selectable = false
-	ShoppingCart.Size = UDim2.new(0.159999996, 0, 0.159999996, 0)
-	ShoppingCart.Image = "rbxassetid://6764432408"
-	ShoppingCart.ImageColor3 = Color3.fromRGB(103, 84, 150)
-	ShoppingCart.ImageRectOffset = Vector2.new(50, 800)
-	ShoppingCart.ImageRectSize = Vector2.new(50, 50)
-
-	UIAspectRatioConstraint_4.Parent = ShoppingCart
-	UIAspectRatioConstraint_4.DominantAxis = Enum.DominantAxis.Height
-
-	UIAspectRatioConstraint_5.Parent = Item
-
-	return Item
+	-- Accesibilty:
+	Chip.MouseEnter:Connect(function()
+		local content =
+			`Scroll <i>up</i> to add to checkout.<br></br>Price: {price}<br></br>Quantity: {quantity}`
+		showTooltip(content, name)
+	end)
+	Chip.MouseLeave:Connect(hideTooltip)
+	print(Chip)
+	return Chip
 end
 
 local function loadProducts()
@@ -592,11 +574,11 @@ local function loadProducts()
 		local productQuantity = product:GetAttribute("quantity")
 		local isGamePass = product:GetAttribute("isProduct")
 
-		local productFrame = nil
+		local productFrame: Frame = nil
 
 		task.defer(function()
 			if isGamePass == true then
-				productFrame.ShoppingCart.MouseButton1Click:Connect(function()
+				productFrame.MouseWheelForward:Connect(function()
 					promptPurchase(product:GetAttribute("id"))
 				end)
 			end
@@ -604,9 +586,6 @@ local function loadProducts()
 		end)
 
 		productFrame = newProductFrame(productTitle, productPrice, productQuantity, isGamePass, productsFrame)
-		productFrame.ShoppingCart.MouseHover:Connect(function()
-			showTooltip("Scroll <i>up</i> to add to checkout.", productTitle)
-		end)
 		print("Loaded products", product, product:GetAttributes())
 		-- Not Finished
 		-- [TODO) Finish Shop UI
@@ -631,7 +610,7 @@ task.spawn(function() -- run in its own thread
 		task.wait(1)
 		if timer.elapsedTime >= 60 then
 			unloadProducts()
-			task.wait(1)
+			task.wait(3)
 			loadProducts()
 			timer:Reset()
 			timer:Start()

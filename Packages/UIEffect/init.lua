@@ -15,11 +15,11 @@ local Lighting = game:GetService("Lighting")
 
 -- // Requires
 -- local Style = require(script:FindFirstChild("Style"))
-local Color = require(script:FindFirstChild("Color"))
-local SoundManager = require(script:FindFirstChild("SoundManager"))
-local Maid = require(script:FindFirstChild("Maid"))
-local Curvy = require(script:FindFirstChild("Curvy"))
-local Text = require(script:FindFirstChild("Text"))
+local Color = require(script.Color)
+local SoundManager = require(script.SoundManager)
+local Maid = require(script.Maid)
+local Curvy = require(script.Curvy)
+local Text = require(script.Text)
 
 -- local Camera = game.Workspace.CurrentCamera
 
