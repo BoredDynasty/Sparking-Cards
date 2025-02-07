@@ -30,6 +30,9 @@ function Curvy:Curve(object: Instance, info, property, target): Tween
 	end
 	curve = createCurve(object, info, property, target)
 	curve:Play()
+	curve.Completed:Connect(function()
+		curve:Destroy() -- no memory leaks!
+	end)
 	return curve
 end
 

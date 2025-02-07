@@ -161,13 +161,22 @@ end
 		@param value boolean
 		@param frame Frame?
 --]=]
-function UIEffect:changeVisibility(canvas: GuiObject, value)
+function UIEffect:changeVisibility(canvas: GuiObject, value, positions: { UDim2 })
+	local TInfo = Curvy.TweenInfo(0.3, "Sine", "InOut", 0, false, 0)
 	if value == true then
-		Curvy:Curve(canvas, Curvy.TweenInfo(0.5, "Sine", "InOut", 0, false, 0), "GroupTransparency", 0)
+		Curvy:Curve(canvas, TInfo, "GroupTransparency", 0)
+		if positions then
+			Curvy:Curve(canvas, TInfo, "Position", positions[1])
+		end
 		canvas.Visible = true
 	else
-		Curvy:Curve(canvas, Curvy.TweenInfo(0.5, "Sine", "InOut", 0, false, 0), "GroupTransparency", 1)
-		canvas.Visible = false
+		local tween = Curvy:Curve(canvas, TInfo, "GroupTransparency", 1)
+		if tween.PlaybackState == Enum.PlaybackState.Completed then
+			canvas.Visible = false
+		end
+		if positions then
+			Curvy:Curve(canvas, TInfo, "Position", positions[2])
+		end
 	end
 end
 

@@ -29,7 +29,7 @@
       },
       "RemoteEvents": {
         "$className": "Folder",
-        "$ignoreUnknownInstances": false,
+        "$ignoreUnknownInstances": true,
         "$path": "Remotes/Remotes.rbxm"
       }
     },

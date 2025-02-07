@@ -128,6 +128,7 @@ print("Camera has finished executing.")
 local UIEffect = require(ReplicatedStorage.Packages.UIEffect)
 local CameraService = require(ReplicatedStorage.Modules.CameraService)
 local Timer = require(ReplicatedStorage.Modules.Timer)
+local UserInputType = require(ReplicatedStorage.Modules.UserInputType)
 
 -- local Interactions = require(ReplicatedStorage.Modules.Interactions)
 
@@ -155,25 +156,6 @@ end
 local function hideTooltip()
 	local tooltipFrame = player.PlayerGui.ToolTip.CanvasGroup.Frame
 	tooltipFrame.Visible = false
-end
-
-local function onHover(imgButton: ImageButton)
-	local onHoverImg: Rect | string = imgButton:GetAttribute("OnHover")
-	if onHoverImg then
-		if type(onHoverImg) == "string" then
-			imgButton.Image = onHoverImg
-		else
-			imgButton.ImageRectOffset = onHoverImg.Width
-			imgButton.ImageRectSize = onHoverImg.Height
-		end
-	end
-end
-
-local function onLeave(imgButton: ImageButton)
-	local onLeaveImg: Vector2 | Rect | string = imgButton:GetAttribute("OnLeave")
-	if onLeaveImg then
-		imgButton.Image = onLeaveImg
-	end
 end
 
 local function setCameraView(view)
@@ -315,7 +297,7 @@ end
 
 OpenProfile.MouseButton1Click:Connect(openProfileGui)
 OpenProfile.MouseEnter:Connect(function()
-	onHover(OpenProfile)
+	--onHover(OpenProfile)
 end)
 DialogRemote.OnClientEvent:Connect(newDialog)
 DataSavedRE.OnClientEvent:Connect(dataSaved)
@@ -324,7 +306,7 @@ PlayerHud.Player.MouseEnter:Connect(function()
 end)
 PlayerHud.Player.MouseLeave:Connect(function()
 	hideTooltip()
-	onLeave(OpenProfile)
+	--onLeave(OpenProfile)
 end)
 
 print(`UI is executing.`)
@@ -349,7 +331,7 @@ NewBattle.MouseEnter:Connect(function()
 end)
 NewBattle.MouseLeave:Connect(function()
 	hideTooltip()
-	onLeave(NewBattle)
+	-- onLeave(NewBattle)
 end)
 
 -- Gamepasses
@@ -381,7 +363,7 @@ local function playAnim(AnimationID)
 		end
 		if oldnim ~= nil then
 			if oldnim.AnimationId == anim then
-				oldnim:Destroy()
+				oldnim:Destroy() -- no memory leak today!
 				Humanoid.WalkSpeed = 14
 				return
 			end
@@ -442,22 +424,25 @@ local infoGui = player.PlayerGui.Info.CanvasGroup
 local infoOpen = infoGui.Parent.FAB
 local infoFrame = infoGui.Frame
 infoOpen.MouseButton1Click:Connect(function()
-	task.wait(1)
 	if infoGui.Visible == false then
-		UIEffect:changeVisibility(infoGui, true)
+		UIEffect:changeVisibility(infoGui, true, {
+			UDim2.fromScale(0.5, 0.5),
+		})
 		CameraService:ChangeFOV(70, false)
 	elseif infoGui.Visible == true then
-		UIEffect:changeVisibility(infoGui, false)
+		UIEffect:changeVisibility(infoGui, false, {
+			UDim2.fromScale(0.5, infoGui.Position.Y.Scale - 0.2),
+		})
 		CameraService:ChangeFOV(60, false)
 	end
 end)
 infoOpen.MouseEnter:Connect(function()
 	showTooltip("Not Finished", "Blog")
-	onHover(infoOpen)
+	--onHover(infoOpen)
 end)
 infoOpen.MouseLeave:Connect(function()
 	hideTooltip()
-	onLeave(infoOpen)
+	--onLeave(infoOpen)
 end)
 infoFrame.Checkout.MouseButton1Click:Connect(function()
 	UIEffect:changeVisibility(infoGui, false)
@@ -471,10 +456,14 @@ local ShopOpen = ShopGui.Parent.FAB -- Floating Action Button
 
 local function openShop()
 	if ShopGui.Visible == false then
-		UIEffect:changeVisibility(ShopGui, true)
+		UIEffect:changeVisibility(ShopGui, true, {
+			UDim2.fromScale(0.5, 0.5),
+		})
 		CameraService:ChangeFOV(70, false)
 	elseif ShopGui.Visible == true then
-		UIEffect:changeVisibility(ShopGui, false)
+		UIEffect:changeVisibility(ShopGui, false, {
+			UDim2.fromScale(0.5, ShopGui.Frame.Position.Y.Scale - 0.2),
+		})
 		CameraService:ChangeFOV(60, false)
 	end
 end
@@ -621,8 +610,86 @@ end)
 ShopOpen.MouseButton1Click:Connect(openShop)
 ShopOpen.MouseEnter:Connect(function()
 	showTooltip("Buy yourself something!", "Market/Shop")
-	onHover(ShopOpen)
+	--onHover(ShopOpen)
 end)
+
+-- Mobile Support
+
+local Navigation = player.PlayerGui.Mobile.Navigation.CanvasGroup
+
+if UserInputType() == "Touch" or Enum.UserInputType.Touch then --[TODO) Fix this
+	print("Mobile Detected", UserInputType())
+	Navigation.Visible = true
+	local navigationRail = Navigation.Frame
+	local isNavigationOpen = false
+	local Curvy = UIEffect.getModule("Curvy")
+	task.spawn(function()
+		-- Remove the PC Navigation
+		ShopOpen.Visible = false
+		infoOpen.Visible = false
+		NewBattle.Visible = false
+		OpenProfile.Visible = false
+		task.wait(30 * 2)
+		showTooltip("Navigation is available on mobile devices.", "Mobile")
+		task.wait(15 * 2)
+		showTooltip("Long press for more info.", "Mobile")
+	end)
+	-- Add the Mobile Navigation
+	Navigation.FAB.MouseButton1Click:Connect(function() -- navigation
+		if isNavigationOpen == false then
+			isNavigationOpen = true
+			local background = Navigation.Background -- design
+			local newTInfo = TweenInfo.new(0.1)
+			background.AnchorPoint = Vector2.new(1, 0.5)
+			Curvy:Curve(navigationRail, newTInfo, "Size", UDim2.fromScale(0.243, 0.071))
+			Curvy:Curve(background, TweenInfo.new((newTInfo.Time - 0.05)), "Transparency", 0)
+			Curvy:Curve(background, newTInfo, "Size", UDim2.fromScale(0.276, 0.071))
+		elseif isNavigationOpen == true then
+			isNavigationOpen = false
+			local background = Navigation.Background -- design
+			local newTInfo = TweenInfo.new(0.1)
+			background.AnchorPoint = Vector2.new(1, 0.5)
+			Curvy:Curve(navigationRail, newTInfo, "Size", UDim2.fromScale(0, 0.071))
+			Curvy:Curve(background, TweenInfo.new((newTInfo.Time - 0.05)), "Transparency", 1)
+			local a: Tween = Curvy:Curve(background, newTInfo, "Size", UDim2.fromScale(0, 0.071))
+			a.Completed:Connect(function()
+				background.AnchorPoint = Vector2.new(0.5, 0.5)
+			end)
+		end
+	end)
+	-- RBXScriptSignal Events
+	navigationRail.Shop.TouchTap:Connect(openShop)
+	navigationRail.Shop.TouchLongPress:Connect(function()
+		showTooltip("Buy yourself something!", "Market/Shop")
+	end)
+	navigationRail.Info.TouchTap:Connect(function()
+		if infoGui.Visible == false then
+			UIEffect:changeVisibility(infoGui, true, {
+				UDim2.fromScale(0.5, 0.5),
+			})
+			CameraService:ChangeFOV(70, false)
+		elseif infoGui.Visible == true then
+			UIEffect:changeVisibility(infoGui, false, {
+				UDim2.fromScale(0.5, infoGui.Position.Y.Scale - 0.2),
+			})
+			CameraService:ChangeFOV(60, false)
+		end
+	end)
+	navigationRail.Info.TouchLongPress:Connect(function()
+		showTooltip("Not Finished", "Blog")
+	end)
+	navigationRail.Battle.TouchTap:Connect(newMatch)
+	navigationRail.Battle.TouchLongPress:Connect(function()
+		showTooltip("This probably doesn't work yet.", "Battle")
+	end)
+	navigationRail.Profile.TouchTap:Connect(openProfileGui)
+	navigationRail.Profile.TouchLongPress:Connect(function()
+		showTooltip(`That's you! <br></br><font size="8">this also doesn't work</font>`, player.DisplayName)
+	end)
+else
+	Navigation.Visible = false
+	print("Mobile Not Detected", UserInputType())
+end
 
 -- Other
 
