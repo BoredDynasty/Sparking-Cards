@@ -24,6 +24,12 @@ local TInfo = TweenInfo.new(0.5, Enum.EasingStyle.Circular, Enum.EasingDirection
 
 ---------------------------------- Camera --------------------------------
 
+-- // Requires -- //
+
+local OverShoulder = require(player.PlayerScripts.Modules.OverShoulder)
+
+OverShoulder:Enable(true)
+
 local ReplicateRE = ReplicatedStorage.RemoteEvents.ReplicateCutscene
 local Camera = game.Workspace.CurrentCamera
 
@@ -61,10 +67,10 @@ local function lerp(a, b, t)
 end
 
 local RenderPriority = Enum.RenderPriority.Camera.Value + 1
-RunService:BindToRenderStep("Camera-Sway", RenderPriority + 1, function(delta)
+RunService:BindToRenderStep("Camera-Sway", RenderPriority, function(delta)
 	local mouseDelta = UserInputService:GetMouseDelta()
 	local sway = 0
-	sway = lerp(sway, math.clamp(mouseDelta.X, -5, 5), (5 * delta))
+	sway = lerp(sway, math.clamp(mouseDelta.X, -6, 6), (15 * delta))
 	-- print("swaying")
 	if not replicateConnection then
 		Camera.CFrame = Camera.CFrame * CFrame.Angles(0, 0, math.rad(sway))
@@ -119,11 +125,121 @@ RunService:BindToRenderStep("Tilt", RenderPriority, function()
 	end
 end)
 
+-- Head Tilt
+
+task.spawn(function()
+	RunService.RenderStepped:Connect(function()
+		local currentCamera = Camera.CFrame
+
+		local head: BasePart = character:WaitForChild("Head")
+		local torso: BasePart = character:WaitForChild("Torso")
+		local waist = torso:WaitForChild("Waist", 5)
+		if not waist then
+			waist = torso["Left Hip"] and torso["Right Hip"]
+		end
+
+		local waistOrigin = waist.C0
+		local neck: Weld? = character:WaitForChild("Neck") or torso:WaitForChild("Neck")
+		local neckOrigin = neck.C0
+
+		local bodyHorizontal = 0.5
+		local headHorizontal = 1
+		local updateSpeed = 0.5
+
+		local torsoLevel = torso.CFrame.LookVector
+		local headPosition = head.CFrame.Position
+		if neck and waist then
+			if
+				Camera.CameraSubject:IsDescendantOf(character) or Camera.CameraSubject:IsDescendantOf(player)
+			then
+				local distance = nil
+				local diff = nil
+
+				distance = (head.CFrame.Position - currentCamera.Position).Magnitude
+				diff = head.CFrame.Y - currentCamera.Y
+
+				neck.C0 = neck.C0:Lerp(
+					neckOrigin
+						* CFrame.Angles(
+							(math.asin(diff / distance) * headHorizontal),
+							-(((headPosition - currentCamera.Position).Unit):Cross(torsoLevel)).Y
+								* headHorizontal,
+							0
+						),
+					updateSpeed / 2
+				)
+				waist.C0 = waist.C0:Lerp(
+					waistOrigin
+						* CFrame.Angles(
+							(math.asin(diff / distance) * bodyHorizontal),
+							-(((headPosition - currentCamera.Position).Unit):Cross(torsoLevel)).Y
+								* bodyHorizontal,
+							0
+						),
+					updateSpeed / 2
+				)
+			end
+		end
+	end)
+end)
+
+-- Smooth Camera
+
+RunService.RenderStepped:Connect(function(deltaTime)
+	local testing = true
+	local min = -10 -- minimum distance
+	local max = 10 -- maximum distance
+	local rigidness = 1 -- bigger number: Faster Movement
+
+	local CamPart = nil
+
+	if testing then
+		CamPart = Instance.new("Part")
+		local highlight = Instance.new("Highlight")
+		highlight.FillColor = Color3.fromHex("#d0bcfe")
+		highlight.Parent = CamPart
+		CamPart.Parent = game.Workspace
+		local part2 = Instance.new("Part")
+		part2.Parent = CamPart
+		part2.Material = Enum.Material.Glass
+		part2.Size = Vector3.new(max, max, max)
+		part2.CanCollide = false
+		part2.Transparency = 1
+		part2.Shape = Enum.PartType.Ball
+		Instance.new("Highlight").Parent = part2
+	end
+	if CamPart then
+		if CamPart.Position.Magnitude > 10000 or CamPart.Position.Magnitude < -10000 then
+			CamPart.CFrame = Camera.CFrame
+		end
+	end
+
+	local head: BasePart = character:WaitForChild("Head")
+	local rootPart: BasePart = character:WaitForChild("HumanoidRootPart")
+
+	local position = head.Position
+	CamPart.Position = CamPart.Position:Lerp(position, rigidness * (deltaTime * 10))
+	CamPart.CFrame =
+		CamPart.CFrame:Lerp(CFrame.lookAt(CamPart.Position, head.Position), rigidness * (deltaTime * 10))
+	local calc = (rootPart.CFrame + Vector3.new(0, 1.1, 0)):Inverse() * CamPart.Position
+	if calc.Magnitude > max / 2 then
+		Camera.CFrame = Camera.CFrame:Lerp(
+			Camera.CFrame:Lerp(CFrame.lookAt(Camera, head.Position), rigidness / (rigidness * 10)).Position,
+			rigidness / (rigidness * 10)
+		).Position
+	end
+	if testing then
+		CamPart.Part.CFrame = CamPart.CFrame
+	end
+	Humanoid.CameraOffset =
+		Vector3.new(math.clamp(calc.X, min, max), math.clamp(calc.Y, min, max), math.clamp(calc.Z, min, max))
+end)
+
 print("Camera has finished executing.")
 
 ---------------------------------- UI --------------------------------
 
--- // Requires -- /
+-- // Requires -- //
 
 local UIEffect = require(ReplicatedStorage.Packages.UIEffect)
 local CameraService = require(ReplicatedStorage.Modules.CameraService)
@@ -169,6 +285,22 @@ local function getProducts(): { Configuration }
 	end
 	print(products)
 	return products
+end
+
+local function getDeviceOS()
+	return player:GetPlatform() -- deprecated
+	-- but still works!
+end
+
+local function checkMobileDevice()
+	if
+		UserInputService.TouchEnabled
+		and not UserInputService.KeyboardEnabled
+		and not UserInputService.MouseEnabled
+	then
+		print("Player is using a mobile device")
+		return true
+	end
 end
 
 mouse.Move:Connect(function()
@@ -617,7 +749,7 @@ end)
 
 local Navigation = player.PlayerGui.Mobile.Navigation.CanvasGroup
 
-if UserInputType() == "Touch" or Enum.UserInputType.Touch then --[TODO) Fix this
+if UserInputType() == "Touch" then --[TODO) Fix this
 	print("Mobile Detected", UserInputType())
 	Navigation.Visible = true
 	local navigationRail = Navigation.Frame
@@ -627,8 +759,8 @@ if UserInputType() == "Touch" or Enum.UserInputType.Touch then --[TODO) Fix this
 		-- Remove the PC Navigation
 		ShopOpen.Visible = false
 		infoOpen.Visible = false
-		NewBattle.Visible = false
-		OpenProfile.Visible = false
+		NewBattle.Parent.Parent.Visible = false
+		OpenProfile.Parent.Parent.Visible = false
 		task.wait(30 * 2)
 		showTooltip("Navigation is available on mobile devices.", "Mobile")
 		task.wait(15 * 2)
@@ -703,20 +835,24 @@ end
 
 local function windowReleased()
 	print("Window Released")
-	UIEffect.changeColor("Red", PlayerHud.Player.Design.Radial)
-	CameraService:ChangeFOV(70, false)
-	-- UIEffect:BlurEffect(true)
-	PlayerHud.Player.PlayerImage.Image = playerProfileImage
-	PlayerHud.Player.TextLabel.Text = player.DisplayName
+	if not UserInputType() == "Touch" then
+		UIEffect.changeColor("Red", PlayerHud.Player.Design.Radial)
+		CameraService:ChangeFOV(70, false)
+		-- UIEffect:BlurEffect(true)
+		PlayerHud.Player.PlayerImage.Image = playerProfileImage
+		PlayerHud.Player.TextLabel.Text = player.DisplayName
+	end
 end
 
 local function windowFocused()
 	print("Window Focused")
-	UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
-	CameraService:ChangeFOV(60, false)
-	-- UIEffect:BlurEffect(false)
-	PlayerHud.Player.PlayerImage.Image = playerProfileImage
-	PlayerHud.Player.TextLabel.Text = player.DisplayName
+	if not UserInputType() == "Touch" then
+		UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
+		CameraService:ChangeFOV(60, false)
+		-- UIEffect:BlurEffect(false)
+		PlayerHud.Player.PlayerImage.Image = playerProfileImage
+		PlayerHud.Player.TextLabel.Text = player.DisplayName
+	end
 end
 
 UserInputService.WindowFocusReleased:Connect(windowReleased)
