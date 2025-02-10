@@ -1,4 +1,3 @@
----@diagnostic disable-next-line: duplicate-doc-class
 --[=[
 	@class DataStoreClass
 -]=]
@@ -169,6 +168,10 @@ end
 
 function DataStoreClass.PlayerRemoving(player: Player)
 	saveData(player, false)
+end
+
+function DataStoreClass.GetStore(storeName: string)
+	return DataStoreService:GetDataStore(storeName)
 end
 
 local function saveAllData() -- Saves All Data

@@ -19,6 +19,9 @@ local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
 local DialogRE: RemoteEvent = ReplicatedStorage.RemoteEvents.NewDialogue
 local SendAnalytic: RemoteEvent = ReplicatedStorage.RemoteEvents.SendAnalytic
 local GetCards: RemoteFunction = ReplicatedStorage.RemoteEvents.GetCards
+local SetHeadCFrame: UnreliableRemoteEvent = ReplicatedStorage.RemoteEvents.SetHeadCFrame
+local GiveCardsRE = ReplicatedStorage.RemoteEvents.GiveCards
+local GetLastLoginRE = ReplicatedStorage.RemoteEvents.GetLastLogin
 
 local productFunctions = {}
 
@@ -206,6 +209,7 @@ end
 local function teleportPartClicked(otherPart: BasePart, destination: Vector3)
 	local player = Players:GetPlayerFromCharacter(otherPart.Parent)
 	if player then -- // check if we have the player
+		player:RequestStreamAroundAsync(destination)
 		otherPart.ClickDetector.MouseClick:Connect(function()
 			player.Character.HumanoidRootPart:PivotTo(destination)
 		end)
@@ -266,10 +270,49 @@ local function catchAnalytic(player, topic, param1, customFields)
 	print(`New Analytic: `, topic, param1, customFields)
 end
 
+local function setHeadDirection(player: Player, neckCFrame)
+	for _, otherPlayer: Player in pairs(Players:GetPlayers()) do
+		local otherCharacter = otherPlayer.Character or otherPlayer.CharacterAdded:Wait()
+		if otherCharacter.Humanoid.Health > 0 and otherCharacter then
+			if
+				otherPlayer ~= player
+				and (otherCharacter.Head.Position - player.Character.Head.Position).Magnitude < 10
+			then
+				ReplicatedStorage.RemoteEvents.SetHeadCFrame:FireClient(otherPlayer, player, neckCFrame)
+			end
+		end
+	end
+end
+
 local function returnCards(player): number?
 	local value = player.leaderstats.Cards.Value
 	print(`{player.DisplayName} has: {value}`)
 	return value
+end
+
+local function payCards(player, reason: string)
+	player.Leaderstats.Cards.Value += 50
+	if reason then
+		local customFields = {
+			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = "Reason: " .. reason,
+		}
+		AnalyticsService:LogEconomyEvent(
+			player,
+			Enum.AnalyticsEconomyFlowType.Source,
+			"Cards",
+			50,
+			DataStoreClass:getPlayerStats().Value,
+			Enum.AnalyticsEconomyTransactionType.IAP.Name,
+			"",
+			customFields
+		)
+	end
+end
+
+local function getLastLogin(player: Player): {}?
+	local lastLogin = DataStoreClass.GetStore("Player-Related")
+	local lastLoginData = lastLogin:GetAsync(`player:{player.UserId}`)
+	return lastLoginData
 end
 
 -- Set the callback; this can only be done once by one server-side script
@@ -282,7 +325,10 @@ add_NPC_Interactions()
 FastTravelRE.OnServerEvent:Connect(FastTravel)
 EnterMatchRE.OnServerEvent:Connect(enterMatch)
 SendAnalytic.OnServerEvent:Connect(catchAnalytic)
+SetHeadCFrame.OnServerEvent:Connect(setHeadDirection)
+GiveCardsRE.OnServerEvent:Connect(payCards)
 GetCards.OnServerInvoke = returnCards
+GetLastLoginRE.OnServerInvoke = getLastLogin
 --
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)

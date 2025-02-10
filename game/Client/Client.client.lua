@@ -26,7 +26,8 @@ local TInfo = TweenInfo.new(0.5, Enum.EasingStyle.Circular, Enum.EasingDirection
 
 -- // Requires -- //
 
-local OverShoulder = require(player.PlayerScripts.Modules.OverShoulder)
+-- selene: allow(incorrect_standard_library_use)
+local OverShoulder = require("./Modules/OverShoulder")
 
 OverShoulder:Enable(true)
 
@@ -93,7 +94,7 @@ local function bobble(humanoid: Humanoid)
 end
 
 task.spawn(function()
-	RunService.PreRender:Connect(function()
+	RunService.RenderStepped:Connect(function()
 		if character then
 			local humanoid = character:WaitForChild("Humanoid")
 			if humanoid then
@@ -129,110 +130,44 @@ end)
 
 task.spawn(function()
 	RunService.RenderStepped:Connect(function()
-		local currentCamera = Camera.CFrame
+		local rootPart = character:WaitForChild("HumanoidRootPart")
+		local neck = character:FindFirstChild("Neck", true)
+		local yOffset = neck.C0.Y
 
-		local head: BasePart = character:WaitForChild("Head")
-		local torso: BasePart = character:WaitForChild("Torso")
-		local waist = torso:WaitForChild("Waist", 5)
-		if not waist then
-			waist = torso["Left Hip"] and torso["Right Hip"]
-		end
+		local cameraDirection = rootPart.CFrame:ToWorldSpace(Camera.CFrame).LookVector
 
-		local waistOrigin = waist.C0
-		local neck: Weld? = character:WaitForChild("Neck") or torso:WaitForChild("Neck")
-		local neckOrigin = neck.C0
-
-		local bodyHorizontal = 0.5
-		local headHorizontal = 1
-		local updateSpeed = 0.5
-
-		local torsoLevel = torso.CFrame.LookVector
-		local headPosition = head.CFrame.Position
-		if neck and waist then
-			if
-				Camera.CameraSubject:IsDescendantOf(character) or Camera.CameraSubject:IsDescendantOf(player)
-			then
-				local distance = nil
-				local diff = nil
-
-				distance = (head.CFrame.Position - currentCamera.Position).Magnitude
-				diff = head.CFrame.Y - currentCamera.Y
-
-				neck.C0 = neck.C0:Lerp(
-					neckOrigin
-						* CFrame.Angles(
-							(math.asin(diff / distance) * headHorizontal),
-							-(((headPosition - currentCamera.Position).Unit):Cross(torsoLevel)).Y
-								* headHorizontal,
-							0
-						),
-					updateSpeed / 2
-				)
-				waist.C0 = waist.C0:Lerp(
-					waistOrigin
-						* CFrame.Angles(
-							(math.asin(diff / distance) * bodyHorizontal),
-							-(((headPosition - currentCamera.Position).Unit):Cross(torsoLevel)).Y
-								* bodyHorizontal,
-							0
-						),
-					updateSpeed / 2
-				)
-			end
+		if neck then
+			neck.C0 = CFrame.new(0, yOffset, 0)
+				* CFrame.Angles(3 * math.pi / 2, 0, math.pi)
+				* CFrame.Angles(0, 0, -math.asin(cameraDirection.X))
+				* CFrame.Angles(-math.asin(cameraDirection.Y), 0, 0)
 		end
 	end)
-end)
-
--- Smooth Camera
-
-RunService.RenderStepped:Connect(function(deltaTime)
-	local testing = true
-	local min = -10 -- minimum distance
-	local max = 10 -- maximum distance
-	local rigidness = 1 -- bigger number: Faster Movement
-
-	local CamPart = nil
-
-	if testing then
-		CamPart = Instance.new("Part")
-		local highlight = Instance.new("Highlight")
-		highlight.FillColor = Color3.fromHex("#d0bcfe")
-		highlight.Parent = CamPart
-		CamPart.Parent = game.Workspace
-		local part2 = Instance.new("Part")
-		part2.Parent = CamPart
-		part2.Material = Enum.Material.Glass
-		part2.Size = Vector3.new(max, max, max)
-		part2.CanCollide = false
-		part2.Transparency = 1
-		part2.Shape = Enum.PartType.Ball
-		Instance.new("Highlight").Parent = part2
-	end
-	if CamPart then
-		if CamPart.Position.Magnitude > 10000 or CamPart.Position.Magnitude < -10000 then
-			CamPart.CFrame = Camera.CFrame
+	ReplicatedStorage.RemoteEvents.SetHeadCFrame.OnClientEvent:Connect(
+		function(otherPlayer: Player, cframe: CFrame)
+			local neck = otherPlayer.Character:FindFirstChild("Head", true)
+			if neck then
+				local newTInfo = TweenInfo.new(0.05)
+				local tween = TweenService:Create(neck, newTInfo, { C0 = cframe })
+				tween:Play()
+				tween.Completed:Once(function()
+					tween:Destroy()
+				end)
+			end
+		end
+	)
+	local neck = character:FindFirstChild("Neck", true)
+	if neck then
+		while true do
+			task.wait(0.01)
+			print("Firing server: ", neck.C0)
+			-- This remote is unreliable
+			-- This means that it will sometimes catch the request
+			-- And is more performant!
+			-- We use it because we are sending firing every 0.01s.
+			ReplicatedStorage.RemoteEvents.SetHeadCFrame:FireServer(neck.C0)
 		end
 	end
-
-	local head: BasePart = character:WaitForChild("Head")
-	local rootPart: BasePart = character:WaitForChild("HumanoidRootPart")
-
-	local position = head.Position
-	CamPart.Position = CamPart.Position:Lerp(position, rigidness * (deltaTime * 10))
-	CamPart.CFrame =
-		CamPart.CFrame:Lerp(CFrame.lookAt(CamPart.Position, head.Position), rigidness * (deltaTime * 10))
-	local calc = (rootPart.CFrame + Vector3.new(0, 1.1, 0)):Inverse() * CamPart.Position
-	if calc.Magnitude > max / 2 then
-		Camera.CFrame = Camera.CFrame:Lerp(
-			Camera.CFrame:Lerp(CFrame.lookAt(Camera, head.Position), rigidness / (rigidness * 10)).Position,
-			rigidness / (rigidness * 10)
-		).Position
-	end
-	if testing then
-		CamPart.Part.CFrame = CamPart.CFrame
-	end
-	Humanoid.CameraOffset =
-		Vector3.new(math.clamp(calc.X, min, max), math.clamp(calc.Y, min, max), math.clamp(calc.Z, min, max))
 end)
 
 print("Camera has finished executing.")
@@ -286,12 +221,13 @@ local function getProducts(): { Configuration }
 	print(products)
 	return products
 end
-
+--[[
 local function getDeviceOS()
 	return player:GetPlatform() -- deprecated
 	-- but still works!
 end
-
+--]]
+--[[
 local function checkMobileDevice()
 	if
 		UserInputService.TouchEnabled
@@ -302,7 +238,7 @@ local function checkMobileDevice()
 		return true
 	end
 end
-
+--]]
 mouse.Move:Connect(function()
 	local tooltipFrame: Frame = player.PlayerGui.ToolTip.CanvasGroup.Frame
 	if tooltipFrame.Visible then
@@ -469,15 +405,82 @@ end)
 -- Gamepasses
 
 local BuyCards = player.PlayerGui.DynamicUI.BuyCards
+local BuyButton = BuyCards.CanvasGroup.Frame.Buy
+
+local buyLabel = [[Purchase Cards <br></br><font color="#21005d">\s</font>]]
+
+local function getLastLogin(lastLogin)
+	local currentDate = os.date("*t") -- Get current date table
+	local lastDate = os.date("*t", lastLogin) -- Convert last login timestamp to date table
+
+	-- Check if the last login was on a different day
+	return currentDate.year ~= lastDate.year or currentDate.yday ~= lastDate.yday
+end
 
 local function promptPurchase(ID)
 	MarketPlaceService:PromptProductPurchase(player, ID)
 	print("Prompted Purchase for ID: ", ID)
 end
 
-BuyCards.Frame.Buy.MouseButton1Down:Connect(function()
-	promptPurchase(1904591683) -- Buying Cards
-end)
+local function getMembershipType(membership: Enum.MembershipType)
+	if Enum.MembershipType[membership] then
+		return player.MembershipType == Enum.MembershipType[membership]
+	end
+end
+
+local showModal = true
+
+if getMembershipType("Premium") then
+	BuyButton.Text = string.format(buyLabel, "") -- Premium Icon
+	local lastLoginRE = ReplicatedStorage.RemoteEvents.GetLastLogin
+	local lastLogin = lastLoginRE:InvokeServer(player)
+	if getLastLogin(lastLogin) then
+		local giveCardsRE = ReplicatedStorage.RemoteEvents.GiveCards
+		BuyButton.MouseButton1Click:Once(function()
+			giveCardsRE:FireServer(50, "Premium")
+		end)
+	end
+else
+	BuyButton.Text = string.format(buyLabel, "15") -- Robux Icon
+	-- Show purchase modal, using debounce to show once every few seconds at most
+	if not showModal then
+		return
+	end
+	showModal = false
+	task.delay(5, function()
+		showModal = true
+	end)
+	BuyButton.MouseButton1Click:Connect(function()
+		promptPurchase(1904591683) -- Buying Cards
+		print("Prompted purchase: ", player, tostring(1904591683))
+	end)
+	MarketPlaceService:PromptPremiumPurchase(player)
+	print("Prompted Premium Purchase ", player)
+end
+
+local function onMembershipChanged(player)
+	print("Membership Changed for: ", player, player.MembershipType)
+	if getMembershipType("Premium") then
+		local lastLoginRE = ReplicatedStorage.RemoteEvents.GetLastLogin
+		local lastLogin = lastLoginRE:InvokeServer(player)
+		if getLastLogin(lastLogin) then
+			local giveCardsRE = ReplicatedStorage.RemoteEvents.GiveCards
+			giveCardsRE:FireServer(50, "Premium")
+		end
+	else
+		BuyButton.Text = string.format(buyLabel, "15") -- Robux Icon
+		-- Show purchase modal, using debounce to show once every few seconds at most
+		if not showModal then
+			return
+		end
+		showModal = false
+		task.delay(5, function()
+			showModal = true
+		end)
+		MarketPlaceService:PromptPremiumPurchase(player)
+		print("Prompted Premium Purchase ", player)
+	end
+end
 
 -- Emotes
 
