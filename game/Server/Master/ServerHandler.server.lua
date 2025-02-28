@@ -9,10 +9,12 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local AnalyticsService = game:GetService("AnalyticsService")
+local LogService = game:GetService("LogService")
 
 local SafeTeleporter = require(ReplicatedStorage.Modules.SafeTeleporter)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local DataStoreClass = require(ReplicatedStorage.Classes.DataStore)
+local GameAnalytics = require(ReplicatedStorage.Packages.GameAnalytics.GameAnalytics)
 
 local FastTravelRE: RemoteEvent = ReplicatedStorage.RemoteEvents.FastTravel
 local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
@@ -28,6 +30,19 @@ local productFunctions = {}
 print("Economic Analytics are enabled.")
 print("Custom Analytics are enabled.")
 print("Developer Notes gets updated every 24h.")
+
+local gameAnalyticsConfig = {
+	gameKey = "4e689e435634bbfe9892f625af5c51bf",
+	secretKey = "1a5289ebbc7daa44accc4d5deb256833263c512a",
+}
+
+GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
+GameAnalytics:initialize({
+	useCustomUserId = true,
+	automaticSendBusinessEvents = true,
+	enableInfoLog = true,
+	enableVerboseLog = true,
+})
 
 local function touchDialog(otherPart: BasePart, player: Player)
 	if not player then
@@ -47,26 +62,20 @@ local function automaticDialog(player: Player, dialog: string)
 end
 
 -- This product Id gives the player more cards (cards as in money)
-productFunctions[1904591683] = function(receipt, player: Player)
+productFunctions[1904591683] = function(receipt: any | string?, player: Player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	local Cards: IntValue = leaderstats:FindFirstChild("Cards")
-	if Cards then
+	if Cards and player then
 		Cards.Value += 50
-		AnalyticsService:LogEconomyEvent(
-			player,
-			Enum.AnalyticsEconomyFlowType.Source,
-			"Cards",
-			50,
-			DataStoreClass:getPlayerStats().Value,
-			Enum.AnalyticsEconomyTransactionType.IAP.Name,
-			"Extra Cards"
-		)
-		local customFields = {
-			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(receipt),
-			[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = player.Name,
-			[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = player.UserId,
+		local resourceEventParams = {
+			flowType = GameAnalytics.EGAResourceFlowType.Source,
+			currency = "Cards",
+			amount = 50,
+			itemType = "Extra Cards",
 		}
-		AnalyticsService:LogCustomEvent(player, "Receipts", 1, customFields)
+		print(receipt)
+		GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+		-- Log the purchase in the custom analytics
 	end
 	return true -- indicate a successful purchase
 end
@@ -78,9 +87,23 @@ productFunctions[1906572512] = function(receipt, player)
 		[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = player.Name,
 		[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = player.UserId,
 	}
-	AnalyticsService:LogCustomEvent(player, "Receipts", 1, customFields)
+	GameAnalytics:setCustomDimension01(player.UserId, tostring(receipt))
+	task.delay(2.5, function()
+		GameAnalytics:setCustomDimension01(player.UserId, "")
+		print("Reset Dimension: 01")
+		-- Reset the Dimension01
+	end)
 	return true
 end
+
+LogService.MessageOut:Connect(function(message, messageType)
+	if messageType == Enum.MessageType.MessageError or messageType == Enum.MessageType.MessageWarning then
+		GameAnalytics:addErrorEvent({
+			message = message,
+			severity = GameAnalytics.EGAErrorSeverity.Error,
+		})
+	end
+end)
 
 local ServerAsset = ReplicatedStorage.Assets.Server:Clone()
 ServerAsset.Parent = game.Workspace
@@ -125,7 +148,7 @@ end
 
 local function onPlayerAdded(player: Player)
 	DataStoreClass.PlayerAdded(player)
-	AnalyticsService:LogOnboardingFunnelStepEvent(player, 1, "Player Joined")
+	GameAnalytics:PlayerJoined(player)
 	player.Chatted:Connect(function(message)
 		chatted(player, message)
 	end)
@@ -147,9 +170,9 @@ end
 
 local function onPlayerRemoving(player: Player)
 	DataStoreClass.PlayerRemoving(player)
-	AnalyticsService:LogOnboardingFunnelStepEvent(player, 1, "Player Leaving")
+	GameAnalytics:PlayerRemoved(player)
 	pcall(function()
-		player:Destroy() -- performance reasons
+		task.defer(player:Destroy())
 	end)
 end
 

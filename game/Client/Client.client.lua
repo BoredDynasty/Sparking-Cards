@@ -458,7 +458,7 @@ else
 	print("Prompted Premium Purchase ", player)
 end
 
-local function onMembershipChanged(player)
+local function onMembershipChanged()
 	print("Membership Changed for: ", player, player.MembershipType)
 	if getMembershipType("Premium") then
 		local lastLoginRE = ReplicatedStorage.RemoteEvents.GetLastLogin
@@ -481,6 +481,8 @@ local function onMembershipChanged(player)
 		print("Prompted Premium Purchase ", player)
 	end
 end
+
+player.MembershipTypeChanged:Connect(onMembershipChanged)
 
 -- Emotes
 
