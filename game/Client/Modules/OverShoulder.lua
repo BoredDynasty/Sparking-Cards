@@ -10,7 +10,7 @@ local USER_INPUT_SERVICE = game:GetService("UserInputService")
 
 local LOCAL_PLAYER = PLAYERS_SERVICE.LocalPlayer
 -- selene: allow(unused_variable)
-local MOUSE = LOCAL_PLAYER:GetMouse()
+-- local MOUSE = LOCAL_PLAYER:GetMouse()
 
 local UPDATE_UNIQUE_KEY = "OTS_CAMERA_SYSTEM_UPDATE"
 
@@ -255,7 +255,7 @@ function CLASS:Update()
 		local raycastParams = RaycastParams.new()
 		raycastParams.FilterDescendantsInstances = { character }
 		-- selene: allow(deprecated)
-		raycastParams.FilterType = Enum.RaycastFilterType.Blacklist
+		raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 		local raycastResult = workspace:Raycast(
 			humanoidRootPart.Position,
 			newCameraCFrame.p - humanoidRootPart.Position,
@@ -269,7 +269,7 @@ function CLASS:Update()
 			local obstructionPosition = humanoidRootPart.Position
 				+ (obstructionDisplacement.Unit * (obstructionDisplacement.Magnitude - 0.1))
 			-- selene: allow(unused_variable)
-			local x, y, z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = newCameraCFrame:components()
+			local _x, _y, _z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = newCameraCFrame:components()
 			newCameraCFrame = CFrame.new(
 				obstructionPosition.x,
 				obstructionPosition.y,
@@ -313,7 +313,7 @@ function CLASS:ConfigureStateForEnabled()
 	--// Calculate angles //--
 	local cameraCFrame = workspace.CurrentCamera.CFrame
 	-- selene: allow(unused_variable)
-	local x, y, z = cameraCFrame:ToOrientation()
+	local x, y = cameraCFrame:ToOrientation()
 	local horizontalAngle = y
 	local verticalAngle = x
 	----
@@ -341,7 +341,7 @@ function CLASS:Enable()
 	self:ConfigureStateForEnabled()
 
 	RUN_SERVICE:BindToRenderStep(UPDATE_UNIQUE_KEY, Enum.RenderPriority.Camera.Value - 10, function()
-		if self.IsEnabled == true then
+		if self.IsEnabled then
 			self:Update()
 		end
 	end)

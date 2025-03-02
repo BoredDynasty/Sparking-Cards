@@ -94,8 +94,8 @@ function DataStoreClass.PlayerAdded(player: Player) -- Setup DataSystem
 	if Util.getDailyRewards(data.lastLogin) then
 		-- Reset the daily streak
 		data.Cards = data.Cards + 5
-		player.leaderstats.Cards.Value = player.leaderstats.Cards.Value + data.Cards
-		CardsData:SetAsync(`player:{player.UserId}`, player.leaderstats.Cards.Value)
+		leaderstats.Cards.Value = leaderstats.Cards.Value + data.Cards
+		CardsData:SetAsync(`player:{player.UserId}`, leaderstats.Cards.Value)
 		print(`Player has been awarded {data.Cards} Cards for logging in today!`)
 		data.lastLogin = os.time() -- Update last login time to now
 	end

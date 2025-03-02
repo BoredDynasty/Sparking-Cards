@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 -- Client.client.lua
 
@@ -9,7 +9,6 @@ print(script.Name)
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local ContextActionService = game:GetService("ContextActionService")
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local MarketPlaceService = game:GetService("MarketplaceService")
@@ -19,8 +18,10 @@ local MarketPlaceService = game:GetService("MarketplaceService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 local character = player.Character or player.CharacterAdded:Wait()
-local Humanoid = character:WaitForChild("Humanoid")
+local Humanoid = character:WaitForChild("Humanoid") :: Humanoid
 local TInfo = TweenInfo.new(0.5, Enum.EasingStyle.Circular, Enum.EasingDirection.InOut)
+
+local RemoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents") :: Folder
 
 ---------------------------------- Camera --------------------------------
 
@@ -31,29 +32,30 @@ local OverShoulder = require("./Modules/OverShoulder")
 
 OverShoulder:Enable(true)
 
-local ReplicateRE = ReplicatedStorage.RemoteEvents.ReplicateCutscene
+local ReplicateRE = RemoteEvents:FindFirstChild("ReplicateCutscene") :: RemoteEvent
 local Camera = game.Workspace.CurrentCamera
 
 local defaultCFrame = Camera.CFrame
 
 -- Cutscenes
 
-local replicateConnection = nil
+local replicateConnection: RBXScriptConnection = nil
 local connection: RBXScriptConnection = nil
 replicateConnection = ReplicateRE.OnClientEvent:Connect(function(cutsceneFolder: Folder)
 	if not connection then
-		connection = RunService.RenderStepped:Connect(function(delta)
+		connection = RunService.RenderStepped:Connect(function(delta: number)
 			local frames = (delta * 60)
-			local steppedFrames: CFrameValue | IntValue =
-				cutsceneFolder:FindFirstChild(tonumber(math.ceil(frames)))
-			character.Humanoid.AutoRotate = false
+			local steppedFrames = cutsceneFolder:WaitForChild(tostring(math.ceil(frames))) :: CFrameValue
+			Humanoid.AutoRotate = false
 			Camera.CameraType = Enum.CameraType.Scriptable
 			if steppedFrames then
-				Camera.CFrame = character.HumanoidRootPart.CFrame * steppedFrames.Value
+				local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart
+				Camera.CFrame = humanoidRootPart.CFrame * steppedFrames.Value
 			else
-				connection:Disconnect()
-				connection = nil
-				character.Humanoid.AutoRotate = true
+				if connection then
+					connection:Disconnect()
+				end
+				Humanoid.AutoRotate = true
 				Camera.CameraType = Enum.CameraType.Custom
 				Camera.CFrame = defaultCFrame
 			end
@@ -63,7 +65,7 @@ end)
 
 -- Sway
 
-local function lerp(a, b, t)
+local function lerp(a: number, b: number, t: number)
 	return a + (b - a) * t
 end
 
@@ -98,7 +100,7 @@ task.spawn(function()
 		if character then
 			local humanoid = character:WaitForChild("Humanoid")
 			if humanoid then
-				bobble(humanoid)
+				bobble(Humanoid)
 			end
 		end
 	end)
@@ -119,7 +121,7 @@ end
 RunService:BindToRenderStep("Tilt", RenderPriority, function()
 	-- print("tilting")
 	if character then
-		local humanoid = character:WaitForChild("Humanoid")
+		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 		if humanoid then
 			roll(humanoid)
 		end
@@ -130,8 +132,8 @@ end)
 
 task.spawn(function()
 	RunService.RenderStepped:Connect(function()
-		local rootPart = character:WaitForChild("HumanoidRootPart")
-		local neck = character:FindFirstChild("Neck", true)
+		local rootPart = character:WaitForChild("HumanoidRootPart") :: BasePart
+		local neck = character:FindFirstChild("Neck", true) :: any
 		local yOffset = neck.C0.Y
 
 		local cameraDirection = rootPart.CFrame:ToWorldSpace(Camera.CFrame).LookVector
@@ -143,20 +145,20 @@ task.spawn(function()
 				* CFrame.Angles(-math.asin(cameraDirection.Y), 0, 0)
 		end
 	end)
-	ReplicatedStorage.RemoteEvents.SetHeadCFrame.OnClientEvent:Connect(
-		function(otherPlayer: Player, cframe: CFrame)
-			local neck = otherPlayer.Character:FindFirstChild("Head", true)
-			if neck then
-				local newTInfo = TweenInfo.new(0.05)
-				local tween = TweenService:Create(neck, newTInfo, { C0 = cframe })
-				tween:Play()
-				tween.Completed:Once(function()
-					tween:Destroy()
-				end)
-			end
+	local setHeadCFrame = RemoteEvents:WaitForChild("SetHeadCFrame") :: RemoteEvent
+	setHeadCFrame.OnClientEvent:Connect(function(otherPlayer: Player, cframe: CFrame)
+		local Othercharacter = otherPlayer.Character :: Model
+		local neck = Othercharacter:FindFirstChild("Head", true)
+		if neck then
+			local newTInfo = TweenInfo.new(0.05)
+			local tween = TweenService:Create(neck, newTInfo, { C0 = cframe })
+			tween:Play()
+			tween.Completed:Once(function()
+				tween:Destroy()
+			end)
 		end
-	)
-	local neck = character:FindFirstChild("Neck", true)
+	end)
+	local neck = character:FindFirstChild("Neck", true) :: any
 	if neck then
 		while true do
 			task.wait(0.01)
@@ -165,7 +167,8 @@ task.spawn(function()
 			-- This means that it will sometimes catch the request
 			-- And is more performant!
 			-- We use it because we are sending firing every 0.01s.
-			ReplicatedStorage.RemoteEvents.SetHeadCFrame:FireServer(neck.C0)
+			local SetHeadCFrame = RemoteEvents:FindFirstChild("SetHeadCFrame") :: RemoteEvent
+			SetHeadCFrame:FireServer(neck.C0)
 		end
 	end
 end)
@@ -176,36 +179,36 @@ print("Camera has finished executing.")
 
 -- // Requires -- //
 
-local UIEffect = require(ReplicatedStorage.Packages.UIEffect)
+local UIEffect = require(ReplicatedStorage.Modules.UIEffect)
 local CameraService = require(ReplicatedStorage.Modules.CameraService)
 local Timer = require(ReplicatedStorage.Modules.Timer)
 local UserInputType = require(ReplicatedStorage.Modules.UserInputType)
 
 -- local Interactions = require(ReplicatedStorage.Modules.Interactions)
 
+local PlayerGui = player:WaitForChild("PlayerGui")
+
 -- // Remotes -- //
-local DataSavedRE = ReplicatedStorage.RemoteEvents.DataSaved
+local DataSavedRE = RemoteEvents:FindFirstChild("DataSaved") :: RemoteEvent
 
 -- // Functions -- //
-local function handleAction(actionName, _, _, gui)
-	if actionName == "Emote" then
-		if gui.Visible == true then
-			gui.Visible = false
-		else
-			gui.Visible = true
-		end
-	end
-end
 
-local function showTooltip(text, more)
-	local tooltipFrame = player.PlayerGui.ToolTip.CanvasGroup.Frame
-	tooltipFrame.Details.Text = text -- Update the tooltip text
+local function showTooltip(text, more: string)
+	local tooltipGui = PlayerGui:FindFirstChild("ToolTip") :: ScreenGui
+	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: Frame | CanvasGroup
+	local tooltipFrame = canvasGroup:FindFirstChild("Frame") :: Frame
+
+	local details = tooltipFrame:WaitForChild("Details") :: TextLabel
+	local accept = tooltipFrame:WaitForChild("Accept") :: TextButton
+	details.Text = text -- Update the tooltip text
 	tooltipFrame.Visible = true
-	tooltipFrame.Accept.Text = more
+	accept.Text = more
 end
 
 local function hideTooltip()
-	local tooltipFrame = player.PlayerGui.ToolTip.CanvasGroup.Frame
+	local tooltipGui = PlayerGui:FindFirstChild("ToolTip") :: ScreenGui
+	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: Frame | CanvasGroup
+	local tooltipFrame = canvasGroup:FindFirstChild("Frame") :: Frame
 	tooltipFrame.Visible = false
 end
 
@@ -213,10 +216,13 @@ local function setCameraView(view)
 	CameraService:SetCameraView(view)
 end
 
-local function getProducts(): { Configuration }
+local function getProducts(): { [string]: Configuration }
 	local products = {}
-	for _, product: Configuration in ReplicatedStorage.Purchasables:GetChildren() do
-		products[product.Name] = product
+	local purchasables = ReplicatedStorage:FindFirstChild("Purchaseables") :: Folder
+	for _, product in pairs(purchasables:GetChildren()) do
+		if product:IsA("Configuration") then
+			products[product.Name] = product
+		end
 	end
 	print(products)
 	return products
@@ -240,7 +246,9 @@ local function checkMobileDevice()
 end
 --]]
 mouse.Move:Connect(function()
-	local tooltipFrame: Frame = player.PlayerGui.ToolTip.CanvasGroup.Frame
+	local tooltipGui = PlayerGui:FindFirstChild("ToolTip") :: ScreenGui
+	local canvas = tooltipGui:FindFirstChild("CanvasGroup") :: Frame | CanvasGroup
+	local tooltipFrame: Frame = canvas:FindFirstChild("Frame") :: Frame
 	if tooltipFrame.Visible then
 		-- local xOffset, yOffset = 0, 0 -- Add some padding
 		local position: UDim2
@@ -258,33 +266,36 @@ end)
 -- // Everything else -- //
 
 -- Main Menu
-local MainMenu = player.PlayerGui.MainHud
-local MainMenuFrame = MainMenu.CanvasGroup.Frame
-MainMenu.CanvasGroup.Visible = true
-MainMenu.CanvasGroup.GroupTransparency = 0
-MainMenuFrame.Visible = true
-task.spawn(function() -- so we don't yield the current thread
+task.spawn(function()
+	local MainMenu = PlayerGui:FindFirstChild("MainHud") :: ScreenGui
+	local canvas = MainMenu:FindFirstChild("CanvasGroup") :: CanvasGroup
+	local MainMenuFrame = canvas:FindFirstChild("Frame") :: Frame
+	canvas.Visible = true
+	canvas.GroupTransparency = 0
+	MainMenuFrame.Visible = true
 	repeat
-		task.wait()
+		task.wait() --  We use spawn so we don't yield the cur. thread
 		Camera.CameraType = Enum.CameraType.Scriptable
 	until Camera.CameraType == Enum.CameraType.Scriptable
-end)
 
---- 1604.172, 267.097, 6215.333, 24.286, 65.438, 0 -- the roads
-Camera.CFrame = CFrame.new(-1721.989, 270.293, 182.625) -- Baseplate
+	--- 1604.172, 267.097, 6215.333, 24.286, 65.438, 0 -- the roads
+	Camera.CFrame = CFrame.new(-1721.989, 270.293, 182.625) -- Baseplate
 
-MainMenuFrame.PlayButton.MouseButton1Click:Once(function()
-	task.spawn(function() -- so we don't yield the current thread
-		repeat
-			task.wait()
-			Camera.CameraType = Enum.CameraType.Custom
-		until Camera.CameraType == Enum.CameraType.Custom
+	local playButton = MainMenuFrame:FindFirstChild("PlayButton") :: TextButton
+
+	playButton.MouseButton1Click:Once(function()
+		task.spawn(function() -- so we don't yield the current thread
+			repeat
+				task.wait()
+				Camera.CameraType = Enum.CameraType.Custom
+			until Camera.CameraType == Enum.CameraType.Custom
+		end)
+		UIEffect:changeVisibility(canvas, false)
 	end)
-	UIEffect:changeVisibility(MainMenu.CanvasGroup, false)
 end)
 
 -- PlayerHud
-local PlayerHud = player.PlayerGui.PlayerHud
+local PlayerHud = PlayerGui:FindFirstChild("PlayerHud") :: ScreenGui
 local OpenProfile = PlayerHud.Player.Design.Background -- im not sure why i labelled this as background
 local Profile = PlayerHud.CanvasGroup.Frame
 local playerProfileImage =
@@ -297,7 +308,7 @@ local LargeDialog = player.PlayerGui.Dialog.CanvasGroup.Frame
 local function reloadProfileImg(img: string)
 	PlayerHud.Player.PlayerImage.Image = img
 	Profile.Frame.PlayerImage.Image = img
-	print(`Reloaded: {player.DisplayName}'s profile image. {img}`) -- debug
+	print("Reloaded: "..player.DisplayName.."'s profile image. {img}")
 end
 
 local function newDialog(dialog: string)
@@ -315,32 +326,36 @@ end
 
 local function dataSaved(message: string)
 	task.spawn(function()
+	local PH_Player = PlayerHud:FindFirstChild("Player") :: Frame
+	local playerImage = PH_Player:FindFirstChild("PlayerImage") :: ImageLabel
+	local design = PH_Player:FindFirstChild("Design") :: Frame
+	local radial = design:FindFirstChild("Radial") :: ImageLabel
 		if not message then
-			local saveStatus = PlayerHud.Player.Check
-			UIEffect.changeColor("#ccb6ff", PlayerHud.Player.Design.Radial)
+			local saveStatus = PH_Player:FindFirstChild("Check"): any
+			UIEffect.changeColor("#ccb6ff", radial)
 			UIEffect.changeColor("#ccb6ff", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PlayerHud.Player.PlayerImage, TInfo, "ImageTransparency", 1)
+			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 1)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 0)
 			saveStatus.Visible = true
-			UIEffect.TypewriterEffect("Saved!", PlayerHud.Player.TextLabel)
+			UIEffect.TypewriterEffect("Saved!", PH_Player.TextLabel)
 			task.wait(5)
-			UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
+			UIEffect.changeColor("Green", radial)
 			UIEffect.changeColor("Green", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PlayerHud.Player.PlayerImage, TInfo, "ImageTransparency", 0)
+			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 0)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 1)
 			saveStatus.Visible = false
 		elseif message then
-			local saveStatus = PlayerHud.Player.Check
-			UIEffect.changeColor("#ccb6ff", PlayerHud.Player.Design.Radial)
+			local saveStatus = PH_Player.Check
+			UIEffect.changeColor("#ccb6ff", radial)
 			UIEffect.changeColor("#ccb6ff", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PlayerHud.Player.PlayerImage, TInfo, "ImageTransparency", 1)
+			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 1)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 0)
 			saveStatus.Visible = true
-			UIEffect.TypewriterEffect(message, PlayerHud.Player.TextLabel)
+			UIEffect.TypewriterEffect(message, PH_Player.TextLabel)
 			task.wait(5)
-			UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
+			UIEffect.changeColor("Green", radial)
 			UIEffect.changeColor("Green", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PlayerHud.Player.PlayerImage, TInfo, "ImageTransparency", 0)
+			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 0)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 1)
 			saveStatus.Visible = false
 		end
@@ -376,6 +391,7 @@ PlayerHud.Player.MouseLeave:Connect(function()
 	hideTooltip()
 	--onLeave(OpenProfile)
 end)
+PlayerHud.Player.MouseButton1Click:Connect(openProfileGui)
 
 print(`UI is executing.`)
 
@@ -404,8 +420,11 @@ end)
 
 -- Gamepasses
 
-local BuyCards = player.PlayerGui.DynamicUI.BuyCards
-local BuyButton = BuyCards.CanvasGroup.Frame.Buy
+local DynamicUI = PlayerGui:FindFirstChild("DynamicUI") :: Folder
+local BuyCards = DynamicUI:FindFirstChild("BuyCards") :: ScreenGui
+local BuyCanvas = BuyCards:FindFirstChild("CanvasGroup") :: CanvasGroup
+local BuyFrame = BuyCanvas:FindFirstChild("Frame") :: Frame
+local BuyButton = BuyFrame:FindFirstChild("Buy") :: TextButton
 
 local buyLabel = [[Purchase Cards <br></br><font color="#21005d">\s</font>]]
 
@@ -422,20 +441,14 @@ local function promptPurchase(ID)
 	print("Prompted Purchase for ID: ", ID)
 end
 
-local function getMembershipType(membership: Enum.MembershipType)
-	if Enum.MembershipType[membership] then
-		return player.MembershipType == Enum.MembershipType[membership]
-	end
-end
-
 local showModal = true
 
-if getMembershipType("Premium") then
+if player.MembershipType == Enum.MembershipType.Premium then
 	BuyButton.Text = string.format(buyLabel, "") -- Premium Icon
-	local lastLoginRE = ReplicatedStorage.RemoteEvents.GetLastLogin
+	local lastLoginRE = RemoteEvents:FindFirstChild("GetLastLogin") :: RemoteFunction
 	local lastLogin = lastLoginRE:InvokeServer(player)
 	if getLastLogin(lastLogin) then
-		local giveCardsRE = ReplicatedStorage.RemoteEvents.GiveCards
+		local giveCardsRE = RemoteEvents:FindFirstChild("GiveCards") :: RemoteEvent
 		BuyButton.MouseButton1Click:Once(function()
 			giveCardsRE:FireServer(50, "Premium")
 		end)
@@ -460,11 +473,11 @@ end
 
 local function onMembershipChanged()
 	print("Membership Changed for: ", player, player.MembershipType)
-	if getMembershipType("Premium") then
-		local lastLoginRE = ReplicatedStorage.RemoteEvents.GetLastLogin
+	if player.MembershipType == Enum.MembershipType.Premium then
+		local lastLoginRE = RemoteEvents:FindFirstChild("GetLastLogin") :: RemoteFunction
 		local lastLogin = lastLoginRE:InvokeServer(player)
 		if getLastLogin(lastLogin) then
-			local giveCardsRE = ReplicatedStorage.RemoteEvents.GiveCards
+			local giveCardsRE = RemoteEvents:FindFirstChild("GiveCards") :: RemoteEvent
 			giveCardsRE:FireServer(50, "Premium")
 		end
 	else
@@ -482,23 +495,27 @@ local function onMembershipChanged()
 	end
 end
 
-player.MembershipTypeChanged:Connect(onMembershipChanged)
+player.Changed:Connect(function(property)
+	if property == "MembershipType" then
+		onMembershipChanged()
+	end
+end)
 
 -- Emotes
 
-local EmoteGui = player.PlayerGui.EmoteGUI
+local EmoteGui = PlayerGui:FindFirstChild("EmoteGui") :: ScreenGui
 
 local playingAnimation = nil
 
 local function playAnim(AnimationID)
-	if character ~= nil and Humanoid ~= nil then
+	if character and Humanoid then
 		local anim = "rbxassetid://" .. tostring(AnimationID)
-		local oldnim = character:FindFirstChild("LocalAnimation")
+		local oldnim = character:FindFirstChild("LocalAnimation") :: Animation
 		Humanoid.WalkSpeed = 0
 		if playingAnimation ~= nil then
 			playingAnimation:Stop()
 		end
-		if oldnim ~= nil then
+		if oldnim then
 			if oldnim.AnimationId == anim then
 				oldnim:Destroy() -- no memory leak today!
 				Humanoid.WalkSpeed = 14
@@ -510,35 +527,48 @@ local function playAnim(AnimationID)
 		animation.Parent = character
 		animation.Name = "LocalAnimation"
 		animation.AnimationId = anim
-		playingAnimation = Humanoid:LoadAnimation(animation)
+
+		local animator = Humanoid:FindFirstChild("Animator") :: Animator
+
+		playingAnimation = animator:LoadAnimation(animation)
 		playingAnimation:Play()
 		Humanoid.WalkSpeed = 0
 	end
 end
 
-local HolderFrame = EmoteGui.HolderFrame
+local HolderFrame = EmoteGui:FindFirstChild("HolderFrame") :: Frame
+local HolderCircle = HolderFrame:FindFirstChild("Circle") :: ImageLabel
 
-for _, emoteButtons: GuiButton in HolderFrame.Circle:GetChildren() do
+for _, emoteButtons in HolderCircle:GetChildren() do
 	if emoteButtons:IsA("GuiButton") then
 		emoteButtons.MouseButton1Down:Connect(function()
-			playAnim(emoteButtons.AnimID.Value)
+			local intValue = emoteButtons:FindFirstChild("AnimID") :: IntValue
+			playAnim(intValue.Value)
 		end)
 	end
 end
 
-EmoteGui.HolderFrame.Visible = false
-
-ContextActionService:BindAction("Emote", function()
-	handleAction("Emote", Enum.UserInputState.Begin, nil, EmoteGui.HolderFrame)
-end, false, Enum.KeyCode.Tab)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if not gameProcessed then
+		if input.UserInputType == Enum.UserInputType.Keyboard then
+			if input.KeyCode == Enum.KeyCode.Tab then
+				if HolderFrame.Visible == true then
+					HolderFrame.Visible = false
+				else
+					HolderFrame.Visible = true
+				end
+			end
+		end
+	end
+end)
 
 print(`UI is halfway executing.`)
 
 -- Main Menu
 local function mainHud()
-	local MainHudGui = player.PlayerGui.MainHud
-	local Canvas = MainHudGui.CanvasGroup
-	local Frame = Canvas:FindFirstChild("Frame")
+	local MainHudGui = PlayerGui:FindFirstChild("MainHud") :: ScreenGui
+	local Canvas = MainHudGui:FindFirstChild("CanvasGroup") :: CanvasGroup
+	local Frame = Canvas:FindFirstChild("Frame") :: Frame
 
 	Canvas.GroupTransparency = 0
 
@@ -551,24 +581,26 @@ local function mainHud()
 			until Camera.CameraType == Enum.CameraType.Custom
 		end)
 	end
-	Frame.PlayButton.MouseButton1Down:Once(continueGameplay)
+	local playButton = Frame:FindFirstChild("PlayButton") :: TextButton
+	playButton.MouseButton1Down:Once(continueGameplay)
 end
 
 mainHud()
 
 -- Info
-local infoGui = player.PlayerGui.Info.CanvasGroup
-local infoOpen = infoGui.Parent.FAB
-local infoFrame = infoGui.Frame
+local infoGui = PlayerGui:FindFirstChild("Info") :: ScreenGui
+local infoCanvas = infoGui:FindFirstChild("CanvasGroup") :: CanvasGroup
+local infoOpen = infoCanvas:FindFirstChild("FAB") :: TextButton -- Floating Action Button
+local infoFrame = infoCanvas:FindFirstChild("Frame") :: Frame
 infoOpen.MouseButton1Click:Connect(function()
-	if infoGui.Visible == false then
+	if infoCanvas.Visible == false then
 		UIEffect:changeVisibility(infoGui, true, {
 			UDim2.fromScale(0.5, 0.5),
 		})
 		CameraService:ChangeFOV(70, false)
-	elseif infoGui.Visible == true then
+	elseif infoCanvas.Visible == true then
 		UIEffect:changeVisibility(infoGui, false, {
-			UDim2.fromScale(0.5, infoGui.Position.Y.Scale - 0.2),
+			UDim2.fromScale(0.5, infoCanvas.Position.Y.Scale - 0.2),
 		})
 		CameraService:ChangeFOV(60, false)
 	end
@@ -581,25 +613,28 @@ infoOpen.MouseLeave:Connect(function()
 	hideTooltip()
 	--onLeave(infoOpen)
 end)
-infoFrame.Checkout.MouseButton1Click:Connect(function()
+local infoLeave = infoFrame:FindFirstChild("Checkout") :: TextButton
+infoLeave.MouseButton1Click:Connect(function()
 	UIEffect:changeVisibility(infoGui, false)
 end)
 
 print(`UI is almost done executing.`)
 
 -- Shop
-local ShopGui = player.PlayerGui.Shop.CanvasGroup
-local ShopOpen = ShopGui.Parent.FAB -- Floating Action Button
+local ShopGui = PlayerGui:FindFirstChild("Shop") :: ScreenGui
+local ShopCanvas = ShopGui:FindFirstChild("CanvasGroup") :: CanvasGroup
+local ShopFrame = ShopCanvas:FindFirstChild("Frame") :: Frame
+local ShopOpen = ShopCanvas:FindFirstChild("FAB") -- Floating Action Button
 
 local function openShop()
-	if ShopGui.Visible == false then
-		UIEffect:changeVisibility(ShopGui, true, {
+	if ShopCanvas.Visible == false then
+		UIEffect:changeVisibility(ShopCanvas, true, {
 			UDim2.fromScale(0.5, 0.5),
 		})
 		CameraService:ChangeFOV(70, false)
-	elseif ShopGui.Visible == true then
-		UIEffect:changeVisibility(ShopGui, false, {
-			UDim2.fromScale(0.5, ShopGui.Frame.Position.Y.Scale - 0.2),
+	elseif ShopCanvas.Visible == true then
+		UIEffect:changeVisibility(ShopCanvas, false, {
+			UDim2.fromScale(0.5, ShopFrame.Position.Y.Scale - 0.2),
 		})
 		CameraService:ChangeFOV(60, false)
 	end
@@ -617,17 +652,23 @@ end
 --]]
 
 local function getProductImg(product: Configuration)
-	local assetImgs = ReplicatedStorage.Assets.Images
+	local assets = ReplicatedStorage:WaitForChild("Assets")
+	local assetImgs = assets:FindFirstChild("Images", true) :: Folder
+	local returnValue = nil
 	if not product:GetAttribute("isProduct") or product:GetAttribute("isProduct") == false then
 		local assetName = `{product.Name}Img`
-		local offset = assetImgs[assetName]:GetAttribute("offset") :: Vector2
-		local size = assetImgs[assetName]:GetAttribute("size") :: Vector2
-		local id = assetImgs[assetName]:GetAttribute("id") :: string
-		return offset, size, id
+		local assetImage = assetImgs:FindFirstChild(assetName)
+		if assetImage then
+			local offset = assetImage:GetAttribute("offset") :: Vector2
+			local size = assetImage:GetAttribute("size") :: Vector2
+			local id: any = assetImage:GetAttribute("id") :: any
+			returnValue = { offset, size, id }
+		end
 	end
+	return returnValue
 end
 
-local function newProductFrame(name, price, quantity, isGamePass, parent)
+local function newProductFrame(name: string, price, quantity, isGamePass, parent)
 	-- Instances:
 
 	local Chip = Instance.new("Frame")
@@ -635,11 +676,11 @@ local function newProductFrame(name, price, quantity, isGamePass, parent)
 	local ImageLabel = Instance.new("ImageLabel")
 	local Element = Instance.new("TextLabel")
 
-	local offset, size, id = getProductImg(products[name])
-
+	local offset, size, id =
+		getProductImg(products[name])[1], getProductImg(products[name])[2], getProductImg(products[name])[3]
 	--Properties:
 
-	Chip.Name = name
+	Chip.Name = tostring(name)
 	Chip.Parent = parent
 	Chip.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Chip.BackgroundTransparency = 1.000
@@ -676,7 +717,7 @@ local function newProductFrame(name, price, quantity, isGamePass, parent)
 	Element.Position = UDim2.new(0.216000363, 0, 0, 0)
 	Element.Size = UDim2.new(0, 60, 0, 27)
 	Element.Font = Enum.Font.GothamBold
-	Element.Text = string.upper(name)
+	Element.Text = tostring(string.upper(name))
 	Element.TextColor3 = Color3.fromRGB(234, 221, 255)
 	Element.TextSize = 14.000
 
@@ -695,10 +736,10 @@ local function loadProducts()
 	for _, product: Configuration in pairs(products) do
 		local productsFrame = ShopGui.Frame.Frame.ScrollingFrame
 
-		local productTitle = product:GetAttribute("title")
-		local productPrice = product:GetAttribute("price")
-		local productQuantity = product:GetAttribute("quantity")
-		local isGamePass = product:GetAttribute("isProduct")
+		local productTitle = product:GetAttribute("title") :: any
+		local productPrice = product:GetAttribute("price") :: number
+		local productQuantity = product:GetAttribute("quantity") :: number
+		local isGamePass = product:GetAttribute("isProduct") :: any
 
 		local productFrame: Frame = nil
 
@@ -840,7 +881,7 @@ end
 
 local function windowReleased()
 	print("Window Released")
-	if not UserInputType() == "Touch" then
+	if UserInputType() ~= "Touch" then
 		UIEffect.changeColor("Red", PlayerHud.Player.Design.Radial)
 		CameraService:ChangeFOV(70, false)
 		-- UIEffect:BlurEffect(true)
@@ -851,7 +892,7 @@ end
 
 local function windowFocused()
 	print("Window Focused")
-	if not UserInputType() == "Touch" then
+	if UserInputType() ~= "Touch" then
 		UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
 		CameraService:ChangeFOV(60, false)
 		-- UIEffect:BlurEffect(false)
@@ -862,7 +903,7 @@ end
 
 UserInputService.WindowFocusReleased:Connect(windowReleased)
 UserInputService.WindowFocused:Connect(windowFocused)
-ReplicatedStorage.RemoteEvents.SetCameraHost.OnClientEvent:Connect(setCameraHost)
-ReplicatedStorage.RemoteEvents.SetCameraView.OnClientEvent:Connect(setCameraView)
+RemoteEvents.SetCameraHost.OnClientEvent:Connect(setCameraHost)
+RemoteEvents.SetCameraView.OnClientEvent:Connect(setCameraView)
 
 print(`UI has finished executing.`)

@@ -44,19 +44,6 @@ GameAnalytics:initialize({
 	enableVerboseLog = true,
 })
 
-local function touchDialog(otherPart: BasePart, player: Player)
-	if not player then
-		player = Players:GetPlayerFromCharacter(otherPart.Parent)
-	end
-	local message = otherPart:GetAttribute("TouchDialog")
-		or otherPart:GetAttribute("DialogText")
-		or otherPart:GetAttribute("Dialog")
-	if message then
-		DialogRE:FireClient(player, message)
-		print(`Sending Dialog to {player.DisplayName}: {message}`)
-	end
-end
-
 local function automaticDialog(player: Player, dialog: string)
 	DialogRE:FireClient(player, dialog)
 end
@@ -82,11 +69,6 @@ end
 
 productFunctions[1906572512] = function(receipt, player)
 	print(`Donated Successfully: {player.Name}.`)
-	local customFields = {
-		[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = tostring(receipt),
-		[Enum.AnalyticsCustomFieldKeys.CustomField03.Name] = player.Name,
-		[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = player.UserId,
-	}
 	GameAnalytics:setCustomDimension01(player.UserId, tostring(receipt))
 	task.delay(2.5, function()
 		GameAnalytics:setCustomDimension01(player.UserId, "")
@@ -176,116 +158,41 @@ local function onPlayerRemoving(player: Player)
 	end)
 end
 
-local function isPlayerNearPart(player: Player, part: BasePart, maxDistance: number)
-	local character = player.Character
-	if character and character:FindFirstChild("HumanoidRootPart") then
-		local playerPosition = character.HumanoidRootPart.Position
-		local partPosition = part.Position
-		local distance = (playerPosition - partPosition).Magnitude
-		return distance <= maxDistance
-	end
-end
-
-local function setCameraView(player, view)
-	local setCameraHost = ReplicatedStorage.RemoteEvents.SetCameraHost
-	setCameraHost:FireClient(player, view)
-end
-
-local function panCameraAtObject(player: Player, otherPart: BasePart, value)
-	-- // we want to grab the players attention to the object
-	local setCameraHost = ReplicatedStorage.RemoteEvents.SetCameraHost
-	if value == true then
-		setCameraHost:FireClient(player, otherPart)
-	elseif value == false then
-		setCameraView(player, "Default")
-	end
-end
-
-local function getClickDetector(otherPart: BasePart, cooldown: { Player })
-	if otherPart:FindFirstChildOfClass("ClickDetector") then
-		local clickDetect = otherPart:FindFirstChildOfClass("ClickDetector")
-		clickDetect.MouseClick:Connect(function(hit)
-			local player = Players:GetPlayerFromCharacter(hit.Parent)
-			if not table.find(cooldown, player) then
-				table.insert(cooldown, player)
-				touchDialog(otherPart, player)
-				task.delay(10, table.remove, cooldown, 1)
-			end
-		end)
-	end
-end
-
-local function otherPartTouched(otherPart: BasePart, cooldown: { Player })
-	otherPart.Touched:Connect(function(hit)
-		local player = Players:GetPlayerFromCharacter(hit.Parent)
-		if not table.find(cooldown, player) then
-			task.spawn(function()
-				table.insert(cooldown, player)
-				touchDialog(otherPart, player)
-				task.wait(10)
-				table.remove(cooldown, 1)
-			end)
-		end
-	end)
-end
-
-local function teleportPartClicked(otherPart: BasePart, destination: Vector3)
-	local player = Players:GetPlayerFromCharacter(otherPart.Parent)
+local function teleportPartClicked(player: Player, otherPart: BasePart, destination: Vector3)
 	if player then -- // check if we have the player
 		player:RequestStreamAroundAsync(destination)
 		otherPart.ClickDetector.MouseClick:Connect(function()
-			player.Character.HumanoidRootPart:PivotTo(destination)
+			local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
+			humanoidRootPart:PivotTo(destination)
 		end)
 	end
 end
 
-local function addDestinations()
-	local cooldown = {}
-	return task.spawn(function()
-		for _, tag in pairs(CollectionService:GetTagged("TeleportPart")) do
-			local Teleport: BasePart = tag
-			local destination = Teleport:GetAttribute("Destination")
-			teleportPartClicked(Teleport, destination)
-			for _, player: Player in pairs(Players:GetPlayers()) do
-				if isPlayerNearPart(player, Teleport, 10) then
-					panCameraAtObject(player, Teleport, true)
-					print("Player is near the part: ", player, Teleport)
-				else
-					panCameraAtObject(player, Teleport, false)
-					-- print("Player is not near the part: ", player)
-				end
-			end
-		end
-		for _, tag in CollectionService:GetTagged("DialogTrigger") do
-			local otherPart: BasePart = tag
-			-- // Call functions
-			getClickDetector(otherPart, cooldown)
-			otherPartTouched(otherPart, cooldown)
-		end
-	end)
-end
+local function setupNonPlayableCharacters()
+	local npcs = CollectionService:GetTagged("NPC")
+	local registeredNPCs = {
+		"Claire",
+		"Obsidian",
+	}
+	for _, npc in pairs(npcs) do
+		if table.find(registeredNPCs, npc.Name) then
+			local humanoid = npc:FindFirstChildOfClass("Humanoid")
+			local configurationFolder = npc:FindFirstChild("NPC_Config") :: Folder
+			if configurationFolder then
+				local animationsConfiguration =
+					configurationFolder:FindFirstChild("Animations") :: Configuration
+				local idleAnimationID = animationsConfiguration:GetAttribute("Idle") :: number
+				local animator = humanoid:FindFirstChildOfClass("Animator") :: Animator
 
-local function add_NPC_Interactions()
-	return task.spawn(function()
-		for _, tag in CollectionService:GetTagged("NPC") do
-			local otherPart: BasePart = tag:FindFirstChild("HumanoidRootPart")
-			-- we have to make sure that the player is near the NPC
-			for _, player in pairs(Players:GetPlayers()) do
-				if isPlayerNearPart(player, otherPart, 10) then
-					panCameraAtObject(otherPart, true)
-					print("Player is near the NPC: ", player, otherPart.Name)
-					print("Sending new Dialog")
-					automaticDialog(
-						player,
-						`{otherPart.Parent.Name}: {otherPart.Parent:GetAttribute("Dialog")}`
-					)
-				else
-					panCameraAtObject(otherPart, false)
-					print("Player is not near the NPC: ", player)
-				end
+				-- New animation instance
+				local animation = Instance.new("Animation")
+				animation.AnimationId = "rbxassetid://" .. idleAnimationID
+				local animationTrack = animator:LoadAnimation(animation) :: AnimationTrack
+				animationTrack.Looped = true
+				animationTrack:Play()
 			end
 		end
-	end)
+	end
 end
 
 local function catchAnalytic(player, topic, param1, customFields)
@@ -316,19 +223,8 @@ end
 local function payCards(player, reason: string)
 	player.Leaderstats.Cards.Value += 50
 	if reason then
-		local customFields = {
-			[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = "Reason: " .. reason,
-		}
-		AnalyticsService:LogEconomyEvent(
-			player,
-			Enum.AnalyticsEconomyFlowType.Source,
-			"Cards",
-			50,
-			DataStoreClass:getPlayerStats().Value,
-			Enum.AnalyticsEconomyTransactionType.IAP.Name,
-			"",
-			customFields
-		)
+		--
+		print(reason)
 	end
 end
 
@@ -341,9 +237,6 @@ end
 -- Set the callback; this can only be done once by one server-side script
 MarketplaceService.ProcessReceipt = processReceipt
 DataStoreClass:StartBindToClose()
---
-addDestinations()
-add_NPC_Interactions()
 --
 FastTravelRE.OnServerEvent:Connect(FastTravel)
 EnterMatchRE.OnServerEvent:Connect(enterMatch)
