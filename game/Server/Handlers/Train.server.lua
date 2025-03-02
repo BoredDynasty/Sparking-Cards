@@ -1,15 +1,18 @@
---!strict
+
 
 -- Train.server.lua
 
 local CollectionService = game:GetService("CollectionService")
 
 for _, seat: VehicleSeat in CollectionService:GetTagged("TrainVehicleSeat") do
-	local carriage = seat.Parent
-	local dl = carriage.DL:GetChildren()
-	local dr = carriage.DR:GetChildren()
-	local engine = carriage.Engine
-	local engineBV = engine.BodyVelocity
+	local carriage = seat.Parent::Instance
+	local DlObject = carriage:WaitForChild("DL")
+	local DRObject = carriage:WaitForChild("DR")
+	local DestinationObject = carriage:WaitForChild("Destination")
+	local dl = DlObject:GetChildren()
+	local dr = DRObject:GetChildren()
+	local engine = carriage:WaitForChild("Engine")
+	local engineBV = engine:WaitForChild("BodyVelocity")
 	local panels = carriage.Destination:GetChildren()
 
 	local lastStation = nil
@@ -34,7 +37,7 @@ for _, seat: VehicleSeat in CollectionService:GetTagged("TrainVehicleSeat") do
 		end
 	end
 
-	seat.Touched:connect(function(child)
+	seat.Touched:Connect(function(child)
 		if (child.Name == "StationSensor") and (child ~= lastStation) then
 			lastStation = child
 			engine.Brake:Play()

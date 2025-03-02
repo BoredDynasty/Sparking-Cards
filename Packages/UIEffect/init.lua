@@ -161,7 +161,7 @@ end
 		@param value boolean
 		@param frame Frame?
 --]=]
-function UIEffect:changeVisibility(canvas: GuiObject, value, positions: { UDim2 })
+function UIEffect:changeVisibility(canvas: GuiObject, value, positions: { UDim2 }?)
 	local TInfo = Curvy.TweenInfo(0.3, "Sine", "InOut", 0, false, 0)
 	if value == true then
 		Curvy:Curve(canvas, TInfo, "GroupTransparency", 0)

@@ -1,4 +1,4 @@
---!strict
+
 
 -- Client.client.lua
 
@@ -179,7 +179,7 @@ print("Camera has finished executing.")
 
 -- // Requires -- //
 
-local UIEffect = require(ReplicatedStorage.Modules.UIEffect)
+local UIEffect = require(ReplicatedStorage.Packages.UIEffect)
 local CameraService = require(ReplicatedStorage.Modules.CameraService)
 local Timer = require(ReplicatedStorage.Modules.Timer)
 local UserInputType = require(ReplicatedStorage.Modules.UserInputType)
@@ -296,8 +296,10 @@ end)
 
 -- PlayerHud
 local PlayerHud = PlayerGui:FindFirstChild("PlayerHud") :: ScreenGui
-local OpenProfile = PlayerHud.Player.Design.Background -- im not sure why i labelled this as background
-local Profile = PlayerHud.CanvasGroup.Frame
+local PlayerProfile = PlayerHud:WaitForChild("Player")
+local ProfileCanvas = PlayerHud:WaitForChild("CanvasGroup")
+local OpenProfile = PlayerProfile.Design.Background -- im not sure why i labelled this as background
+local Profile = ProfileCanvas.Frame
 local playerProfileImage =
 	Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
 
@@ -329,9 +331,9 @@ local function dataSaved(message: string)
 	local PH_Player = PlayerHud:FindFirstChild("Player") :: Frame
 	local playerImage = PH_Player:FindFirstChild("PlayerImage") :: ImageLabel
 	local design = PH_Player:FindFirstChild("Design") :: Frame
-	local radial = design:FindFirstChild("Radial") :: ImageLabel
+	local radial = design:FindFirstChild("Radial") :: any
 		if not message then
-			local saveStatus = PH_Player:FindFirstChild("Check"): any
+			local saveStatus = PH_Player:FindFirstChild("Check"):: any
 			UIEffect.changeColor("#ccb6ff", radial)
 			UIEffect.changeColor("#ccb6ff", saveStatus)
 			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 1)

@@ -1,4 +1,4 @@
---!strict
+
 
 -- Client.client.lua
 
@@ -21,20 +21,19 @@ local defaultCFrame = Camera.CFrame
 ---------------------------------- Cutscenes --------------------------------
 
 local replicateConnection = nil
-local connection: RBXScriptConnection = nil
+local connection
 replicateConnection = ReplicateRE.OnClientEvent:Connect(function(cutsceneFolder: Folder)
 	if not connection then
 		connection = RunService.RenderStepped:Connect(function(delta)
 			local frames = (delta * 60)
 			local steppedFrames: CFrameValue | IntValue =
-				cutsceneFolder:FindFirstChild(tonumber(math.ceil(frames)))
+				cutsceneFolder:FindFirstChild(tostring(math.ceil(frames)))::any
 			character.Humanoid.AutoRotate = false
 			Camera.CameraType = Enum.CameraType.Scriptable
 			if steppedFrames then
 				Camera.CFrame = character.HumanoidRootPart.CFrame * steppedFrames.Value
 			else
 				connection:Disconnect()
-				connection = nil
 				character.Humanoid.AutoRotate = true
 				Camera.CameraType = Enum.CameraType.Custom
 				Camera.CFrame = defaultCFrame
@@ -160,7 +159,7 @@ end
 
 local function getAnimations(folder: Folder)
 	local animationTable = {}
-	for _, animation: Animation in folder:GetChildren() do
+	for _, animation: Animation in pairs(folder:GetChildren()::any) do
 		if animation:IsA("Animation") then
 			table.insert(animationTable, animation)
 		end
@@ -184,7 +183,7 @@ end
 local function onTarget(humanoidRootPart: BasePart)
 	local WeaponClass = require(ReplicatedStorage.Classes.WeaponClass)
 	local range =
-		tonumber(humanoidRootPart.ExtentsCFrame * CFrame.new(3, humanoidRootPart.ExtentsCFrame.YVector, 3))
+		tonumber(humanoidRootPart.ExtentsCFrame * CFrame.new(3, humanoidRootPart.ExtentsCFrame.YVector.Y, 3))
 	if range then
 		print("Got range: ", range)
 		local otherPlayer = WeaponClass:Raycast(range)
@@ -208,7 +207,7 @@ local MarketPlaceService = game:GetService("MarketplaceService")
 
 -- // Requires
 
-local UIEffect = require(ReplicatedStorage.Modules.UIEffect)
+local UIEffect = require(ReplicatedStorage.Packages.UIEffect)
 
 -- // Variables
 
@@ -245,16 +244,16 @@ local DialogRemote = ReplicatedStorage.RemoteEvents.NewDialogue
 
 UserInputService.WindowFocusReleased:Connect(function()
 	UIEffect.changeColor("Red", PlayerHud.Player.Design.Radial)
-	UIEffect:Zoom(true)
-	UIEffect:BlurEffect(true)
+	--UIEffect:Zoom(true)
+	--UIEffect:BlurEffect(true)
 	PlayerHud.Player.PlayerImage.Image = playerProfileImage
 	PlayerHud.Player.TextLabel.Text = player.DisplayName
 end)
 
 UserInputService.WindowFocused:Connect(function()
 	UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
-	UIEffect:Zoom(false)
-	UIEffect:BlurEffect(false)
+	--UIEffect:Zoom(false)
+	--UIEffect:BlurEffect(false)
 	PlayerHud.Player.PlayerImage.Image = playerProfileImage
 	PlayerHud.Player.TextLabel.Text = player.DisplayName
 end)
@@ -433,8 +432,8 @@ Humanoid.HealthChanged:Connect(function(health)
 	local font_color = tostring(Color3.fromRGB(red, 255, 255))
 	for _, textLabel: TextLabel in ChanceUI.CanvasGroup:GetDescendants() do
 		textLabel.Text = `<font color="{font_color}">%{player:GetAttribute("Chance") :: string}</font>`
-		UIEffect.CustomAnimation("Click", textLabel) -- To get larger
-		UIEffect.CustomAnimation("Shake", textLabel) -- To rotate
+		UIEffect:CustomAnimation("Click", textLabel) -- To get larger
+		UIEffect:CustomAnimation("Shake", textLabel) -- To rotate
 	end
 end)
 
