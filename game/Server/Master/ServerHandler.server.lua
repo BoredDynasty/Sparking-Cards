@@ -1,4 +1,4 @@
---!nocheck
+--!nonstrict
 
 -- Master.server.lua
 
@@ -8,13 +8,14 @@ local CollectionService = game:GetService("CollectionService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local AnalyticsService = game:GetService("AnalyticsService")
 local LogService = game:GetService("LogService")
+local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local SafeTeleporter = require(ReplicatedStorage.Modules.SafeTeleporter)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
-local DataStoreClass = require(ReplicatedStorage.Classes.DataStore)
-local GameAnalytics = require(ReplicatedStorage.Packages.GameAnalytics.GameAnalytics)
+local GameAnalytics = require(ReplicatedStorage.Modules.GameAnalytics)
+local ProfileStore = require(ServerStorage.Modules.ProfileStore)
 
 local FastTravelRE: RemoteEvent = ReplicatedStorage.RemoteEvents.FastTravel
 local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
@@ -50,7 +51,7 @@ end
 
 -- This product Id gives the player more cards (cards as in money)
 productFunctions[1904591683] = function(receipt: any | string?, player: Player)
-	local leaderstats = player:FindFirstChild("leaderstats")
+	local leaderstats = player:FindFirstChild("leaderstats") :: Folder
 	local Cards: IntValue = leaderstats:FindFirstChild("Cards")
 	if Cards and player then
 		Cards.Value += 50
@@ -128,30 +129,70 @@ local function chatted(player, message)
 	end
 end
 
+local profiles = {}
+
 local function onPlayerAdded(player: Player)
-	DataStoreClass.PlayerAdded(player)
+	-- Migrate to ProfileStore
+	ProfileStore.GetProfileStore("PlayerRelated", {
+		-- Template
+		["Cards"] = 0,
+		["Level"] = "Bronze I",
+		["Experience"] = 0,
+		["LastLogin"] = os.time(),
+		-- Other
+		options = {
+			clockTime = 12,
+		},
+		combatBindings = {
+			attack = Enum.KeyCode.MouseLeftButton, -- melee
+			special_One = Enum.KeyCode.E, -- primary
+			special_Two = Enum.KeyCode.Q, -- ultimate
+			special_Three = Enum.KeyCode.R, -- any
+		},
+	})
+	local profile = ProfileStore:LoadProfileAsync(`player-{player.UserId}`)
+
+	if profile ~= nil then
+		profile:AddUserId(player.UserId) -- GDPR compliance
+		profile:Reconcile() -- Fill in missing variables from ProfileTemplate (optional)
+		profile:ListenToRelease(function()
+			profiles[player] = nil
+			player:Kick() -- The profile could've been loaded on another Roblox server
+		end)
+		if player:IsDescendantOf(Players) then
+			profiles[player] = profile
+		else
+			profile:Release() -- Player left before the profile loaded
+		end
+	end
+
+	local leaderstats = Instance.new("Folder")
+	leaderstats.Parent = player
+	leaderstats.Name = "leaderstats"
+	--
+	local Cards = Instance.new("IntValue")
+	Cards.Name = "Cards"
+	Cards.Parent = leaderstats
+	Cards.Value = 0
+	--
+	local Rank = Instance.new("StringValue")
+	Rank.Name = "Rank"
+	Rank.Parent = leaderstats
+	Rank.Value = ""
+
+	local EXP = Instance.new("IntValue")
+	EXP.Name = "ExperiencePoints"
+	EXP.Parent = leaderstats
+	EXP.Value = 0
+
 	GameAnalytics:PlayerJoined(player)
 	player.Chatted:Connect(function(message)
 		chatted(player, message)
 	end)
-	-- // The actual stuff
-	-- // Character
-	player.CharacterAdded:Connect(function(character: Model)
-		local cardBackItem: BasePart = ReplicatedStorage.Assets.CardBackItem:Clone()
-		cardBackItem.Parent = character
-		local HumanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-		local weldConstraint = Instance.new("WeldConstraint")
-		weldConstraint.Parent = cardBackItem
-		weldConstraint.Part0 = cardBackItem
-		weldConstraint.Part1 = character:FindFirstChild("Torso")
-		cardBackItem.CFrame = HumanoidRootPart.CFrame * CFrame.new(0, 0, 1)
-		--
-		character.Animate.walk.WalkAnim.AnimationId = "rbxassetid://14512867805"
-	end)
 end
 
 local function onPlayerRemoving(player: Player)
-	DataStoreClass.PlayerRemoving(player)
+	--
 	GameAnalytics:PlayerRemoved(player)
 	pcall(function()
 		task.defer(player:Destroy())
@@ -161,7 +202,7 @@ end
 local function teleportPartClicked(player: Player, otherPart: BasePart, destination: Vector3)
 	if player then -- // check if we have the player
 		player:RequestStreamAroundAsync(destination)
-		otherPart.ClickDetector.MouseClick:Connect(function()
+		otherPart:FindFirstChildOfClass("ClickDetector").MouseClick:Connect(function()
 			local humanoidRootPart = player.Character:FindFirstChild("HumanoidRootPart")
 			humanoidRootPart:PivotTo(destination)
 		end)
@@ -176,7 +217,7 @@ local function setupNonPlayableCharacters()
 	}
 	for _, npc in pairs(npcs) do
 		if table.find(registeredNPCs, npc.Name) then
-			local humanoid = npc:FindFirstChildOfClass("Humanoid")
+			local humanoid = npc:FindFirstChildOfClass("Humanoid") :: Humanoid
 			local configurationFolder = npc:FindFirstChild("NPC_Config") :: Folder
 			if configurationFolder then
 				local animationsConfiguration =
@@ -214,29 +255,72 @@ local function setHeadDirection(player: Player, neckCFrame)
 	end
 end
 
-local function returnCards(player): number?
-	local value = player.leaderstats.Cards.Value
+local function returnCards(player: Player): number
+	local value = player.leaderstats.Cards.Value :: number
 	print(`{player.DisplayName} has: {value}`)
 	return value
 end
 
 local function payCards(player, reason: string)
-	player.Leaderstats.Cards.Value += 50
+	player.leaderstats.Cards.Value += 50
 	if reason then
-		--
 		print(reason)
 	end
 end
 
 local function getLastLogin(player: Player): {}?
-	local lastLogin = DataStoreClass.GetStore("Player-Related")
+	local lastLogin = DataStore.GetStore("Player-Related")
 	local lastLoginData = lastLogin:GetAsync(`player:{player.UserId}`)
 	return lastLoginData
 end
 
+local lastTime = tick()
+local fps = 0
+local frameTimes = {}
+
+local function calculateFPS(): number
+	RunService.Heartbeat:Wait()
+	local currentTime = tick()
+	local deltaTime = currentTime - lastTime
+	lastTime = currentTime
+
+	if deltaTime > 0 then
+		fps = 1 / deltaTime
+	end
+
+	-- Smoothing FPS calculation
+	table.insert(frameTimes, fps)
+	if #frameTimes > 30 then -- Keep last 30 frames for average
+		table.remove(frameTimes, 1)
+	end
+
+	-- Calculate average FPS
+	local total = 0
+	for _, f in ipairs(frameTimes) do
+		total = total + f
+	end
+
+	local averageFPS = total / #frameTimes
+	return math.floor(averageFPS)
+end
+
+local function updateServerInfo()
+	task.spawn(function()
+		while true do
+			task.wait(5)
+			local server = ReplicatedStorage.Assets.Server :: Model
+			local billboard = server.Top:FindFirstChildOfClass("BillBoardGui") :: BillBoardGui
+			local details = billboard.ServerDetails :: TextLabel
+			-- Get server frames
+			local frames = calculateFPS()
+			details.Text = `{frames}<br />—<br />360`
+		end
+	end)
+end
+
 -- Set the callback; this can only be done once by one server-side script
 MarketplaceService.ProcessReceipt = processReceipt
-DataStoreClass:StartBindToClose()
+updateServerInfo()
 --
 FastTravelRE.OnServerEvent:Connect(FastTravel)
 EnterMatchRE.OnServerEvent:Connect(enterMatch)

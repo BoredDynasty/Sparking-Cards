@@ -1,14 +1,12 @@
-
-
 -- Train.server.lua
 
 local CollectionService = game:GetService("CollectionService")
 
 for _, seat: VehicleSeat in CollectionService:GetTagged("TrainVehicleSeat") do
-	local carriage = seat.Parent::Instance
+	local carriage = seat.Parent :: Instance
 	local DlObject = carriage:WaitForChild("DL")
 	local DRObject = carriage:WaitForChild("DR")
-	local DestinationObject = carriage:WaitForChild("Destination")
+	local _DestinationObject = carriage:WaitForChild("Destination")
 	local dl = DlObject:GetChildren()
 	local dr = DRObject:GetChildren()
 	local engine = carriage:WaitForChild("Engine")
@@ -27,12 +25,14 @@ for _, seat: VehicleSeat in CollectionService:GetTagged("TrainVehicleSeat") do
 				lights.SpotLight.Color = (dir > 0) and Color3.new(1, 0.95, 0.88) or Color3.new(0.66, 0, 0)
 				lights.SurfaceGui.White.ImageColor3 = (dir > 0) and Color3.new(1, 0.95, 0.88)
 					or Color3.new(0.1, 0.1, 0.1)
-				lights.SurfaceGui.Red.ImageColor3 = (dir < 0) and Color3.new(0.66, 0, 0) or Color3.new(0.1, 0, 0)
+				lights.SurfaceGui.Red.ImageColor3 = (dir < 0) and Color3.new(0.66, 0, 0)
+					or Color3.new(0.1, 0, 0)
 			else
 				lights.SpotLight.Color = (dir < 0) and Color3.new(1, 0.95, 0.88) or Color3.new(0.66, 0, 0)
 				lights.SurfaceGui.White.ImageColor3 = (dir < 0) and Color3.new(1, 0.95, 0.88)
 					or Color3.new(0.1, 0.1, 0.1)
-				lights.SurfaceGui.Red.ImageColor3 = (dir > 0) and Color3.new(0.66, 0, 0) or Color3.new(0.1, 0, 0)
+				lights.SurfaceGui.Red.ImageColor3 = (dir > 0) and Color3.new(0.66, 0, 0)
+					or Color3.new(0.1, 0, 0)
 			end
 		end
 	end

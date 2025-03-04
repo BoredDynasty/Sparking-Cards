@@ -31,10 +31,6 @@ end
 
 local startTime = os.clock()
 
-if not game.Loaded then
-	game.Loaded:Wait()
-end
-
 local assetsRequired = #player:GetDescendants() + #ReplicatedStorage:GetDescendants()
 local assetsLoaded = 0
 
@@ -44,19 +40,17 @@ local preload_Thread = task.spawn(function()
 		ContentProvider:PreloadAsync({ object })
 		task.wait()
 		assetsLoaded += 1
-		return "preloaded_Players"
 	end
 	for _, object in pairs(ReplicatedStorage:GetDescendants()) do
 		ContentProvider:PreloadAsync({ object })
 		task.wait()
 		assetsLoaded += 1
-		return "preloaded_Storage"
 	end
 end)
 
 local function votedSkip()
 	status.Text = "Skipped..."
-	task.wait(4)
+	task.wait(2)
 	loadingUI:Destroy()
 end
 
@@ -65,9 +59,11 @@ background.Status.TextButton.MouseButton1Click:Once(votedSkip)
 local success, result = coroutine.resume(preload_Thread)
 
 local function getResult()
-	if success == true and result == "preloaded_Players" and "preloaded_Storage" then
-		return true
+	local _result = false
+	if success == true and _result == "preloaded_Players" and "preloaded_Storage" then
+		_result = true
 	end
+	return result
 end
 
 if coroutine.status(preload_Thread) == "dead" or getResult() then
@@ -90,12 +86,12 @@ if coroutine.status(preload_Thread) == "dead" or getResult() then
 		print("Number of instances loaded: " .. #game.Workspace:GetDescendants())
 		local sendAnalytic = ReplicatedStorage.RemoteEvents:WaitForChild("SendAnalytic")
 		task.delay(20, function() -- wait for the server to load
+			game.Loaded:Wait()
 			local customFields = {
 				[Enum.AnalyticsCustomFieldKeys.CustomField01.Name] = `Load Time (unrounded): {loadTime}`,
 				[Enum.AnalyticsCustomFieldKeys.CustomField02.Name] = `Load Time (rounded): {roundedLoadTime}`,
 			}
 			sendAnalytic:FireServer("GameLoaded", loadTime, customFields)
-			print(debug.info("preload_Thread", 1))
 		end)
 
 		local imgServer = status.public
@@ -106,7 +102,7 @@ if coroutine.status(preload_Thread) == "dead" or getResult() then
 		imgServer.ImageRectSize = publicSize
 		--end
 		status.Text = "Loaded!"
-		task.wait(4)
+		task.wait(2)
 		loadingUI:Destroy()
 	end
 end

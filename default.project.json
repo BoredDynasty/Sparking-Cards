@@ -8,11 +8,6 @@
   ],
   "tree": {
     "$className": "DataModel",
-    "Chat": {
-      "$className": "Chat",
-      "$ignoreUnknownInstances": true,
-      "$path": "src/Chat"
-    },
     "ReplicatedFirst": {
       "$className": "ReplicatedFirst",
       "$ignoreUnknownInstances": true,
@@ -22,15 +17,20 @@
       "$className": "ReplicatedStorage",
       "$ignoreUnknownInstances": true,
       "$path": "Shared/Replicated",
-      "Packages": {
-        "$className": "Folder",
-        "$ignoreUnknownInstances": true,
-        "$path": "Packages"
-      },
       "RemoteEvents": {
         "$className": "Folder",
         "$ignoreUnknownInstances": true,
         "$path": "Remotes/Remotes.rbxm"
+      },
+      "Modules": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "Shared/Replicated/Modules"
+      },
+      "ClientModules": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "Shared/Replicated/ClientModules"
       }
     },
     "ServerScriptService": {
@@ -41,7 +41,17 @@
     "ServerStorage": {
       "$className": "ServerStorage",
       "$ignoreUnknownInstances": true,
-      "$path": "Shared/Storage"
+      "$path": "Shared/Storage",
+      "Modules": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "Shared/Storage/Modules"
+      },
+      "Classes": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
+        "$path": "Shared/Replicated/Classes"
+      }
     },
     "StarterGui": {
       "$className": "StarterGui",
@@ -56,11 +66,6 @@
         "$path": "game/Client"
       },
       "$ignoreUnknownInstances": true
-    },
-    "Workspace": {
-      "$className": "Workspace",
-      "$ignoreUnknownInstances": true,
-      "$path": "src/Workspace"
     }
   }
 }

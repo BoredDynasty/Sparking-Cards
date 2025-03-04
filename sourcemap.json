@@ -1,1 +1,535 @@
-{"name":"SPARKING CARDS!","className":"DataModel","filePaths":["default.project.json"],"children":[{"name":"Chat","className":"Chat"},{"name":"ReplicatedFirst","className":"ReplicatedFirst","filePaths":["Shared/ReplicatedFirst\\init.meta.json"],"children":[{"name":"DataModel","className":"LocalScript","filePaths":["Shared/ReplicatedFirst\\DataModel.client.lua"]}]},{"name":"ReplicatedStorage","className":"ReplicatedStorage","children":[{"name":"Assets","className":"Folder","filePaths":["Shared/Replicated\\Assets\\init.meta.json"]},{"name":"Classes","className":"Folder","filePaths":["Shared/Replicated\\Classes\\init.meta.json"],"children":[{"name":"DataStore","className":"ModuleScript","filePaths":["Shared/Replicated\\Classes\\DataStore\\init.lua"],"children":[{"name":"Util","className":"ModuleScript","filePaths":["Shared/Replicated\\Classes\\DataStore\\Util.lua"]}]},{"name":"RewardsClass","className":"ModuleScript","filePaths":["Shared/Replicated\\Classes\\RewardsClass.lua"]},{"name":"WeaponClass","className":"ModuleScript","filePaths":["Shared/Replicated\\Classes\\WeaponClass\\init.lua"],"children":[{"name":"DamageIndict","className":"ModuleScript","filePaths":["Shared/Replicated\\Classes\\WeaponClass\\DamageIndict.lua"]}]}]},{"name":"GlobalSettings","className":"ModuleScript","filePaths":["Shared/Replicated\\GlobalSettings.lua"]},{"name":"Modules","className":"Folder","filePaths":["Shared/Replicated\\Modules\\init.meta.json"],"children":[{"name":"CameraService","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\CameraService.lua"]},{"name":"LevelManager","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\LevelManager.lua"]},{"name":"MatchHandler","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\MatchHandler.lua"]},{"name":"SafeTeleporter","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\SafeTeleporter.lua"]},{"name":"SoundManager","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\SoundManager.lua"]},{"name":"Timer","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\Timer.lua"]},{"name":"UserInputType","className":"ModuleScript","filePaths":["Shared/Replicated\\Modules\\UserInputType.lua"]}]},{"name":"Packages","className":"Folder","filePaths":["Packages\\init.meta.json"],"children":[{"name":"ComputePosition","className":"ModuleScript","filePaths":["Packages\\ComputePosition.lua"]},{"name":"FastCast","className":"ModuleScript","filePaths":["Packages\\FastCast\\init.lua"],"children":[{"name":"Signal","className":"ModuleScript","filePaths":["Packages\\FastCast\\Signal.lua"]},{"name":"Table","className":"ModuleScript","filePaths":["Packages\\FastCast\\Table.lua"]},{"name":"TypeDefinitions","className":"ModuleScript","filePaths":["Packages\\FastCast\\TypeDefinitions.lua"]},{"name":"TypeMarshaller","className":"ModuleScript","filePaths":["Packages\\FastCast\\TypeMarshaller.lua"]}]},{"name":"GameAnalytics","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\init.lua"],"children":[{"name":"GameAnalytics","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\init.lua"],"children":[{"name":"Events","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Events.lua"]},{"name":"GAErrorSeverity","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\GAErrorSeverity.lua"]},{"name":"GAProgressionStatus","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\GAProgressionStatus.lua"]},{"name":"GAResourceFlowType","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\GAResourceFlowType.lua"]},{"name":"HttpApi","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\HttpApi\\init.lua"],"children":[{"name":"HashLib","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\HttpApi\\HashLib\\init.lua"],"children":[{"name":"Base64","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\HttpApi\\HashLib\\Base64.lua"]}]}]},{"name":"Logger","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Logger.lua"]},{"name":"Postie","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Postie.lua"]},{"name":"State","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\State.lua"]},{"name":"Store","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Store\\init.lua"],"children":[{"name":"DataStoreQueue","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Store\\DataStoreQueue.lua"]}]},{"name":"Threading","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Threading.lua"]},{"name":"Types","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Types.lua"]},{"name":"Utilities","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Utilities.lua"]},{"name":"Validation","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Validation.lua"]},{"name":"Version","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalytics\\Version.lua"]}]},{"name":"GameAnalyticsClient","className":"ModuleScript","filePaths":["Packages\\GameAnalytics\\GameAnalyticsClient.lua"]}]},{"name":"UIEffect","className":"ModuleScript","filePaths":["Packages\\UIEffect\\init.lua"],"children":[{"name":"Color","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Color.lua"]},{"name":"Curvy","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Curvy.lua"]},{"name":"Maid","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Maid.lua"]},{"name":"SoundManager","className":"ModuleScript","filePaths":["Packages\\UIEffect\\SoundManager.lua"]},{"name":"Style","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Style\\init.lua"],"children":[{"name":"AppendStyles","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Style\\AppendStyles\\init.lua"],"children":[{"name":"Button","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Style\\AppendStyles\\Button.lua"]},{"name":"Canvas","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Style\\AppendStyles\\Canvas.lua"]},{"name":"Libraries","className":"Folder","children":[{"name":"Tooltip","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Style\\AppendStyles\\Libraries\\Tooltip.lua"]}]}]}]},{"name":"Text","className":"ModuleScript","filePaths":["Packages\\UIEffect\\Text.lua"]}]}]},{"name":"RemoteEvents","className":"Folder","filePaths":["Remotes/Remotes.rbxm"],"children":[{"name":"EnemyTurn","className":"RemoteEvent"},{"name":"HeroTurn","className":"RemoteEvent"},{"name":"SendAnalytic","className":"UnreliableRemoteEvent"},{"name":"PlayerWon","className":"RemoteEvent"},{"name":"PlayerLost","className":"RemoteEvent"},{"name":"MatchStarted","className":"RemoteEvent"},{"name":"MatchEnded","className":"RemoteEvent"},{"name":"RankUp","className":"RemoteEvent"},{"name":"AnnouncementMade","className":"RemoteEvent"},{"name":"CreateNotification","className":"RemoteEvent"},{"name":"SetCameraHost","className":"UnreliableRemoteEvent"},{"name":"NewDialogue","className":"RemoteEvent"},{"name":"NewQuest","className":"RemoteEvent"},{"name":"FinishedQuest","className":"RemoteEvent"},{"name":"PlayerDied","className":"RemoteEvent"},{"name":"RespawnPlayer","className":"RemoteEvent"},{"name":"SetCameraView","className":"UnreliableRemoteEvent"},{"name":"GameLoaded","className":"RemoteEvent"},{"name":"GiftPlayer","className":"RemoteEvent"},{"name":"ReplicateCutscene","className":"UnreliableRemoteEvent"},{"name":"AwardPlayer","className":"RemoteEvent"},{"name":"BonusMaze","className":"RemoteEvent"},{"name":"BonusMapCompleted","className":"RemoteEvent"},{"name":"BonusMapFailed","className":"RemoteEvent"},{"name":"LeaveButton","className":"RemoteEvent"},{"name":"GiveCards","className":"RemoteEvent"},{"name":"DisplayCards","className":"RemoteEvent"},{"name":"CutsceneRemote","className":"RemoteEvent"},{"name":"PlayCard","className":"RemoteEvent"},{"name":"SendWebhook","className":"UnreliableRemoteEvent"},{"name":"JoinQueueEvent","className":"RemoteEvent"},{"name":"FastTravel","className":"RemoteEvent"},{"name":"EnterMatch","className":"RemoteEvent"},{"name":"PollAnalytics","className":"RemoteEvent"},{"name":"QueueRE","className":"RemoteEvent"},{"name":"DataSaved","className":"UnreliableRemoteEvent"}]}]},{"name":"ServerScriptService","className":"ServerScriptService","children":[{"name":"Handlers","className":"Folder","children":[{"name":"Tag","className":"Script","filePaths":["game/Server\\Handlers\\Tag.server.lua"]},{"name":"Train","className":"Script","filePaths":["game/Server\\Handlers\\Train.server.lua"]}]},{"name":"Master","className":"Folder","children":[{"name":"ServerHandler","className":"Script","filePaths":["game/Server\\Master\\ServerHandler.server.lua"]}]}]},{"name":"ServerStorage","className":"ServerStorage","children":[{"name":"Assets","className":"Folder","filePaths":["Shared/Storage\\Assets\\init.meta.json"]},{"name":"Modules","className":"Folder","filePaths":["Shared/Storage\\Modules\\init.meta.json"],"children":[{"name":"MapApply","className":"ModuleScript","filePaths":["Shared/Storage\\Modules\\MapApply.lua"]},{"name":"MapSettings","className":"ModuleScript","filePaths":["Shared/Storage\\Modules\\MapSettings.lua"]}]}]},{"name":"StarterGui","className":"StarterGui","filePaths":["game/UI\\init.meta.json"]},{"name":"StarterPlayer","className":"StarterPlayer","children":[{"name":"StarterPlayerScripts","className":"StarterPlayerScripts","children":[{"name":"Client","className":"LocalScript","filePaths":["game/Client\\Client.client.lua"]},{"name":"Modules","className":"Folder","children":[{"name":"OverShoulder","className":"ModuleScript","filePaths":["game/Client\\Modules\\OverShoulder.lua"]}]}]}]},{"name":"Workspace","className":"Workspace"}]}
+{
+    "name": "SPARKING CARDS!",
+    "className": "DataModel",
+    "filePaths": [
+        "default.project.json"
+    ],
+    "children": [
+        {
+            "name": "ReplicatedFirst",
+            "className": "ReplicatedFirst",
+            "filePaths": [
+                "Shared/ReplicatedFirst\\init.meta.json"
+            ],
+            "children": [
+                {
+                    "name": "DataModel",
+                    "className": "LocalScript",
+                    "filePaths": [
+                        "Shared/ReplicatedFirst\\DataModel.client.lua"
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "ReplicatedStorage",
+            "className": "ReplicatedStorage",
+            "children": [
+                {
+                    "name": "ClientModules",
+                    "className": "Folder",
+                    "children": [
+                        {
+                            "name": "LevelCalculate",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\ClientModules\\LevelCalculate.lua"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "GlobalSettings",
+                    "className": "ModuleScript",
+                    "filePaths": [
+                        "Shared/Replicated\\GlobalSettings.lua"
+                    ]
+                },
+                {
+                    "name": "Modules",
+                    "className": "Folder",
+                    "filePaths": [
+                        "Shared/Replicated\\Modules\\init.meta.json"
+                    ],
+                    "children": [
+                        {
+                            "name": "CameraService",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\CameraService.lua"
+                            ]
+                        },
+                        {
+                            "name": "FastCast",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\FastCast\\init.lua"
+                            ],
+                            "children": [
+                                {
+                                    "name": "Signal",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\FastCast\\Signal.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "Table",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\FastCast\\Table.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "TypeDefinitions",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\FastCast\\TypeDefinitions.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "TypeMarshaller",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\FastCast\\TypeMarshaller.lua"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "LevelManager",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\LevelManager.lua"
+                            ]
+                        },
+                        {
+                            "name": "MatchHandler",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\MatchHandler.lua"
+                            ]
+                        },
+                        {
+                            "name": "Projectile",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\Projectile.lua"
+                            ]
+                        },
+                        {
+                            "name": "SafeTeleporter",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\SafeTeleporter.lua"
+                            ]
+                        },
+                        {
+                            "name": "SoundManager",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\SoundManager.lua"
+                            ]
+                        },
+                        {
+                            "name": "Timer",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\Timer.lua"
+                            ]
+                        },
+                        {
+                            "name": "UIEffect",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\UIEffect\\init.lua"
+                            ],
+                            "children": [
+                                {
+                                    "name": "Color",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\UIEffect\\Color.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "Curvy",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\UIEffect\\Curvy.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "Maid",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\UIEffect\\Maid.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "SoundManager",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\UIEffect\\SoundManager.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "Style",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\UIEffect\\Style\\init.lua"
+                                    ],
+                                    "children": [
+                                        {
+                                            "name": "AppendStyles",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Replicated\\Modules\\UIEffect\\Style\\AppendStyles\\init.lua"
+                                            ],
+                                            "children": [
+                                                {
+                                                    "name": "Button",
+                                                    "className": "ModuleScript",
+                                                    "filePaths": [
+                                                        "Shared/Replicated\\Modules\\UIEffect\\Style\\AppendStyles\\Button.lua"
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "Canvas",
+                                                    "className": "ModuleScript",
+                                                    "filePaths": [
+                                                        "Shared/Replicated\\Modules\\UIEffect\\Style\\AppendStyles\\Canvas.lua"
+                                                    ]
+                                                },
+                                                {
+                                                    "name": "Libraries",
+                                                    "className": "Folder",
+                                                    "children": [
+                                                        {
+                                                            "name": "Tooltip",
+                                                            "className": "ModuleScript",
+                                                            "filePaths": [
+                                                                "Shared/Replicated\\Modules\\UIEffect\\Style\\AppendStyles\\Libraries\\Tooltip.lua"
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "Text",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Replicated\\Modules\\UIEffect\\Text.lua"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "UserInputType",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Replicated\\Modules\\UserInputType.lua"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "ServerScriptService",
+            "className": "ServerScriptService",
+            "children": [
+                {
+                    "name": "Handlers",
+                    "className": "Folder",
+                    "children": [
+                        {
+                            "name": "Tag",
+                            "className": "Script",
+                            "filePaths": [
+                                "game/Server\\Handlers\\Tag.server.lua"
+                            ]
+                        },
+                        {
+                            "name": "Train",
+                            "className": "Script",
+                            "filePaths": [
+                                "game/Server\\Handlers\\Train.server.lua"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Master",
+                    "className": "Folder",
+                    "children": [
+                        {
+                            "name": "ServerHandler",
+                            "className": "Script",
+                            "filePaths": [
+                                "game/Server\\Master\\ServerHandler.server.lua"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "ServerStorage",
+            "className": "ServerStorage",
+            "children": [
+                {
+                    "name": "Classes",
+                    "className": "Folder",
+                    "children": [
+                        {
+                            "name": "DataStore",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Storage\\Classes\\DataStore\\init.lua"
+                            ],
+                            "children": [
+                                {
+                                    "name": "Util",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Storage\\Classes\\DataStore\\Util.lua"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "Experience",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Storage\\Classes\\Experience.lua"
+                            ]
+                        },
+                        {
+                            "name": "ProfileStore",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Storage\\Classes\\ProfileStore.lua"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "name": "Modules",
+                    "className": "Folder",
+                    "filePaths": [
+                        "Shared/Storage\\Modules\\init.meta.json"
+                    ],
+                    "children": [
+                        {
+                            "name": "GameAnalytics",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Storage\\Modules\\GameAnalytics\\init.lua"
+                            ],
+                            "children": [
+                                {
+                                    "name": "GameAnalytics",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\init.lua"
+                                    ],
+                                    "children": [
+                                        {
+                                            "name": "Events",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Events.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "GAErrorSeverity",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\GAErrorSeverity.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "GAProgressionStatus",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\GAProgressionStatus.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "GAResourceFlowType",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\GAResourceFlowType.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "HttpApi",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\HttpApi\\init.lua"
+                                            ],
+                                            "children": [
+                                                {
+                                                    "name": "HashLib",
+                                                    "className": "ModuleScript",
+                                                    "filePaths": [
+                                                        "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\HttpApi\\HashLib\\init.lua"
+                                                    ],
+                                                    "children": [
+                                                        {
+                                                            "name": "Base64",
+                                                            "className": "ModuleScript",
+                                                            "filePaths": [
+                                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\HttpApi\\HashLib\\Base64.lua"
+                                                            ]
+                                                        }
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "Logger",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Logger.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "Postie",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Postie.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "State",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\State.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "Store",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Store\\init.lua"
+                                            ],
+                                            "children": [
+                                                {
+                                                    "name": "DataStoreQueue",
+                                                    "className": "ModuleScript",
+                                                    "filePaths": [
+                                                        "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Store\\DataStoreQueue.lua"
+                                                    ]
+                                                }
+                                            ]
+                                        },
+                                        {
+                                            "name": "Threading",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Threading.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "Types",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Types.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "Utilities",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Utilities.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "Validation",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Validation.lua"
+                                            ]
+                                        },
+                                        {
+                                            "name": "Version",
+                                            "className": "ModuleScript",
+                                            "filePaths": [
+                                                "Shared/Storage\\Modules\\GameAnalytics\\GameAnalytics\\Version.lua"
+                                            ]
+                                        }
+                                    ]
+                                },
+                                {
+                                    "name": "GameAnalyticsClient",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "Shared/Storage\\Modules\\GameAnalytics\\GameAnalyticsClient.lua"
+                                    ]
+                                }
+                            ]
+                        },
+                        {
+                            "name": "MapApply",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Storage\\Modules\\MapApply.lua"
+                            ]
+                        },
+                        {
+                            "name": "MapSettings",
+                            "className": "ModuleScript",
+                            "filePaths": [
+                                "Shared/Storage\\Modules\\MapSettings.lua"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "StarterPlayer",
+            "className": "StarterPlayer",
+            "children": [
+                {
+                    "name": "StarterPlayerScripts",
+                    "className": "StarterPlayerScripts",
+                    "children": [
+                        {
+                            "name": "Client",
+                            "className": "LocalScript",
+                            "filePaths": [
+                                "game/Client\\Client.client.lua"
+                            ]
+                        },
+                        {
+                            "name": "Modules",
+                            "className": "Folder",
+                            "children": [
+                                {
+                                    "name": "Confetti",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "game/Client\\Modules\\Confetti.lua"
+                                    ]
+                                },
+                                {
+                                    "name": "OverShoulder",
+                                    "className": "ModuleScript",
+                                    "filePaths": [
+                                        "game/Client\\Modules\\OverShoulder.lua"
+                                    ]
+                                }
+                            ]
+                        }
+                    ]
+                }
+            ]
+        }
+    ]
+}

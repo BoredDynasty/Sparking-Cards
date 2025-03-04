@@ -1,3 +1,5 @@
+--!nonstrict
+
 local CLASS = {}
 
 --// SERVICES //--

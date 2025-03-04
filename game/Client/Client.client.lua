@@ -1,4 +1,4 @@
-
+--!nonstrict
 
 -- Client.client.lua
 
@@ -134,7 +134,7 @@ task.spawn(function()
 	RunService.RenderStepped:Connect(function()
 		local rootPart = character:WaitForChild("HumanoidRootPart") :: BasePart
 		local neck = character:FindFirstChild("Neck", true) :: any
-		local yOffset = neck.C0.Y
+		local yOffset = neck.C0.Y :: number
 
 		local cameraDirection = rootPart.CFrame:ToWorldSpace(Camera.CFrame).LookVector
 
@@ -179,9 +179,9 @@ print("Camera has finished executing.")
 
 -- // Requires -- //
 
-local UIEffect = require(ReplicatedStorage.Packages.UIEffect)
 local CameraService = require(ReplicatedStorage.Modules.CameraService)
 local Timer = require(ReplicatedStorage.Modules.Timer)
+local UIEffect = require(ReplicatedStorage.Modules.UIEffect)
 local UserInputType = require(ReplicatedStorage.Modules.UserInputType)
 
 -- local Interactions = require(ReplicatedStorage.Modules.Interactions)
@@ -193,9 +193,9 @@ local DataSavedRE = RemoteEvents:FindFirstChild("DataSaved") :: RemoteEvent
 
 -- // Functions -- //
 
-local function showTooltip(text, more: string)
+local function showTooltip(text: string, more: string)
 	local tooltipGui = PlayerGui:FindFirstChild("ToolTip") :: ScreenGui
-	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: Frame | CanvasGroup
+	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: CanvasGroup
 	local tooltipFrame = canvasGroup:FindFirstChild("Frame") :: Frame
 
 	local details = tooltipFrame:WaitForChild("Details") :: TextLabel
@@ -207,12 +207,12 @@ end
 
 local function hideTooltip()
 	local tooltipGui = PlayerGui:FindFirstChild("ToolTip") :: ScreenGui
-	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: Frame | CanvasGroup
+	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: CanvasGroup
 	local tooltipFrame = canvasGroup:FindFirstChild("Frame") :: Frame
 	tooltipFrame.Visible = false
 end
 
-local function setCameraView(view)
+local function setCameraView(view: unknown)
 	CameraService:SetCameraView(view)
 end
 
@@ -310,7 +310,7 @@ local LargeDialog = player.PlayerGui.Dialog.CanvasGroup.Frame
 local function reloadProfileImg(img: string)
 	PlayerHud.Player.PlayerImage.Image = img
 	Profile.Frame.PlayerImage.Image = img
-	print("Reloaded: "..player.DisplayName.."'s profile image. {img}")
+	print("Reloaded: " .. player.DisplayName .. "'s profile image. {img}")
 end
 
 local function newDialog(dialog: string)
@@ -328,22 +328,22 @@ end
 
 local function dataSaved(message: string)
 	task.spawn(function()
-	local PH_Player = PlayerHud:FindFirstChild("Player") :: Frame
-	local playerImage = PH_Player:FindFirstChild("PlayerImage") :: ImageLabel
-	local design = PH_Player:FindFirstChild("Design") :: Frame
-	local radial = design:FindFirstChild("Radial") :: any
+		local PH_Player = PlayerHud:FindFirstChild("Player") :: Frame
+		local playerImage = PH_Player:FindFirstChild("PlayerImage") :: ImageLabel
+		local design = PH_Player:FindFirstChild("Design") :: Frame
+		local radial = design:FindFirstChild("Radial") :: any
 		if not message then
-			local saveStatus = PH_Player:FindFirstChild("Check"):: any
+			local saveStatus = PH_Player:FindFirstChild("Check") :: any
 			UIEffect.changeColor("#ccb6ff", radial)
 			UIEffect.changeColor("#ccb6ff", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 1)
+			UIEffect.getModule("Curvy"):Curve(playerImage, TInfo, "ImageTransparency", 1)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 0)
 			saveStatus.Visible = true
 			UIEffect.TypewriterEffect("Saved!", PH_Player.TextLabel)
 			task.wait(5)
 			UIEffect.changeColor("Green", radial)
 			UIEffect.changeColor("Green", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 0)
+			UIEffect.getModule("Curvy"):Curve(playerImage, TInfo, "ImageTransparency", 0)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 1)
 			saveStatus.Visible = false
 		elseif message then
@@ -357,7 +357,7 @@ local function dataSaved(message: string)
 			task.wait(5)
 			UIEffect.changeColor("Green", radial)
 			UIEffect.changeColor("Green", saveStatus)
-			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 0)
+			UIEffect.getModule("Curvy"):Curve(playerImage, TInfo, "ImageTransparency", 0)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 1)
 			saveStatus.Visible = false
 		end
@@ -507,7 +507,7 @@ end)
 
 local EmoteGui = PlayerGui:FindFirstChild("EmoteGui") :: ScreenGui
 
-local playingAnimation = nil
+local playingAnimation = nil :: AnimationTrack?
 
 local function playAnim(AnimationID)
 	if character and Humanoid then
@@ -626,7 +626,7 @@ print(`UI is almost done executing.`)
 local ShopGui = PlayerGui:FindFirstChild("Shop") :: ScreenGui
 local ShopCanvas = ShopGui:FindFirstChild("CanvasGroup") :: CanvasGroup
 local ShopFrame = ShopCanvas:FindFirstChild("Frame") :: Frame
-local ShopOpen = ShopCanvas:FindFirstChild("FAB") -- Floating Action Button
+local ShopOpen = ShopCanvas:FindFirstChild("FAB") :: TextButton -- Floating Action Button
 
 local function openShop()
 	if ShopCanvas.Visible == false then
@@ -653,7 +653,7 @@ local function UDim2ToVector2(udim2: UDim2)
 end
 --]]
 
-local function getProductImg(product: Configuration)
+local function getProductImg(product: Configuration): { Vector2 | Vector2 | string }
 	local assets = ReplicatedStorage:WaitForChild("Assets")
 	local assetImgs = assets:FindFirstChild("Images", true) :: Folder
 	local returnValue = nil
@@ -736,7 +736,7 @@ end
 
 local function loadProducts()
 	for _, product: Configuration in pairs(products) do
-		local productsFrame = ShopGui.Frame.Frame.ScrollingFrame
+		local productsFrame = ShopGui.Frame.Frame.ScrollingFrame :: ScrollingFrame
 
 		local productTitle = product:GetAttribute("title") :: any
 		local productPrice = product:GetAttribute("price") :: number
@@ -762,7 +762,7 @@ local function loadProducts()
 end
 
 local function unloadProducts() -- to reset the products
-	local productsFrame = ShopGui.Frame.Frame.ScrollingFrame
+	local productsFrame = ShopGui.Frame.Frame.ScrollingFrame :: ScrollingFrame
 	print("Unloading products")
 	for _, item in productsFrame:GetChildren() do
 		if item.Name == "Item" then
@@ -795,12 +795,12 @@ end)
 
 -- Mobile Support
 
-local Navigation = player.PlayerGui.Mobile.Navigation.CanvasGroup
+local Navigation = player.PlayerGui.Mobile.Navigation.CanvasGroup :: CanvasGroup
 
 if UserInputType() == "Touch" then --[TODO) Fix this
 	print("Mobile Detected", UserInputType())
 	Navigation.Visible = true
-	local navigationRail = Navigation.Frame
+	local navigationRail = Navigation.Frame :: Frame
 	local isNavigationOpen = false
 	local Curvy = UIEffect.getModule("Curvy")
 	task.spawn(function()
@@ -818,7 +818,7 @@ if UserInputType() == "Touch" then --[TODO) Fix this
 	Navigation.FAB.MouseButton1Click:Connect(function() -- navigation
 		if isNavigationOpen == false then
 			isNavigationOpen = true
-			local background = Navigation.Background -- design
+			local background = Navigation.Background :: Frame -- design
 			local newTInfo = TweenInfo.new(0.1)
 			background.AnchorPoint = Vector2.new(1, 0.5)
 			Curvy:Curve(navigationRail, newTInfo, "Size", UDim2.fromScale(0.243, 0.071))

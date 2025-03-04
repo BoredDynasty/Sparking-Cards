@@ -1,4 +1,6 @@
+--!nonstrict
 --\\----- [CAMERA SERVICE] -----//--
+
 --[[
     Open-sourced, custom camera system for Roblox experiences.
     Find more ease in implementing beautiful, breath-taking camera effects into your place.
@@ -268,7 +270,7 @@ local function raycastWorld(origin, direction)
 	else
 		params.FilterDescendantsInstances = { currentCharacter, CameraService.Host }
 	end
-	local pos = (currentCamPosition + offset) -- no Offset property applied yet
+	local _pos = (currentCamPosition + offset) -- no Offset property applied yet
 	--> Allow clipping through transluscent parts
 	local landRay = workspace:Raycast(origin, direction, params)
 	if landRay and landRay.Distance and landRay.Instance then
@@ -332,7 +334,8 @@ local function updateCamera(deltaTime: number)
 	if self.MinZoom == 0 and self.MaxZoom == 0 and self.RotSmoothness > self.Smoothness then
 		local desiredTime2 = self.RotSmoothness ^ 2 * 0.05 + 0.02 * self.RotSmoothness + 0.005
 		local lerpFactor2 = math.min(1, deltaTime / desiredTime2)
-		rotationCFrame = self.RotSmoothness > 0 and pastCamRot:Lerp(rotationCFrame, lerpFactor2) or rotationCFrame
+		rotationCFrame = self.RotSmoothness > 0 and pastCamRot:Lerp(rotationCFrame, lerpFactor2)
+			or rotationCFrame
 	end
 
 	pastCamRot = rotationCFrame
@@ -355,7 +358,9 @@ local function updateCamera(deltaTime: number)
 				humState = hum:GetState()
 			end
 
-			if (humState == Enum.HumanoidStateType.Jumping) or (humState == Enum.HumanoidStateType.Freefall) then
+			if
+				(humState == Enum.HumanoidStateType.Jumping) or (humState == Enum.HumanoidStateType.Freefall)
+			then
 				lapsed = 0
 				return desiredTime * 3.33
 			end
@@ -450,7 +455,10 @@ end
 
 --> @SetCameraView: Changes the game-cam to a new view, disabling the old
 function CameraService:SetCameraView(__type: string) --> Used to change views (i.e. from 1st to 3rd)
-	assert(cameraSettings[__type] ~= nil, "[CameraService] Camera view not found for ID: " .. tostring(__type))
+	assert(
+		cameraSettings[__type] ~= nil,
+		"[CameraService] Camera view not found for ID: " .. tostring(__type)
+	)
 
 	self.CameraView = __type
 	for i, v in pairs(cameraSettings[__type]) do
@@ -475,7 +483,9 @@ function CameraService:SetCameraView(__type: string) --> Used to change views (i
 		if self.Host.Parent and self.Host.Parent == currentCharacter then
 			hideBodyParts(self.CharacterVisibility ~= "None" and self.CharacterVisibility or nil)
 		end
-		UserInputService.MouseBehavior = self.LockMouse and __type ~= "Default" and Enum.MouseBehavior.LockCenter
+		UserInputService.MouseBehavior = self.LockMouse
+				and __type ~= "Default"
+				and Enum.MouseBehavior.LockCenter
 			or Enum.MouseBehavior.Default
 		cam.CameraType = Enum.CameraType.Scriptable
 		cam.CameraSubject = nil
@@ -500,8 +510,12 @@ function CameraService:SetCameraView(__type: string) --> Used to change views (i
 						self.MinZoom,
 						self.MaxZoom
 					)
-				elseif input.KeyCode == Enum.KeyCode.ButtonR3 and input.UserInputState == Enum.UserInputState.Begin then --> Console Joystick Press
-					self.Zoom = self.Zoom - ((self.MaxZoom - self.MinZoom) / 4) < self.MinZoom and self.MaxZoom
+				elseif
+					input.KeyCode == Enum.KeyCode.ButtonR3
+					and input.UserInputState == Enum.UserInputState.Begin
+				then --> Console Joystick Press
+					self.Zoom = self.Zoom - ((self.MaxZoom - self.MinZoom) / 4) < self.MinZoom
+							and self.MaxZoom
 						or self.Zoom - ((self.MaxZoom - self.MinZoom) / 4)
 				end
 			end
@@ -510,7 +524,8 @@ function CameraService:SetCameraView(__type: string) --> Used to change views (i
 		--> @onInputChange: stores input, convert to Vector2 with rotation data
 		local function onInputChange(input, gpe)
 			updateZoom(input, gpe)
-			local rightHold = self.LockMouse or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
+			local rightHold = self.LockMouse
+				or UserInputService:IsMouseButtonPressed(Enum.UserInputType.MouseButton2)
 			local mobile = input.UserInputType == Enum.UserInputType.Touch
 			local console = input.UserInputType == Enum.UserInputType.Gamepad1
 				and input.KeyCode == Enum.KeyCode.Thumbstick2
@@ -530,11 +545,13 @@ function CameraService:SetCameraView(__type: string) --> Used to change views (i
 				if console then
 					differenceVector = Vector2.new(
 						if delta.X < 0.2 / 15 * math.sqrt(UserInputService.MouseDeltaSensitivity)
-								and delta.X > -0.2 / 15 * math.sqrt(UserInputService.MouseDeltaSensitivity)
+								and delta.X
+									> -0.2 / 15 * math.sqrt(UserInputService.MouseDeltaSensitivity)
 							then 0
 							else delta.X,
 						if -delta.Y < 0.2 / 15 * math.sqrt(UserInputService.MouseDeltaSensitivity)
-								and -delta.Y > -0.2 / 15 * math.sqrt(UserInputService.MouseDeltaSensitivity)
+								and -delta.Y
+									> -0.2 / 15 * math.sqrt(UserInputService.MouseDeltaSensitivity)
 							then 0
 							else -delta.Y
 					)
@@ -593,7 +610,8 @@ function CameraService:SetCameraView(__type: string) --> Used to change views (i
 
 		--> Special effects for the CINEMATIC VIEW
 		if __type == "Cinematic" then
-			local ui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+			local ui = Instance.new("ScreenGui")
+			ui.Parent = player:WaitForChild("PlayerGui")
 			ui.Name = "CameraService_Cinematic_Effect"
 			ui.Enabled = true
 			ui.ResetOnSpawn = false
@@ -643,7 +661,10 @@ function CameraService:CreateNewCameraView(id: string, settingsArray: {})
 	for property, default in pairs(propertyTypes) do
 		if cameraSettings[id][property] == nil then
 			warn(
-				'[CameraService] The "' .. property .. '" property was set to the default value: ' .. tostring(default)
+				'[CameraService] The "'
+					.. property
+					.. '" property was set to the default value: '
+					.. tostring(default)
 			)
 			cameraSettings[id][property] = default
 		end
@@ -652,7 +673,12 @@ end
 
 --> @LockCameraPanning: locks panning on a certain direction.
 --> Great for emulating 2D systems + games on Roblox
-function CameraService:LockCameraPanning(lockXAxis: boolean, lockYAxis: boolean, lockAtX: number, lockAtY: number)
+function CameraService:LockCameraPanning(
+	lockXAxis: boolean,
+	lockYAxis: boolean,
+	lockAtX: number,
+	lockAtY: number
+)
 	--> Set up the camera orientation
 	self.atX = lockAtX and math.rad(lockAtX) or 0
 	self.atY = lockAtY and math.rad(lockAtY) or 0
@@ -730,7 +756,8 @@ end
 
 --> @TiltAllAxes: converts degree to rads., but in all axes!!! Tilt go brr.
 function CameraService:TiltAllAxes(x: number, y: number, z: number)
-	self.TiltFactor = CFrame.fromEulerAnglesYXZ(y and math.rad(y) or 0, x and math.rad(x) or 0, z and math.rad(z) or 0)
+	self.TiltFactor =
+		CFrame.fromEulerAnglesYXZ(y and math.rad(y) or 0, x and math.rad(x) or 0, z and math.rad(z) or 0)
 end
 
 --> @SetWobbling: set up dynamic wobbling (interchangeable w/:Change())

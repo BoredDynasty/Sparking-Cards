@@ -1,4 +1,4 @@
-
+--!nonstrict
 
 -- Client.client.lua
 
@@ -27,7 +27,7 @@ replicateConnection = ReplicateRE.OnClientEvent:Connect(function(cutsceneFolder:
 		connection = RunService.RenderStepped:Connect(function(delta)
 			local frames = (delta * 60)
 			local steppedFrames: CFrameValue | IntValue =
-				cutsceneFolder:FindFirstChild(tostring(math.ceil(frames)))::any
+				cutsceneFolder:FindFirstChild(tostring(math.ceil(frames))) :: any
 			character.Humanoid.AutoRotate = false
 			Camera.CameraType = Enum.CameraType.Scriptable
 			if steppedFrames then
@@ -119,15 +119,17 @@ local cardChoices = {
 }
 
 local function getChoice(input, gameProcessed)
+	local result = nil
 	if gameProcessed then
 		return
 	end
 	for choice, keyCode in pairs(cardChoices) do
 		if input.KeyCode == keyCode then
 			print(`{player.DisplayName} chose: {choice}`)
-			return choice
+			result = choice
 		end
 	end
+	return result
 end
 
 local function onInputBegan(input, gameProcessed)
@@ -146,7 +148,7 @@ UserInputService.InputBegan:Connect(onInputBegan)
 
 -- Function to rotate the character based on mouse position
 local function updateCharacterFacing(humanoidRootPart: BasePart)
-	local mousePosition = mouse.Hit.p -- Get the mouse's world position
+	local mousePosition = mouse.Hit.Position -- Get the mouse's world position
 	local characterPosition = humanoidRootPart.Position
 
 	-- Calculate the direction the character should face (Y-axis ignored)
@@ -159,7 +161,7 @@ end
 
 local function getAnimations(folder: Folder)
 	local animationTable = {}
-	for _, animation: Animation in pairs(folder:GetChildren()::any) do
+	for _, animation: Animation in pairs(folder:GetChildren() :: any) do
 		if animation:IsA("Animation") then
 			table.insert(animationTable, animation)
 		end
@@ -167,9 +169,10 @@ local function getAnimations(folder: Folder)
 end
 
 local function playNextAnimation(folder: { Animation }, i: number)
+	local result = false
 	if i == 0 then
 		print(`Couldn't find next anims: {folder}, {i}`)
-		return false
+		result = false
 	end
 	i += 1 -- Increment
 	if i >= #folder then
@@ -178,6 +181,7 @@ local function playNextAnimation(folder: { Animation }, i: number)
 	-- Play the current animation
 	local selectedAnimation = folder[i]
 	selectedAnimation:Play()
+	return result
 end
 
 local function onTarget(humanoidRootPart: BasePart)
@@ -196,10 +200,6 @@ local function onTarget(humanoidRootPart: BasePart)
 end
 
 ---------------------------------- UI --------------------------------
-
---!nonstrict
-
--- UI.client.lua
 
 print(script.Name)
 local TweenService = game:GetService("TweenService")
