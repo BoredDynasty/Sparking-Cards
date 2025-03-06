@@ -37,7 +37,7 @@ local function getMetrics(metricTable: metricTypes): Vector3
 
 	return force
 end
-function Projectile.New(object: BasePart, metricTable: metricTypes)
+function Projectile.new(object: BasePart, metricTable: metricTypes)
 	task.spawn(function()
 		if object == nil or metricTable == nil then
 			return
@@ -51,7 +51,7 @@ function Projectile.New(object: BasePart, metricTable: metricTypes)
 			primaryPart.Position = metricTable[1]
 			clone.Parent = game.Workspace
 
-			for _, part in clone:GetDescendants() do
+			for _, part: BasePart in clone:GetDescendants() do
 				if part:IsA("BasePart") then
 					totalMass = totalMass + part:GetMass()
 				end

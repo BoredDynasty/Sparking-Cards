@@ -2,7 +2,7 @@
 
 -- Master.server.lua
 
-print(string.format(`Server ID [ {game.JobId} ] \nVER. {game.PlaceVersion}`, "%q"))
+print(string.format(`Server ID [ {game.JobId} ] \nVER. 0.1.0`, "%q"))
 
 local CollectionService = game:GetService("CollectionService")
 local MarketplaceService = game:GetService("MarketplaceService")
@@ -34,14 +34,9 @@ print("Developer Notes gets updated every 24h.")
 local gameAnalyticsConfig = {
 	enableInfoLog = true,
 	enableVerboseLog = false,
-	-- availableCustomDimensions01: { CustomDimension }?,
-	-- availableCustomDimensions02: { CustomDimension }?,
-	-- availableCustomDimensions03: { CustomDimension }?,
-	-- availableResourceCurrencies: { string }?,
-	-- availableResourceItemTypes: { string }?,
-	-- build = "1.0.1",
-	-- availableGamepasses: { string }?,
-	-- enableDebugLog: boolean?,
+	availableResourceCurrencies = { "Cards" },
+	build = "0.1.0",
+	availableGamepasses = { "Extra Cards" },
 	automaticSendBusinessEvents = true,
 	reportErrors = true,
 	useCustomUserId = true,
@@ -49,17 +44,8 @@ local gameAnalyticsConfig = {
 	secretKey = "1a5289ebbc7daa44accc4d5deb256833263c512a",
 }
 
-GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 -- selene:allow(mixed_table)
-GameAnalytics:initialize({
-	gameAnalyticsConfig.gameKey,
-	gameAnalyticsConfig.secretKey,
-	--
-	useCustomUserId = true,
-	automaticSendBusinessEvents = true,
-	enableInfoLog = true,
-	enableVerboseLog = true,
-})
+GameAnalytics:initialize(gameAnalyticsConfig)
 
 local function automaticDialog(player: Player, dialog: string)
 	DialogRE:FireClient(player, dialog)
@@ -86,12 +72,6 @@ end
 
 productFunctions[1906572512] = function(receipt, player)
 	print(`Donated Successfully: {player.Name}.`)
-	GameAnalytics:setCustomDimension01(player.UserId, tostring(receipt))
-	task.delay(2.5, function()
-		GameAnalytics:setCustomDimension01(player.UserId, "")
-		print("Reset Dimension: 01")
-		-- Reset the Dimension01
-	end)
 	return true
 end
 
@@ -104,7 +84,7 @@ LogService.MessageOut:Connect(function(message, messageType)
 	end
 end)
 
-local ServerAsset = ReplicatedStorage.Assets.Server:Clone()
+local ServerAsset = ReplicatedStorage.Assets.Server:Clone() :: Model
 ServerAsset.Parent = game.Workspace
 
 local function processReceipt(receiptInfo)

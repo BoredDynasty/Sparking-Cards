@@ -18,7 +18,7 @@ local MarketPlaceService = game:GetService("MarketplaceService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 local character = player.Character or player.CharacterAdded:Wait()
-local Humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local Humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 local TInfo = TweenInfo.new(0.5, Enum.EasingStyle.Circular, Enum.EasingDirection.InOut)
 
 local RemoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents") :: Folder
@@ -45,7 +45,7 @@ replicateConnection = ReplicateRE.OnClientEvent:Connect(function(cutsceneFolder:
 	if not connection then
 		connection = RunService.RenderStepped:Connect(function(delta: number)
 			local frames = (delta * 60)
-			local steppedFrames = cutsceneFolder:WaitForChild(tostring(math.ceil(frames))) :: CFrameValue
+			local steppedFrames = cutsceneFolder:FindFirstChild(tostring(math.ceil(frames))) :: CFrameValue
 			Humanoid.AutoRotate = false
 			Camera.CameraType = Enum.CameraType.Scriptable
 			if steppedFrames then
@@ -98,7 +98,7 @@ end
 task.spawn(function()
 	RunService.RenderStepped:Connect(function()
 		if character then
-			local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+			local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 			if humanoid and humanoid.Health > 0 then
 				bobble(Humanoid)
 			end
@@ -121,7 +121,7 @@ end
 RunService:BindToRenderStep("Tilt", RenderPriority, function()
 	-- print("tilting")
 	if character then
-		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+		local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 		if humanoid then
 			roll(humanoid)
 		end
@@ -153,8 +153,8 @@ local function showTooltip(text: string, more: string)
 	local canvasGroup = tooltipGui:FindFirstChild("CanvasGroup") :: CanvasGroup
 	local tooltipFrame = canvasGroup:FindFirstChild("Frame") :: Frame
 
-	local details = tooltipFrame:WaitForChild("Details") :: TextLabel
-	local accept = tooltipFrame:WaitForChild("Accept") :: TextButton
+	local details = tooltipFrame:FindFirstChild("Details") :: TextLabel
+	local accept = tooltipFrame:FindFirstChild("Accept") :: TextButton
 	details.Text = text -- Update the tooltip text
 	tooltipFrame.Visible = true
 	accept.Text = more
@@ -221,52 +221,43 @@ end)
 -- // Everything else -- //
 
 -- Main Menu
+local MainMenu = PlayerGui:FindFirstChild("MainHud") :: ScreenGui
+local canvas = MainMenu:FindFirstChild("Canvas") :: CanvasGroup
+local MainMenuFrame = canvas:FindFirstChild("Frame") :: Frame
+canvas.Visible = true
+canvas.GroupTransparency = 0
+MainMenuFrame.Visible = true
 task.spawn(function()
-	local MainMenu = PlayerGui:WaitForChild("MainHud") :: ScreenGui
-	local canvas = MainMenu:WaitForChild("Canvas") :: CanvasGroup
-	local MainMenuFrame = canvas:FindFirstChild("Frame") :: Frame
-	canvas.Visible = true
-	canvas.GroupTransparency = 0
-	MainMenuFrame.Visible = true
 	repeat
 		task.wait() --  We use spawn so we don't yield the cur. thread
 		Camera.CameraType = Enum.CameraType.Scriptable
 	until Camera.CameraType == Enum.CameraType.Scriptable
+end)
 
-	--- 1604.172, 267.097, 6215.333, 24.286, 65.438, 0 -- the roads
+--- 1604.172, 267.097, 6215.333, 24.286, 65.438, 0 -- the roads
 
-	local cameraPositions = {
-		CFrame.new(-1721.989, 270.293, 182.625), -- Baseplate
-	} :: { CFrame }
+local cameraPositions = {
+	CFrame.new(-1721.989, 270.293, 182.625), -- Baseplate
+} :: { CFrame }
 
-	player:RequestStreamAroundAsync(
-		Vector3.new(
-			cameraPositions[1].Position.X,
-			cameraPositions[1].Position.Y,
-			cameraPositions[1].Position.Z
-		),
-		20
-	)
-	Camera.CFrame = CFrame.new(cameraPositions[1]) -- Baseplate
+player:RequestStreamAroundAsync(
+	Vector3.new(cameraPositions[1].Position.X, cameraPositions[1].Position.Y, cameraPositions[1].Position.Z),
+	20
+)
+Camera.CFrame = CFrame.new(cameraPositions[1]) -- Baseplate
 
-	local playButton = MainMenuFrame:FindFirstChild("PlayButton") :: TextButton
+local playButton = MainMenuFrame:FindFirstChild("PlayButton") :: TextButton
 
-	playButton.MouseButton1Click:Once(function()
-		task.spawn(function() -- so we don't yield the current thread
-			repeat
-				task.wait()
-				Camera.CameraType = Enum.CameraType.Custom
-			until Camera.CameraType == Enum.CameraType.Custom
-		end)
-		UIEffect:changeVisibility(canvas, false)
-	end)
+playButton.MouseButton1Click:Once(function()
+	Camera.CameraType = Enum.CameraType.Custom
+	UIEffect:changeVisibility(canvas, false)
 end)
 
 -- PlayerHud
 local PlayerHud = PlayerGui:FindFirstChild("PlayerHud") :: ScreenGui
-local PlayerProfile = PlayerHud:WaitForChild("Player")
-local ProfileCanvas = PlayerHud:WaitForChild("CanvasGroup")
-local OpenProfile = PlayerProfile.Design.Background -- im not sure why i labelled this as background
+local PlayerProfile = PlayerHud:FindFirstChild("Player") :: Frame
+local ProfileCanvas = PlayerHud:FindFirstChild("CanvasGroup") :: CanvasGroup
+local OpenProfile = PlayerProfile.Design.Background :: TextButton? -- im not sure why i labelled this as background
 local Profile = ProfileCanvas.Frame :: Frame
 local playerProfileImage =
 	Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
@@ -278,14 +269,14 @@ local LargeDialog = player.PlayerGui.Dialog.CanvasGroup.Frame :: Frame
 local function reloadProfileImg(img: string)
 	PlayerHud.Player.PlayerImage.Image = img
 	Profile.Frame.PlayerImage.Image = img
-	print("Reloaded: " .. player.DisplayName .. "'s profile image. {img}")
+	print("Reloaded: " .. player.DisplayName .. "'s profile image. " .. img)
 end
 
 local function newDialog(dialog: string)
 	UIEffect.TypewriterEffect(dialog, LargeDialog.TextLabel)
 	UIEffect.getModule("Curvy"):Curve(LargeDialog, TInfo, "Position", UDim2.new(0.5, 0, 0.944, 0))
 	UIEffect.changeColor("Blue", PlayerHud.Player.Design.Radial)
-	print(`New Dialog for {player.DisplayName}: {dialog}`)
+	print("New Dialog for " .. player.DisplayName .. ": " .. dialog)
 	task.delay(10, function()
 		UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
 		UIEffect.getModule("Curvy"):Curve(LargeDialog, TInfo, "Position", UDim2.new(0.5, 0, 1.5, 0))
@@ -477,7 +468,7 @@ local EmoteGui = PlayerGui:FindFirstChild("EmoteGui") :: ScreenGui
 
 local playingAnimation = nil :: AnimationTrack?
 
-local function playAnim(AnimationID)
+local function playAnim(AnimationID: string)
 	if character and Humanoid then
 		local anim = "rbxassetid://" .. tostring(AnimationID)
 		local oldnim = character:FindFirstChild("LocalAnimation") :: Animation
@@ -533,29 +524,6 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
 end)
 
 print(`UI is halfway executing.`)
-
--- Main Menu
-local function mainHud()
-	local MainHudGui = PlayerGui:FindFirstChild("MainHud") :: ScreenGui
-	local Canvas = MainHudGui:FindFirstChild("CanvasGroup") :: CanvasGroup
-	local Frame = Canvas:FindFirstChild("Frame") :: Frame
-
-	Canvas.GroupTransparency = 0
-
-	local function continueGameplay()
-		UIEffect:changeVisibility(Canvas, false)
-		task.spawn(function()
-			repeat
-				task.wait()
-				Camera.CameraType = Enum.CameraType.Custom
-			until Camera.CameraType == Enum.CameraType.Custom
-		end)
-	end
-	local playButton = Frame:FindFirstChild("PlayButton") :: TextButton
-	playButton.MouseButton1Down:Once(continueGameplay)
-end
-
-mainHud()
 
 -- Info
 local infoGui = PlayerGui:FindFirstChild("Info") :: ScreenGui
@@ -622,7 +590,7 @@ end
 --]]
 
 local function getProductImg(product: Configuration): { Vector2 | Vector2 | string }
-	local assets = ReplicatedStorage:WaitForChild("Assets")
+	local assets = ReplicatedStorage:FindFirstChild("Assets")
 	local assetImgs = assets:FindFirstChild("Images", true) :: Folder
 	local returnValue = nil
 	if not product:GetAttribute("isProduct") or product:GetAttribute("isProduct") == false then
@@ -771,17 +739,10 @@ if UserInputType() == "Touch" then --[TODO) Fix this
 	local navigationRail = Navigation.Frame :: Frame
 	local isNavigationOpen = false
 	local Curvy = UIEffect.getModule("Curvy")
-	task.spawn(function()
-		-- Remove the PC Navigation
-		ShopOpen.Visible = false
-		infoOpen.Visible = false
-		NewBattle.Parent.Parent.Visible = false
-		OpenProfile.Parent.Parent.Visible = false
-		task.wait(30 * 2)
-		showTooltip("Navigation is available on mobile devices.", "Mobile")
-		task.wait(15 * 2)
-		showTooltip("Long press for more info.", "Mobile")
-	end)
+	ShopOpen.Visible = false
+	infoOpen.Visible = false
+	NewBattle.Parent.Parent.Visible = false
+	OpenProfile.Parent.Parent.Visible = false
 	-- Add the Mobile Navigation
 	Navigation.FAB.MouseButton1Click:Connect(function() -- navigation
 		if isNavigationOpen == false then

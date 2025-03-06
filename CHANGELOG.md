@@ -7,6 +7,7 @@
 
 > [!IMPORTANT]
 > We are on **Beta Phase.**
+> `0.1.0
 
 ### Update Logs
 
