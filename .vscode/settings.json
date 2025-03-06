@@ -34,7 +34,8 @@
     "robloxLsp.workspace.loadMode": "Rojo Project",
     "robloxLsp.workspace.rojoProjectFile": "",
     "luau-lsp.sourcemap.rojoProjectFile": "default.project.json",
-    "luau-lsp.plugin.maximumRequestBodySize": "10mb",
+    "luau-lsp.plugin.maximumRequestBodySize": "999mb",
     "robloxLsp.diagnostics.enable": false,
-    "files.autoSave": "onFocusChange"
+    "files.autoSave": "onFocusChange",
+    "luau-lsp.completion.autocompleteEnd": true
 }

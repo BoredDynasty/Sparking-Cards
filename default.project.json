@@ -41,7 +41,7 @@
     "ServerStorage": {
       "$className": "ServerStorage",
       "$ignoreUnknownInstances": true,
-      "$path": "Shared/Storage",
+      "$path": "game/ServerStorage",
       "Modules": {
         "$className": "Folder",
         "$ignoreUnknownInstances": true,

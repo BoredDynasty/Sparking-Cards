@@ -12,15 +12,14 @@ local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
+local ProfileStore = require(ServerStorage.Classes.ProfileStore)
 local SafeTeleporter = require(ReplicatedStorage.Modules.SafeTeleporter)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
-local GameAnalytics = require(ReplicatedStorage.Modules.GameAnalytics)
-local ProfileStore = require(ServerStorage.Modules.ProfileStore)
+local GameAnalytics = require(ServerStorage.Modules.GameAnalytics.GameAnalytics)
 
 local FastTravelRE: RemoteEvent = ReplicatedStorage.RemoteEvents.FastTravel
 local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
 local DialogRE: RemoteEvent = ReplicatedStorage.RemoteEvents.NewDialogue
-local SendAnalytic: RemoteEvent = ReplicatedStorage.RemoteEvents.SendAnalytic
 local GetCards: RemoteFunction = ReplicatedStorage.RemoteEvents.GetCards
 local SetHeadCFrame: UnreliableRemoteEvent = ReplicatedStorage.RemoteEvents.SetHeadCFrame
 local GiveCardsRE = ReplicatedStorage.RemoteEvents.GiveCards
@@ -33,12 +32,29 @@ print("Custom Analytics are enabled.")
 print("Developer Notes gets updated every 24h.")
 
 local gameAnalyticsConfig = {
+	enableInfoLog = true,
+	enableVerboseLog = false,
+	-- availableCustomDimensions01: { CustomDimension }?,
+	-- availableCustomDimensions02: { CustomDimension }?,
+	-- availableCustomDimensions03: { CustomDimension }?,
+	-- availableResourceCurrencies: { string }?,
+	-- availableResourceItemTypes: { string }?,
+	-- build = "1.0.1",
+	-- availableGamepasses: { string }?,
+	-- enableDebugLog: boolean?,
+	automaticSendBusinessEvents = true,
+	reportErrors = true,
+	useCustomUserId = true,
 	gameKey = "4e689e435634bbfe9892f625af5c51bf",
 	secretKey = "1a5289ebbc7daa44accc4d5deb256833263c512a",
 }
 
 GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
+-- selene:allow(mixed_table)
 GameAnalytics:initialize({
+	gameAnalyticsConfig.gameKey,
+	gameAnalyticsConfig.secretKey,
+	--
 	useCustomUserId = true,
 	automaticSendBusinessEvents = true,
 	enableInfoLog = true,
@@ -83,7 +99,7 @@ LogService.MessageOut:Connect(function(message, messageType)
 	if messageType == Enum.MessageType.MessageError or messageType == Enum.MessageType.MessageWarning then
 		GameAnalytics:addErrorEvent({
 			message = message,
-			severity = GameAnalytics.EGAErrorSeverity.Error,
+			severity = GameAnalytics.EGAErrorSeverity.error,
 		})
 	end
 end)
@@ -129,61 +145,76 @@ local function chatted(player, message)
 	end
 end
 
-local profiles = {}
+local playerStore = ProfileStore.New("player-related", {
+	-- Template
+	["Cards"] = 0,
+	["Level"] = "Bronze I",
+	["Experience"] = 0,
+	["LastLogin"] = os.time(),
+	-- Other
+	options = {
+		clockTime = 12,
+	},
+	combatBindings = {
+		attack = Enum.KeyCode.MouseLeftButton, -- melee
+		special_One = Enum.KeyCode.E, -- primary
+		special_Two = Enum.KeyCode.Q, -- ultimate
+		special_Three = Enum.KeyCode.R, -- any
+	},
+})
+local profiles: { [player]: typeof(playerStore:StartSessionAsync()) } = {}
 
 local function onPlayerAdded(player: Player)
-	-- Migrate to ProfileStore
-	ProfileStore.GetProfileStore("PlayerRelated", {
-		-- Template
-		["Cards"] = 0,
-		["Level"] = "Bronze I",
-		["Experience"] = 0,
-		["LastLogin"] = os.time(),
-		-- Other
-		options = {
-			clockTime = 12,
-		},
-		combatBindings = {
-			attack = Enum.KeyCode.MouseLeftButton, -- melee
-			special_One = Enum.KeyCode.E, -- primary
-			special_Two = Enum.KeyCode.Q, -- ultimate
-			special_Three = Enum.KeyCode.R, -- any
-		},
+	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
 	})
-	local profile = ProfileStore:LoadProfileAsync(`player-{player.UserId}`)
-
 	if profile ~= nil then
 		profile:AddUserId(player.UserId) -- GDPR compliance
-		profile:Reconcile() -- Fill in missing variables from ProfileTemplate (optional)
-		profile:ListenToRelease(function()
+		profile:Reconcile() -- Fill in missing variables from PROFILE_TEMPLATE (optional)
+
+		profile.OnSessionEnd:Connect(function()
 			profiles[player] = nil
-			player:Kick() -- The profile could've been loaded on another Roblox server
+			player:Kick("DataStore session ended")
 		end)
-		if player:IsDescendantOf(Players) then
+
+		if player.Parent == Players then
 			profiles[player] = profile
+			print(`Profile loaded for {player.DisplayName}!`)
 		else
-			profile:Release() -- Player left before the profile loaded
+			-- The player has left before the profile session started
+			profile:EndSession()
 		end
+	else
+		-- This condition should only happen when the Roblox server is shutting down
+		player:Kick(`Profile load fail - Please rejoin`)
 	end
 
-	local leaderstats = Instance.new("Folder")
-	leaderstats.Parent = player
-	leaderstats.Name = "leaderstats"
-	--
-	local Cards = Instance.new("IntValue")
-	Cards.Name = "Cards"
-	Cards.Parent = leaderstats
-	Cards.Value = 0
-	--
-	local Rank = Instance.new("StringValue")
-	Rank.Name = "Rank"
-	Rank.Parent = leaderstats
-	Rank.Value = ""
+	local leaderStatInfo = playerStore:GetAsync("player-related", `player:{player.UserId}`)
 
-	local EXP = Instance.new("IntValue")
-	EXP.Name = "ExperiencePoints"
-	EXP.Parent = leaderstats
-	EXP.Value = 0
+	if leaderStatInfo then
+		local leaderstats = Instance.new("Folder")
+		leaderstats.Name = "leaderstats"
+		leaderstats.Parent = player
+
+		local cards = Instance.new("IntValue")
+		cards.Name = "Cards"
+		cards.Value = leaderStatInfo.Cards
+		cards.Parent = leaderstats
+
+		local level = Instance.new("StringValue")
+		level.Name = "Rank"
+		level.Value = leaderStatInfo.Level
+		level.Parent = leaderstats
+
+		local experience = Instance.new("IntValue")
+		experience.Name = "Experience"
+		experience.Value = leaderStatInfo.Experience
+		experience.Parent = leaderstats
+	else
+		player:Kick("Failed to load leaderstats")
+	end
 
 	GameAnalytics:PlayerJoined(player)
 	player.Chatted:Connect(function(message)
@@ -194,9 +225,11 @@ end
 local function onPlayerRemoving(player: Player)
 	--
 	GameAnalytics:PlayerRemoved(player)
-	pcall(function()
-		task.defer(player:Destroy())
-	end)
+	local profile = profiles[player]
+	if profile ~= nil then
+		profile:EndSession()
+	end
+	-- player:Destroy()
 end
 
 local function teleportPartClicked(player: Player, otherPart: BasePart, destination: Vector3)
@@ -236,14 +269,9 @@ local function setupNonPlayableCharacters()
 	end
 end
 
-local function catchAnalytic(player, topic, param1, customFields)
-	AnalyticsService:LogCustomEvent(player, topic, param1, customFields)
-	print(`New Analytic: `, topic, param1, customFields)
-end
-
 local function setHeadDirection(player: Player, neckCFrame)
 	for _, otherPlayer: Player in pairs(Players:GetPlayers()) do
-		local otherCharacter = otherPlayer.Character or otherPlayer.CharacterAdded:Wait()
+		local otherCharacter = otherPlayer.Character
 		if otherCharacter.Humanoid.Health > 0 and otherCharacter then
 			if
 				otherPlayer ~= player
@@ -262,16 +290,19 @@ local function returnCards(player: Player): number
 end
 
 local function payCards(player, reason: string)
-	player.leaderstats.Cards.Value += 50
+	local cardsInteger = player.leaderstats.Cards :: IntValue
+	cardsInteger.Value += 50
 	if reason then
 		print(reason)
 	end
 end
 
 local function getLastLogin(player: Player): {}?
-	local lastLogin = DataStore.GetStore("Player-Related")
-	local lastLoginData = lastLogin:GetAsync(`player:{player.UserId}`)
-	return lastLoginData
+	local result = nil
+	if profiles[player] then
+		result = profiles[player]:GetAsync("player-related", `player:{player.UserId}`)
+	end
+	return result
 end
 
 local lastTime = tick()
@@ -309,8 +340,8 @@ local function updateServerInfo()
 		while true do
 			task.wait(5)
 			local server = ReplicatedStorage.Assets.Server :: Model
-			local billboard = server.Top:FindFirstChildOfClass("BillBoardGui") :: BillBoardGui
-			local details = billboard.ServerDetails :: TextLabel
+			local billboard: BillboardGui = server.Top:FindFirstChildOfClass("BillBoardGui") :: BillBoardGui
+			local details = billboard:FindFirstChildOfClass("TextLabel") :: TextLabel
 			-- Get server frames
 			local frames = calculateFPS()
 			details.Text = `{frames}<br />—<br />360`
@@ -324,7 +355,6 @@ updateServerInfo()
 --
 FastTravelRE.OnServerEvent:Connect(FastTravel)
 EnterMatchRE.OnServerEvent:Connect(enterMatch)
-SendAnalytic.OnServerEvent:Connect(catchAnalytic)
 SetHeadCFrame.OnServerEvent:Connect(setHeadDirection)
 GiveCardsRE.OnServerEvent:Connect(payCards)
 GetCards.OnServerInvoke = returnCards

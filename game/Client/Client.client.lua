@@ -74,9 +74,9 @@ RunService:BindToRenderStep("Camera-Sway", RenderPriority, function(delta)
 	local mouseDelta = UserInputService:GetMouseDelta()
 	local sway = 0
 	sway = lerp(sway, math.clamp(mouseDelta.X, -6, 6), (15 * delta))
-	-- print("swaying")
+	local rz = math.rad(sway)
 	if not replicateConnection then
-		Camera.CFrame = Camera.CFrame * CFrame.Angles(0, 0, math.rad(sway))
+		Camera.CFrame = Camera.CFrame * CFrame.Angles(0, 0, rz)
 	end
 end)
 
@@ -98,8 +98,8 @@ end
 task.spawn(function()
 	RunService.RenderStepped:Connect(function()
 		if character then
-			local humanoid = character:WaitForChild("Humanoid")
-			if humanoid then
+			local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+			if humanoid and humanoid.Health > 0 then
 				bobble(Humanoid)
 			end
 		end
@@ -124,51 +124,6 @@ RunService:BindToRenderStep("Tilt", RenderPriority, function()
 		local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 		if humanoid then
 			roll(humanoid)
-		end
-	end
-end)
-
--- Head Tilt
-
-task.spawn(function()
-	RunService.RenderStepped:Connect(function()
-		local rootPart = character:WaitForChild("HumanoidRootPart") :: BasePart
-		local neck = character:FindFirstChild("Neck", true) :: any
-		local yOffset = neck.C0.Y :: number
-
-		local cameraDirection = rootPart.CFrame:ToWorldSpace(Camera.CFrame).LookVector
-
-		if neck then
-			neck.C0 = CFrame.new(0, yOffset, 0)
-				* CFrame.Angles(3 * math.pi / 2, 0, math.pi)
-				* CFrame.Angles(0, 0, -math.asin(cameraDirection.X))
-				* CFrame.Angles(-math.asin(cameraDirection.Y), 0, 0)
-		end
-	end)
-	local setHeadCFrame = RemoteEvents:WaitForChild("SetHeadCFrame") :: RemoteEvent
-	setHeadCFrame.OnClientEvent:Connect(function(otherPlayer: Player, cframe: CFrame)
-		local Othercharacter = otherPlayer.Character :: Model
-		local neck = Othercharacter:FindFirstChild("Head", true)
-		if neck then
-			local newTInfo = TweenInfo.new(0.05)
-			local tween = TweenService:Create(neck, newTInfo, { C0 = cframe })
-			tween:Play()
-			tween.Completed:Once(function()
-				tween:Destroy()
-			end)
-		end
-	end)
-	local neck = character:FindFirstChild("Neck", true) :: any
-	if neck then
-		while true do
-			task.wait(0.01)
-			print("Firing server: ", neck.C0)
-			-- This remote is unreliable
-			-- This means that it will sometimes catch the request
-			-- And is more performant!
-			-- We use it because we are sending firing every 0.01s.
-			local SetHeadCFrame = RemoteEvents:FindFirstChild("SetHeadCFrame") :: RemoteEvent
-			SetHeadCFrame:FireServer(neck.C0)
 		end
 	end
 end)
@@ -267,8 +222,8 @@ end)
 
 -- Main Menu
 task.spawn(function()
-	local MainMenu = PlayerGui:FindFirstChild("MainHud") :: ScreenGui
-	local canvas = MainMenu:FindFirstChild("CanvasGroup") :: CanvasGroup
+	local MainMenu = PlayerGui:WaitForChild("MainHud") :: ScreenGui
+	local canvas = MainMenu:WaitForChild("Canvas") :: CanvasGroup
 	local MainMenuFrame = canvas:FindFirstChild("Frame") :: Frame
 	canvas.Visible = true
 	canvas.GroupTransparency = 0
@@ -279,7 +234,20 @@ task.spawn(function()
 	until Camera.CameraType == Enum.CameraType.Scriptable
 
 	--- 1604.172, 267.097, 6215.333, 24.286, 65.438, 0 -- the roads
-	Camera.CFrame = CFrame.new(-1721.989, 270.293, 182.625) -- Baseplate
+
+	local cameraPositions = {
+		CFrame.new(-1721.989, 270.293, 182.625), -- Baseplate
+	} :: { CFrame }
+
+	player:RequestStreamAroundAsync(
+		Vector3.new(
+			cameraPositions[1].Position.X,
+			cameraPositions[1].Position.Y,
+			cameraPositions[1].Position.Z
+		),
+		20
+	)
+	Camera.CFrame = CFrame.new(cameraPositions[1]) -- Baseplate
 
 	local playButton = MainMenuFrame:FindFirstChild("PlayButton") :: TextButton
 
@@ -299,13 +267,13 @@ local PlayerHud = PlayerGui:FindFirstChild("PlayerHud") :: ScreenGui
 local PlayerProfile = PlayerHud:WaitForChild("Player")
 local ProfileCanvas = PlayerHud:WaitForChild("CanvasGroup")
 local OpenProfile = PlayerProfile.Design.Background -- im not sure why i labelled this as background
-local Profile = ProfileCanvas.Frame
+local Profile = ProfileCanvas.Frame :: Frame
 local playerProfileImage =
 	Players:GetUserThumbnailAsync(player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420)
 
-local DialogRemote = ReplicatedStorage.RemoteEvents.NewDialogue
+local DialogRemote = ReplicatedStorage.RemoteEvents.NewDialogue :: RemoteEvent
 
-local LargeDialog = player.PlayerGui.Dialog.CanvasGroup.Frame
+local LargeDialog = player.PlayerGui.Dialog.CanvasGroup.Frame :: Frame
 
 local function reloadProfileImg(img: string)
 	PlayerHud.Player.PlayerImage.Image = img
@@ -314,12 +282,11 @@ local function reloadProfileImg(img: string)
 end
 
 local function newDialog(dialog: string)
-	task.spawn(function()
-		UIEffect.TypewriterEffect(dialog, LargeDialog.TextLabel)
-		UIEffect.getModule("Curvy"):Curve(LargeDialog, TInfo, "Position", UDim2.new(0.5, 0, 0.944, 0))
-		UIEffect.changeColor("Blue", PlayerHud.Player.Design.Radial)
-		print(`New Dialog for {player.DisplayName}: {dialog}`)
-		task.wait(10)
+	UIEffect.TypewriterEffect(dialog, LargeDialog.TextLabel)
+	UIEffect.getModule("Curvy"):Curve(LargeDialog, TInfo, "Position", UDim2.new(0.5, 0, 0.944, 0))
+	UIEffect.changeColor("Blue", PlayerHud.Player.Design.Radial)
+	print(`New Dialog for {player.DisplayName}: {dialog}`)
+	task.delay(10, function()
 		UIEffect.changeColor("Green", PlayerHud.Player.Design.Radial)
 		UIEffect.getModule("Curvy"):Curve(LargeDialog, TInfo, "Position", UDim2.new(0.5, 0, 1.5, 0))
 		LargeDialog.TextLabel.Text = "" -- cleanup
@@ -347,7 +314,7 @@ local function dataSaved(message: string)
 			UIEffect.getModule("Curvy"):Curve(saveStatus, TInfo, "ImageTransparency", 1)
 			saveStatus.Visible = false
 		elseif message then
-			local saveStatus = PH_Player.Check
+			local saveStatus = PH_Player:FindFirstChild("Check") :: any
 			UIEffect.changeColor("#ccb6ff", radial)
 			UIEffect.changeColor("#ccb6ff", saveStatus)
 			UIEffect.getModule("Curvy"):Curve(PH_Player.PlayerImage, TInfo, "ImageTransparency", 1)
@@ -398,8 +365,8 @@ PlayerHud.Player.MouseButton1Click:Connect(openProfileGui)
 print(`UI is executing.`)
 
 -- Battle Gui
-local BattleGui = player.PlayerGui.NewMatch.CanvasGroup
-local NewBattle = BattleGui.Status.TextButton
+local BattleGui = player.PlayerGui.NewMatch.CanvasGroup :: CanvasGroup
+local NewBattle = BattleGui.Status.TextButton :: TextButton
 
 local function newMatch()
 	local EnterMatchRE: RemoteEvent = ReplicatedStorage.RemoteEvents.EnterMatch
@@ -407,7 +374,8 @@ local function newMatch()
 	NewBattle.Text = "Finding Battle..."
 	NewBattle.Interactable = false
 	-- UIEffect.changeColor(newBackgroundColor, NewBattle) this wouldn't work
-	TweenService:Create(NewBattle, TInfo, { BackgroundColor3 = Color3.fromHex("#000000") }):Play()
+	local goal = { BackgroundColor3 = Color3.fromHex("#000000") }
+	TweenService:Create(NewBattle, TInfo, goal):Play()
 	print(`New Match for: {player.DisplayName}`)
 end
 

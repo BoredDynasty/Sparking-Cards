@@ -1,0 +1,4 @@
+--!nonstrict
+
+-- NPCManager.server.lua
+
