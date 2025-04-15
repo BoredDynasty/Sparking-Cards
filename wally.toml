@@ -5,3 +5,7 @@ registry = "https://github.com/UpliftGames/wally-index"
 realm = "shared"
 
 [dependencies]
+gameanalytics-sdk = "gameanalytics/gameanalytics-sdk@2.2.6"
+profilestore = "2jammers/profilestore@0.1.0"
+parallelizer = "artzified/parallelizer@2.0.0"
+Red = "red-blox/red@2.3.0"

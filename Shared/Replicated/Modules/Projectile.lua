@@ -1,3 +1,5 @@
+--!strict
+
 local Projectile = {}
 --[[
 	Projectile needs to be:
@@ -13,57 +15,55 @@ local Projectile = {}
 	Function returns:
 	- force
 ]]
-type metricTypes = {
+export type metricTypes = {
 	position1: Vector3,
 	position2: Vector3,
 	duration: number,
 	position2Object: BasePart,
 }
 local function getMetrics(metricTable: metricTypes): Vector3
-	if metricTable == nil then
-		return
-	end
+	local position1 = metricTable.position1 :: Vector3
+	local position2 = metricTable.position2 :: Vector3
+	local duration = metricTable.duration :: number
+	local position2Object = metricTable.position2Object :: BasePart
 
-	local position1: Vector3 = metricTable[1]
-	local position2: Vector3 = metricTable[2]
-	local duration: number = metricTable[3]
-	local position2Object: BasePart = metricTable[4]
+	local gravity = game.Workspace.Gravity :: number
 
 	position2 = position2Object.Position
+
 	local direction = position2 - position1
 	position2 = position2 + position2Object.AssemblyLinearVelocity * duration
 	direction = position2 - position1
-	local force = direction / duration + Vector3.new(0, game.Workspace.Gravity * duration * 0.5, 0)
+	task.wait()
+	local force = direction / duration + Vector3.new(0, gravity * duration * 0.5, 0)
 
 	return force
 end
 function Projectile.new(object: BasePart, metricTable: metricTypes)
 	task.spawn(function()
-		if object == nil or metricTable == nil then
-			return
-		end
 		local force = getMetrics(metricTable)
 		if object:IsA("Model") then
 			local primaryPart = nil
 			local totalMass = 0
 			local clone = object:Clone()
 			primaryPart = clone.PrimaryPart
-			primaryPart.Position = metricTable[1]
+			primaryPart.Position = metricTable.position1
 			clone.Parent = game.Workspace
 
 			for _, part: BasePart in clone:GetDescendants() do
 				if part:IsA("BasePart") then
 					totalMass = totalMass + part:GetMass()
 				end
+				task.wait()
 			end
 
 			primaryPart:ApplyImpulse(force * totalMass)
 			primaryPart:SetNetworkOwner(nil)
 		else
 			local clone = object:Clone()
-			clone.Position = metricTable[1]
+			clone.Position = metricTable.position1
 			clone.Parent = game.Workspace
-
+			task.wait()
 			clone:ApplyImpulse(force * clone.AssemblyMass)
 			clone:SetNetworkOwner(nil)
 		end

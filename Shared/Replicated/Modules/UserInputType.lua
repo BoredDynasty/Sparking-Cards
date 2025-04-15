@@ -1,4 +1,5 @@
---!nonstrict
+--!strict
+
 local UserInputService = game:GetService("UserInputService")
 
 local inputTypeString

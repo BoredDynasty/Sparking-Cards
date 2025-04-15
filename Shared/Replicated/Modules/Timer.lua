@@ -4,12 +4,20 @@
 local TimerModule = {}
 TimerModule.__index = TimerModule
 
+export type timer = {
+	["startTime"]: number,
+	["running"]: boolean,
+	["elaspedTime"]: number,
+}
+
 -- Creates a new timer instance
-function TimerModule.new()
+function TimerModule.new(): timer
 	local self = setmetatable({}, TimerModule)
+
 	self.startTime = 0
 	self.running = false
 	self.elapsedTime = 0 -- Keeps track of paused time
+
 	return self
 end
 
@@ -66,6 +74,12 @@ function TimerModule:FormatCustom(format)
 		:gsub("HH", string.format("%02d", hours))
 		:gsub("MM", string.format("%02d", minutes))
 		:gsub("SS", string.format("%02d", seconds))
+end
+
+function TimerModule:Desroy()
+	self.running = nil
+	self.elaspedTime = nil
+	self.startTime = nil
 end
 
 return TimerModule

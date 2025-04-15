@@ -1,0 +1,69 @@
+site_name: Parallelizer
+site_url: https://scion-softworks.github.io/parallelizer/
+repo_url: https://github.com/scion-softworks/parallelizer
+repo_name: scion-softworks/parallelizer
+extra_css:
+  - css/extra.css
+nav:
+  - Home: index.md
+  - Guides:
+    - Quick Start: 
+      - Installation: guides/quick-start/installation.md
+      - Getting Started: guides/quick-start/getting-started.md
+    - Tips:
+      - Deriving Data from TaskId: guides/tips/derive-taskid.md
+      - Choosing the right actor count: guides/tips/choosing-actor-count.md
+  - References:
+    - Parallelizer: api/index.md
+    - Task Coordinator: api/task-coordinator.md
+    - Data Types: api/datatypes.md
+    - Types: api/types.md
+  - Extras:
+    - Philosophy: extras/philosophy.md
+    - Performance Optimizations: extras/optimization.md
+markdown_extensions:
+  - tables
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - attr_list
+  - md_in_html
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+theme:
+  name: material
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    edit: material/pencil
+    view: material/eye
+    admonition:
+      note: fontawesome/solid/note-sticky
+      abstract: fontawesome/solid/book
+      info: fontawesome/solid/circle-info
+      tip: fontawesome/solid/bullhorn
+      success: fontawesome/solid/check
+      question: fontawesome/solid/circle-question
+      warning: fontawesome/solid/triangle-exclamation
+      failure: fontawesome/solid/bomb
+      danger: fontawesome/solid/skull
+      bug: fontawesome/solid/robot
+      example: fontawesome/solid/flask
+      quote: fontawesome/solid/quote-left
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.top
+    - navigation.footer
+    - content.action.edit
+    - content.code.copy
+    - content.code.select
+    - content.tooltips
+    - header.autohide
+  palette:
+    scheme: slate
+    primary: teal

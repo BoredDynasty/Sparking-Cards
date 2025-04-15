@@ -1,3 +1,5 @@
+--!strict
+
 local TeleportService = game:GetService("TeleportService")
 local Players = game:GetService("Players")
 local MessagingService = game:GetService("MessagingService")
@@ -6,27 +8,26 @@ local DataStoreService = game:GetService("DataStoreService")
 local MatchmakingModule = {}
 local queueDataStore = DataStoreService:GetDataStore("MatchmakingQueue")
 
-local function addToGlobalQueue(player)
-	local success, err = pcall(function()
-		local queue = queueDataStore:GetAsync("Queue") or {}
-		table.insert(queue, player.UserId)
+local function addToGlobalQueue(player: Player)
+	pcall(function()
+		local queue = queueDataStore:GetAsync("Queue") or {} :: any
+		table.insert(queue, 1, player.UserId)
 		queueDataStore:SetAsync("Queue", queue)
 		MessagingService:PublishAsync("MatchmakingQueueUpdate")
 	end)
-	assert(success, `Failed to add {player} to global queue: {err}!!`)
 end
 
 local function checkForMatch()
-	local success, queue = pcall(function()
+	local success: boolean, queue: { any } = pcall(function()
 		return queueDataStore:GetAsync("Queue") or {}
 	end)
 	if success and #queue >= 2 then
-		local player1Id = table.remove(queue, 1)
-		local player2Id = table.remove(queue, 1)
+		local player1Id = table.remove(queue, 1) :: number
+		local player2Id = table.remove(queue, 1) :: number
 		queueDataStore:SetAsync("Queue", queue)
 
-		local player1 = Players:GetPlayerByUserId(player1Id)
-		local player2 = Players:GetPlayerByUserId(player2Id)
+		local player1 = Players:GetPlayerByUserId(player1Id) :: Player
+		local player2 = Players:GetPlayerByUserId(player2Id) :: Player
 
 		if player1 and player2 then
 			local placeId = 90845913624517 -- Match
@@ -35,7 +36,7 @@ local function checkForMatch()
 	end
 end
 
-function MatchmakingModule.AddPlayerToQueue(player)
+function MatchmakingModule.AddPlayerToQueue(player: Player)
 	if not game:GetService("RunService"):IsStudio() then
 		addToGlobalQueue(player)
 		checkForMatch()

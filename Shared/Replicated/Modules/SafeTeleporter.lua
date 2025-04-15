@@ -6,9 +6,9 @@ local ATTEMPT_LIMIT = 5
 local RETRY_DELAY = 1
 local FLOOD_DELAY = 15
 
-local function SafeTeleport(placeId, players, options)
+local function SafeTeleport(placeId: number, players: { Player }, options: TeleportOptions?)
 	local attemptIndex = 0
-	local success, result -- define pcall results outside of loop so results can be reported later on
+	local success: boolean, result: TeleportAsyncResult -- define pcall results outside of loop so results can be reported later on
 
 	repeat
 		success, result = pcall(function()
@@ -27,7 +27,13 @@ local function SafeTeleport(placeId, players, options)
 	return success, result
 end
 
-local function handleFailedTeleport(player, teleportResult, errorMessage, targetPlaceId, teleportOptions)
+local function handleFailedTeleport(
+	player: Player,
+	teleportResult: Enum.TeleportResult,
+	errorMessage: string,
+	targetPlaceId: number,
+	teleportOptions: TeleportOptions?
+)
 	if teleportResult == Enum.TeleportResult.Flooded then
 		task.wait(FLOOD_DELAY)
 	elseif teleportResult == Enum.TeleportResult.Failure then

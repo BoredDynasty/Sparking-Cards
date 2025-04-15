@@ -100,64 +100,37 @@ end
 
 --// FUNCTIONS //--
 
-local function Lerp(x, y, a)
+local function Lerp(x: number, y: number, a: number)
 	return x + (y - x) * a
 end
 
 --// METHODS //--
 
 --// //--
-function CLASS:SetActiveCameraSettings(cameraSettings)
-	assert(cameraSettings ~= nil, "OTS Camera System Argument Error: Argument 1 nil or missing")
-	assert(
-		typeof(cameraSettings) == "string",
-		"OTS Camera System Argument Error: string expected, got " .. typeof(cameraSettings)
-	)
-	assert(
-		self.CameraSettings[cameraSettings] ~= nil,
-		"OTS Camera System Argument Error: Attempt to set unrecognized camera settings " .. cameraSettings
-	)
-	if self.IsEnabled == false then
-		warn(
-			"OTS Camera System Logic Warning: Attempt to change active camera settings without enabling OTS camera system"
-		)
-		return
-	end
-
+function CLASS:SetActiveCameraSettings(cameraSettings: {
+	DefaultShoulder: {
+		FieldOfVie: number,
+		Offset: Vector3,
+		Sensitivi: number,
+		LerpSpeed: number,
+	},
+	ZoomedShoulder: {
+		FieldOfVie: number,
+		Offset: Vector3,
+		Sensitivity: number,
+		LerpSpeed: number,
+	},
+})
 	self.ActiveCameraSettings = cameraSettings
 	self.ActiveCameraSettingsChangedEvent:Fire(cameraSettings)
 end
 
-function CLASS:SetCharacterAlignment(aligned)
-	assert(aligned ~= nil, "OTS Camera System Argument Error: Argument 1 nil or missing")
-	assert(
-		typeof(aligned) == "boolean",
-		"OTS Camera System Argument Error: boolean expected, got " .. typeof(aligned)
-	)
-	if self.IsEnabled == false then
-		warn(
-			"OTS Camera System Logic Warning: Attempt to change character alignment without enabling OTS camera system"
-		)
-		return
-	end
-
+function CLASS:SetCharacterAlignment(aligned: boolean)
 	self.IsCharacterAligned = aligned
 	self.CharacterAlignmentChangedEvent:Fire(aligned)
 end
 
-function CLASS:SetMouseStep(steppedIn)
-	assert(steppedIn ~= nil, "OTS Camera System Argument Error: Argument 1 nil or missing")
-	assert(
-		typeof(steppedIn) == "boolean",
-		"OTS Camera System Argument Error: boolean expected, got " .. typeof(steppedIn)
-	)
-	if self.IsEnabled == false then
-		warn(
-			"OTS Camera System Logic Warning: Attempt to change mouse step without enabling OTS camera system"
-		)
-		return
-	end
-
+function CLASS:SetMouseStep(steppedIn: boolean)
 	self.IsMouseSteppedIn = steppedIn
 	self.MouseStepChangedEvent:Fire(steppedIn)
 	if steppedIn == true then
@@ -167,24 +140,7 @@ function CLASS:SetMouseStep(steppedIn)
 	end
 end
 
-function CLASS:SetShoulderDirection(shoulderDirection)
-	assert(shoulderDirection ~= nil, "OTS Camera System Argument Error: Argument 1 nil or missing")
-	assert(
-		typeof(shoulderDirection) == "number",
-		"OTS Camera System Argument Error: number expected, got " .. typeof(shoulderDirection)
-	)
-	assert(
-		math.abs(shoulderDirection) == 1,
-		"OTS Camera System Argument Error: Attempt to set unrecognized shoulder direction "
-			.. shoulderDirection
-	)
-	if self.IsEnabled == false then
-		warn(
-			"OTS Camera System Logic Warning: Attempt to change shoulder direction without enabling OTS camera system"
-		)
-		return
-	end
-
+function CLASS:SetShoulderDirection(shoulderDirection: number)
 	self.ShoulderDirection = shoulderDirection
 	self.ShoulderDirectionChangedEvent:Fire(shoulderDirection)
 end
@@ -202,9 +158,14 @@ end
 
 function CLASS:LoadCameraSettings()
 	local currentCamera = workspace.CurrentCamera
-	for setting, value in pairs(self.SavedCameraSettings) do
-		currentCamera[setting] = value
-	end
+	type cameraSetting = "FieldOfView" | "CameraSubject" | "CameraType"
+	task.spawn(function()
+		for setting: cameraSetting, value: any in pairs(self.SavedCameraSettings) do
+			if setting == "FieldOfView" or setting == "CameraSubject" or setting == "CameraType" then
+				currentCamera[setting] = value
+			end
+		end
+	end)
 end
 ----
 
@@ -231,16 +192,16 @@ function CLASS:Update()
 	)
 	----
 
-	local character = LOCAL_PLAYER.Character
-	local humanoidRootPart = (character ~= nil) and (character:FindFirstChild("HumanoidRootPart"))
-	if humanoidRootPart ~= nil then
+	local character = LOCAL_PLAYER.Character :: Model | Instance
+	local humanoidRootPart = character and (character:FindFirstChild("HumanoidRootPart")) :: BasePart
+	if humanoidRootPart then
 		--// Lerp field of view //--
 		currentCamera.FieldOfView =
 			Lerp(currentCamera.FieldOfView, activeCameraSettings.FieldOfView, activeCameraSettings.LerpSpeed)
 		----
 
 		--// Address shoulder direction //--
-		local offset = activeCameraSettings.Offset
+		local offset = activeCameraSettings.Offset :: Vector3
 		offset = Vector3.new(offset.X * self.ShoulderDirection, offset.Y, offset.Z)
 		----
 
@@ -260,7 +221,7 @@ function CLASS:Update()
 		raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 		local raycastResult = workspace:Raycast(
 			humanoidRootPart.Position,
-			newCameraCFrame.p - humanoidRootPart.Position,
+			newCameraCFrame.Position - humanoidRootPart.Position,
 			raycastParams
 		)
 		----
@@ -271,11 +232,11 @@ function CLASS:Update()
 			local obstructionPosition = humanoidRootPart.Position
 				+ (obstructionDisplacement.Unit * (obstructionDisplacement.Magnitude - 0.1))
 			-- selene: allow(unused_variable)
-			local _x, _y, _z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = newCameraCFrame:components()
+			local _x, _y, _z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = newCameraCFrame:GetComponents()
 			newCameraCFrame = CFrame.new(
-				obstructionPosition.x,
-				obstructionPosition.y,
-				obstructionPosition.z,
+				obstructionPosition.X,
+				obstructionPosition.Y,
+				obstructionPosition.Z,
 				r00,
 				r01,
 				r02,
@@ -336,8 +297,6 @@ function CLASS:ConfigureStateForDisabled()
 end
 
 function CLASS:Enable()
-	assert(self.IsEnabled == false, "OTS Camera System Logic Error: Attempt to enable without disabling")
-
 	self.IsEnabled = true
 	self.EnabledEvent:Fire()
 	self:ConfigureStateForEnabled()
@@ -350,8 +309,6 @@ function CLASS:Enable()
 end
 
 function CLASS:Disable()
-	assert(self.IsEnabled == true, "OTS Camera System Logic Error: Attempt to disable without enabling")
-
 	self:ConfigureStateForDisabled()
 	self.IsEnabled = false
 	self.DisabledEvent:Fire()
@@ -360,8 +317,7 @@ function CLASS:Disable()
 end
 ----
 
---// INSTRUCTIONS //--
-
+--[[
 CLASS.__index = CLASS
 
 local singleton = CLASS.new()
@@ -392,5 +348,6 @@ USER_INPUT_SERVICE.InputEnded:Connect(function(inputObject, gameProcessedEvent)
 		end
 	end
 end)
+--]]
 
-return singleton
+return CLASS
