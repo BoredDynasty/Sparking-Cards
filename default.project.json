@@ -28,6 +28,8 @@
         "$path": "Remotes/Remotes.rbxm"
       },
       "Packages": {
+        "$className": "Folder",
+        "$ignoreUnknownInstances": true,
         "$path": "Packages"
       }
     },

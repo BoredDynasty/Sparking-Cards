@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 -- Client.client.lua
 
@@ -171,7 +171,7 @@ end
 local function playNextAnimation(folder: { Animation }, i: number)
 	local result = false
 	if i == 0 then
-		print(`Couldn't find next anims: {folder}, {i}`)
+		-- print(`Couldn't find next anims: {folder}, {i}`)
 		result = false
 	end
 	i += 1 -- Increment
@@ -202,8 +202,8 @@ end
 ---------------------------------- UI --------------------------------
 
 print(script.Name)
-local TweenService = game:GetService("TweenService")
 local MarketPlaceService = game:GetService("MarketplaceService")
+local TweenService = game:GetService("TweenService")
 
 -- // Requires
 

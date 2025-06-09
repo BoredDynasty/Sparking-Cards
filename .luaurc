@@ -1,4 +1,5 @@
 {
     "languageMode": "nonstrict",
-    "lintErrors": true
+    "lintErrors": false,
+    "typeErrors": true
 }

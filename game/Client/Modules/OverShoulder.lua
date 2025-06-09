@@ -1,353 +1,221 @@
---!nonstrict
+local SmoothShiftLock = {}
+SmoothShiftLock.__index = SmoothShiftLock
 
-local CLASS = {}
+-- [[ Variables ]]:
 
---// SERVICES //--
+--// Services
+local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local WorkspaceService = game:GetService("Workspace")
 
-local PLAYERS_SERVICE = game:GetService("Players")
-local RUN_SERVICE = game:GetService("RunService")
-local USER_INPUT_SERVICE = game:GetService("UserInputService")
+local Maid = require(ReplicatedStorage.Utility.Maid)
+local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local Spring = require(ReplicatedStorage.Utility.Spring)
 
---// CONSTANTS //--
+local player = Players.LocalPlayer
 
-local LOCAL_PLAYER = PLAYERS_SERVICE.LocalPlayer
--- selene: allow(unused_variable)
--- local MOUSE = LOCAL_PLAYER:GetMouse()
+--// Bindables
+local ToggleEvent = player:WaitForChild("ToggleShiftLock")
+local EditConfig = player:WaitForChild("EditConfig")
 
-local UPDATE_UNIQUE_KEY = "OTS_CAMERA_SYSTEM_UPDATE"
+--// Configuration
+local config = {
+	["CHARACTER_SMOOTH_ROTATION"] = true, --// If your character should rotate smoothly or not
+	["MANUALLY_TOGGLEABLE"] = true, --// If the shift lock an be toggled manually by player
+	["CHARACTER_ROTATION_SPEED"] = 3, --// How quickly character rotates smoothly
+	["TRANSITION_SPRING_DAMPER"] = 0.7, --// Camera transition spring damper, test it out to see what works for you
+	["CAMERA_TRANSITION_IN_SPEED"] = 10, --// How quickly locked camera moves to offset position
+	["CAMERA_TRANSITION_OUT_SPEED"] = 14, --// How quickly locked camera moves back from offset position
+	["LOCKED_CAMERA_OFFSET"] = Vector3.new(1.75, 0.25, 0), --// Locked camera offset
+	--// Locked mouse icon
+	["LOCKED_MOUSE_ICON"] = "rbxasset://textures/MouseLockedCursor.png",
+	--// Shift lock keybinds
+	["SHIFT_LOCK_KEYBINDS"] = { Enum.KeyCode.RightShift },
+}
 
---// VARIABLES //--
+local ENABLED = false
 
---// CONSTRUCTOR //--
+--// Setup
+local maid = Maid.new()
 
-function CLASS.new()
-	--// Events //--
-	local activeCameraSettingsChangedEvent = Instance.new("BindableEvent")
-	local characterAlignmentChangedEvent = Instance.new("BindableEvent")
-	local mouseStepChangedEvent = Instance.new("BindableEvent")
-	local shoulderDirectionChangedEvent = Instance.new("BindableEvent")
-	local enabledEvent = Instance.new("BindableEvent")
-	local disabledEvent = Instance.new("BindableEvent")
-	----
+-- [[ Functions ]]:
 
-	local dataTable = setmetatable({
+--// Setup smooth shift lock on client (Run once and on a LocalScript)
+function SmoothShiftLock:Init()
+	local _managerMaid = Maid.new()
+	SmoothShiftLock.ShiftLockToggled = SignalPlus()
 
-		--// Properties //--
-		SavedCameraSettings = nil,
-		SavedMouseBehavior = nil,
-		ActiveCameraSettings = nil,
-		HorizontalAngle = 0,
-		VerticalAngle = 0,
-		ShoulderDirection = 1,
-		----
-
-		--// Flags //--
-		IsCharacterAligned = false,
-		IsMouseSteppedIn = false,
-		IsEnabled = false,
-		----
-
-		--// Events //--
-		ActiveCameraSettingsChangedEvent = activeCameraSettingsChangedEvent,
-		ActiveCameraSettingsChanged = activeCameraSettingsChangedEvent.Event,
-		CharacterAlignmentChangedEvent = characterAlignmentChangedEvent,
-		CharacterAlignmentChanged = characterAlignmentChangedEvent.Event,
-		MouseStepChangedEvent = mouseStepChangedEvent,
-		MouseStepChanged = mouseStepChangedEvent.Event,
-		ShoulderDirectionChangedEvent = shoulderDirectionChangedEvent,
-		ShoulderDirectionChanged = shoulderDirectionChangedEvent.Event,
-		EnabledEvent = enabledEvent,
-		Enabled = enabledEvent.Event,
-		DisabledEvent = disabledEvent,
-		Disabled = disabledEvent.Event,
-		----
-
-		--// Configurations //--
-		VerticalAngleLimits = NumberRange.new(-45, 45),
-		----
-
-		--// Camera Settings //--
-		CameraSettings = {
-
-			DefaultShoulder = {
-				FieldOfView = 70,
-				Offset = Vector3.new(2.5, 2.5, 8),
-				Sensitivity = 3,
-				LerpSpeed = 0.5,
-			},
-
-			ZoomedShoulder = {
-				FieldOfView = 40,
-				Offset = Vector3.new(1.5, 1.5, 6),
-				Sensitivity = 1.5,
-				LerpSpeed = 0.5,
-			},
-		},
-		----
-	}, CLASS)
-	-- selene: allow(unused_variable)
-	local proxyTable = setmetatable({}, {
-		__index = function(self, index)
-			return dataTable[index]
-		end,
-		__newindex = function(self, index, newValue)
-			dataTable[index] = newValue
-		end,
-	})
-
-	return proxyTable
-end
-
---// FUNCTIONS //--
-
-local function Lerp(x: number, y: number, a: number)
-	return x + (y - x) * a
-end
-
---// METHODS //--
-
---// //--
-function CLASS:SetActiveCameraSettings(cameraSettings: {
-	DefaultShoulder: {
-		FieldOfVie: number,
-		Offset: Vector3,
-		Sensitivi: number,
-		LerpSpeed: number,
-	},
-	ZoomedShoulder: {
-		FieldOfVie: number,
-		Offset: Vector3,
-		Sensitivity: number,
-		LerpSpeed: number,
-	},
-})
-	self.ActiveCameraSettings = cameraSettings
-	self.ActiveCameraSettingsChangedEvent:Fire(cameraSettings)
-end
-
-function CLASS:SetCharacterAlignment(aligned: boolean)
-	self.IsCharacterAligned = aligned
-	self.CharacterAlignmentChangedEvent:Fire(aligned)
-end
-
-function CLASS:SetMouseStep(steppedIn: boolean)
-	self.IsMouseSteppedIn = steppedIn
-	self.MouseStepChangedEvent:Fire(steppedIn)
-	if steppedIn == true then
-		USER_INPUT_SERVICE.MouseBehavior = Enum.MouseBehavior.LockCenter
-	else
-		USER_INPUT_SERVICE.MouseBehavior = Enum.MouseBehavior.Default
+	if player.Character then
+		coroutine.wrap(function()
+			self:CharacterAdded()
+		end)()
 	end
+
+	_managerMaid:GiveTask(player.CharacterAdded:Connect(function()
+		coroutine.wrap(function()
+			self:CharacterAdded()
+		end)()
+	end))
 end
 
-function CLASS:SetShoulderDirection(shoulderDirection: number)
-	self.ShoulderDirection = shoulderDirection
-	self.ShoulderDirectionChangedEvent:Fire(shoulderDirection)
-end
-----
+--// Character added event function
+function SmoothShiftLock:CharacterAdded()
+	local self = setmetatable({}, SmoothShiftLock)
+	--// Instances
+	self.Character = player.Character or player.CharacterAdded:Wait()
+	self.RootPart = self.Character:WaitForChild("HumanoidRootPart")
+	self.Humanoid = self.Character:WaitForChild("Humanoid")
+	self.Head = self.Character:WaitForChild("Head")
+	--// Other
+	self.Camera = WorkspaceService.CurrentCamera
+	--// Setup
+	self._connectionsMaid = Maid.new()
+	self.camOffsetSpring = Spring.new(Vector3.new(0, 0, 0))
+	self.camOffsetSpring.Damper = config.TRANSITION_SPRING_DAMPER
 
---// //--
-function CLASS:SaveCameraSettings()
-	local currentCamera = workspace.CurrentCamera
-	self.SavedCameraSettings = {
-		FieldOfView = currentCamera.FieldOfView,
-		CameraSubject = currentCamera.CameraSubject,
-		CameraType = currentCamera.CameraType,
-	}
-end
+	--// Bind keybinds
+	self._connectionsMaid:GiveTask(UserInputService.InputBegan:Connect(function(input, gpe)
+		if gpe or not config.MANUALLY_TOGGLEABLE then
+			return
+		end
 
-function CLASS:LoadCameraSettings()
-	local currentCamera = workspace.CurrentCamera
-	type cameraSetting = "FieldOfView" | "CameraSubject" | "CameraType"
+		for _, keyBind in pairs(config.SHIFT_LOCK_KEYBINDS) do
+			if (input.KeyCode == keyBind) and (self.Humanoid and self.Humanoid.Health ~= 0) then
+				self:ToggleShiftLock(not ENABLED)
+			end
+		end
+	end))
+
+	--// Update camera offset
 	task.spawn(function()
-		for setting: cameraSetting, value: any in pairs(self.SavedCameraSettings) do
-			if setting == "FieldOfView" or setting == "CameraSubject" or setting == "CameraType" then
-				currentCamera[setting] = value
+		self._connectionsMaid:GiveTask(RunService.RenderStepped:Connect(function()
+			debug.profilebegin("camera_offset_upd")
+			if self.Head.LocalTransparencyModifier > 0.6 then
+				return
 			end
-		end
-	end)
-end
-----
 
---// //--
-function CLASS:Update()
-	local currentCamera = workspace.CurrentCamera
-	local activeCameraSettings = self.CameraSettings[self.ActiveCameraSettings]
+			local camCF = self.Camera.CFrame
+			local distance: number = (self.Head.Position - camCF.Position).Magnitude
 
-	--// Address mouse behavior and camera type //--
-	if self.IsMouseSteppedIn == true then
-		USER_INPUT_SERVICE.MouseBehavior = Enum.MouseBehavior.LockCenter
-	else
-		USER_INPUT_SERVICE.MouseBehavior = Enum.MouseBehavior.Default
-	end
-	currentCamera.CameraType = Enum.CameraType.Scriptable
-	---
+			--// Camera offset
+			if distance > 1 then
+				self.Camera.CFrame = (self.Camera.CFrame * CFrame.new(self.camOffsetSpring.Position))
 
-	--// Address mouse input //--
-	local mouseDelta = USER_INPUT_SERVICE:GetMouseDelta() * activeCameraSettings.Sensitivity
-	self.HorizontalAngle -= mouseDelta.X / currentCamera.ViewportSize.X
-	self.VerticalAngle -= mouseDelta.Y / currentCamera.ViewportSize.Y
-	self.VerticalAngle = math.rad(
-		math.clamp(math.deg(self.VerticalAngle), self.VerticalAngleLimits.Min, self.VerticalAngleLimits.Max)
-	)
-	----
-
-	local character = LOCAL_PLAYER.Character :: Model | Instance
-	local humanoidRootPart = character and (character:FindFirstChild("HumanoidRootPart")) :: BasePart
-	if humanoidRootPart then
-		--// Lerp field of view //--
-		currentCamera.FieldOfView =
-			Lerp(currentCamera.FieldOfView, activeCameraSettings.FieldOfView, activeCameraSettings.LerpSpeed)
-		----
-
-		--// Address shoulder direction //--
-		local offset = activeCameraSettings.Offset :: Vector3
-		offset = Vector3.new(offset.X * self.ShoulderDirection, offset.Y, offset.Z)
-		----
-
-		--// Calculate new camera cframe //--
-		local newCameraCFrame = CFrame.new(humanoidRootPart.Position)
-			* CFrame.Angles(0, self.HorizontalAngle, 0)
-			* CFrame.Angles(self.VerticalAngle, 0, 0)
-			* CFrame.new(offset)
-
-		newCameraCFrame = currentCamera.CFrame:Lerp(newCameraCFrame, activeCameraSettings.LerpSpeed)
-		----
-
-		--// Raycast for obstructions //--
-		local raycastParams = RaycastParams.new()
-		raycastParams.FilterDescendantsInstances = { character }
-		-- selene: allow(deprecated)
-		raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-		local raycastResult = workspace:Raycast(
-			humanoidRootPart.Position,
-			newCameraCFrame.Position - humanoidRootPart.Position,
-			raycastParams
-		)
-		----
-
-		--// Address obstructions if any //--
-		if raycastResult ~= nil then
-			local obstructionDisplacement = (raycastResult.Position - humanoidRootPart.Position)
-			local obstructionPosition = humanoidRootPart.Position
-				+ (obstructionDisplacement.Unit * (obstructionDisplacement.Magnitude - 0.1))
-			-- selene: allow(unused_variable)
-			local _x, _y, _z, r00, r01, r02, r10, r11, r12, r20, r21, r22 = newCameraCFrame:GetComponents()
-			newCameraCFrame = CFrame.new(
-				obstructionPosition.X,
-				obstructionPosition.Y,
-				obstructionPosition.Z,
-				r00,
-				r01,
-				r02,
-				r10,
-				r11,
-				r12,
-				r20,
-				r21,
-				r22
-			)
-		end
-		----
-
-		--// Address character alignment //--
-		if self.IsCharacterAligned == true then
-			local newHumanoidRootPartCFrame = CFrame.new(humanoidRootPart.Position)
-				* CFrame.Angles(0, self.HorizontalAngle, 0)
-			humanoidRootPart.CFrame =
-				humanoidRootPart.CFrame:Lerp(newHumanoidRootPartCFrame, activeCameraSettings.LerpSpeed / 2)
-		end
-		----
-
-		currentCamera.CFrame = newCameraCFrame
-	else
-		self:Disable()
-	end
-end
-
-function CLASS:ConfigureStateForEnabled()
-	self:SaveCameraSettings()
-	self.SavedMouseBehavior = USER_INPUT_SERVICE.MouseBehavior
-	self:SetActiveCameraSettings("DefaultShoulder")
-	self:SetCharacterAlignment(false)
-	self:SetMouseStep(true)
-	self:SetShoulderDirection(1)
-
-	--// Calculate angles //--
-	local cameraCFrame = workspace.CurrentCamera.CFrame
-	-- selene: allow(unused_variable)
-	local x, y = cameraCFrame:ToOrientation()
-	local horizontalAngle = y
-	local verticalAngle = x
-	----
-
-	self.HorizontalAngle = horizontalAngle
-	self.VerticalAngle = verticalAngle
-end
-
-function CLASS:ConfigureStateForDisabled()
-	self:LoadCameraSettings()
-	USER_INPUT_SERVICE.MouseBehavior = self.SavedMouseBehavior
-	self:SetActiveCameraSettings("DefaultShoulder")
-	self:SetCharacterAlignment(false)
-	self:SetMouseStep(false)
-	self:SetShoulderDirection(1)
-	self.HorizontalAngle = 0
-	self.VerticalAngle = 0
-end
-
-function CLASS:Enable()
-	self.IsEnabled = true
-	self.EnabledEvent:Fire()
-	self:ConfigureStateForEnabled()
-
-	RUN_SERVICE:BindToRenderStep(UPDATE_UNIQUE_KEY, Enum.RenderPriority.Camera.Value - 10, function()
-		if self.IsEnabled then
-			self:Update()
-		end
-	end)
-end
-
-function CLASS:Disable()
-	self:ConfigureStateForDisabled()
-	self.IsEnabled = false
-	self.DisabledEvent:Fire()
-
-	RUN_SERVICE:UnbindFromRenderStep(UPDATE_UNIQUE_KEY)
-end
-----
-
---[[
-CLASS.__index = CLASS
-
-local singleton = CLASS.new()
-
-USER_INPUT_SERVICE.InputBegan:Connect(function(inputObject, gameProcessedEvent)
-	if (gameProcessedEvent == false) and (singleton.IsEnabled == true) then
-		if inputObject.KeyCode == Enum.KeyCode.Q then
-			singleton:SetShoulderDirection(-1)
-		elseif inputObject.KeyCode == Enum.KeyCode.E then
-			singleton:SetShoulderDirection(1)
-		end
-		if inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
-			singleton:SetActiveCameraSettings("ZoomedShoulder")
-		end
-
-		if inputObject.KeyCode == Enum.KeyCode.LeftControl then
-			if singleton.IsEnabled == true then
-				singleton:SetMouseStep(not singleton.IsMouseSteppedIn)
+				if ENABLED and (UserInputService.MouseBehavior ~= Enum.MouseBehavior.LockCenter) then
+					self:SetMouseState(ENABLED)
+				end
 			end
-		end
-	end
-end)
+		end))
+	end)
 
-USER_INPUT_SERVICE.InputEnded:Connect(function(inputObject, gameProcessedEvent)
-	if (gameProcessedEvent == false) and (singleton.IsEnabled == true) then
-		if inputObject.UserInputType == Enum.UserInputType.MouseButton2 then
-			singleton:SetActiveCameraSettings("DefaultShoulder")
+	--// Bindables
+	self._connectionsMaid:GiveTask(ToggleEvent.Event:Connect(function(toggle: boolean)
+		if self.Humanoid and self.Humanoid.Health ~= 0 then
+			self:ToggleShiftLock(toggle)
 		end
-	end
-end)
---]]
+	end))
 
-return CLASS
+	self._connectionsMaid:GiveTask(EditConfig.Event:Connect(function(toChange, value)
+		if config[toChange] ~= nil then
+			config[toChange] = value
+		end
+	end))
+
+	--// On death
+	self._connectionsMaid:GiveTask(self.Humanoid.Died:Connect(function()
+		self:CharacterDiedOrRemoved()
+		return
+	end))
+
+	--// On character removing
+	self._connectionsMaid:GiveTask(player.CharacterRemoving:Connect(function()
+		self:CharacterDiedOrRemoved()
+		return
+	end))
+
+	return self
+end
+
+--// Stop shiftlock upon character death or removal
+function SmoothShiftLock:CharacterDiedOrRemoved()
+	self:ToggleShiftLock(false)
+
+	if self._connectionsMaid ~= nil then
+		self._connectionsMaid:Destroy()
+	end
+
+	maid:DoCleaning()
+end
+
+--// Return shiftlock enabled state
+function SmoothShiftLock:IsEnabled(): boolean
+	return ENABLED
+end
+
+--// Set Enum.MouseBehavior to LockCenter or Default depending on shiftlock enabled
+function SmoothShiftLock:SetMouseState(enable: boolean)
+	UserInputService.MouseBehavior = (enable and Enum.MouseBehavior.LockCenter) or Enum.MouseBehavior.Default
+end
+
+--// Change mouse icon depending on shiftlock enabled
+function SmoothShiftLock:SetMouseIcon(enable: boolean)
+	UserInputService.MouseIcon = (enable and config.LOCKED_MOUSE_ICON :: string) or ""
+end
+
+--// Tween locked camera offset position
+function SmoothShiftLock:TransitionLockOffset(enable: boolean)
+	if enable then
+		self.camOffsetSpring.Speed = config.CAMERA_TRANSITION_IN_SPEED
+		self.camOffsetSpring.Target = config.LOCKED_CAMERA_OFFSET
+	else
+		self.camOffsetSpring.Speed = config.CAMERA_TRANSITION_OUT_SPEED
+		self.camOffsetSpring.Target = Vector3.new(0, 0, 0)
+	end
+end
+
+--// Toggle shift lock
+function SmoothShiftLock:ToggleShiftLock(enable: boolean)
+	assert(typeof(enable) == typeof(false), "Enable value is not a boolean.")
+	debug.profilebegin("enable shiftlock")
+	ENABLED = enable
+
+	self:SetMouseState(ENABLED)
+	self:SetMouseIcon(ENABLED)
+	self:TransitionLockOffset(ENABLED)
+
+	--// Start
+	if ENABLED then
+		maid:GiveTask(RunService.RenderStepped:Connect(function(delta)
+			if self.Humanoid and self.RootPart then
+				self.Humanoid.AutoRotate = not ENABLED
+			end
+
+			--// Rotate character
+			if ENABLED then
+				if not self.Humanoid.Sit and config.CHARACTER_SMOOTH_ROTATION then
+					local _, y, _ = self.Camera.CFrame:ToOrientation()
+					self.RootPart.CFrame = self.RootPart.CFrame:Lerp(
+						CFrame.new(self.RootPart.Position) * CFrame.Angles(0, y, 0),
+						delta * 5 * config.CHARACTER_ROTATION_SPEED
+					)
+				elseif not self.Humanoid.Sit then
+					local _, y, _ = self.Camera.CFrame:ToOrientation()
+					self.RootPart.CFrame = CFrame.new(self.RootPart.Position) * CFrame.Angles(0, y, 0)
+				end
+			end
+
+			--// Stop
+			if not ENABLED then
+				maid:Destroy()
+			end
+		end))
+	end
+
+	SmoothShiftLock.ShiftLockToggled:Fire(ENABLED)
+	debug.profileend()
+	return self
+end
+
+return SmoothShiftLock

@@ -1,6 +1,6 @@
-syntax = "All"
+syntax = "Luau"
 column_width = 110
-line_endings = "Unix"
+line_endings = "Windows"
 indent_type = "Tabs"
 indent_width = 4
 quote_style = "AutoPreferDouble"
@@ -9,4 +9,4 @@ collapse_simple_statement = "Never"
 space_after_function_names = "Never"
 
 [sort_requires]
-enabled = false
+enabled = true

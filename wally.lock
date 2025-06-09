@@ -8,41 +8,26 @@ version = "0.1.0"
 dependencies = []
 
 [[package]]
-name = "artzified/parallelizer"
-version = "2.0.0"
+name = "dynas/sparking-cards"
+version = "0.1.0"
+dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["cmdr", "evaera/cmdr@1.12.0"], ["gameanalytics-sdk", "gameanalytics/gameanalytics-sdk@2.2.6"], ["profilestore", "2jammers/profilestore@0.1.0"], ["promise", "evaera/promise@4.0.0"]]
+
+[[package]]
+name = "evaera/cmdr"
+version = "1.12.0"
 dependencies = []
 
 [[package]]
-name = "dynas/sparking-cards"
-version = "0.1.0"
-dependencies = [["Red", "red-blox/red@2.3.2"], ["gameanalytics-sdk", "gameanalytics/gameanalytics-sdk@2.2.6"], ["parallelizer", "artzified/parallelizer@2.0.0"], ["profilestore", "2jammers/profilestore@0.1.0"]]
+name = "evaera/promise"
+version = "4.0.0"
+dependencies = []
+
+[[package]]
+name = "ffrostflame/bytenet"
+version = "0.4.6"
+dependencies = []
 
 [[package]]
 name = "gameanalytics/gameanalytics-sdk"
 version = "2.2.6"
-dependencies = []
-
-[[package]]
-name = "red-blox/future"
-version = "1.0.1"
-dependencies = [["Spawn", "red-blox/spawn@1.1.0"]]
-
-[[package]]
-name = "red-blox/guard"
-version = "1.0.1"
-dependencies = []
-
-[[package]]
-name = "red-blox/red"
-version = "2.3.2"
-dependencies = [["Future", "red-blox/future@1.0.1"], ["Guard", "red-blox/guard@1.0.1"], ["Signal", "red-blox/signal@2.0.2"], ["Spawn", "red-blox/spawn@1.1.0"]]
-
-[[package]]
-name = "red-blox/signal"
-version = "2.0.2"
-dependencies = [["Spawn", "red-blox/spawn@1.1.0"]]
-
-[[package]]
-name = "red-blox/spawn"
-version = "1.1.0"
 dependencies = []

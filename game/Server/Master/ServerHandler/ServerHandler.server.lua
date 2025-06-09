@@ -4,31 +4,37 @@
 
 print(script.Name)
 
+local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local LogService = game:GetService("LogService")
 local RunService = game:GetService("RunService")
 
-local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
-local SafeTeleporter = require(ReplicatedStorage.Modules.SafeTeleporter)
-local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
-local Red = require(ReplicatedStorage.Packages.Red)
+local Cards = require(ReplicatedStorage.Market.Cards)
+local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
+local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
+local Packet = require(ReplicatedStorage.Packet)
+local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
+local characterUtility = require(ReplicatedStorage.Utility.character)
+local dictionary = require(ReplicatedStorage.Utility.dictionary)
+local profilestore = require(ReplicatedStorage.Packages.profilestore)
+local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+
 -- local ActorGroup = require(ReplicatedStorage.Utility.ActorGroup)
 
+local remoteEvents = ReplicatedStorage.RemoteEvents
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
 
 local productFunctions = {} :: { (receipt: (any | string)?, player: Player) -> boolean }
 
-print("Economic Analytics are enabled.")
-print("Custom Analytics are enabled.")
-print("Developer Notes gets updated every 24h.")
+print("GameAnalytics is enabled.")
 
 local gameAnalyticsConfig = {
 	enableInfoLog = false,
 	enableVerboseLog = false,
-	availableResourceCurrencies = { "Cards" },
+	availableResourceCurrencies = { "BigCards" },
 	build = "0.1.0",
 	availableGamepasses = { "Extra Cards" },
 	automaticSendBusinessEvents = true,
@@ -37,28 +43,54 @@ local gameAnalyticsConfig = {
 	gameKey = "4e689e435634bbfe9892f625af5c51bf",
 	secretKey = "1a5289ebbc7daa44accc4d5deb256833263c512a",
 }
+local resourceItemTypes = {
+	"Weapons",
+	"Boosters",
+	"IAP",
+	"Gameplay",
+}
 
 local serverStartTime = os.clock()
 
+Cmdr:RegisterDefaultCommands() -- This loads the default set of commands that Cmdr comes with. (Optional)
+
 -- selene:allow(mixed_table)
 GameAnalytics:initialize(gameAnalyticsConfig)
-GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
+GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
+-- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 
+local playerStore = ProfileStore.New("player-related", profilestructure)
+
+type profileType = { [Player]: typeof(playerStore:StartSessionAsync({})) }
+local profiles: profileType = {}
+
+--[[
+	This is only for if I want to write
+	data to the profiles while testing.
+]]
+--[[
+if RunService:IsStudio() then
+	playerStore = playerStore.Mock
+end
+--]]
 -- This product Id gives the player more cards (cards as in money)
 productFunctions[1904591683] = function(receipt: any | string?, player: Player)
-	local leaderstats = player:FindFirstChild("leaderstats") :: Folder
-	local Cards: IntValue = leaderstats:FindFirstChild("Cards") :: IntValue
-	if Cards and player then
-		Cards.Value += 50
+	local profile = profiles[player]
+	if not profile then
+		print("Profile not found for player: " .. player.Name)
+		return false -- indicate a failed purchase
+	end
+	local Card_int = profile.Data["Big-Cards"] :: number
+	if Card_int and player then
+		Card_int += 50
 		local resourceEventParams = {
 			flowType = GameAnalytics.EGAResourceFlowType.Source,
-			currency = "Cards",
+			currency = "BigCards",
 			amount = 50,
-			itemType = "Extra Cards",
+			itemType = "IAP", -- In-App Purchase
 		}
 		print(receipt)
 		GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
-		-- Log the purchase in the custom analytics
 	end
 	return true -- indicate a successful purchase
 end
@@ -121,75 +153,20 @@ local function processReceipt(receiptInfo: { PlayerId: number, ProductId: number
 	-- Return "NotProcessedYet" to try again next time the user joins
 	return Enum.ProductPurchaseDecision.NotProcessedYet
 end
-
-local function _FastTravel(place: number, players: { Player }, options)
-	return SafeTeleporter(place, players, options)
-end
-
-local function enterMatch(player: Player)
+local function enterMatch(player: Player?)
+	print("player entered match")
+	if not player then
+		return
+	end
 	MatchHandler.AddPlayerToQueue(player)
 end
 
-local function _teleportPartClicked(player: Player, otherPart: BasePart, destination: CFrame)
-	if player then -- // check if we have the player
-		local clickDetector = otherPart:FindFirstChild("ClickDetector") :: ClickDetector
-		clickDetector.MouseClick:Connect(function()
-			local character = player.Character :: Model
-			local humanoidRootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart
-			if humanoidRootPart then
-				humanoidRootPart:PivotTo(destination)
-			end
-		end)
+local function cancelMatch(player: Player)
+	print("cancel match")
+	if not player then
+		return
 	end
-end
-
-local function _payCards(player: Player, reason: string?, amount: number)
-	if not amount then
-		amount = 50
-	end
-	if not reason then
-		reason = "Unknown"
-	end
-	local leaderstats = player:FindFirstChild("leaderstats") :: Folder
-	local cardsInteger = leaderstats:FindFirstChild("Cards") :: IntValue
-	local resourceEventParams = {
-		flowType = GameAnalytics.EGAResourceFlowType.Source,
-		currency = "Cards",
-		amount = amount,
-		itemType = reason,
-	}
-	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
-	cardsInteger.Value += amount
-	if reason then
-		print(reason)
-	end
-end
-
-local playerStore = ProfileStore.New("player-related", {
-	-- Template
-	["Cards"] = 0,
-	["Level"] = "Bronze I",
-	["Experience"] = 0,
-	["LastLogin"] = os.time(),
-	-- Other
-	["options"] = {
-		["clockTime"] = 12,
-		["description"] = "Destined for awesomeness!",
-		["profileBannerLink"] = "rbxassetid://95864343491678",
-	},
-	["combatBindings"] = {
-		["attack"] = "LMB", -- melee
-		["special_One"] = "E", -- primary
-		["special_Two"] = "Q", -- ultimate
-		["special_Three"] = "R", -- any
-	},
-})
-
-type profileType = { [typeof(playerStore:StartSessionAsync())]: any }
-local profiles: profileType = {}
-
-if RunService:IsStudio() then
-	playerStore = playerStore.Mock
+	MatchHandler.RemovePlayerFromQueue(player)
 end
 
 --[[
@@ -199,132 +176,250 @@ local LEADERSTATS_TEMPLATE = {
 	Experience = { className = "IntValue", default = 0 },
 }
 --]]
-local function createLeaderstats(player: Player, data: { [string]: any })
-	local leaderstats = Instance.new("Folder")
-	leaderstats.Name = "leaderstats"
-	leaderstats.Parent = player
-
-	local Cards = Instance.new("IntValue")
-	Cards.Name = "Cards"
-	Cards.Parent = leaderstats
-	Cards.Value = data.Cards
-
-	local Rank = Instance.new("StringValue")
-	Rank.Name = "Rank"
-	Rank.Parent = leaderstats
-	Rank.Value = data.Level
-
-	local EXP = Instance.new("IntValue")
-	EXP.Name = "ExperiencePoints"
-	EXP.Parent = leaderstats
-	EXP.Value = data.Experience
-
-	return leaderstats
-end
 
 local function onPlayerAdded(player: Player)
-	debug.profilebegin("player_added")
-
 	-- Start profile session with timeout
-	local profileSuccess, profile = pcall(function()
-		return playerStore:StartSessionAsync(`player:{player.UserId}`, {
-			Cancel = function()
-				return player.Parent ~= Players
-			end,
-		})
-	end)
-
-	if not profileSuccess or not profile then
-		player:Kick("Profile load failed - Please rejoin")
-		debug.profileend()
+	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	})
+	if not profile or profile == nil then
+		player:Kick("Roblox Servers on fire. It's best to rejoin.")
 		return
 	end
 	-- Set up profile
 	profile:AddUserId(player.UserId)
 	profile:Reconcile()
+	task.wait(1)
+	profile:Save()
 
 	-- Handle session end
 	profile.OnSessionEnd:Connect(function()
 		profiles[player] = nil
-		if player.Parent == Players then
-			player:Kick("Session Locked, rejoin")
-		end
+		player:Kick("Session Locked, rejoin")
 	end)
 
-	-- Store profile if player still here
+	if (player.Parent == Players) or player:FindFirstAncestor("Players") then
+		profiles[player] = profile
+		print("Data Loaded for " .. player.DisplayName, unpack(profile.Data))
+		profile.Data.LastLogin = os.time()
+		profile:Reconcile()
+		profile:Save()
+	else
+		profile:EndSession()
+		warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
+		return
+	end
 
-	task.spawn(function()
-		local character = player.Character or player.CharacterAdded:Wait() :: Model
-		local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart
-		if character or rootPart then
-			player:RequestStreamAroundAsync(rootPart.Position)
-		end
-	end)
+	-- for the client to mess around with
+	local editConfig = Instance.new("BindableEvent")
+	editConfig.Parent = player
+	editConfig.Name = "EditConfig"
+	local toggleShiftLock = Instance.new("BindableEvent")
+	toggleShiftLock.Parent = player
+	toggleShiftLock.Name = "ToggleShiftLock"
+	print("yay, installed bindable events to player")
 
-	-- if player.Parent == Players then
-	table.insert(profiles, 1, profile)
-
-	-- Load leaderstats data in parallel
-	task.spawn(function()
-		local leaderStatInfo = playerStore:GetAsync(`player:{player.UserId}`)
-		if leaderStatInfo and leaderStatInfo.Data then
-			createLeaderstats(player, leaderStatInfo.Data)
-		else
-			player:Kick("Roblox Servers on fire. It's best to rejoin.")
-		end
-	end)
+	local character: Model = player.Character or player.CharacterAdded:Wait()
+	character:SetAttribute("Stamina", 100)
+	character:SetAttribute("MaxStamina", 100)
 
 	GameAnalytics:PlayerJoined(player)
 
-	player.Chatted:Connect(function(message: string)
-		if message:match("@match") or message:match("@ready") then
-			enterMatch(player)
-		end
-	end)
-
 	-- Optimize character cleanup
-	player.CharacterRemoving:Connect(function(char: Model)
-		task.delay(1, function() -- Give time for any final processing
+	player.CharacterRemoving:Once(function(char: Model)
+		task.defer(function()
 			if char and char.Parent then
 				char:Destroy()
 			end
 		end)
 	end)
-	-- else
-	-- profile:EndSession()
-	-- end
-
-	debug.profileend()
 end
+
+-- just in case the players have joined the server before the script loaded
+for _, player in ipairs(Players:GetPlayers()) do
+	if player.Parent == Players then
+		task.spawn(onPlayerAdded, player)
+	end
+end
+
+ProfileStore.OnError:Connect(function(error_message, store_name, profile_key)
+	print(`DataStore error (Store:{store_name};Key:{profile_key}): {error_message}`)
+end)
 
 local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
 	local profile = profiles[player]
 	if profile ~= nil then
+		profile:Save()
+		print("saving data for: " .. player.DisplayName)
 		profile:EndSession()
+		print("ending session for: " .. player.DisplayName)
+	else
+		print("couldn't save in time for " .. player.DisplayName)
 	end
 	task.defer(player.Destroy, player)
 end
 
-local function _setPlayerExperience(player: Player, exp: number)
-	local leaderstats = player:WaitForChild("leaderstats") :: Folder
-	local expValue = leaderstats:FindFirstChild("Experience") :: IntValue
-	expValue.Value = exp
-end
-
-local function _getPlayerInfo(player: Player): any
+local function purchaseCard(player: Player, cardName: string)
 	local profile = profiles[player]
-	local data = nil
-	if profile then
-		data = profile
+	if not profile then
+		Packet.sendNotification.sendTo({
+			"Error",
+			"Profile not found for player: " .. player.Name,
+		}, player)
+		warn("Profile not found for player: " .. player.Name)
+		return
 	end
-	return data
+	if not Cards[cardName] then
+		Packet.sendNotification.sendTo({
+			"Error",
+			"Card does not exist.",
+		}, player)
+		warn("Card does not exist: " .. cardName)
+		return
+	end
+
+	print("Purchasing card: " .. cardName .. " for player: " .. player.Name)
+
+	local resourceEventParams = {
+		flowType = GameAnalytics.EGAResourceFlowType.Sink,
+		currency = "BigCards",
+		amount = 1,
+		itemType = "Weapons",
+		itemId = cardName .. " Card",
+	}
+	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+	local cards = profile.Data["Big-Cards"]
+	if cards and cards >= math.ceil(Cards[cardName].Price) then
+		profile.Data["Big-Cards"] -= math.ceil(Cards[cardName].Price) or 1
+		profile.Data.Cards[cardName] = (profile.Data.Cards[cardName] or 0) + 1
+		profile:Save()
+		profile:Reconcile()
+		local result = "success"
+		Packet.buyCard.sendTo({ result }, player)
+		print("Card purchased successfully.")
+	else
+		Packet.sendNotification.sendTo({ "Error", "Not enough Big-Cards." }, player)
+		warn("Not enough Big Cards for player: " .. player.Name)
+	end
 end
 
 local function streamArea(player: Player, area: Vector3)
+	if not player then
+		return
+	end
 	task.spawn(function()
 		player:RequestStreamAroundAsync(area)
 	end)
+end
+
+local function payCards(player: Player, amount: number)
+	local profile = profiles[player]
+	if not profile then
+		Packet.sendNotification.sendTo({
+			"Error",
+			"Profile not found for player: " .. player.Name,
+		}, player)
+		warn("Profile not found for player: " .. player.Name)
+		return
+	end
+	print("got req. from client to pay big cards!")
+	local bigCards = math.ceil(profile.Data["Big-Cards"] + (amount or 0))
+	profile.Data["Big-Cards"] = bigCards
+	print("added big cards for " .. player.DisplayName .. " and an amount of " .. tostring(amount))
+	print(player.DisplayName .. " now has " .. tostring(profile.Data["Big-Cards"]) .. " Big Cards!")
+	local resourceEventParams = {
+		flowType = GameAnalytics.EGAResourceFlowType.Source,
+		currency = "BigCards",
+		amount = amount,
+		itemType = "Gameplay",
+		itemId = "Big-Cards",
+	}
+	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+	profile:Save()
+	profile:Reconcile()
+end
+
+local function sellCards(player: Player, cardName: string)
+	local profile = profiles[player]
+	if not profile then
+		Packet.sendNotification.sendTo({
+			"Error",
+			"Profile not found for player: " .. player.Name,
+		}, player)
+		warn("Profile not found for player: " .. player.Name)
+		return
+	end
+
+	print("Attempting to sell card: " .. cardName)
+
+	-- validate card exists
+	if not Cards[cardName] then
+		Packet.sendNotification.sendTo({
+			"Error",
+			"Invalid card type.",
+		}, player)
+		warn("Invalid card to sell: ", cardName)
+		return
+	end
+	if not profile.Data.Cards[cardName] or profile.Data.Cards[cardName] <= 0 then
+		Packet.sendNotification.sendTo({
+			"Error",
+			"You don't have any " .. cardName .. " cards to sell.",
+		}, player)
+		return
+	end
+
+	-- calculate sell price (usually half of buy price)
+	local sellPrice = math.floor(Cards[cardName].Price * 0.5)
+
+	-- upd
+	profile.Data["Big-Cards"] += sellPrice
+	profile.Data.Cards[cardName] -= 1
+
+	print(player.DisplayName .. " sold " .. cardName .. " for " .. tostring(sellPrice) .. " Big Cards")
+	print(player.DisplayName .. " now has " .. tostring(profile.Data["Big-Cards"]) .. " Big Cards!")
+
+	local resourceEventParams = {
+		flowType = GameAnalytics.EGAResourceFlowType.Sink,
+		currency = "BigCards",
+		amount = sellPrice,
+		itemType = "Gameplay",
+		itemId = cardName .. "_Sell",
+	}
+	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+
+	-- Save changes
+	profile:Save()
+	profile:Reconcile()
+end
+
+local function getProfile(player: Player)
+	local profile = profiles[player]
+	assert(profile or profiles[player], "Profile does not exist!")
+	return {
+		Data = profile.Data,
+		Key = profile.Key,
+		LastSaved = profile.LastSavedData,
+	}
+end
+
+local function handleSprint(player: Player, v: number, b: boolean)
+	local character = characterUtility.get(player)
+	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+
+	if b == true then
+		-- sprint
+		if humanoid then
+			humanoid.WalkSpeed = v
+		end
+	else
+		if humanoid then
+			humanoid.WalkSpeed = 14 or v
+		end
+	end
 end
 
 -- Set the callback; this can only be done once by one server-side script
@@ -345,22 +440,35 @@ MarketplaceService.ProcessReceipt = processReceipt
 --("PayCards", payCards)
 --("GetPlayerInfo", getPlayerInfo)
 --("SetPlayerExperience", setPlayerExperience)
---
+--("GetStats", getStats)
 
-local RequestStream = Red.Event(
-	"RequestStream",
-	(
-			function(area: Vector3)
-				if not area then
-					return
-				end
-				area = area :: Vector3
-				assert(typeof(area) == "Vector3", "The requested to stream area is not a Vector3.")
-				return area
-			end
-		) :: (Vector3) -> any
-)
-RequestStream:Server():On(streamArea)
+Packet.streamArea.listen(function(area, player: Player)
+	streamArea(player, area[1])
+end)
+Packet.createMatch.listen(function(_, player: Player)
+	enterMatch(player)
+end)
+Packet.buyCard.listen(function(cardName, player: Player)
+	purchaseCard(player, cardName[1])
+end)
+Packet.payBigCards.listen(function(data: { number })
+	payCards(data[2], data[1])
+end)
+Packet.sprintRemote.listen(function(data: { boolean | buffer }, player: Player)
+	handleSprint(player, data[1], data[2])
+end)
+Packet.cancelMatch.listen(function(_: nil?, player: Player)
+	cancelMatch(player)
+end)
+Packet.sellCard.listen(function(data: { Instance | string }, player: Player)
+	local cardName = data[2]
+	sellCards(player, cardName)
+end)
+
+local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
+getProfileRF.OnServerInvoke = getProfile
+
+-- TODO) add player saving options
 
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)

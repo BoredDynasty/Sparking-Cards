@@ -3,11 +3,11 @@
 -- DataModel.client.lua
 
 local ContentProvider = game:GetService("ContentProvider")
-local ReplicatedFirst = game:GetService("ReplicatedFirst")
-local StarterGui = game:GetService("StarterGui")
 local Players = game:GetService("Players")
+local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local StarterGui = game:GetService("StarterGui")
 
 ReplicatedFirst:RemoveDefaultLoadingScreen()
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
@@ -21,8 +21,8 @@ local player = Players.LocalPlayer :: Player
 local loadingUI = ReplicatedFirst:WaitForChild("Loading"):Clone() :: ScreenGui
 loadingUI.Parent = player.PlayerGui :: PlayerGui
 
-local loadingCanvas = loadingUI:FindFirstChild("CanvasGroup") :: CanvasGroup
-local background = loadingCanvas:FindFirstChild("Background") :: Frame
+local loadingCanvas = loadingUI:WaitForChild("CanvasGroup") :: CanvasGroup
+local background = loadingCanvas:WaitForChild("Background") :: Frame
 
 local statusBar = background:WaitForChild("Status")
 local textIndicator = statusBar:FindFirstChild("StatusText") :: TextLabel
@@ -32,8 +32,8 @@ local loader = background:FindFirstChild("LoaderImage") :: ImageLabel -- the spi
 
 local connection: RBXScriptConnection | nil
 
-local BATCH_SIZE = 60
-local MAX_PARALLEL_LOADS = 12
+local BATCH_SIZE = 12
+local MAX_PARALLEL_LOADS = 50
 
 local function skipPreloading()
 	loadingUI:Destroy()
@@ -52,12 +52,13 @@ end
 local function preload()
 	local startTime = os.clock()
 
-	textIndicator.Text = tostring(game.PlaceVersion) or "hi"
+	textIndicator.Text = ("%s"):format(tostring(game.PlaceId)) or "hi"
 
 	-- Combine assets into one table
-	local assets = {}
+	local pre_allocated = 2000
+	local assets = table.create(pre_allocated) -- pre-allocate approximate size
 	task.spawn(function()
-		for _, asset in ipairs(player.PlayerGui:GetChildren()) do
+		for _, asset in ipairs(player:GetDescendants()) do
 			table.insert(assets, asset)
 		end
 	end)
@@ -74,12 +75,16 @@ local function preload()
 
 	skipButton.MouseButton1Click:Once(skipPreloading)
 
-	connection = RunService.Heartbeat:Connect(function()
-		loader.Rotation = loader.Rotation + 10
+	local renderTask = task.spawn(function()
+		local circle = 360
+		connection = RunService.RenderStepped:Connect(function(deltaTime: number)
+			task.wait()
+			loader.Rotation += circle * deltaTime
+		end)
 	end)
 
 	-- split assets into batches
-	local batches = {}
+	local batches: { ((({ any }?) & { any } & { any })?) & ({ any }?) & { any } & { any } } = {}
 	for i = 1, #assets, BATCH_SIZE do
 		local batch = {}
 		for j = i, math.min(i + BATCH_SIZE - 1, #assets) do
@@ -89,7 +94,7 @@ local function preload()
 	end
 
 	local activeThreads = 0
-
+	local success, err
 	-- process batches in parallel hehe
 	for _, batch in ipairs(batches) do
 		while activeThreads >= MAX_PARALLEL_LOADS do
@@ -98,10 +103,32 @@ local function preload()
 
 		activeThreads += 1
 		task.spawn(function()
-			pcall(function()
+			success, err = pcall(function()
 				ContentProvider:PreloadAsync(batch)
 			end)
-
+			if not success or err ~= nil then
+				warn(err)
+				local banner = background:FindFirstChild("Banner") :: ImageLabel
+				local errorImage = "86354301652315"
+				local assetPrefix = "rbxassetid://"
+				banner.Image = assetPrefix .. errorImage
+				local concatenated_batch: string
+				for k, v in pairs(batch) do
+					concatenated_batch = concatenated_batch .. k .. ":" .. v .. "\n" -- concatenate key/value pairs, with a newline in-between
+				end
+				status.Text = "Couldn't download batch: "
+					.. table.concat(
+						table.create(#batch, function(i)
+							return tostring(batch[i])
+						end),
+						", "
+					)
+				print("Couldn't download batch: ", concatenated_batch)
+				--
+				local statusImage = statusBar:FindFirstChild("statusImage") :: ImageLabel
+				local statusImg = "10747384394"
+				statusImage.Image = assetPrefix .. statusImg
+			end
 			loadedCount += #batch
 			status.Text = string.format("Loaded: %d/%d", loadedCount, maxAssets)
 
@@ -124,18 +151,15 @@ local function preload()
 	if connection then
 		connection:Disconnect()
 		connection = nil
+		task.cancel(renderTask)
 	end
 	table.clear(assets)
+	table.clear(batches)
 
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
-end
-
-if connection then
-	connection:Disconnect()
-	connection = nil
 end
 
 preload()
