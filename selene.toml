@@ -1,4 +1,6 @@
 std = "roblox"
-# [lints]
+[lints]
 # lint_8.7 = "allow"
 # lint_8.3 = "allow"
+
+lint_8.12 = "allow"

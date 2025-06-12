@@ -169,14 +169,6 @@ local function cancelMatch(player: Player)
 	MatchHandler.RemovePlayerFromQueue(player)
 end
 
---[[
-local LEADERSTATS_TEMPLATE = {
-	Cards = { className = "IntValue", default = 0 },
-	Rank = { className = "StringValue", default = "Bronze I" },
-	Experience = { className = "IntValue", default = 0 },
-}
---]]
-
 local function onPlayerAdded(player: Player)
 	-- Start profile session with timeout
 	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {

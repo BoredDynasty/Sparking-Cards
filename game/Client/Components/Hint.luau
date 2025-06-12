@@ -1,9 +1,10 @@
---!strict
+--!nonstrict
 
--- Hint.lua
+-- Hint.luau
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local Spring = require("../Interface/spring")
 
 local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
@@ -20,14 +21,7 @@ local mouse = player:GetMouse()
 local camera = workspace.CurrentCamera
 
 local connection: RBXScriptConnection? = nil
-
--- Spring physics parameters
-local springPosition = Vector2.new()
-local targetPosition = Vector2.new()
-local velocity = Vector2.new()
-local stiffness = 200 -- Spring stiffness
-local damping = 10 -- Damping factor
-local mass = 1 -- Mass of the spring system
+local hintSpring = Spring.new(Vector2.new(), 200, 10, 1) -- Using your original spring values
 
 return function(t: string, element: GuiObject)
 	if (t:len() or #t or string.len(t)) >= characterLimit then
@@ -51,10 +45,8 @@ return function(t: string, element: GuiObject)
 		connection = nil
 	end
 
-	-- Reset spring values
-	springPosition = Vector2.new(mouse.X, mouse.Y)
-	targetPosition = springPosition
-	velocity = Vector2.new()
+	-- Reset spring with current mouse position
+	hintSpring:Reset(hintSpring, Vector2.new(mouse.X, mouse.Y))
 
 	if not connection then
 		connection = RunService.RenderStepped:Connect(function(deltaTime: number)
@@ -62,15 +54,10 @@ return function(t: string, element: GuiObject)
 			local offset = (scale.X.Scale * viewSize)
 
 			-- Update target position
-			targetPosition = Vector2.new(mouse.X, mouse.Y)
+			hintSpring:SetTarget(hintSpring, Vector2.new(mouse.X, mouse.Y))
 
-			-- Spring physics calculation
-			local force = (targetPosition - springPosition) * stiffness
-			local dampingForce = velocity * -damping
-			local acceleration = (force + dampingForce) / mass
-
-			velocity = velocity + acceleration * deltaTime
-			springPosition = springPosition + velocity * deltaTime
+			-- Update spring physics
+			hintSpring:Update(hintSpring, deltaTime)
 
 			-- Determine which side of the screen the mouse is on
 			local isMouseOnRightHalf = mouse.X > viewSize.X / 2
@@ -80,7 +67,7 @@ return function(t: string, element: GuiObject)
 				or 440 -- Move to right of cursor
 
 			-- Apply position with spring effect
-			local finalPosition = UDim2.new(0, (springPosition.X + xOffset), 0, springPosition.Y)
+			local finalPosition = UDim2.new(0, (hintSpring.Position.X + xOffset), 0, hintSpring.Position.Y)
 
 			hintFrame.Position = finalPosition
 		end)

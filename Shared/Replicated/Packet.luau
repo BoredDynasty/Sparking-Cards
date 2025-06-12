@@ -1,6 +1,8 @@
 --!nonstrict
+
 --[[
 	Packet.luau
+
 	bytenet packet definitions
 ]]
 
