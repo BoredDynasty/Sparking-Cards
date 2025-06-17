@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")
@@ -10,7 +10,7 @@ local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local MatchmakingModule = {}
 local queueDataStore = DataStoreService:GetDataStore("MatchmakingQueue")
 
-local localQueue = {} :: { Player }
+local localQueue = {} :: { Player? }
 
 MatchmakingModule.localQueue = localQueue
 

@@ -14,15 +14,15 @@ type self = {
 	miscellaneous: { [string]: string },
 	playlist: {},
 	events: {
-		playing: typeof(SignalPlus()),
-		stopped: typeof(SignalPlus()),
+		playing: SignalPlus.Signal<Sound, string>,
+		stopped: SignalPlus.Signal<Sound, string>,
 	},
 	create: (data: create_data) -> Sound,
 }
 
 type create_data = {
 	identification: string,
-	volume: number,
+	volume: number?,
 }
 
 export type Audio = typeof(setmetatable({} :: self, Audio))
@@ -40,9 +40,10 @@ function Audio.new(): Audio
 			played = SignalPlus(),
 			stopped = SignalPlus(),
 		},
-		create = function(data: create_data)
+		create = function(data: create_data): Sound
 			local audio = Instance.new("Sound")
 			audio.SoundId = data.identification
+			data.volume = data.volume or 1 -- set default
 			audio.Volume = data.volume
 			return audio
 		end,
@@ -79,7 +80,9 @@ function Audio:read_miscellaneous(self: self, name: string, data: create_data?)
 	audio.Name = name
 	audio.Parent = self.player
 	audio:Play()
+	self.events.playing:Fire(audio, audio.Name)
 	task.delay(audio.TimeLength + math.random(), function()
+		self.events.stopped:Fire(audio, audio.Name)
 		audio:Destroy()
 	end)
 end

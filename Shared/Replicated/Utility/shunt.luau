@@ -1,4 +1,5 @@
 --!strict
+local SignalPlus = require(script.Parent.SignalPlus)
 
 --[[
     Given a tuple of Luau `signals`, to wait only for the first of them to fire without leaking memory
@@ -7,9 +8,10 @@
     waitForFirst(humanoid.Died, character.AncestryChanged)
     ```
 ]]
+
 return function(...): ...any
-	local shunt = Instance.new("BindableEvent")
-	local slots: { any } = { ... }
+	local shunt = SignalPlus() :: SignalPlus.Signal<...any>
+	local slots: { typeof(...) } = { ... }
 
 	local function fire(...)
 		for i = 1, #slots do
@@ -22,5 +24,5 @@ return function(...): ...any
 		slots[i] = slots[i]:Connect(fire)
 	end
 
-	return shunt.Event:Wait()
+	return shunt:Wait()
 end
