@@ -1,12 +1,15 @@
 --!strict
 
+local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local orion = require(ReplicatedStorage.Combat.orion)
 
 -- Wait for Orion to be initialized if this script runs very early
 if not orion.RegisterAttack then
 	warn("OrionAttackRegistry: Orion module not fully loaded or InitServer not called yet. Waiting...")
-	repeat task.wait() until orion.RegisterAttack
+	repeat
+		task.wait()
+	until orion.RegisterAttack
 end
 
 -- Placeholder for a custom visual effect function (defined further down or in a separate module)
@@ -17,12 +20,12 @@ local function placeholderVisualEffect(player: Player, attackData: table)
 		local part = Instance.new("Part")
 		part.BrickColor = BrickColor.Random()
 		part.Material = Enum.Material.Neon
-		part.Size = Vector3.new(3,3,3)
+		part.Size = Vector3.new(3, 3, 3)
 		part.Position = char.PrimaryPart.Position + char.PrimaryPart.CFrame.LookVector * 5
 		part.Anchored = true
 		part.CanCollide = false
 		part.Parent = workspace
-		game.Debris:AddItem(part, 1) -- Effect lasts 1 second
+		Debris:AddItem(part, 1) -- Effect lasts 1 second
 	end
 end
 
@@ -35,8 +38,8 @@ local m1_BasicPunch = {
 	Range = 6, -- Used by simple hitbox check in current Orion.ExecuteAttack
 	Cooldown = 0.5,
 	AnimationId = "rbxassetid://YOUR_PUNCH_ANIMATION_ID", -- Replace with actual ID
-	SoundId = "rbxassetid://YOUR_PUNCH_SOUND_ID",     -- Replace with actual ID
-	Hitbox = { Shape = "Box", Size = Vector3.new(3, 3, 5), Offset = Vector3.new(0,0,2.5)}, -- More detailed hitbox
+	SoundId = "rbxassetid://YOUR_PUNCH_SOUND_ID", -- Replace with actual ID
+	Hitbox = { Shape = "Box", Size = Vector3.new(3, 3, 5), Offset = Vector3.new(0, 0, 2.5) }, -- More detailed hitbox
 	OnExecute = function(player: Player, attackData: table)
 		print(player.Name, "is executing M1 Punch (via Orion OnExecute callback)")
 	end,
@@ -45,7 +48,7 @@ local m1_BasicPunch = {
 	end,
 	OnBlock = function(sourcePlayer: Player, targetPlayer: Player, attackData: table)
 		print(targetPlayer.Name, "blocked BasicPunch_M1 from", sourcePlayer.Name)
-	end
+	end,
 }
 orion.RegisterAttack("BasicPunch_M1", m1_BasicPunch)
 
@@ -62,7 +65,7 @@ local skill_Fireball = {
 	VisualEffect = placeholderVisualEffect, -- Assigning the placeholder VFX function
 	-- Projectile logic would typically be in OnExecute or a separate system called by it
 	Hitbox = { Shape = "Sphere", Radius = 2 }, -- For the fireball projectile
-	OnExecute = function(player: Player, attackData: table)
+	OnExecute = function(player: Player, attackData: {})
 		print(player.Name, "is casting Fireball_Skill")
 		-- Placeholder for projectile creation:
 		-- local projectile = Instance.new("Part") -- create and configure projectile
@@ -72,7 +75,7 @@ local skill_Fireball = {
 	OnHit = function(sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackData: table)
 		print(sourcePlayer.Name, "hit", targetPlayer.Name, "with Fireball_Skill for", damageAmount, "damage.")
 		-- Apply burning status effect, etc.
-	end
+	end,
 }
 orion.RegisterAttack("Fireball_Skill", skill_Fireball)
 
@@ -89,7 +92,8 @@ local ultimate_MeteorStrike = {
 	VisualEffect = function(player: Player, attackData: table)
 		print("Orion VFX: Playing METEOR STRIKE visual effect for", player.Name)
 		-- More complex VFX logic here
-		local targetPos = player.Character.HumanoidRootPart.Position + player.Character.HumanoidRootPart.CFrame.LookVector * 20
+		local targetPos = player.Character.HumanoidRootPart.Position
+			+ player.Character.HumanoidRootPart.CFrame.LookVector * 20
 		local meteorEffect = Instance.new("Explosion")
 		meteorEffect.BlastRadius = attackData.Range or 10
 		meteorEffect.BlastPressure = 0 -- We handle damage via Orion.HandleDamage
@@ -98,7 +102,7 @@ local ultimate_MeteorStrike = {
 	end,
 	Cutscene = "MeteorStrike_IntroCutscene", -- Placeholder ID for a cutscene
 	Hitbox = { Shape = "Cylinder", Radius = 15, Height = 10 }, -- Large AoE
-	OnExecute = function(player: Player, attackData: table)
+	OnExecute = function(player: Player, attackData: {})
 		print(player.Name, "is calling down a MeteorStrike_Ultimate!")
 		if attackData.Cutscene then
 			print("Orion: Triggering cutscene:", attackData.Cutscene)
@@ -112,8 +116,15 @@ local ultimate_MeteorStrike = {
 		end)
 	end,
 	OnHit = function(sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackData: table)
-		print(sourcePlayer.Name, "'s MeteorStrike_Ultimate hit", targetPlayer.Name, "for", damageAmount, "damage.")
-	end
+		print(
+			sourcePlayer.Name,
+			"'s MeteorStrike_Ultimate hit",
+			targetPlayer.Name,
+			"for",
+			damageAmount,
+			"damage."
+		)
+	end,
 }
 orion.RegisterAttack("MeteorStrike_Ultimate", ultimate_MeteorStrike)
 
@@ -123,35 +134,46 @@ print("OrionAttackRegistry: Example attacks registered.")
 -- This would be registered similarly, but its 'Input' might be nil if not tied to a direct key.
 -- It would be triggered by CombatHandler.server.lua calling orion.ExecuteAttack("Frost_Primary")
 local cardSkill_FrostNova = {
-    Name = "FrostNova_CardSkill",
-    Type = "CardSkill", -- Custom type if desired, or just "Skill"
-    Input = nil, -- Not directly from keyboard input via Orion client handler
-    Damage = 20,
-    Cooldown = 10,
-    AnimationId = "rbxassetid://YOUR_FROSTNOVA_ANIM_ID",
-    SoundId = "rbxassetid://YOUR_FROSTNOVA_SOUND_ID",
-    VisualEffect = function(player: Player, attackData: table)
-        print("Orion VFX: FrostNova visual effect for", player.Name)
-        -- Create frost ring effect around player
-    end,
-    Hitbox = { Shape = "Sphere", Radius = 15 }, -- AoE around the caster
-    OnExecute = function(player: Player, attackData: table)
-        print(player.Name, "is casting FrostNova (Card Skill)")
-        -- AoE damage logic around the player
-        local playerPos = player.Character.HumanoidRootPart.Position
-        for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
-            if otherPlayer ~= player and otherPlayer.Character and otherPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local distance = (otherPlayer.Character.HumanoidRootPart.Position - playerPos).Magnitude
-                if distance <= (attackData.Hitbox.Radius or 15) then
-                    orion.HandleDamage(player, otherPlayer, attackData.Damage, attackData.Name)
-                end
-            end
-        end
-    end,
-    OnHit = function(sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackData: table)
-        print(sourcePlayer.Name, "'s FrostNova hit", targetPlayer.Name, "for", damageAmount, "and applied slow.")
-        -- Apply slow status effect to targetPlayer
-    end
+	Name = "FrostNova_CardSkill",
+	Type = "CardSkill", -- Custom type if desired, or just "Skill"
+	Input = nil, -- Not directly from keyboard input via Orion client handler
+	Damage = 20,
+	Cooldown = 10,
+	AnimationId = "rbxassetid://YOUR_FROSTNOVA_ANIM_ID",
+	SoundId = "rbxassetid://YOUR_FROSTNOVA_SOUND_ID",
+	VisualEffect = function(player: Player, attackData: table)
+		print("Orion VFX: FrostNova visual effect for", player.Name)
+		-- Create frost ring effect around player
+	end,
+	Hitbox = { Shape = "Sphere", Radius = 15 }, -- AoE around the caster
+	OnExecute = function(player: Player, attackData: table)
+		print(player.Name, "is casting FrostNova (Card Skill)")
+		-- AoE damage logic around the player
+		local playerPos = player.Character.HumanoidRootPart.Position
+		for _, otherPlayer in ipairs(game.Players:GetPlayers()) do
+			if
+				otherPlayer ~= player
+				and otherPlayer.Character
+				and otherPlayer.Character:FindFirstChild("HumanoidRootPart")
+			then
+				local distance = (otherPlayer.Character.HumanoidRootPart.Position - playerPos).Magnitude
+				if distance <= (attackData.Hitbox.Radius or 15) then
+					orion.HandleDamage(player, otherPlayer, attackData.Damage, attackData.Name)
+				end
+			end
+		end
+	end,
+	OnHit = function(sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackData: table)
+		print(
+			sourcePlayer.Name,
+			"'s FrostNova hit",
+			targetPlayer.Name,
+			"for",
+			damageAmount,
+			"and applied slow."
+		)
+		-- Apply slow status effect to targetPlayer
+	end,
 }
 orion.RegisterAttack("FrostNova_CardSkill", cardSkill_FrostNova)
 

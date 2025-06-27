@@ -5,32 +5,35 @@
    combat framework for Sparking Cards
 ]]
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService") -- Added for input handling
 
 local CombatStructure = require(ReplicatedStorage.Structures.CombatStructure)
--- Assuming states.luau is in Shared/Replicated/Combat/
--- If states.luau is in Shared/Replicated/Structures, the path should be ReplicatedStorage.Structures.states
+local audio = require(script.Parent.Parent.Modules.audio)
 local states = require(ReplicatedStorage.Combat.states)
 
 local orion = {}
 orion.RegisteredAttacks = {} -- Stores data for all registered attacks
-orion.PlayerStates = {}      -- Stores the current combat state of each player
+orion.PlayerStates = {} -- Stores the current combat state of each player
 orion.PlayerCooldowns = {} -- Stores cooldowns for player attacks
+orion._audio = audio.new()
 
 -- Placeholder for RemoteEvents - these should be defined in ReplicatedStorage
-local remoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents") or Instance.new("Folder", ReplicatedStorage)
+local remoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents")
+	or Instance.new("Folder", ReplicatedStorage)
 remoteEvents.Name = "RemoteEvents"
-local executeAttackEvent = remoteEvents:FindFirstChild("Orion_ExecuteAttack") or Instance.new("RemoteEvent", remoteEvents)
+local executeAttackEvent = remoteEvents:FindFirstChild("Orion_ExecuteAttack")
+	or Instance.new("RemoteEvent", remoteEvents)
 executeAttackEvent.Name = "Orion_ExecuteAttack"
-local playerStateChangedEvent = remoteEvents:FindFirstChild("Orion_PlayerStateChanged") or Instance.new("RemoteEvent", remoteEvents)
+local playerStateChangedEvent = remoteEvents:FindFirstChild("Orion_PlayerStateChanged")
+	or Instance.new("RemoteEvent", remoteEvents)
 playerStateChangedEvent.Name = "Orion_PlayerStateChanged"
-
 
 -- Core API Functions
 
-function orion.RegisterAttack(attackName: string, attackData: table)
+function orion.RegisterAttack(attackName: string, attackData: {})
 	-- Validate attackData structure (optional but recommended)
 	if not attackData.Type or not attackData.Input then
 		warn("Orion: Attempted to register attack with missing Type or Input:", attackName)
@@ -42,7 +45,11 @@ end
 
 function orion.ExecuteAttack(player: Player, attackName: string)
 	local character = player.Character
-	if not character or not character:FindFirstChild("Humanoid") or character:FindFirstChildOfClass("Humanoid").Health <= 0 then
+	if
+		not character
+		or not character:FindFirstChild("Humanoid")
+		or character:FindFirstChildOfClass("Humanoid").Health <= 0
+	then
 		return
 	end
 
@@ -60,7 +67,11 @@ function orion.ExecuteAttack(player: Player, attackName: string)
 	end
 
 	-- Check Cooldowns
-	if orion.PlayerCooldowns[player.UserId] and orion.PlayerCooldowns[player.UserId][attackName] and tick() < orion.PlayerCooldowns[player.UserId][attackName] then
+	if
+		orion.PlayerCooldowns[player.UserId]
+		and orion.PlayerCooldowns[player.UserId][attackName]
+		and tick() < orion.PlayerCooldowns[player.UserId][attackName]
+	then
 		-- print("Orion:", player.Name, "attack", attackName, "is on cooldown.")
 		return
 	end
@@ -108,11 +119,10 @@ function orion.ExecuteAttack(player: Player, attackName: string)
 	-- Trigger sound (can be done on client via remote event for responsiveness, or server for authority)
 	if attackData.SoundId then
 		-- Example: Play sound on server
-		local sound = Instance.new("Sound")
-		sound.SoundId = attackData.SoundId
-		sound.Parent = character.PrimaryPart or character
-		sound:Play()
-		game.Debris:AddItem(sound, sound.TimeLength) -- Clean up sound
+		orion._audio:write_miscellaneous(orion._audio, { sound_1 = attackData.SoundId })
+		orion._audio:read_miscellaneous(orion._audio, "sound_1")
+		task.wait()
+		orion._audio:remove(orion._audio, "sound_1")
 	end
 
 	-- Hitbox detection and damage application (SERVER-SIDE)
@@ -148,12 +158,21 @@ function orion.ExecuteAttack(player: Player, attackName: string)
 	-- This is partially handled by animation track.Stopped, but may need refinement
 end
 
-function orion.HandleDamage(sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackName: string)
+function orion.HandleDamage(
+	sourcePlayer: Player,
+	targetPlayer: Player,
+	damageAmount: number,
+	attackName: string
+)
 	local targetCharacter = targetPlayer.Character
-	if not targetCharacter then return end
+	if not targetCharacter then
+		return
+	end
 
 	local targetHumanoid = targetCharacter:FindFirstChildOfClass("Humanoid")
-	if not targetHumanoid or targetHumanoid.Health <= 0 then return end
+	if not targetHumanoid or targetHumanoid.Health <= 0 then
+		return
+	end
 
 	local attackData = orion.RegisteredAttacks[attackName] -- May be nil if damage is from other source
 	local finalDamage = damageAmount
@@ -169,7 +188,16 @@ function orion.HandleDamage(sourcePlayer: Player, targetPlayer: Player, damageAm
 		end
 	end
 
-	print("Orion:", sourcePlayer.Name, "damaged", targetPlayer.Name, "for", finalDamage, "HP with", attackName or "Unknown Attack")
+	print(
+		"Orion:",
+		sourcePlayer.Name,
+		"damaged",
+		targetPlayer.Name,
+		"for",
+		finalDamage,
+		"HP with",
+		attackName or "Unknown Attack"
+	)
 	targetHumanoid:TakeDamage(finalDamage)
 
 	if targetHumanoid.Health <= 0 then
@@ -180,17 +208,18 @@ function orion.HandleDamage(sourcePlayer: Player, targetPlayer: Player, damageAm
 		-- Handle knockback (SERVER-SIDE)
 		if attackData and attackData.Knockback then
 			print("Orion: Applying knockback to", targetPlayer.Name)
-			local knockbackForce = attackData.Knockback.Force or CombatStructure.Knockback.DamageScale * finalDamage
+			local knockbackForce = attackData.Knockback.Force
+				or CombatStructure.Knockback.DamageScale * finalDamage
 			local knockbackDuration = attackData.Knockback.Duration or CombatStructure.Knockback.Duration
 
 			local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
 			if targetRoot then
-				local direction = (targetRoot.Position - (sourcePlayer.Character.PrimaryPart.Position)).Unit
+				local direction: Vector3 = (targetRoot.Position - sourcePlayer.Character.PrimaryPart.Position).Unit
 				local bv = Instance.new("BodyVelocity")
-				bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+				bv.MaxForce = Vector3.new(1, 1, 1) * math.huge
 				bv.Velocity = direction * knockbackForce + Vector3.new(0, knockbackForce * 0.5, 0) -- Add some upward force
 				bv.Parent = targetRoot
-				game.Debris:AddItem(bv, knockbackDuration)
+				Debris:AddItem(bv, knockbackDuration)
 				orion.SetPlayerState(targetPlayer, states.Stunned) -- Apply stun during knockback
 				task.delay(knockbackDuration, function()
 					if orion.GetPlayerState(targetPlayer) == states.Stunned then
@@ -208,7 +237,9 @@ function orion.HandleDamage(sourcePlayer: Player, targetPlayer: Player, damageAm
 end
 
 function orion.SetPlayerState(player: Player, state: string)
-	if orion.PlayerStates[player.UserId] == state then return end -- No change
+	if orion.PlayerStates[player.UserId] == state then
+		return
+	end -- No change
 
 	orion.PlayerStates[player.UserId] = state
 	print("Orion:", player.Name, "state changed to:", state)
@@ -231,13 +262,19 @@ end
 
 -- CLIENT-SIDE: Input Handling
 local function setupClientInput()
-	if not Players.LocalPlayer then return end -- Should not happen in a LocalScript context but good check
+	if not Players.LocalPlayer then
+		return
+	end -- Should not happen in a LocalScript context but good check
 
 	local function onInputBegan(input: InputObject, gameProcessedEvent: boolean)
-		if gameProcessedEvent then return end
+		if gameProcessedEvent then
+			return
+		end
 
 		local player = Players.LocalPlayer
-		if not player or not player.Character or orion.GetPlayerState(player) == states.Defeated then return end
+		if not player or not player.Character or orion.GetPlayerState(player) == states.Defeated then
+			return
+		end
 
 		-- Iterate through registered attacks to find a match for the input
 		for attackName, attackData in pairs(orion.RegisteredAttacks) do
@@ -245,7 +282,10 @@ local function setupClientInput()
 				print("Client: M1 input detected for", attackName)
 				executeAttackEvent:FireServer(attackName)
 				return -- Process only one M1 attack per click
-			elseif attackData.Input == input.KeyCode and (attackData.Type == "Skill" or attackData.Type == "Ultimate") then
+			elseif
+				attackData.Input == input.KeyCode
+				and (attackData.Type == "Skill" or attackData.Type == "Ultimate")
+			then
 				print("Client:", attackData.Type, "input (", input.KeyCode.Name, ") detected for", attackName)
 				executeAttackEvent:FireServer(attackName)
 				return -- Process one skill/ultimate per key press
@@ -267,7 +307,6 @@ local function setupClientInput()
 		end
 	end)
 end
-
 
 -- Initialization
 function orion.InitServer()

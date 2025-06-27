@@ -87,4 +87,12 @@ function Audio:read_miscellaneous(self: self, name: string, data: create_data?)
 	end)
 end
 
+function Audio:remove(self: self, name: string)
+	for sound_name, _ in pairs(self.miscellaneous) do
+		if name:lower() == sound_name:lower() then
+			self.miscellaneous[sound_name] = nil
+		end
+	end
+end
+
 return Audio
