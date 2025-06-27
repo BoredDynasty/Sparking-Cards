@@ -7,10 +7,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
-local characterUtility = require(ReplicatedStorage.Utility.character)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
-local player = Players.LocalPlayer
-local character = characterUtility.get(player)
+local player = playerMarshaller.get()
+local character = player.Character
 
 local Stamina = {}
 

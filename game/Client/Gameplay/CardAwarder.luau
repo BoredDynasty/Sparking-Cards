@@ -9,11 +9,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CardManager = require(ReplicatedStorage.ClientModules.CardManager)
 local Fireworks = require(ReplicatedStorage.Modules.Fireworks)
 local Packet = require(ReplicatedStorage.Packet)
-local characterUtility = require(ReplicatedStorage.Utility.character)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- // Gameplay -- //
 
-local player: Player = Players.LocalPlayer
+local player: Player = playerMarshaller.get()
 
 local debounceDelay = 1
 
@@ -40,7 +40,7 @@ return function()
 				local amount = card:GetAttribute("Award") :: number
 				local dropAmount = amount
 				CardManager:Drop(player, dropAmount)
-				local character = characterUtility.get(player)
+				local character = player.Character
 				Fireworks:PlayFireworks(character.HumanoidRootPart)
 				Packet.payBigCards.send({ amount, player.Name })
 				print("sent req. to pay big cards!")

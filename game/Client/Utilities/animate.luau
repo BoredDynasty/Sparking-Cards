@@ -8,7 +8,10 @@
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local character = require(ReplicatedStorage.Utility.character)
+
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local player = playerMarshaller.get()
+local character = player.Character
 
 type AnimationObject = {
 	Animation: Animation,
@@ -27,7 +30,7 @@ export type AnimationData = {
 local Animate = {}
 Animate.__index = Animate
 
-function Animate.new(char: character.Character)
+function Animate.new(char: typeof(character))
 	local self = setmetatable({
 		_character = char,
 		_animator = char.Humanoid.Animator,

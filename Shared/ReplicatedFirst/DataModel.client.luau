@@ -33,7 +33,7 @@ local loader = background:FindFirstChild("LoaderImage") :: ImageLabel -- the spi
 local connection: RBXScriptConnection | nil
 
 local BATCH_SIZE = 12
-local MAX_PARALLEL_LOADS = 50
+local MAX_PARALLEL_LOADS = 8 ^ 2
 
 local function skipPreloading()
 	loadingUI:Destroy()

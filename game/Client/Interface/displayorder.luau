@@ -1,8 +1,14 @@
+--!strict
+
+-- DisplayOrder.lua
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
 local LightingManipulation = require(script.Parent.LightingManipulation)
 local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local promise = require(ReplicatedStorage.Packages.promise)
+
 local DisplayOrder = {}
 DisplayOrder.__index = DisplayOrder
 
@@ -24,28 +30,26 @@ function DisplayOrder.new()
 end
 
 function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
-	task.spawn(function()
-		if v == true then
-			canvas.Visible = true
-			TweenPlus(
-				canvas,
-				{ Position = self.canvasPositions.middle },
-				{ Time = Emphasis.emphasized, EasingDirection = "InOut", EasingStyle = "Circular" }
-			):Start()
-			LightingManipulation:blur(true)
-			print("visible")
-		elseif v == false then
-			TweenPlus(
-				canvas,
-				{ Position = self.canvasPositions.lower },
-				{ Time = Emphasis.emphasized_accelerate, EasingDirection = "Out", EasingStyle = "Circular" }
-			):Start()
-			LightingManipulation:blur(true)
-			task.wait(0.200)
-			canvas.Visible = false
-			print("invisible")
-		end
-	end)
+	if v == true then
+		canvas.Visible = true
+		TweenPlus(
+			canvas,
+			{ Position = self.canvasPositions.middle },
+			{ Time = Emphasis.emphasized, EasingDirection = "InOut", EasingStyle = "Circular" }
+		):Start()
+		LightingManipulation:blur(true)
+		print("visible")
+	elseif v == false then
+		TweenPlus(
+			canvas,
+			{ Position = self.canvasPositions.lower },
+			{ Time = Emphasis.emphasized_accelerate, EasingDirection = "Out", EasingStyle = "Circular" }
+		):Start()
+		LightingManipulation:blur(true)
+		task.wait(0.200)
+		canvas.Visible = false
+		print("invisible")
+	end
 end
 
 function DisplayOrder:setDisplayOrder(i: string)

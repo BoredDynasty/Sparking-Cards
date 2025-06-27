@@ -42,12 +42,12 @@ return bytenet.defineNamespace("MainNet", function()
 		[1] = bytenet.int16,
 		[2] = bytenet.string, -- username
 	})
+	local raycastValidation = bytenet.struct({
+		[1] = bytenet.string, -- Model name that was hit
+	})
 	local sprint = bytenet.struct({
 		[1] = bytenet.int8,
 		[2] = bytenet.bool,
-	})
-	local raycastValidation = bytenet.struct({
-		[1] = bytenet.string,
 	})
 	return {
 		createMatch = bytenet.definePacket({
@@ -67,6 +67,9 @@ return bytenet.defineNamespace("MainNet", function()
 		}),
 		rewardExperience = bytenet.definePacket({
 			value = giveExperience,
+		}),
+		rayValidation = bytenet.definePacket({
+			value = raycastValidation,
 		}),
 		ascendRank = bytenet.definePacket({
 			value = rankUp,

@@ -1,6 +1,6 @@
 --!nonstrict
 
--- ServerHandler.server.lua
+-- ServerHandler.server.luau
 
 print(script.Name)
 
@@ -10,14 +10,15 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Cards = require(ReplicatedStorage.Market.Cards)
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
+local Items = require(ReplicatedStorage.Market.Items)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
-local characterUtility = require(ReplicatedStorage.Utility.character)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
+local lucide = require(ReplicatedStorage.Packages.lucide)
+local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
@@ -62,7 +63,7 @@ GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
 local playerStore = ProfileStore.New("player-related", profilestructure)
 
 type profileType = { [Player]: typeof(playerStore:StartSessionAsync({})) }
-local profiles: profileType = {}
+local profiles = profileMarshaller.server
 
 --[[
 	This is only for if I want to write
@@ -103,29 +104,27 @@ productFunctions[1906572512] = function(receipt: any | string?, player: Player)
 end
 
 LogService.MessageOut:Connect(function(message: string, messageType: Enum.MessageType)
-	task.spawn(function()
-		if messageType == Enum.MessageType.MessageError then
-			GameAnalytics:addErrorEvent({
-				message = message,
-				severity = GameAnalytics.EGAErrorSeverity.error,
-			})
-		elseif messageType == Enum.MessageType.MessageWarning then
-			GameAnalytics:addErrorEvent({
-				message = message,
-				severity = GameAnalytics.EGAErrorSeverity.warning,
-			})
-		elseif messageType == Enum.MessageType.MessageInfo then
-			GameAnalytics:addErrorEvent({
-				message = message,
-				severity = GameAnalytics.EGAErrorSeverity.info,
-			})
-		elseif messageType == Enum.MessageType.MessageOutput then
-			GameAnalytics:addErrorEvent({
-				message = message,
-				severity = GameAnalytics.EGAErrorSeverity.debug,
-			})
-		end
-	end)
+	if messageType == Enum.MessageType.MessageError then
+		GameAnalytics:addErrorEvent({
+			message = message,
+			severity = GameAnalytics.EGAErrorSeverity.error,
+		})
+	elseif messageType == Enum.MessageType.MessageWarning then
+		GameAnalytics:addErrorEvent({
+			message = message,
+			severity = GameAnalytics.EGAErrorSeverity.warning,
+		})
+	elseif messageType == Enum.MessageType.MessageInfo then
+		GameAnalytics:addErrorEvent({
+			message = message,
+			severity = GameAnalytics.EGAErrorSeverity.info,
+		})
+	elseif messageType == Enum.MessageType.MessageOutput then
+		GameAnalytics:addErrorEvent({
+			message = message,
+			severity = GameAnalytics.EGAErrorSeverity.debug,
+		})
+	end
 end)
 
 local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model
@@ -220,7 +219,7 @@ local function onPlayerAdded(player: Player)
 	GameAnalytics:PlayerJoined(player)
 
 	-- Optimize character cleanup
-	player.CharacterRemoving:Once(function(char: Model)
+	player.CharacterRemoving:Connect(function(char: Model)
 		task.defer(function()
 			if char and char.Parent then
 				char:Destroy()
@@ -264,7 +263,7 @@ local function purchaseCard(player: Player, cardName: string)
 		warn("Profile not found for player: " .. player.Name)
 		return
 	end
-	if not Cards[cardName] then
+	if not Items[cardName] then
 		Packet.sendNotification.sendTo({
 			"Error",
 			"Card does not exist.",
@@ -284,8 +283,8 @@ local function purchaseCard(player: Player, cardName: string)
 	}
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
 	local cards = profile.Data["Big-Cards"]
-	if cards and cards >= math.ceil(Cards[cardName].Price) then
-		profile.Data["Big-Cards"] -= math.ceil(Cards[cardName].Price) or 1
+	if cards and cards >= math.ceil(Items[cardName].Price) then
+		profile.Data["Big-Cards"] -= math.ceil(Items[cardName].Price) or 1
 		profile.Data.Cards[cardName] = (profile.Data.Cards[cardName] or 0) + 1
 		profile:Save()
 		profile:Reconcile()
@@ -307,7 +306,12 @@ local function streamArea(player: Player, area: Vector3)
 	end)
 end
 
-local function payCards(player: Player, amount: number)
+local function payCards(amount: number, playerName: string)
+	local player: Player? = Players:FindFirstChild(playerName)
+	if not player then
+		warn("player not found: " .. playerName)
+		return
+	end
 	local profile = profiles[player]
 	if not profile then
 		Packet.sendNotification.sendTo({
@@ -348,7 +352,7 @@ local function sellCards(player: Player, cardName: string)
 	print("Attempting to sell card: " .. cardName)
 
 	-- validate card exists
-	if not Cards[cardName] then
+	if not Items[cardName] then
 		Packet.sendNotification.sendTo({
 			"Error",
 			"Invalid card type.",
@@ -365,9 +369,9 @@ local function sellCards(player: Player, cardName: string)
 	end
 
 	-- calculate sell price (usually half of buy price)
-	local sellPrice = math.floor(Cards[cardName].Price * 0.5)
+	local sellPrice = Items[cardName].Price // 2
 
-	-- upd
+	-- update profile
 	profile.Data["Big-Cards"] += sellPrice
 	profile.Data.Cards[cardName] -= 1
 
@@ -443,8 +447,8 @@ end)
 Packet.buyCard.listen(function(cardName, player: Player)
 	purchaseCard(player, cardName[1])
 end)
-Packet.payBigCards.listen(function(data: { number })
-	payCards(data[2], data[1])
+Packet.payBigCards.listen(function(data)
+	payCards(data[1], data[2])
 end)
 Packet.sprintRemote.listen(function(data: { boolean | buffer }, player: Player)
 	handleSprint(player, data[1], data[2])

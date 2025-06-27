@@ -2,13 +2,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local MouseRaycast = require(StarterPlayer.StarterPlayerScripts.Utilities.MouseRaycast)
-local characterUtility = require(ReplicatedStorage.Utility.character)
+local mousecast = require(StarterPlayer.StarterPlayerScripts.Utilities.mousecast)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local player = playerMarshaller.get()
 
 return function(player: Player)
-	local character = characterUtility.get(player)
+	local character = player.Character
 	local maxDistance = 5
-	local raycast = MouseRaycast({ character })
+	local raycast = mousecast({ character })
 	if not raycast then
 		return
 	end

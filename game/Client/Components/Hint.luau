@@ -4,7 +4,7 @@
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local Spring = require("../Interface/spring")
+local Spring = require(script.Parent.Parent.Interface.spring)
 
 local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
@@ -15,7 +15,7 @@ local hintFrame = hintCanvas:FindFirstChild("Frame") :: Frame
 
 local details = hintFrame:FindFirstChild("Details") :: TextLabel
 
-local characterLimit = 46
+local characterLimit = math.exp(5)
 
 local mouse = player:GetMouse()
 local camera = workspace.CurrentCamera

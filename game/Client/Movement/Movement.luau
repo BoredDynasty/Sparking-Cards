@@ -14,15 +14,15 @@ local Keyboard = require(ReplicatedStorage.Utility.input.Keyboard)
 local Stamina = require(Players.LocalPlayer.PlayerScripts.Movement.Stamina)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local audio = require(ReplicatedStorage.Modules.audio)
-local characterUtility = require(ReplicatedStorage.Utility.character)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
+local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 
-local player = Players.LocalPlayer
+local player = playerMarshaller.get()
+local character = player.Character
 local camera = workspace.CurrentCamera
-
-local character = characterUtility.get(player)
 
 type self = {
 	character: typeof(character),
@@ -50,6 +50,10 @@ type self = {
 		slide: {
 			active: boolean,
 			cooldown: number,
+		},
+		dash: {
+			active: boolean,
+			cooldown: number, -- Cooldown time in seconds
 		},
 	},
 	_position_checks: {
@@ -82,6 +86,7 @@ type self = {
 	sprint: (self: self) -> (),
 	jump: (self: self) -> (),
 	slide: (self: self) -> (),
+	dash: (self: self) -> (),
 }
 export type Movement = { typeof(setmetatable({} :: self, Movement)) }
 
@@ -108,11 +113,19 @@ function Movement.new(): Movement
 				sprint = Enum.KeyCode.LeftShift,
 				slide = Enum.KeyCode.C,
 				cancel_slide = Enum.KeyCode.Space,
+				dash = Enum.KeyCode.C,
 			},
 			_animate = animate.new(character),
 			_keyboard = Keyboard.new(),
 			_audio = audio.new(),
 			_debounces = {
+				--[[
+					These flags mean if you can use the action or not.
+				]]
+				sprint = {
+					active = false,
+					cooldown = 0.6,
+				},
 				jump = {
 					active = false,
 					cooldown = 0.8, -- Cooldown time in seconds
@@ -120,6 +133,10 @@ function Movement.new(): Movement
 				slide = {
 					active = true,
 					cooldown = 2,
+				},
+				dash = {
+					active = false,
+					cooldown = 3, -- Cooldown time in seconds
 				},
 			},
 			_hip_height = {
@@ -157,6 +174,12 @@ function Movement.new(): Movement
 						walking = "walking",
 					},
 				},
+				dashing = {
+					name = "dashing",
+					transitions = {
+						walking = "walking",
+					},
+				},
 			}, "walking") :: statemachine.StateMachineType,
 			_airborneStates = {
 				[Enum.HumanoidStateType.Freefall] = true,
@@ -174,12 +197,57 @@ function Movement.new(): Movement
 end
 
 --[[
+    Initialize the walk system
+]]
+function Movement:walk(self: self)
+	-- Load walk animation
+	self._animate:LoadAnimation("walk", {
+		Id = "rbxassetid://94049151700764", -- Replace with actual walk animation ID
+		Weight = 1,
+		Speed = 1,
+	})
+
+	-- Set base walking speed
+	self.character.Humanoid.WalkSpeed = self.baseSpeed
+
+	-- Handle walking animation
+	local connection = RunService.Heartbeat:Connect(function()
+		if self.isMoving() and self._statemachine:getCurrentState() == "walking" then
+			local track = self._animate:Play("walk", 0.25)
+
+			if track then
+				-- Adjust animation speed based on movement
+				if self._airborneStates[self.character.Humanoid:GetState()] then
+					track:AdjustSpeed(0.25)
+				else
+					track:AdjustSpeed(1)
+				end
+			end
+		else
+			self._animate:Stop("walk")
+		end
+	end)
+
+	-- Store the connection
+	table.insert(self.connections, {
+		name = "walkHeartbeat",
+		connection = connection,
+		disconnect = function()
+			if connection then
+				connection:Disconnect()
+				connection = nil
+			end
+		end,
+	})
+end
+
+--[[
    Initialize the sprint system
 ]]
 function Movement:sprint(self: self)
 	-- load animations
 	self._animate:LoadAnimation("run", {
-		Id = "rbxassetid://14608790956", -- Replace with actual animation ID
+		Id = "rbxassetid://14608790956",
 		Weight = 1,
 		Speed = 1,
 	})
@@ -190,6 +258,13 @@ function Movement:sprint(self: self)
 			self.character.Humanoid.WalkSpeed -= self.maxSpeed
 			self._animate:Stop("run")
 			self.character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
+			gamecamera:disconnect("camera_trail")
+			UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- reset mouse behavior
+			local speedForce = self.character.HumanoidRootPart:FindFirstChild("SpeedForce")
+			if speedForce then
+				speedForce:Destroy() -- clean up the speed force effect
+			end
+
 			-- Disconnect the heartbeat connection
 			for i, conn in pairs(self.connections) do
 				if conn.name == "sprintHeartbeat" then
@@ -209,9 +284,19 @@ function Movement:sprint(self: self)
 			self.character.Humanoid.WalkSpeed += self.maxSpeed
 			if not self.isMoving() then
 				stop()
+				return
 			end
+			self._statemachine:transition("running")
 			local track = self._animate:Play("run", 0.25)
 			local connection = nil
+
+			local visualEffects = ReplicatedStorage.Assets.VisualEffects :: Folder
+			local speedForce = visualEffects.SpeedForce:Clone() :: BasePart & { ParticleEmitter }
+			speedForce.Parent = self.character.HumanoidRootPart
+			speedForce.CFrame = self.character.HumanoidRootPart.CFrame
+
+			gamecamera:trail()
+
 			connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 				if not self.isMoving() then
 					stop()
@@ -223,6 +308,25 @@ function Movement:sprint(self: self)
 					track:AdjustSpeed(1)
 				end
 				local currentStamina = self.character:GetAttribute("Stamina") :: number
+
+				local velocity = self.character.HumanoidRootPart.AssemblyLinearVelocity
+				local value = math.clamp(velocity.Magnitude / 100, 0, 5)
+
+				local sequence = NumberSequence.new({
+					NumberSequenceKeypoint.new(0, 1),
+					NumberSequenceKeypoint.new(1, value),
+				})
+
+				local offset = CFrame.new(3 + value, 0, 0) * CFrame.Angles(90, 90, 0)
+				speedForce.CFrame = self.character.HumanoidRootPart.CFrame * offset
+
+				for _, particle in ipairs(speedForce:GetChildren()) do
+					if particle:IsA("ParticleEmitter") then
+						-- manipulate the attachment's position based on character's velocity
+						particle.Size = sequence
+					end
+				end
+
 				if currentStamina and currentStamina > 0 then
 					local staminaDrain = self.staminaRate * deltaTime
 					currentStamina = math.max(currentStamina - staminaDrain, 0)
@@ -248,7 +352,9 @@ function Movement:sprint(self: self)
 
 	UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean)
 		if not gameProcessedEvent and input.KeyCode == keybind then
-			start()
+			if not self._debounces.sprint.active then
+				start()
+			end
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input: InputObject, gameProcessedEvent: boolean)
@@ -308,7 +414,7 @@ function Movement:jump(self: self)
 					local t1 = (-b + sqrtDisc) / (2 * a)
 					local t2 = (-b - sqrtDisc) / (2 * a)
 
-					landingTime = math.max(t1, t2, 1 / 60) -- Fallback to a small value if no valid time found
+					landingTime = math.max(t1, t2) or 1 / 0.5 -- Fallback to a small value if no valid time found
 					task.delay(landingTime, function()
 						if self.character and self.character:IsDescendantOf(game.Workspace) then
 							self.character:SetAttribute("Stamina", currentStamina)
@@ -348,16 +454,14 @@ function Movement:slide(self: self)
 		self._statemachine:transition("walking") -- stop sliding
 		self.character.Humanoid.HipHeight = self._hip_height.normal -- reset hip height
 		self._animate:Stop("slide")
-		task.spawn(function()
-			if velocity then
-				velocity:Destroy() -- clean up the BodyVelocity instance
-				velocity = nil
-			end
-			if gyro then
-				gyro:Destroy() -- clean up the BodyGyro instance
-				gyro = nil
-			end
-		end)
+		if velocity then
+			velocity:Destroy() -- clean up the BodyVelocity instance
+			velocity = nil
+		end
+		if gyro then
+			gyro:Destroy() -- clean up the BodyGyro instance
+			gyro = nil
+		end
 		for i, conn in pairs(self.connections) do
 			if conn.name == "slidePositionCheck" then
 				conn.disconnect()
@@ -509,6 +613,118 @@ function Movement:slide(self: self)
 			end
 		end
 	end)
+end
+
+function Movement:dash(self: self)
+	if self._statemachine:getCurrentState() == "dashing" then
+		return -- already dashing
+	end
+	self._statemachine:transition("dashing")
+	self._animate:LoadAnimation("dash", {
+		Id = "rbxassetid://14608790956", -- Replace with actual animation ID
+		Weight = 1,
+		Speed = 1,
+	})
+	local keybind = self.keybinds.dash
+	UserInputService.InputBegan:Connect(function(input: InputObject, gameProcessedEvent: boolean)
+		if not gameProcessedEvent and input.KeyCode == keybind then
+			if self._debounces.dash.active then
+				return -- already dashing or on cooldown
+			end
+			if self.character and self.character:IsDescendantOf(game.Workspace) then
+				self.character:SetAttribute("AntiRegenerate", true) -- prevent stamina regeneration
+			end
+			self._animate:Play("dash", 0.25) -- play dash animation
+			self._debounces.dash.active = true
+			task.delay(self._debounces.dash.cooldown, function()
+				self._debounces.dash.active = false
+			end)
+
+			local velocity = Instance.new("BodyVelocity") -- TODO) use linear velocity
+			velocity.MaxForce = Vector3.new(1, 0, 1) * 30000
+			velocity.Velocity = self.character.HumanoidRootPart.CFrame.LookVector * 100
+			velocity.Parent = self.character.HumanoidRootPart
+
+			-- now for some cool effects!!!11!
+
+			local visualEffects = ReplicatedStorage.Assets.VisualEffects :: Folder
+			local windForce = visualEffects.WindForce:Clone() :: BasePart & { Attachment | Beam }
+
+			windForce.Parent = self.character.HumanoidRootPart
+
+			local connection = nil
+			connection = RunService.RenderStepped:Connect(function()
+				if self._statemachine:getCurrentState() ~= "dashing" then
+					if connection then
+						connection:Disconnect() -- stop the connection if not dashing
+						connection = nil
+					end
+					if windForce then
+						task.wait(0.1) -- wait a bit before cleaning up
+						windForce:Destroy() -- clean up the wind force effect
+					end
+					return
+				end
+				-- orient the wind force to the character's direction
+				windForce.CFrame = self.character.HumanoidRootPart.CFrame
+				local windForceOffset = Vector3.new(0, 2, 2) -- offset for the wind force
+				windForce.Position = self.character.HumanoidRootPart.Position + windForceOffset
+				local characterVelocity = self.character.HumanoidRootPart.AssemblyLinearVelocity
+				-- these will run at the same time
+				-- manipulate the beams and attachments based on character's velocity
+				task.spawn(function()
+					for _, beam in ipairs(windForce:GetChildren()) do
+						if beam:IsA("Beam") then
+							-- manipulate the beams transparency for a cool effect
+							local value = math.clamp(characterVelocity.Magnitude / 100, 0, 1)
+							local floats = NumberSequence.new({ -- set the default ones first
+								NumberSequenceKeypoint.new(0.249, 1),
+								NumberSequenceKeypoint.new(0.5, 0.254),
+								NumberSequenceKeypoint.new(0.672, 0.27),
+								NumberSequenceKeypoint.new(0.834, 0.989),
+								-- set the dynamic ones
+								NumberSequenceKeypoint.new(1, 1 - value), -- dynamic transparency based on speed
+							})
+							-- set the transparency of the beam
+							beam.Transparency = floats
+						end
+					end
+				end)
+				task.spawn(function()
+					for _, attachment in ipairs(windForce:GetChildren()) do
+						if attachment:IsA("Attachment") and not string.find(attachment.Name, "base") then
+							-- manipulate the attachment's position based on character's velocity
+							attachment.CFrame.Position = windForceOffset + (characterVelocity * 0.1)
+						end
+					end
+				end)
+			end)
+
+			-- run the cycle
+			for i = 1, 8 do
+				task.wait(0.1)
+				if self._statemachine:getCurrentState() ~= "dashing" then
+					break -- stop dashing if state changes
+				end
+				velocity.Velocity *= 0.7
+				print(velocity.Velocity)
+			end
+			-- stop dashing
+			velocity:Destroy() -- clean up the BodyVelocity instance
+			self._statemachine:transition("walking") -- transition back to walking state
+			self._animate:Stop("dash") -- stop dash animation
+			if self.character and self.character:IsDescendantOf(game.Workspace) then
+				self.character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
+			end
+		end
+	end)
+end
+
+function Movement:initialize(self: self)
+	self:dash()
+	self:sprint()
+	self:jump()
+	self:slide()
 end
 
 function Movement.isMoving()

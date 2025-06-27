@@ -4,7 +4,7 @@
 
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Spring = require("./spring")
+local Spring = require(script.Parent.spring)
 
 export type Layer = {
 	Instance: GuiObject,

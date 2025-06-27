@@ -1,85 +1,117 @@
---!strict
+--!nonstrict
 
--- Dialog.luau
-
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
-local DisplayOrder = require(StarterPlayer.StarterPlayerScripts.Modules.DisplayOrder).new()
-local Pop = require(StarterPlayer.StarterPlayerScripts.Modules.Pop)
-local shunt = require(ReplicatedStorage.Utility.shunt)
-local timer = require(ReplicatedStorage.Modules.timer)
+local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
+local lucide = require(ReplicatedStorage.Packages.lucide)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local statemachine = require(ReplicatedStorage.Utility.statemachine)
 
-local player = Players.LocalPlayer
-local PlayerGui = player.PlayerGui
+local player = playerMarshaller.get()
+local playerGui = player.PlayerGui
 
-local confirmGui = PlayerGui:WaitForChild("Confirm") :: ScreenGui
-local confirmFrame = confirmGui:FindFirstChild("Frame") :: Frame
+export type dialog = ScreenGui & {
+	Frame: Frame & {
+		Cancel: TextButton & {
+			TextHolder: Frame,
+		},
+		Confirm: TextButton & {
+			TextHolder: Frame,
+		},
+		ImageLabel: ImageLabel,
+		Description: Frame,
+		Title: Frame,
+	},
+}
 
-local dialogs = table.create(10)
+local dialog = playerGui:WaitForChild("Confirm") :: dialog
 
-local disclaimerTxt = [[
-<br/><font transparency="0.5"><font size="12">No other action can be made during this dialog.</font></font>
-]]
+TextPlus.Create(dialog.Frame.Cancel.TextHolder, "Nah", {
+	Font = Font.new(
+		"rbxasset://fonts/families/Montserrat.json", -- Family.
+		Enum.FontWeight.Bold, -- Weight.
+		Enum.FontStyle.Normal -- Style.
+	),
+	Size = 14,
+	Color = Color3.fromRGB(255, 219, 209),
+	XAlignment = "Center",
+	YAlignment = "Center",
+	Dynamic = true,
+})
+TextPlus.Create(dialog.Frame.Cancel.TextHolder, "Yeah, sure", {
+	Font = Font.new(
+		"rbxasset://fonts/families/Montserrat.json", -- Family.
+		Enum.FontWeight.Bold, -- Weight.
+		Enum.FontStyle.Normal -- Style.
+	),
+	Size = 14,
+	Color = Color3.fromRGB(255, 219, 209),
+	XAlignment = "Center",
+	YAlignment = "Center",
+	Dynamic = true,
+})
 
-local timeout = 15
+local state = statemachine.new({
+	active = {
+		name = "active",
+		transitions = {
+			inactive = "inactive",
+		},
+	},
+	inactive = {
+		name = "inactive",
+		transitions = {
+			inactive = "active",
+		},
+	},
+}, "inactive")
 
--- THIS YIELDS
-return function(titleTxt: string, descriptionTxt: string, icon: string?): boolean?
-	local needle = table.find(dialogs, true)
-	if needle then
-		return nil
+type signal = SignalPlus.Signal<boolean>
+
+local icon = lucide.GetAsset("info")
+dialog.Frame.ImageLabel.Image = icon.Url
+dialog.Frame.ImageLabel.ImageRectOffset = icon.ImageRectOffset
+dialog.Frame.ImageLabel.ImageRectSize = icon.ImageRectSize
+
+return function(title: string, description: string)
+	if state:getCurrentState() ~= "inactive" then
+		print("active dialog")
 	end
-	debug.profilebegin("dialog")
-	table.insert(dialogs, true)
-	DisplayOrder:changeVisibility(true, confirmFrame)
-	Pop(confirmFrame)
-	local title = confirmFrame:FindFirstChild("Title") :: TextLabel
-	local description = confirmFrame:FindFirstChild("Description") :: TextLabel
-
-	local confirmBtn = confirmFrame:FindFirstChild("Confirm") :: TextButton
-	local cancelBtn = confirmFrame:FindFirstChild("Cancel") :: TextButton
-
-	if icon then
-		local img = confirmFrame:FindFirstChildOfClass("ImageLabel") :: ImageLabel
-		img.Image = icon
-	end
-
-	local result: boolean? = nil :: boolean?
-
-	title.Text = titleTxt
-	description.Text = descriptionTxt .. disclaimerTxt
-
-	confirmBtn.MouseButton1Click:Once(function()
-		print("confirm")
-		result = true
-		Pop(cancelBtn)
-		task.wait()
-		DisplayOrder:changeVisibility(false, confirmFrame)
+	TextPlus.Create(dialog.Frame.Title, title, {
+		Font = Font.new(
+			"rbxasset://fonts/families/Montserrat.json", -- Family.
+			Enum.FontWeight.Bold, -- Weight.
+			Enum.FontStyle.Normal -- Style.
+		),
+		Size = 20,
+		Color = Color3.fromRGB(255, 219, 209),
+		XAlignment = "Center",
+		YAlignment = "Center",
+		Dynamic = true,
+	})
+	TextPlus.Create(dialog.Frame.Description, title, {
+		Font = Font.fromName("Montserrat"),
+		Size = 20,
+		Color = Color3.fromRGB(255, 219, 209),
+		XAlignment = "Center",
+		YAlignment = "Center",
+		Dynamic = true,
+	})
+	local activated: signal = SignalPlus()
+	dialog.Frame.Confirm.Activated:Connect(function()
+		activated:Fire(true)
+		dialog.Frame.Confirm.Interactable = false
+		dialog.Frame.Cancel.Interactable = false
 	end)
-	cancelBtn.MouseButton1Click:Once(function()
-		print("cancel")
-		result = false
-		Pop(cancelBtn)
-		task.wait()
-		DisplayOrder:changeVisibility(false, confirmFrame)
+	dialog.Frame.Cancel.Activated:Connect(function()
+		activated:Fire(false)
+		dialog.Frame.Confirm.Interactable = false
+		dialog.Frame.Cancel.Interactable = false
 	end)
-	shunt(confirmBtn.MouseButton1Click, cancelBtn.MouseButton1Click)
-	local clock = timer.new()
-	clock:Start()
-	while result ~= type("boolean") do
-		task.wait(1)
-		local elapsed = clock:GetTime()
-		assert(elapsed, "no elapsed time somehow :skull:")
-		if elapsed >= timeout then
-			result = false
-			clock:Stop()
-			clock:Destroy()
-			break -- remove the loop
-		end
-	end
-	table.remove(dialogs, 1)
-	debug.profileend()
-	return result
+	task.delay(3, function()
+		dialog.Frame.Confirm.Interactable = true
+		dialog.Frame.Cancel.Interactable = true
+	end)
+	return activated
 end

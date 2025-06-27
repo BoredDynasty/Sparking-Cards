@@ -35,6 +35,6 @@ return {
 		["attack"] = "LMB", -- melee
 		["special_One"] = "E", -- primary
 		["special_Two"] = "Q", -- ultimate
-		["special_Three"] = "R", -- any
+		["special_Three"] = "R", -- support
 	},
 }

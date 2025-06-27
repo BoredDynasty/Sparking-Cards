@@ -6,8 +6,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local DisplayOrder = require("../Modules/DisplayOrder").new()
-local Pop = require(StarterPlayer.StarterPlayerScripts.Modules.Pop)
+local DisplayOrder = require(script.Parent.Parent.Interface.displayorder).new()
+local Pop = require(script.Parent.Parent.Interface.pop)
 local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
 local promise = require(ReplicatedStorage.Packages.promise)
 
@@ -35,16 +35,7 @@ return function(element: GuiObject, signal: typeof(SignalPlus()))
 			connection:Disconnect()
 		end
 		task.defer(function() -- at the end of the frame
-			local executor = promise.new(function(resolve, reject)
-				resolve()
-				reject()
-			end)
-			executor:andThen(function()
-				loader:Destroy()
-			end)
-			executor:_reject(function()
-				return nil
-			end)
+			loader:Destroy()
 		end)
 	end
 	signal:Once(cleanup)

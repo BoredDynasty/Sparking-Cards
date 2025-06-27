@@ -1,4 +1,4 @@
--- Cards.lua
+-- Items.luau
 
 export type dataType = {
 	[string]: {
@@ -9,6 +9,7 @@ export type dataType = {
 		Icon: string?,
 		Color: string,
 		NewRelease: boolean?,
+		Tags: { string }?,
 	},
 }
 
@@ -17,7 +18,7 @@ return {
 		Name = "Fire",
 		Description = "Fire damage",
 		Price = 9.99,
-		ExperimentsEnabled = false, -- Can the Card be tested by players in the game?
+		ExperimentsEnabled = false,
 		-- Icon = "rbxassetid://1234567890",
 		Color = "Irish-Moss",
 		NewRelease = true,
@@ -26,9 +27,19 @@ return {
 		Name = "Frost",
 		Description = "Frost damage",
 		Price = 13.99,
-		ExperimentsEnabled = true, -- Can the Card be tested by players in the game?
+		ExperimentsEnabled = true,
 		-- Icon = "rbxassetid://1234567890",
 		-- Color = "Irish-Moss",
 		NewRelease = true,
+	},
+	["Healthy"] = {
+		Name = "Healthy",
+		Description = "+5% Additional Health",
+		Price = 44.99,
+		ExperimentsEnabled = false,
+		NewRelease = true,
+		Tags = {
+			"Passive",
+		},
 	},
 } :: dataType

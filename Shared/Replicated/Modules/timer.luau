@@ -34,6 +34,7 @@ function Timer:Start()
 		self.startTime = os.clock() - self.elapsedTime
 		self.running = true
 	end
+	return self
 end
 
 function Timer:Stop()
@@ -41,12 +42,14 @@ function Timer:Stop()
 		self.elapsedTime = os.clock() - self.startTime
 		self.running = false
 	end
+	return self
 end
 
 function Timer:Reset()
 	self.startTime = 0
 	self.elapsedTime = 0
 	self.running = false
+	return self
 end
 
 function Timer:GetTime(): number

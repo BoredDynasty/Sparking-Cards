@@ -1,0 +1,9 @@
+{
+  "name": "lucide-icons",
+  "tree": {
+    "$path": "lib",
+    "VersionInfo": {
+      "$path": "version-info.luau"
+    }
+  }
+}
