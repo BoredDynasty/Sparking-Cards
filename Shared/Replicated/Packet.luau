@@ -49,6 +49,43 @@ return bytenet.defineNamespace("MainNet", function()
 		[1] = bytenet.int8,
 		[2] = bytenet.bool,
 	})
+
+	-- Orion Combat Framework Packets
+	local orionExecuteAttackRequest = bytenet.struct({
+		attackName = bytenet.string,
+		equippedIdentifier = bytenet.string, -- e.g., card name or weapon ID
+		targetInfo = bytenet.optional(bytenet.dictionary({ -- For things like mouse.Hit.p
+			targetPosition = bytenet.optional(bytenet.vec3),
+			targetInstanceId = bytenet.optional(bytenet.uint32), -- if targeting an instance
+		})),
+	})
+
+	local orionPlayerStateChangedNotif = bytenet.struct({
+		playerId = bytenet.uint32, -- Player.UserId
+		newState = bytenet.string,
+		stateParams = bytenet.optional(bytenet.dictionary(bytenet.any)), -- e.g., { stunDuration = 2 }
+	})
+
+	local orionClientHitNotif = bytenet.struct({
+		targetInstanceId = bytenet.uint32, -- Instance ID of the character model hit (or relevant part)
+		hitPosition = bytenet.vec3, -- World position of the hit
+		attackName = bytenet.string, -- Which attack registered the hit
+		weaponIdentifier = bytenet.string, -- Identifier for the weapon/card that made the attack
+		validationRaycastData = bytenet.optional(bytenet.dictionary(bytenet.any)), -- For clientcast's ValidateRaycast
+	})
+
+	local orionPlayEffectNotif = bytenet.struct({
+		effectName = bytenet.string, -- Identifier for the effect to play
+		effectParams = bytenet.dictionary({ -- Parameters for the effect
+			position = bytenet.optional(bytenet.vec3),
+			sourcePlayerId = bytenet.optional(bytenet.uint32),
+			targetPlayerId = bytenet.optional(bytenet.uint32),
+			attachToInstanceId = bytenet.optional(bytenet.uint32),
+			-- Add other common effect parameters as needed
+			customData = bytenet.optional(bytenet.dictionary(bytenet.any)),
+		}),
+	})
+
 	return {
 		createMatch = bytenet.definePacket({
 			value = newMatch,
@@ -83,8 +120,22 @@ return bytenet.defineNamespace("MainNet", function()
 		sprintRemote = bytenet.definePacket({
 			value = sprint,
 		}),
-		rayValidation = bytenet.definePacket({
+		rayValidation = bytenet.definePacket({ -- This is likely used by clientcast, ensure it's compatible or adapt
 			value = raycastValidation,
+		}),
+
+		-- Orion Packets
+		Orion_ExecuteAttackRequest = bytenet.definePacket({
+			value = orionExecuteAttackRequest,
+		}),
+		Orion_PlayerStateChangedNotif = bytenet.definePacket({
+			value = orionPlayerStateChangedNotif,
+		}),
+		Orion_ClientHitNotif = bytenet.definePacket({
+			value = orionClientHitNotif,
+		}),
+		Orion_PlayEffectNotif = bytenet.definePacket({
+			value = orionPlayEffectNotif,
 		}),
 	}
 end)

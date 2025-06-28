@@ -39,10 +39,14 @@ local pop = require(script.Parent.Parent.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local yoink = require(script.Parent.Parent.Utilities.yoink)
+local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
+local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary) -- Corrected Path
+local Maid = require(ReplicatedStorage.Utility.Maid)
 
 print("Client Requirements")
 
 -- // Variables -- //
+local clientMaid = Maid.new()
 
 local player = playerMarshaller.get()
 local profile: typeof(profilestructure) = yoink:grab("profile_data")
@@ -291,9 +295,144 @@ print("game camera")
 local mouse_one = keybindlink.new("M1", Enum.KeyCode.MouseLeftButton, Enum.KeyCode.ButtonB, 1):Show()
 local skill = keybindlink.new("Primary", Enum.KeyCode.E, Enum.KeyCode.ButtonX, 2):Show()
 local ultimate = keybindlink.new("Ultimate", Enum.KeyCode.Q, Enum.KeyCode.ButtonY, 3):Show()
-local support = keybindlink.new("Support", Enum.KeyCode.R, Enum.KeyCode.ButtonA, 4):Show()
+local support = keybindlink.new("Support", Enum.KeyCode.R, Enum.KeyCode.ButtonA, 4):Show() -- Support/Auxiliary ability
 
 print("controls")
+
+-- Initialize Orion Combat Framework on Client
+orion.InitClient()
+
+-- Helper function to get the Orion attack name for a given action and card
+local function getOrionAttackName(actionType: string): string?
+	if not profile or not profile.EquippedCard then
+		warn("Client: No profile or equipped card found.")
+		return nil
+	end
+	local equippedCardName = profile.EquippedCard -- This should be the key like "FrostGauntlet" or "FireSword"
+	local cardInfo = CardLibrary[equippedCardName]
+
+	if not cardInfo or not cardInfo.Moveset then
+		warn("Client: Card info or moveset not found in CardLibrary for equipped card:", equippedCardName)
+		return nil
+	end
+
+	local attackName: string?
+
+	if actionType == "M1" then
+		attackName = cardInfo.Moveset.M1
+	elseif actionType == "Primary" then -- Corresponds to 'E' key, mapped to Skill
+		attackName = cardInfo.Moveset.Skill
+	elseif actionType == "Ultimate" then -- Corresponds to 'Q' key
+		attackName = cardInfo.Moveset.Ultimate
+	elseif actionType == "Support" then -- Corresponds to 'R' key
+		attackName = cardInfo.Moveset.Support
+	else
+		warn("Client: Unknown actionType provided to getOrionAttackName:", actionType)
+		return nil
+	end
+
+	if attackName and orion.RegisteredAttacks[attackName] then
+		return attackName
+	elseif attackName then
+		-- This warning means the CardLibrary specifies an attack name, but it hasn't been registered in Orion yet.
+		-- This is expected if the attack module for it hasn't been created or loaded.
+		warn("Client: Attack '", attackName, "' for card '", equippedCardName, "' (action: ", actionType, ") is defined in CardLibrary but not registered in Orion.")
+		return nil
+	else
+		warn("Client: No attackName defined in CardLibrary for card '", equippedCardName, "' action '", actionType, "'.")
+		return nil
+	end
+end
+
+-- Variables for M1 Combo Tracking
+local clientPlayerComboData = {} -- [playerId] = { currentAttackName = "attackName", count = 1, lastAttackTime = tick() }
+local COMBO_WINDOW_DURATION = 0.8 -- Max time between M1 presses to continue a combo (adjust as needed)
+
+-- Connect keybinds to Orion framework
+mouse_one.activated:Connect(function()
+	if not profile or not profile.EquippedCard then return end
+	local equippedCardName = profile.EquippedCard
+	local cardInfo = CardLibrary[equippedCardName]
+	if not cardInfo then return end
+
+	local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
+	local currentComboData = clientPlayerComboData[player.UserId]
+	local attackNameToExecute: string?
+
+	if currentComboData
+		and (tick() - currentComboData.lastAttackTime < COMBO_WINDOW_DURATION)
+		and currentComboData.count < (cardInfo.MaxCombo or 1)
+	then
+		-- Try to continue combo
+		local lastAttackData = orion.RegisteredAttacks[currentComboData.currentAttackName]
+		if lastAttackData and lastAttackData.NextComboAttack then
+			attackNameToExecute = lastAttackData.NextComboAttack
+			currentComboData.count += 1
+			-- print("Client: Continuing combo to", attackNameToExecute, "Count:", currentComboData.count)
+		else
+			-- No next attack or last attack data missing, reset combo
+			attackNameToExecute = getOrionAttackName("M1") -- Get base M1
+			clientPlayerComboData[player.UserId] = { count = 1 }
+			-- print("Client: Resetting combo (no next attack), starting with", attackNameToExecute)
+		end
+	else
+		-- Start or restart combo
+		attackNameToExecute = getOrionAttackName("M1") -- Get base M1
+		clientPlayerComboData[player.UserId] = { count = 1 }
+		-- print("Client: Starting new combo with", attackNameToExecute)
+	end
+
+	if attackNameToExecute then
+		orion.RequestExecuteAttack(attackNameToExecute, equippedCardName, targetInfo)
+		if clientPlayerComboData[player.UserId] then -- Ensure it was initialized
+			clientPlayerComboData[player.UserId].currentAttackName = attackNameToExecute
+			clientPlayerComboData[player.UserId].lastAttackTime = tick()
+		end
+	else
+		warn("Client: No M1 attack found for", equippedCardName)
+		clientPlayerComboData[player.UserId] = nil -- Clear combo data if no attack found
+	end
+end)
+
+skill.activated:Connect(function()
+	local attackName = getOrionAttackName("Primary")
+	if attackName and profile and profile.EquippedCard then
+		local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
+		orion.RequestExecuteAttack(attackName, profile.EquippedCard, targetInfo)
+	end
+end)
+
+ultimate.activated:Connect(function()
+	local attackName = getOrionAttackName("Ultimate")
+	if attackName and profile and profile.EquippedCard then
+		local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
+		orion.RequestExecuteAttack(attackName, profile.EquippedCard, targetInfo)
+	end
+end)
+
+support.activated:Connect(function()
+	local attackName = getOrionAttackName("Support")
+	if attackName and profile and profile.EquippedCard then
+		local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
+		orion.RequestExecuteAttack(attackName, profile.EquippedCard, targetInfo)
+	end
+end)
+
+-- Listen for profile changes to update equipped card if necessary
+-- This assumes 'yoink' or the profile system has a way to notify changes.
+-- If yoink:grab("profile_data") always returns the latest, this might not be strictly needed
+-- unless CardLibrary itself changes dynamically.
+-- For simplicity, we'll assume 'profile' variable is updated when it changes.
+-- yoink.updated("profile_data", function(newProfile)
+-- profile = newProfile
+-- print("Client: Profile updated, current equipped card:", profile and profile.EquippedCard)
+-- end)
+
+-- Add keybindlink connections to maid for cleanup
+clientMaid:GiveTask(mouse_one)
+clientMaid:GiveTask(skill)
+clientMaid:GiveTask(ultimate)
+clientMaid:GiveTask(support)
 
 local interfaceEndTime = os.clock()
 local totalExecutionTime = math.round((interfaceEndTime - interfaceStartTime) * 10000) / 10000
