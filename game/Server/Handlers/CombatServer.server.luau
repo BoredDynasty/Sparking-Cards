@@ -4,10 +4,18 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 
 local CombatStructure = require(ReplicatedStorage.Structures.CombatStructure)
+local playerMarshaller = require(script.Parent.Parent.Parent.ReplicatedStorage.Utility.playerMarshaller)
 -- local Frost = require(ServerScriptService.CombatModules.Frost) -- Commented out, Orion will handle attacks
 
 local orion = require(ReplicatedStorage.Combat.orion) -- Require Orion framework
+local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 orion.InitServer() -- Initialize Orion on the server
+
+-- // Types
+
+type skill_parameters = {
+	Position: CFrame | Vector3,
+}
 
 -- // Requires
 
@@ -27,7 +35,9 @@ local remoteEvents = ReplicatedStorage:FindFirstChild("RemoteEvents") :: Folder 
 
 local skillEvent = remoteEvents:FindFirstChild("SkillEvents") :: RemoteEvent -- This might be legacy or for specific non-Orion skills
 if not skillEvent then
-	warn("CombatHandler: 'SkillEvents' RemoteEvent not found. Card-specific skills might not work unless migrated to Orion.")
+	warn(
+		"CombatHandler: 'SkillEvents' RemoteEvent not found. Card-specific skills might not work unless migrated to Orion."
+	)
 end
 
 local getProfile = remoteEvents:FindFirstChild("GetProfile") :: BindableFunction
@@ -35,11 +45,13 @@ if not getProfile then
 	warn("CombatHandler: 'GetProfile' BindableFunction not found. Cannot determine current card.")
 end
 
-local function getCurrentCard(player: Player)
-	if not getProfile then return nil end
-	local profile = getProfile:Invoke(player) -- Corrected Invoke call
-	if profile and profile.Data and profile.Data.EquippedCard then
-		local equipped: string = profile.Data.EquippedCard
+local function getCurrentCard(player: Player): string?
+	if not getProfile then
+		return nil
+	end
+	local profile: typeof(profilestructure) = getProfile:Invoke(player) -- Corrected Invoke call
+	if profile and profile.EquippedCard then
+		local equipped: string = profile.EquippedCard
 		print(player.Name .. " has an equipped card of", equipped)
 		return equipped
 	else
@@ -51,7 +63,11 @@ end
 -- This function will now translate a card-specific skill activation into an Orion attack.
 -- The client should ideally send an attackName directly if using Orion's input system.
 -- This handler remains for card-based skill triggers if they are separate from Orion's direct M1/Skill/Ultimate inputs.
-local function handleCardSkillEvent(player: Player, skillIdentifier: string, params: table?)
+local function handleCardSkillEvent(
+	player: playerMarshaller.player,
+	skillIdentifier: string,
+	params: skill_parameters?
+)
 	print(player.Name, "triggered card skill event:", skillIdentifier, params)
 
 	local currentCard = getCurrentCard(player)
@@ -79,7 +95,14 @@ local function handleCardSkillEvent(player: Player, skillIdentifier: string, par
 			-- Attack-specific data like target position needs to be handled by the attack's own logic,
 			-- potentially set via a separate mechanism before ExecuteAttack, or the attack itself determines targets.
 			-- For simplicity, we're showing that 'params' might exist, but direct usage in orion.ExecuteAttack is not standard.
-			print("CombatHandler: Skill", skillIdentifier, "for card", currentCard, "requires position:", params.Position)
+			print(
+				"CombatHandler: Skill",
+				skillIdentifier,
+				"for card",
+				currentCard,
+				"requires position:",
+				params.Position
+			)
 		end
 	else
 		warn("CombatHandler: No Orion attack mapped for card", currentCard, "and skill", skillIdentifier)
@@ -98,7 +121,6 @@ local function handleCardSkillEvent(player: Player, skillIdentifier: string, par
 		print("CombatHandler: Could not determine Orion attack name for card skill.")
 	end
 end
-
 
 if skillEvent then
 	-- Assuming skillEvent now sends (player: Player, skillIdentifier: string, params: table?)

@@ -12,11 +12,13 @@ local UserInputService = game:GetService("UserInputService") -- Added for input 
 
 local CombatStructure = require(ReplicatedStorage.Structures.CombatStructure)
 local audio = require(script.Parent.Parent.Modules.audio)
+local playerMarshaller = require(script.Parent.Parent.Utility.playerMarshaller)
+local statemachine = require(script.Parent.Parent.Utility.statemachine)
 local states = require(ReplicatedStorage.Combat.states)
 
 local orion = {}
 orion.RegisteredAttacks = {} -- Stores data for all registered attacks
-orion.PlayerStates = {} -- Stores the current combat state of each player
+orion.PlayerStates = {} :: { statemachine.StateMachineType } -- Stores the current combat state of each player
 orion.PlayerCooldowns = {} -- Stores cooldowns for player attacks
 orion._audio = audio.new()
 
@@ -31,6 +33,17 @@ local playerStateChangedEvent = remoteEvents:FindFirstChild("Orion_PlayerStateCh
 	or Instance.new("RemoteEvent", remoteEvents)
 playerStateChangedEvent.Name = "Orion_PlayerStateChanged"
 
+local function validateCharacter(character: playerMarshaller.player?)
+	local result = true
+	if not character.Character then
+		result = false
+	end
+	local humanoid = character.Character.Humanoid :: Humanoid
+	if not humanoid or humanoid.Health <= 0 then
+		result = false
+	end
+end
+
 -- Core API Functions
 
 function orion.RegisterAttack(attackName: string, attackData: {})
@@ -43,13 +56,9 @@ function orion.RegisterAttack(attackName: string, attackData: {})
 	print("Orion: Registered attack -", attackName)
 end
 
-function orion.ExecuteAttack(player: Player, attackName: string)
+function orion.ExecuteAttack(player: playerMarshaller.player, attackName: string)
 	local character = player.Character
-	if
-		not character
-		or not character:FindFirstChild("Humanoid")
-		or character:FindFirstChildOfClass("Humanoid").Health <= 0
-	then
+	if not validateCharacter(player) then
 		return
 	end
 
@@ -241,7 +250,7 @@ function orion.SetPlayerState(player: Player, state: string)
 		return
 	end -- No change
 
-	orion.PlayerStates[player.UserId] = state
+	orion.PlayerStates[player.UserId]:transition(state)
 	print("Orion:", player.Name, "state changed to:", state)
 	-- Fire remote event to update client-side visuals for the state (e.g., blocking animation, stun effect)
 	playerStateChangedEvent:FireClient(player, state)
@@ -249,12 +258,16 @@ function orion.SetPlayerState(player: Player, state: string)
 	-- or :FireClient(otherPlayer, player, state) for each otherPlayer
 end
 
-function orion.GetPlayerState(player: Player)
-	return orion.PlayerStates[player.UserId] or states.Idle
+function orion.GetPlayerState(player: playerMarshaller.player)
+	local state = orion.PlayerStates[player.UserId]
+	if not state then
+		orion.PlayerStates[player.UserId] = states.new(player)
+	end
+	return state
 end
 
 -- SERVER-SIDE: Handler for client attack requests
-local function onServerExecuteAttack(player: Player, attackName: string)
+local function onServerExecuteAttack(player: playerMarshaller.player, attackName: string)
 	-- Add server-side validation if needed (e.g., sanity checks)
 	print("Orion Server: Received attack request from", player.Name, "for", attackName)
 	orion.ExecuteAttack(player, attackName)
