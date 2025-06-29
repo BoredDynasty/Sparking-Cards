@@ -1,30 +1,36 @@
 return {
-	["Bronze I"] = {
-		["Name"] = "Bronze I",
+	["Bronze"] = {
+		["Name"] = "Bronze",
 		["Experience"] = 0,
 		["Description"] = "Just starting out!",
 		["Reward"] = 20,
 	},
-	["Gold II"] = {
-		["Name"] = "Gold II",
+	["Gold"] = {
+		["Name"] = "Gold",
 		["Experience"] = 50000,
 		["Description"] = "Going Golden, huh?",
 		["Reward"] = 1500,
 	},
-	["Platinum III"] = {
-		["Name"] = "Platinum III",
+	["Platinum"] = {
+		["Name"] = "Platinum",
 		["Experience"] = 100000,
 		["Description"] = "You can make jewelry out of this!",
 		["Reward"] = 15000,
 	},
-	["Master IV"] = {
-		["Name"] = "Master IV",
+	["Emerald"] = {
+		["Name"] = "Emerald",
+		["Experience"] = 200000,
+		["Description"] = "A precious gem!",
+		["Reward"] = 25000,
+	},
+	["Master"] = {
+		["Name"] = "Master",
 		["Experience"] = 350000,
 		["Description"] = "You've mastered this one!",
 		["Reward"] = 19500,
 	},
-	["Sparking V"] = {
-		["Name"] = "Sparking V",
+	["Sparking"] = {
+		["Name"] = "Sparking",
 		["Experience"] = 100000,
 		["Description"] = "Sparking Cards!",
 		["Reward"] = 50000,

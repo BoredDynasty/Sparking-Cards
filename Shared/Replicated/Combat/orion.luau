@@ -58,7 +58,7 @@ export type AttackData = {
 	VisualEffectServer: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?, -- Main server effect / replication
 
 	-- Knockback (example structure, can be expanded)
-	Knockback = {
+	Knockback: {
 		Force: number,
 		Duration: number,
 		Mode: "Directional" | "Omni"?, -- Directional from attacker, Omni away from impact
@@ -103,10 +103,11 @@ end
 
 -- Server-side M1 Combo Tracking
 local serverPlayerComboData = {} -- [playerId] = { currentAttackName = "attackName", count = 1, lastAttackTime = tick() }
-local SERVER_COMBO_WINDOW_DURATION = COMBO_WINDOW_DURATION + 0.2 -- Allow slightly more time on server for latency
+local COMBO_WINDOW_DURATION = 0.8 -- Max time between M1 presses to continue a combo (adjust as needed)
+local SERVER_COMBO_WINDOW_DURATION: number = COMBO_WINDOW_DURATION + 0.2 -- Allow slightly more time on server for latency
 
 -- SERVER-SIDE: Handles the validated request to execute an attack's server logic
-function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackName: string, equippedIdentifier: string?, targetInfo: table?)
+function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackName: string, equippedIdentifier: string?, targetInfo: {}?)
 	if not validateCharacter(player) then
 		return
 	end
@@ -120,7 +121,7 @@ function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackN
 	-- Check Player State (e.g., cannot attack if stunned or already attacking)
 	local currentPlayerState = orion.GetPlayerState(player)
 	if currentPlayerState:getCurrentState() == states.Attacking or currentPlayerState:getCurrentState() == states.Stunned then
-		-- print("Orion Server:", player.Name, "cannot attack while in state:", currentPlayerState:getCurrentState())
+		print("Orion Server:", player.Name, "cannot attack while in state:", currentPlayerState:getCurrentState())
 		return
 	end
 
@@ -222,8 +223,8 @@ function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackN
 
 	-- Trigger animation (server-side for replication to other clients)
 	if attackData.AnimationId then
-		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
+		local humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
+		local animator: Animator? = humanoid and humanoid:FindFirstChildOfClass("Animator")
 		if animator then
 			local animation = ReplicatedStorage.Assets.Animations:FindFirstChild(attackData.AnimationId) -- Example path
 			if animation and animation:IsA("Animation") then
@@ -255,7 +256,7 @@ function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackN
 		-- task.wait()
 		-- orion._audio:remove(orion._audio, "sound_1")
 		-- Option 2: Send as an effect to clients
-		Packet.Orion_PlayEffectNotif.sendToAllClients({
+		Packet.Orion_PlayEffectNotif.sendToAll({
 			effectName = "PlaySound",
 			effectParams = { customData = { soundId = attackData.SoundId }, sourcePlayerId = player.UserId },
 		})

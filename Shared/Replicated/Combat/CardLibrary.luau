@@ -1,5 +1,20 @@
--- CardLibrary.lua
+-- CardLibrary.luau
 -- Defines the available cards/weapon archetypes and their specific Orion attack names.
+
+export type Card = {
+	DisplayName: string,
+	WeaponType: string, -- General category for the weapon type
+	BaseDamageMultiplier: number, -- Base damage multiplier for this card
+	MaxCombo: number, -- Max M1 combo count for this weapon
+	Moveset: {
+		M1: string, -- AttackName for the first M1 attack
+		Skill: string, -- AttackName for the E skill
+		Ultimate: string, -- AttackName for the Q ultimate
+		Support: string?, -- AttackName for R if this card has a support move
+	},
+	-- Other card-specific properties can go here
+	-- e.g., StatusEffectOnHit?: { Name: string, Chance: number, Duration: number },
+}
 
 return {
 	FrostGauntlet = {
@@ -8,8 +23,8 @@ return {
 		BaseDamageMultiplier = 1.0,
 		MaxCombo = 3, -- Max M1 combo count for this weapon
 		Moveset = {
-			M1 = "FrostGauntlet_M1_1",       -- AttackName for the first M1 attack
-			Skill = "FrostGauntlet_IceShard_Skill",  -- AttackName for the E skill
+			M1 = "FrostGauntlet_M1_1", -- AttackName for the first M1 attack
+			Skill = "FrostGauntlet_IceShard_Skill", -- AttackName for the E skill
 			Ultimate = "FrostGauntlet_BlizzardRush_Ultimate", -- AttackName for the Q ultimate
 			Support = "FrostGauntlet_CryoBarrier_Support", -- AttackName for R if this card has a support move
 		},

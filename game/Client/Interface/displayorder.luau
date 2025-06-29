@@ -12,29 +12,21 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local DisplayOrder = {}
 DisplayOrder.__index = DisplayOrder
 
---[[
-	Creates a new `DisplayOrder` object.
-]]
-function DisplayOrder.new()
-	local self = setmetatable({
-		compiled = {},
-		canvasPositions = {
-			middle = UDim2.fromScale(0.5, 0.5),
-			offscreen_high = UDim2.fromScale(0.5, -2),
-			higher = UDim2.fromScale(0.5, 0.053),
-			lower = UDim2.fromScale(0.5, 0.7),
-			offscreen = UDim2.fromScale(0.5, 2),
-		},
-	}, DisplayOrder)
-	return self
-end
+DisplayOrder.compiled = {}
+DisplayOrder.canvasPositions = {
+	middle = UDim2.fromScale(0.5, 0.5),
+	offscreen_high = UDim2.fromScale(0.5, -2),
+	higher = UDim2.fromScale(0.5, 0.053),
+	lower = UDim2.fromScale(0.5, 0.7),
+	offscreen = UDim2.fromScale(0.5, 2),
+}
 
 function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 	if v == true then
 		canvas.Visible = true
 		TweenPlus(
 			canvas,
-			{ Position = self.canvasPositions.middle },
+			{ Position = DisplayOrder.canvasPositions.middle },
 			{ Time = Emphasis.emphasized, EasingDirection = "InOut", EasingStyle = "Circular" }
 		):Start()
 		LightingManipulation:blur(true)
@@ -42,7 +34,7 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 	elseif v == false then
 		TweenPlus(
 			canvas,
-			{ Position = self.canvasPositions.lower },
+			{ Position = DisplayOrder.canvasPositions.lower },
 			{ Time = Emphasis.emphasized_accelerate, EasingDirection = "Out", EasingStyle = "Circular" }
 		):Start()
 		LightingManipulation:blur(true)
@@ -53,10 +45,10 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 end
 
 function DisplayOrder:setDisplayOrder(i: string)
-	for _, t: CanvasGroup | Frame in self.compiled do
-		if t ~= self.compiled[i:lower()] then
+	for _, t: CanvasGroup | Frame in DisplayOrder.compiled do
+		if t ~= DisplayOrder.compiled[i:lower()] then
 			print("setDisplayOrder: ", t)
-			self:changeVisibility(false, t)
+			DisplayOrder:changeVisibility(false, t)
 		end
 	end
 end
