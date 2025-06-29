@@ -1,141 +1,130 @@
---!nonstrict
-
+--!strict
 --[[
 	Packet.luau
-
-	bytenet packet definitions
+	bytenet packet definitions for network communication.
+	This module defines the structure of data sent between server and client.
 ]]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
 local bytenet = require(ReplicatedStorage.Packages.bytenet)
 
+-- Define a type for the TargetInfo dictionary to improve clarity
+type TargetInfo = {
+	targetPosition: Vector3?, -- Optional world position (e.g., mouse hit)
+	targetInstanceId: number?, -- Optional InstanceId of a target object (e.g., for targeted abilities)
+}
+
+-- Define a type for common effect parameters
+type EffectParams = {
+	position: Vector3?, -- World position for the effect
+	sourcePlayerId: number?, -- UserId of the player initiating the effect
+	targetPlayerId: number?, -- UserId of the player targeted by the effect
+	attachToInstanceId: number?, -- InstanceId to attach the effect to
+	customData: { [string]: any }?, -- For any other effect-specific data
+}
+
 return bytenet.defineNamespace("MainNet", function()
-	local newMatch = bytenet.struct({
-		[1] = bytenet.nothing,
-	}) -- lol
-	local removeMatch = bytenet.struct({
-		[1] = bytenet.inst,
+	-- General Game Packets (Non-Combat)
+	local newMatchStruct = bytenet.struct({
+		[1] = bytenet.nothing, -- Placeholder, structure can be expanded
 	})
-	local requestStream = bytenet.struct({
-		[1] = bytenet.vec3, -- Area to stream
+	local removeMatchStruct = bytenet.struct({
+		matchInstance = bytenet.inst, -- Instance of the match to be removed
 	})
-	local sendNotification = bytenet.struct({
-		[1] = bytenet.string, -- Notification
-		[2] = bytenet.string, -- Title
+	local requestStreamStruct = bytenet.struct({
+		areaCenter = bytenet.vec3, -- Center of the area to stream
 	})
-	local buyCard = bytenet.struct({
-		[1] = bytenet.string, -- Card Name
+	local sendNotificationStruct = bytenet.struct({
+		message = bytenet.string, -- Notification message content
+		title = bytenet.optional(bytenet.string), -- Optional title for the notification
 	})
-	local giveExperience = bytenet.struct({
-		[1] = bytenet.int16, -- reward
+	local buyCardStruct = bytenet.struct({
+		cardName = bytenet.string, -- Name/ID of the card to purchase
 	})
-	local rankUp = bytenet.struct({
-		[1] = bytenet.string,
-		[2] = bytenet.int32,
+	local giveExperienceStruct = bytenet.struct({
+		amount = bytenet.int16, -- Amount of experience to reward
 	})
-	local sellCard = bytenet.struct({
-		[1] = bytenet.inst,
-		[2] = bytenet.string,
+	local rankUpStruct = bytenet.struct({
+		rankName = bytenet.string, -- New rank name
+		rankLevel = bytenet.int32, -- New rank level
 	})
-	local payBigCardsStruct = bytenet.struct({
-		[1] = bytenet.int16,
-		[2] = bytenet.string, -- username
+	local sellCardStruct = bytenet.struct({
+		playerInstance = bytenet.inst, -- Player instance selling the card (server might get this from packet sender)
+		cardName = bytenet.string, -- Name/ID of the card to sell
 	})
-	local raycastValidation = bytenet.struct({
-		[1] = bytenet.string, -- Model name that was hit
+	local payBigCardsStruct = bytenet.struct({ -- Assuming "Big Cards" is a currency or item
+		amount = bytenet.int16,
+		recipientUsername = bytenet.string,
 	})
-	local sprint = bytenet.struct({
-		[1] = bytenet.int8,
-		[2] = bytenet.bool,
+	local raycastValidationStruct = bytenet.struct({ -- For general raycast validation, e.g. client interactions
+		hitModelName = bytenet.string, -- Name of the model that was hit
+	})
+	local sprintStruct = bytenet.struct({
+		staminaCost = bytenet.int8, -- Stamina cost of the sprint action
+		isSprinting = bytenet.bool, -- True if starting to sprint, false if stopping
 	})
 
 	-- Orion Combat Framework Packets
 	local orionExecuteAttackRequest = bytenet.struct({
-		attackName = bytenet.string,
-		equippedIdentifier = bytenet.string, -- e.g., card name or weapon ID
-		targetInfo = bytenet.optional(bytenet.dictionary({ -- For things like mouse.Hit.p
-			targetPosition = bytenet.optional(bytenet.vec3),
-			targetInstanceId = bytenet.optional(bytenet.uint32), -- if targeting an instance
-		})),
+		attackName = bytenet.string, -- Unique identifier for the attack being executed
+		equippedIdentifier = bytenet.string, -- Identifier for the equipped item (e.g., card name, weapon ID)
+		-- Optional dictionary for targeting information, like mouse position or target entity.
+		targetInfo = bytenet.optional(bytenet.dictionary(bytenet.any)), -- `bytenet.any` used for flexibility; ensure consistent usage. Corresponds to TargetInfo type.
 	})
 
 	local orionPlayerStateChangedNotif = bytenet.struct({
-		playerId = bytenet.uint32, -- Player.UserId
-		newState = bytenet.string,
-		stateParams = bytenet.optional(bytenet.dictionary(bytenet.any)), -- e.g., { stunDuration = 2 }
+		playerId = bytenet.uint32, -- UserId of the player whose state changed
+		newState = bytenet.string, -- Name of the new state (e.g., "Attacking", "Stunned")
+		-- Optional parameters for the new state, e.g., { stunDuration = 2 }.
+		-- Using `bytenet.any` for flexibility. Careful handling required by sender/receiver.
+		stateParams = bytenet.optional(bytenet.dictionary(bytenet.any)),
 	})
 
 	local orionClientHitNotif = bytenet.struct({
-		targetInstanceId = bytenet.uint32, -- Instance ID of the character model hit (or relevant part)
-		hitPosition = bytenet.vec3, -- World position of the hit
-		attackName = bytenet.string, -- Which attack registered the hit
+		targetInstanceId = bytenet.uint32, -- InstanceId of the character model (or relevant part) that was hit
+		hitPosition = bytenet.vec3, -- Precise world position of the hit
+		attackName = bytenet.string, -- Identifier of the attack that registered the hit
 		weaponIdentifier = bytenet.string, -- Identifier for the weapon/card that made the attack
-		validationRaycastData = bytenet.optional(bytenet.dictionary(bytenet.any)), -- For clientcast's ValidateRaycast
+		-- Optional data for server-side validation of the client's raycast (e.g., from clientcast module).
+		validationRaycastData = bytenet.optional(bytenet.dictionary(bytenet.any)),
 	})
 
 	local orionPlayEffectNotif = bytenet.struct({
-		effectName = bytenet.string, -- Identifier for the effect to play
-		effectParams = bytenet.dictionary({ -- Parameters for the effect
-			position = bytenet.optional(bytenet.vec3),
-			sourcePlayerId = bytenet.optional(bytenet.uint32),
-			targetPlayerId = bytenet.optional(bytenet.uint32),
-			attachToInstanceId = bytenet.optional(bytenet.uint32),
-			-- Add other common effect parameters as needed
-			customData = bytenet.optional(bytenet.dictionary(bytenet.any)),
-		}),
+		effectName = bytenet.string, -- Identifier for the visual/audio effect to play
+		-- Dictionary containing parameters for the effect. Corresponds to EffectParams type.
+		effectParams = bytenet.dictionary(bytenet.any), -- `bytenet.any` used for flexibility; ensure structure matches EffectParams.
 	})
 
 	return {
-		createMatch = bytenet.definePacket({
-			value = newMatch,
-		}),
-		cancelMatch = bytenet.definePacket({
-			value = removeMatch,
-		}),
-		streamArea = bytenet.definePacket({
-			value = requestStream,
-		}),
-		sendNotification = bytenet.definePacket({
-			value = sendNotification,
-		}),
-		buyCard = bytenet.definePacket({
-			value = buyCard,
-		}),
-		rewardExperience = bytenet.definePacket({
-			value = giveExperience,
-		}),
-		rayValidation = bytenet.definePacket({
-			value = raycastValidation,
-		}),
-		ascendRank = bytenet.definePacket({
-			value = rankUp,
-		}),
-		sellCard = bytenet.definePacket({
-			value = sellCard,
-		}),
-		payBigCards = bytenet.definePacket({
-			value = payBigCardsStruct,
-		}),
-		sprintRemote = bytenet.definePacket({
-			value = sprint,
-		}),
-		rayValidation = bytenet.definePacket({ -- This is likely used by clientcast, ensure it's compatible or adapt
-			value = raycastValidation,
-		}),
+		-- General Game Packets
+		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
+		CancelMatch = bytenet.definePacket({ value = removeMatchStruct }),
+		StreamArea = bytenet.definePacket({ value = requestStreamStruct }),
+		SendNotification = bytenet.definePacket({ value = sendNotificationStruct }),
+		BuyCard = bytenet.definePacket({ value = buyCardStruct }),
+		RewardExperience = bytenet.definePacket({ value = giveExperienceStruct }),
+		AscendRank = bytenet.definePacket({ value = rankUpStruct }),
+		SellCard = bytenet.definePacket({ value = sellCardStruct }),
+		PayBigCards = bytenet.definePacket({ value = payBigCardsStruct }),
+		SprintRemote = bytenet.definePacket({ value = sprintStruct }),
+		RayValidation = bytenet.definePacket({	value = raycastValidationStruct }), -- For general client-side raycast validation
 
-		-- Orion Packets
+		-- Orion Combat Packets
 		Orion_ExecuteAttackRequest = bytenet.definePacket({
 			value = orionExecuteAttackRequest,
+			reliable = true, -- Attack requests should be reliable
 		}),
 		Orion_PlayerStateChangedNotif = bytenet.definePacket({
 			value = orionPlayerStateChangedNotif,
+			reliable = true, -- State changes are important and should be reliable
 		}),
 		Orion_ClientHitNotif = bytenet.definePacket({
 			value = orionClientHitNotif,
+			reliable = false, -- Hit notifications can be unreliable as server validates; consider reliability based on game feel.
 		}),
 		Orion_PlayEffectNotif = bytenet.definePacket({
 			value = orionPlayEffectNotif,
+			reliable = false, -- Effects are often cosmetic and can tolerate unreliability
 		}),
 	}
 end)

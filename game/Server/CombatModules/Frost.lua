@@ -1,202 +1,310 @@
---!nonstrict
+--!strict
+--[[
+	Frost.lua
+	Combat module for Frost-based abilities (e.g., FrostGauntlet).
+]]
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
+local Debris = game:GetService("Debris")
 
-local playerMarshaller = require(script.Parent.Parent.Parent.ReplicatedStorage.Utility.playerMarshaller)
+local PlayerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local Orion = require(ReplicatedStorage.Combat.orion) -- For AttackData type and Packet
+local Packet = require(ReplicatedStorage.Packet) -- For sending effects
 
--- In construction
+type Player = PlayerMarshaller.player
+type AttackData = Orion.AttackData -- Use the exported type from orion.luau
+type TargetInfoParams = { targetPosition: Vector3?, targetInstanceId: number? }
 
-local cooldown: { Player? } = {}
-local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
-
-local TInfo = TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
-
-local function checkDebounce()
-	local result = true
-	if table.find(cooldown, player) then
-		print("cooldown")
-		result = false
-		return
-	end
-	table.insert(cooldown, player)
-	task.delay(5, function()
-		local needle = table.find(cooldown, player)
-		if needle then
-			print("removing cooldown for: ", player)
-			table.remove(cooldown, needle)
-		end
-	end)
-	return result
+local assetsFolder = ReplicatedStorage:FindFirstChild("Assets")
+if not assetsFolder or not assetsFolder:IsA("Folder") then
+	error("Frost.lua: Assets folder not found in ReplicatedStorage.")
 end
 
-local function snowballed(player: playerMarshaller.player, position: Vector3)
-	if not checkDebounce() then
-		return
-	end
+local TWEEN_INFO_QUINT_1S = TweenInfo.new(1, Enum.EasingStyle.Quint, Enum.EasingDirection.InOut)
+local TWEEN_INFO_LINEAR_0_3S = TweenInfo.new(0.3, Enum.EasingStyle.Linear)
 
-	-- instead of using the availiable module,
-	-- we'll make our own system
+-- ==== Private Helper Functions for Frost Abilities ====
+
+local function _getAsset(name: string): Instance?
+	local asset = assetsFolder:FindFirstChild(name)
+	if not asset then
+		warn("Frost module: Asset not found -", name)
+		return nil
+	end
+	return asset:Clone()
+end
+
+-- ==== Moveset Implementation ====
+local Frost = {}
+Frost.moveset = {}
+
+-- M1: Snowball Attack
+function Frost.moveset.M1(player: Player, attackData: AttackData, targetInfo: TargetInfoParams?)
 	local character = player.Character
-	local rootPart = character.HumanoidRootPart :: BasePart
+	if not character then return end
+	local rootPart: BasePart? = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not rootPart then return end
 
-	local params = RaycastParams.new()
-	params.FilterType = Enum.RaycastFilterType.Exclude
-	params.RespectCanCollide = true
-	params.FilterDescendantsInstances = { character }
-
-	local origin = rootPart.Position
-	local mousePositition = position
-	local direction = (mousePositition - origin).Unit
-	local speed = 7 -- studs/s
-	local gravity = Vector3.new(0, -workspace.Gravity, 0) * 0.5
-
-	local isActive = false
-
-	local projectile = assets:FindFirstChild("Snowball"):Clone() :: MeshPart
-	projectile.CFrame = CFrame.new(origin, origin + direction)
-	projectile.Size = Vector3.one
-	projectile.CanCollide = false
-
-	local velocity = direction * speed
-	local currentPosition = origin
-	local connection: RBXScriptConnection? = nil
-
-	local maxDistance = 500
-	local totalDistance = 0
-
-	local function boom(hitPosition: Vector3)
-		connection:Disconnect()
-		projectile:Destroy()
-
-		local alreadyHit = table.create(50)
-
-		local hitbox = assets:FindFirstChild("Snowball"):Clone() :: MeshPart
-		hitbox.Position = hitPosition
-		hitbox.Size = Vector3.one
-		hitbox.CanCollide = false
-		hitbox.Parent = workspace
-
-		local potentialHits = workspace:GetPartsInPart(projectile)
-		for _, otherPart in pairs(potentialHits) do
-			local otherHumanoid: Humanoid? = otherPart.Parent:FindFirstChildOfClass("Humanoid")
-			if
-				otherHumanoid
-				and otherHumanoid ~= character.Humanoid
-				and not table.find(alreadyHit, otherHumanoid)
-			then
-				table.insert(alreadyHit, otherHumanoid)
-				otherHumanoid:TakeDamage(10)
-			end
-		end
+	local targetPosition = targetInfo and targetInfo.targetPosition
+	if not targetPosition then
+		-- Default to looking forward if no targetPosition (e.g. server initiated without specific target point)
+		targetPosition = rootPart.Position + rootPart.CFrame.LookVector * (attackData.Range or 30)
+		-- warn(player.Name .. " Frost.M1: No targetPosition provided, using default.")
 	end
 
-	connection = RunService.Heartbeat:Connect(function(deltaTime: number)
-		local stepVelocity = velocity + gravity * deltaTime
-		local stepDisplacement = (velocity + stepVelocity) / 2 * deltaTime -- avg. velocity
-		velocity = stepVelocity -- upd. velocity for next frame
+	-- print(player.Name .. " executing Frost M1 (Snowball) towards", targetPosition)
 
-		local nextPosition = currentPosition + stepDisplacement
-		local rayDirection = nextPosition - currentPosition
+	local projectile = _getAsset("Snowball") :: MeshPart?
+	if not projectile then return end
 
-		local cast = workspace:Raycast(currentPosition, rayDirection, params)
+	projectile.CanCollide = false
+	projectile.Anchored = false
+	projectile.Size = Vector3.one * 1.5 -- Slightly larger snowball
+	local spawnOffset = Vector3.new(0, 2, 0) + rootPart.CFrame.LookVector * 3
+	projectile.CFrame = CFrame.new(rootPart.Position + spawnOffset, targetPosition)
+	projectile.Parent = Workspace
+	Debris:AddItem(projectile, 5) -- Auto-cleanup after 5 seconds
 
-		local potentialHits = workspace:GetPartsInPart(projectile)
-		for _, otherPart in pairs(potentialHits) do
-			local otherHumanoid: Humanoid? = otherPart.Parent:FindFirstChildOfClass("Humanoid")
-			if otherHumanoid and otherHumanoid ~= character.Humanoid and isActive then
+	local direction = (targetPosition - projectile.Position).Unit
+	local speed = attackData.ProjectileSpeed or 60 -- Adjusted speed
+
+	projectile.AssemblyLinearVelocity = direction * speed
+
+	local alreadyHit = {} ---@type { [Instance]: boolean }
+	local connection: RBXScriptConnection?
+
+	local function cleanupProjectile()
+		if connection then connection:Disconnect() connection = nil end
+		if projectile and projectile.Parent then projectile:Destroy() end
+	end
+
+	local lifeTimer = task.delay(5, cleanupProjectile) -- Max lifetime for projectile
+
+	connection = projectile.Touched:Connect(function(otherPart: BasePart)
+		if alreadyHit[otherPart] or alreadyHit[otherPart.Parent] then return end
+
+		local otherModel = otherPart:FindFirstAncestorWhichIsA("Model")
+		local otherPlayerCharacter = otherModel and game:GetService("Players"):GetPlayerFromCharacter(otherModel)
+
+		-- Prevent self-damage or hitting already processed parts/models
+		if otherModel == character then return end
+
+		local otherHumanoid: Humanoid? = otherModel and otherModel:FindFirstChildOfClass("Humanoid")
+
+		if otherHumanoid then
+			if alreadyHit[otherHumanoid] then return end
+			alreadyHit[otherHumanoid] = true
+			alreadyHit[otherModel] = true
+
+			-- Damage is now primarily handled by Orion's client-side hit reporting (if used for this attack)
+			-- or by server-side validation if clientcast is not used for this specific projectile.
+			-- If this is a purely server-created and server-authoritative projectile, then:
+			-- otherHumanoid:TakeDamage(attackData.Damage)
+			-- For now, we assume HandleDamage in Orion will be called via client hit notif or a server-side raycast.
+			-- This server-side .Touched is a fallback or for environment interaction.
+			print("Frost M1 (Snowball) hit humanoid:", otherModel.Name)
+			-- Orion.HandleDamage(player, Players:GetPlayerFromCharacter(otherModel), attackData.Damage, attackData.Name)
+			-- ^ This would be if Orion had a direct way to inject a server-detected hit.
+			-- For now, client is expected to report this hit if it's client-cast.
+			-- If it's server-cast, then this .Touched is the primary detection.
+
+			-- Let's assume for a server projectile, we do minimal effect here and expect client hit notif for damage.
+			-- Or, if this M1 is NOT client-cast, then this is where damage would occur.
+			-- For simplicity of example, let's assume this M1 is server-authoritative for hits.
+			if PlayerMarshaller.get(otherPlayerCharacter) then
+				Orion.HandleDamage(player, PlayerMarshaller.get(otherPlayerCharacter), attackData.Damage, attackData.Name)
+			else
+				otherHumanoid:TakeDamage(attackData.Damage) -- Non-player humanoid
 			end
-		end
 
-		if cast then
-			local hitPosition = cast.Position
-			boom(hitPosition)
-		else
-			currentPosition = nextPosition
-
-			projectile.CFrame = CFrame.new(currentPosition, currentPosition + velocity.Unit)
-			totalDistance += rayDirection.Magnitude
-			if totalDistance >= maxDistance then
-				boom(projectile.Position)
-			end
+			task.cancel(lifeTimer)
+			cleanupProjectile()
+		elseif otherPart.CanCollide and not otherPart:IsDescendantOf(character) then
+			-- Hit an environment part
+			-- print("Frost M1 (Snowball) hit environment part:", otherPart.Name)
+			task.cancel(lifeTimer)
+			cleanupProjectile()
 		end
 	end)
 end
 
-local function iceShards(player: Player, position: Vector3)
-	if not checkDebounce() then
-		return
+-- Skill: Ice Shards
+function Frost.moveset.Skill(player: Player, attackData: AttackData, targetInfo: TargetInfoParams?)
+	local character = player.Character
+	if not character then return end
+	local rootPart: BasePart? = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not rootPart then return end
+
+	local targetPosition = targetInfo and targetInfo.targetPosition
+	if not targetPosition then
+		targetPosition = rootPart.Position + rootPart.CFrame.LookVector * (attackData.Range or 25)
+		-- warn(player.Name .. " Frost.Skill (IceShards): No targetPosition provided, using default.")
 	end
-	local character = player.Character or player.CharacterAdded:Wait()
-	local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart
 
-	local multiplier = 70
+	-- print(player.Name .. " executing Frost Skill (IceShards) towards", targetPosition)
 
-	local startPosition = CFrame.new(rootPart.Position, position)
-	-- local goal = startPosition.LookVector * multiplier
+	local baseShard = _getAsset("IceShard") :: UnionOperation?
+	if not baseShard then return end
 
-	local shardsNum = math.random(8, 15)
+	local numShards = 5
+	local spreadAngle = math.rad(25)
+	local baseLookDirection = (targetPosition - (rootPart.Position + Vector3.new(0,2,0))).Unit -- Aim from eye level
 
-	local shardIncrements = multiplier / shardsNum
+	for i = 1, numShards do
+		local shard = baseShard:Clone()
+		shard.Anchored = true
+		shard.CanCollide = false -- Shards themselves don't collide, rely on raycasting or Touched for hitbox parts
+		shard.Parent = Workspace
+		Debris:AddItem(shard, 2) -- Auto-cleanup
 
-	local shard = assets:FindFirstChild("IceShard") :: UnionOperation
+		local currentAngle = 0
+		if numShards > 1 then
+			currentAngle = (-spreadAngle / 2) + (spreadAngle * (i - 1) / (numShards - 1))
+		end
 
-	for i = 1, shardsNum do
-		local newShard = shard:Clone()
-		newShard.Anchored = true
-		newShard.CanCollide = false
+		local shardDirection = CFrame.Angles(0, currentAngle, 0) * baseLookDirection
+		local startPosition = rootPart.Position + Vector3.new(0,2,0) + shardDirection * 2
 
-		local x, y, z =
-			math.random(30, 50) / 30 * i, math.random(30, 50) / 30 * i * 2, math.random(30, 50) / 30 * i
+		shard.CFrame = CFrame.new(startPosition, startPosition + shardDirection)
+		shard.Size = Vector3.new(0.2, 0.2, 1) -- Initial small size
 
-		newShard.Size = Vector3.new(0, 0, 0)
+		local endSize = Vector3.new(0.8, 0.8, 3)
+		local travelDistance = attackData.Range or 25
+		local endPosition = startPosition + shardDirection * travelDistance
 
-		local orientation = Vector3.new(math.random(-30, 30), math.random(-180, 180), math.random(-30, 30))
-		newShard.Orientation = orientation
+		local growTween = TweenService:Create(shard, TWEEN_INFO_QUINT_1S, { Size = endSize, CFrame = CFrame.new(endPosition, endPosition + shardDirection) })
+		growTween:Play()
 
-		local shardPosition = rootPart.Position + startPosition.LookVector * (shardIncrements * i)
-		newShard.Position = Vector3.new(shardPosition.X, shardPosition.Y or position.Y, shardPosition.Z)
-		print("shard position 1: ", shardPosition.Y, "shard position 2: ", position.Y)
-		local newSize = Vector3.new(x, y, z)
-		local divisor = 2.5
-		local newPosition = newShard.Position + Vector3.new(0, y / divisor, 0)
+		-- Hit detection for server-created shards:
+		-- This simple Touched event is okay for basic effects.
+		-- For more precise hit detection, especially for fast projectiles, raycasting (e.g., ClientCast or a server raycast) is better.
+		-- If this skill uses client-side hit detection via HitboxProvider in AttackData, this server .Touched might be for environment only or not needed.
+		local hitHumanoids = {} ---@type {[Humanoid]: boolean}
+		local shardConnection: RBXScriptConnection?
+		shardConnection = shard.Touched:Connect(function(hitPart)
+			if hitPart:IsDescendantOf(character) then return end -- Don't hit self
 
-		local tween = TweenService:Create(newShard, TInfo, { Size = newSize, Position = newPosition })
+			local model = hitPart:FindFirstAncestorWhichIsA("Model")
+			if model then
+				local humanoid = model:FindFirstChildOfClass("Humanoid")
+				if humanoid and not hitHumanoids[humanoid] then
+					hitHumanoids[humanoid] = true
+					-- Assuming damage is per shard that hits.
+					-- If client-cast, client reports hits to Orion.HandleDamage.
+					-- If server-authoritative like this, call Orion.HandleDamage.
+					local hitPlayer = game:GetService("Players"):GetPlayerFromCharacter(model)
+					if hitPlayer then
+						Orion.HandleDamage(player, PlayerMarshaller.get(hitPlayer), attackData.Damage / numShards, attackData.Name)
+					else
+						humanoid:TakeDamage(attackData.Damage / numShards) -- Non-player humanoid
+					end
 
-		newShard.Parent = Workspace
-		tween:Play()
+					-- Small visual effect for shard hit
+					local effectParams: Packet.EffectParams = { position = shard.Position }
+					Packet.Orion_PlayEffectNotif.sendToAllClients({effectName = "FrostShardImpact", effectParams = effectParams})
 
-		local charactersHit = {}
-
-		newShard.Touched:Connect(function(otherPart: BasePart)
-			local parent = otherPart.Parent :: BasePart
-			if parent:FindFirstChild("Humanoid") and parent ~= character and not charactersHit[parent] then
-				charactersHit[otherPart.Parent] = true
-
-				local humanoid_ = parent:FindFirstChild("Humanoid") :: Humanoid
-				local damagePoints = 30
-				if humanoid_ then
-					humanoid_:TakeDamage(damagePoints)
+					shard:Destroy() -- Shard breaks on impact with humanoid
+					if shardConnection then shardConnection:Disconnect() shardConnection = nil end
+				elseif humanoid == nil and hitPart.CanCollide then -- Hit environment
+					shard:Destroy()
+					if shardConnection then shardConnection:Disconnect() shardConnection = nil end
 				end
 			end
 		end)
-		task.spawn(function()
-			local reverseTween = TweenService:Create(
-				newShard,
-				TInfo,
-				{ Size = Vector3.new(0, 0, 0), Position = Vector3.new(shardPosition.X, 0, shardPosition.Z) }
-			)
-			task.wait(3)
-			reverseTween:Play()
 
-			reverseTween.Completed:Wait()
-			newShard:Destroy()
+		growTween.Completed:Connect(function()
+			if shardConnection then shardConnection:Disconnect() shardConnection = nil end
+			if shard and shard.Parent then shard:Destroy() end
 		end)
-		local delayInt = math.random(1, 100) / 1000
-		task.wait(delayInt)
+
+		if numShards > 1 then task.wait(0.03) end
 	end
-	print("frost done")
 end
 
-return iceShards
+-- Ultimate: Blizzard Rush (Placeholder)
+function Frost.moveset.Ultimate(player: Player, attackData: AttackData, targetInfo: TargetInfoParams?)
+	local character = player.Character
+	if not character then return end
+	local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not rootPart then return end
+
+	-- print(player.Name .. " executing Frost Ultimate (BlizzardRush) with targetInfo:", targetInfo)
+
+	local targetPos = targetInfo and targetInfo.targetPosition or rootPart.Position + rootPart.CFrame.LookVector * (attackData.Range or 15)
+
+	-- Example: Simple AoE damage at target position
+	local explosion = Instance.new("Explosion")
+	explosion.BlastPressure = 0 -- No physics force from this example
+	explosion.BlastRadius = attackData.Range or 15
+	explosion.Position = targetPos
+	explosion.ExplosionType = Enum.ExplosionType.NoCraters
+	explosion.DestroyJointRadiusPercent = 0
+	explosion.Visible = false -- Visuals handled by effect notification
+	explosion.Parent = Workspace
+
+	-- Hit detection for AoE
+	local hitModels = {} ---@type {[Model]:boolean}
+	local region = Region3.new(targetPos - Vector3.one * explosion.BlastRadius, targetPos + Vector3.one * explosion.BlastRadius)
+	local partsInRegion = Workspace:FindPartsInRegion3(region, character, math.huge)
+
+	for _, partInRegion in ipairs(partsInRegion) do
+		local model = partInRegion:FindFirstAncestorWhichIsA("Model")
+		if model and model ~= character and not hitModels[model] then
+			local humanoid = model:FindFirstChildOfClass("Humanoid")
+			if humanoid then
+				hitModels[model] = true
+				local hitPlayer = game:GetService("Players"):GetPlayerFromCharacter(model)
+				if hitPlayer then
+					Orion.HandleDamage(player, PlayerMarshaller.get(hitPlayer), attackData.Damage, attackData.Name)
+				else
+					humanoid:TakeDamage(attackData.Damage) -- Non-player humanoid
+				end
+			end
+		end
+	end
+
+	local effectParams: Packet.EffectParams = { position = targetPos, customData = { radius = explosion.BlastRadius } }
+	Packet.Orion_PlayEffectNotif.sendToAllClients({effectName = "FrostUltimateExplosion", effectParams = effectParams})
+
+	-- print("Frost Ultimate activated by", player.Name, "at", targetPos)
+end
+
+-- Support: Cryo Barrier (Placeholder)
+function Frost.moveset.Support(player: Player, attackData: AttackData, targetInfo: TargetInfoParams?)
+	local character = player.Character
+	if not character then return end
+	local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if not rootPart then return end
+
+	-- print(player.Name .. " executing Frost Support (CryoBarrier)")
+
+	local barrier = _getAsset("IceWall") :: Part?
+	if not barrier then
+		warn("Frost Support: IceWall asset not found.")
+		return
+	end
+
+	barrier.Anchored = true
+	barrier.CanCollide = true
+	local barrierSize = Vector3.new(12, 8, 1.5)
+	barrier.Size = barrierSize
+
+	local spawnPos = rootPart.CFrame * CFrame.new(0, -rootPart.Size.Y/2 + barrierSize.Y/2, -(rootPart.Size.Z/2 + barrierSize.Z/2 + 2))
+	barrier.CFrame = spawnPos
+
+	barrier.Transparency = 0.4
+	barrier.Color = Color3.fromRGB(173, 216, 230)
+	barrier.Material = Enum.Material.Ice
+	barrier.Parent = Workspace
+
+	Debris:AddItem(barrier, attackData.ActiveDuration or 8)
+	-- print("Frost Support (CryoBarrier) created by", player.Name)
+
+	local effectParams: Packet.EffectParams = { position = barrier.Position, customData = { size = barrier.Size, orientation = barrier.Orientation } }
+	Packet.Orion_PlayEffectNotif.sendToAllClients({effectName = "CryoBarrierSpawn", effectParams = effectParams})
+end
+
+return Frost
