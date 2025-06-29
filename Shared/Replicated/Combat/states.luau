@@ -2,37 +2,46 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local statemachine = require(ReplicatedStorage.Utility.statemachine)
+local PlayerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local StateMachineUtil = require(ReplicatedStorage.Utility.statemachine)
 
 -- states.luau
+-- Defines character combat states and their transitions.
 
--- Define state names as constants for easier reference and to avoid typos
+-- Types for state parameters to improve type safety and clarity
+type PlayerType = PlayerMarshaller.player -- More specific than 'Player' if playerMarshaller has custom fields
+
+type IdleStateParams = {} -- No specific params for Idle onEnter/onExit currently
+type AttackingStateParams = { attackName: string, duration: number }
+type BlockingStateParams = {} -- No specific params for Blocking onEnter/onExit currently
+type StunnedStateParams = { duration: number } -- Duration is now primarily for server logic to schedule recovery
+type DefunctStateParams = {} -- No specific params for Defunct onEnter/onExit currently
+type ChannelingStateParams = { channelDuration: number, abilityName: string }
+
+-- Define state names as constants
 local STATE_IDLE = "Idle"
 local STATE_ATTACKING = "Attacking"
 local STATE_BLOCKING = "Blocking"
 local STATE_STUNNED = "Stunned"
-local STATE_DEFUNCT = "Defunct" -- Renamed from Defeated to avoid conflict if 'Defeated' is an event name
+local STATE_DEFUNCT = "Defunct"
 local STATE_CHANNELING = "Channeling"
--- Add more states as needed, e.g., Dashing, Dodging, Climbing
 
-local function newStateMachine(player: playerMarshaller.player)
-	local states: { [string]: statemachine.State } = {
+local function newStateMachine(player: PlayerType): StateMachineUtil.StateMachineType
+	local states: { [string]: StateMachineUtil.State } = {
 		[STATE_IDLE] = {
 			name = STATE_IDLE,
-			onEnter = function(params: { [string]: any }?)
+			onEnter = function(params: IdleStateParams?)
 				-- print(player.Name .. " entered Idle state")
-				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				local char = player.Character
+				local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 				if humanoid then
-					-- Example: Reset walkspeed if it was modified by other states
-					-- humanoid.WalkSpeed = 16
+					-- Example: humanoid.WalkSpeed = 16 -- Reset walkspeed
 				end
 			end,
-			onExit = function(params: { [string]: any }?)
+			onExit = function(params: IdleStateParams?)
 				-- print(player.Name .. " exited Idle state")
 			end,
 			transitions = {
-				-- Event name leading to state name
 				start_attack = STATE_ATTACKING,
 				start_block = STATE_BLOCKING,
 				got_stunned = STATE_STUNNED,
@@ -42,9 +51,9 @@ local function newStateMachine(player: playerMarshaller.player)
 		},
 		[STATE_ATTACKING] = {
 			name = STATE_ATTACKING,
-			onEnter = function(params: { attackName: string, duration: number }?)
+			onEnter = function(params: AttackingStateParams?)
 				-- print(player.Name .. " entered Attacking state with params:", params)
-				-- Potentially slow player, prevent jumping, etc.
+				-- Potentially slow player, prevent jumping, etc. based on params.attackName or params.duration
 			end,
 			onExit = function()
 				-- print(player.Name .. " exited Attacking state")
@@ -53,85 +62,82 @@ local function newStateMachine(player: playerMarshaller.player)
 				finish_attack = STATE_IDLE,
 				got_stunned = STATE_STUNNED, -- Can be interrupted
 				died = STATE_DEFUNCT,
-				-- Add transitions for combo breaks or specific attack interruptions
 			},
 		},
 		[STATE_BLOCKING] = {
 			name = STATE_BLOCKING,
-			onEnter = function()
+			onEnter = function(params: BlockingStateParams?)
 				-- print(player.Name .. " entered Blocking state")
-				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				local char = player.Character
+				local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 				if humanoid then
-					-- humanoid.WalkSpeed = CombatStructure.Blocking.WalkSpeed or 8
+					-- humanoid.WalkSpeed = 8 -- Example: Reduce walkspeed while blocking
 				end
 			end,
-			onExit = function()
+			onExit = function(params: BlockingStateParams?)
 				-- print(player.Name .. " exited Blocking state")
-				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				local char = player.Character
+				local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 				if humanoid then
-					-- humanoid.WalkSpeed = 16 -- Reset to default
+					-- humanoid.WalkSpeed = 16 -- Reset walkspeed
 				end
 			end,
 			transitions = {
 				stop_block = STATE_IDLE,
-				got_stunned = STATE_STUNNED, -- Block can be broken by heavy attacks leading to stun
+				got_stunned = STATE_STUNNED, -- Block can be broken
 				died = STATE_DEFUNCT,
-				-- block_break_attack = STATE_STUNNED, (Example specific event)
 			},
 		},
 		[STATE_STUNNED] = {
 			name = STATE_STUNNED,
-			onEnter = function(params: { duration: number }?)
+			onEnter = function(params: StunnedStateParams?)
 				-- print(player.Name .. " entered Stunned state for duration:", params and params.duration)
-				-- Stop animations, prevent movement/actions
-				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				-- Stop animations, prevent movement/actions.
+				-- The actual recovery timer and transition back to Idle ('recover_from_stun')
+				-- will be handled by the system that initiated the stun (e.g., orion.luau),
+				-- by calling playerState:transition("recover_from_stun") after the duration.
+				local char = player.Character
+				local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 				if humanoid then
-					-- humanoid.WalkSpeed = 0
-				end
-				if params and params.duration then
-					task.delay(params.duration, function()
-						-- Check if still stunned before transitioning, could have been overridden
-						local sm = require(ReplicatedStorage.Combat.orion).GetPlayerState(player)
-						if sm and sm:getCurrentState() == STATE_STUNNED then
-							sm:transition("recover_from_stun")
-						end
-					end)
+					-- humanoid.WalkSpeed = 0 -- Prevent movement
 				end
 			end,
 			onExit = function()
 				-- print(player.Name .. " exited Stunned state")
-				local humanoid = player.Character and player.Character:FindFirstChildOfClass("Humanoid")
+				local char = player.Character
+				local humanoid = char and char:FindFirstChildOfClass("Humanoid")
 				if humanoid then
-					-- humanoid.WalkSpeed = 16 -- Reset to default
+					-- humanoid.WalkSpeed = 16 -- Reset walkspeed
 				end
 			end,
 			transitions = {
 				recover_from_stun = STATE_IDLE,
-				died = STATE_DEFUNCT,
+				died = STATE_DEFUNCT, -- Can still die while stunned
 			},
 		},
 		[STATE_DEFUNCT] = {
 			name = STATE_DEFUNCT,
-			onEnter = function()
+			onEnter = function(params: DefunctStateParams?)
 				-- print(player.Name .. " entered Defunct state (died)")
-				-- Handle ragdoll, drop items, etc.
+				-- Handle ragdoll, drop items, notify game systems, etc.
 			end,
-			-- No onExit usually, player might respawn which would reset the state machine or create a new one
+			-- No onExit usually, player might respawn which would typically involve
+			-- creating a new state machine or re-initializing this one to Idle.
 			transitions = {
-				-- respawn = STATE_IDLE, -- Respawn logic would typically re-initialize the player's state machine
+				-- respawn_complete = STATE_IDLE, -- Example if respawn logic transitions here
 			},
 		},
 		[STATE_CHANNELING] = {
 			name = STATE_CHANNELING,
-			onEnter = function(params: { channel_duration: number, ability_name: string }?)
-				-- print(player.Name .. " entered Channeling state for:", params and params.ability_name)
+			onEnter = function(params: ChannelingStateParams?)
+				-- print(player.Name .. " entered Channeling state for:", params and params.abilityName)
 				-- Play channeling animation, VFX. Prevent most other actions.
 			end,
 			onExit = function()
 				-- print(player.Name .. " exited Channeling state")
 			end,
 			transitions = {
-				finish_channel_success = STATE_IDLE, -- Or directly into an attack state
+				finish_channel_success = STATE_IDLE, -- Or directly into an attack/action state
 				channel_interrupted_stun = STATE_STUNNED,
 				channel_interrupted_cancel = STATE_IDLE,
 				died = STATE_DEFUNCT,
@@ -139,17 +145,42 @@ local function newStateMachine(player: playerMarshaller.player)
 		},
 	}
 
-	-- The statemachine module itself handles calling onEnter for the initial state.
-	return statemachine.new(states, STATE_IDLE)
+	return StateMachineUtil.new(states, STATE_IDLE)
 end
 
-return {
+-- Module exports
+local StateManager = {
 	new = newStateMachine,
-	-- Export state names for external use if needed, e.g. orion.SetPlayerState(player, states.IDLE)
 	IDLE = STATE_IDLE,
 	ATTACKING = STATE_ATTACKING,
 	BLOCKING = STATE_BLOCKING,
 	STUNNED = STATE_STUNNED,
 	DEFUNCT = STATE_DEFUNCT,
 	CHANNELING = STATE_CHANNELING,
+
+	-- Export types for external use if needed, e.g. in orion.luau for parameters
+	-- Note: Luau doesn't directly export types in the same way as TypeScript.
+	-- These are more for documentation or if this table is inspected.
+	-- Actual type usage will be through `typeof(StateManager.IdleStateParams)` if needed elsewhere,
+	-- but it's often cleaner to define shared types in a dedicated types module if they are widely used.
+	_types = {
+		PlayerType = "PlayerMarshaller.player", -- Placeholder for documentation
+		IdleStateParams = "IdleStateParams",
+		AttackingStateParams = "AttackingStateParams",
+		BlockingStateParams = "BlockingStateParams",
+		StunnedStateParams = "StunnedStateParams",
+		DefunctStateParams = "DefunctStateParams",
+		ChannelingStateParams = "ChannelingStateParams",
+	},
 }
+
+export type StateManagerType = typeof(StateManager)
+export type IdleParams = IdleStateParams
+export type AttackingParams = AttackingStateParams
+export type BlockingParams = BlockingStateParams
+export type StunnedParams = StunnedStateParams
+export type DefunctParams = DefunctStateParams
+export type ChannelingParams = ChannelingStateParams
+
+
+return StateManager

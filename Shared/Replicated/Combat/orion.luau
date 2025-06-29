@@ -2,82 +2,89 @@
 
 --[[
    orion
-   combat framework for Sparking Cards
+   Core combat framework logic for Sparking Cards.
+   Handles attack registration, server-side execution validation, state management,
+   damage application, and network communication for combat events.
 ]]
 
 local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService") -- Added for input handling
+local ServerScriptService = game:GetService("ServerScriptService") -- For requiring CombatModuleManager
+local UserInputService = game:GetService("UserInputService")
 
 local CombatStructure = require(ReplicatedStorage.Structures.CombatStructure)
-local audio = require(script.Parent.Parent.Modules.audio)
-local playerMarshaller = require(script.Parent.Parent.Utility.playerMarshaller)
-local statemachine = require(script.Parent.Parent.Utility.statemachine)
-local states = require(ReplicatedStorage.Combat.states) -- Assuming states.new() creates a statemachine instance
+local audio = require(ReplicatedStorage.Modules.audio) -- Adjusted path
+local PlayerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local StateManager = require(ReplicatedStorage.Combat.states) -- Updated to use the refined states module
 local Packet = require(ReplicatedStorage.Packet)
-local clientcast = require(ReplicatedStorage.ClientModules.clientcast) -- For client-side use
+local ClientCast = require(ReplicatedStorage.ClientModules.clientcast) -- For client-side use
 local Maid = require(ReplicatedStorage.Utility.Maid)
+-- local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary) -- Moved to ExecuteServerAttackLogic for M1 combo check
 
-local orion = {}
-orion.RegisteredAttacks = {} -- Stores data for all registered attacks
-orion.PlayerStates = {} -- Key: Player.UserId, Value: statemachine.StateMachineType
-orion.PlayerCooldowns = {} -- Key: Player.UserId, Value: { [attackName: string]: tick }
-orion._audio = audio.new()
-orion._maid = Maid.new() -- Maid for cleaning up global connections for Orion itself
+-- Forward declare CombatModuleManager due to potential circular dependencies if it requires Orion early.
+-- Actual require will be done in InitServer.
+local CombatModuleManager: any --typeof(require(ServerScriptService.Server.CombatModuleManager))
 
--- Type for AttackData (will be expanded)
+
+-- Define types for clarity
+type Player = PlayerMarshaller.player
+type StateMachineType = ReturnType<typeof(StateManager.new)>
+type TargetInfoParams = { targetPosition: Vector3?, targetInstanceId: number? } -- Matches CombatModuleManager definition
+
 export type AttackData = {
 	Name: string,
-	Type: "M1" | "Skill" | "Ultimate" | "WeaponAbility" | string, -- M1, Skill, Ultimate, or custom types
-	InputType: "Action" | "KeyCode" | "UserInputType", -- How input is specified
-	InputAction: string?, -- e.g., "PrimaryAttack", "Ability1" (if InputType is "Action")
-	KeyCode: Enum.KeyCode?, -- (if InputType is "KeyCode")
-	UserInputType: Enum.UserInputType?, -- (if InputType is "UserInputType")
+	Type: "M1" | "Skill" | "Ultimate" | "Support" | "WeaponAbility" | string,
+	InputType: "Action" | "KeyCode" | "UserInputType",
+	InputAction: string?,
+	KeyCode: Enum.KeyCode?,
+	UserInputType: Enum.UserInputType?,
 
 	Damage: number,
 	Cooldown: number,
-	Range: number?, -- General purpose range, specific use depends on attack
+	Range: number?,
 
-	AnimationId: string?, -- Asset ID for server-side animation
-	SoundId: string?, -- Asset ID for server-side sound
+	AnimationId: string?,
+	SoundId: string?,
 
-	-- Client-side Hit Detection (using clientcast)
-	HitboxProvider: ((player: Player, attackData: AttackData) -> clientcast.HitboxConfig)?,
-	ActiveDuration: number?, -- How long clientcast hitbox is active
+	HitboxProvider: ((player: Player, attackData: AttackData) -> ClientCast.HitboxConfig)?,
+	ActiveDuration: number?, -- How long clientcast hitbox is active or server attack logic considers "active"
 
 	-- Callbacks
-	OnExecuteServer: ((player: Player, attackData: AttackData, targetInfo: table?) -> ())?,
-	OnExecuteClient: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?, -- For predictive effects
+	OnExecuteServer: ((player: Player, attackData: AttackData, targetInfo: TargetInfoParams?) -> ())?,
+	OnExecuteClient: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?,
 	OnHitServer: ((sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackData: AttackData) -> ())?,
-	OnHitClient: ((sourcePlayer: Player, targetPosition: Vector3, attackData: AttackData, maid: Maid.Maid) -> ())?, -- For impact effects
+	OnHitClient: ((sourcePlayer: Player, targetPosition: Vector3, attackData: AttackData, maid: Maid.Maid) -> ())?,
 	OnBlockServer: ((sourcePlayer: Player, targetPlayer: Player, attackData: AttackData) -> ())?,
 
-	-- Visuals & Effects
-	VisualEffectClient: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?, -- Main client effect
-	VisualEffectServer: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?, -- Main server effect / replication
+	VisualEffectClient: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?,
+	VisualEffectServer: ((player: Player, attackData: AttackData, maid: Maid.Maid) -> ())?,
 
-	-- Knockback (example structure, can be expanded)
 	Knockback: {
 		Force: number,
 		Duration: number,
-		Mode: "Directional" | "Omni"?, -- Directional from attacker, Omni away from impact
+		Mode: "Directional" | "Omni"?,
+		SourcePosition: Vector3?, -- Used if Mode is Omni
 	}?,
 
-	-- Other potential fields
 	StaminaCost: number?,
 	SpecialCost: number?,
 	RequiresTarget: boolean?,
-	MaxCombo: number?, -- For M1 sequences
-	NextComboAttack: string?, -- Name of the next attack in a combo chain
+	MaxCombo: number?,
+	NextComboAttack: string?,
 	IsProjectile: boolean?,
 	ProjectileSpeed: number?,
-	ProjectileModule: ModuleScript?, -- For custom projectile logic
-	-- Add more as needed
+	ProjectileModule: ModuleScript?,
 }
 
+local orion = {}
+orion.RegisteredAttacks = {} ---@type { [string]: AttackData }
+orion.PlayerStates = {} ---@type { [number]: StateMachineType } -- Key: Player.UserId
+orion.PlayerCooldowns = {} ---@type { [number]: { [string]: number } } -- Key: Player.UserId, Value: { [attackName]: tick }
+orion._audio = audio.new()
+orion._maid = Maid.new()
 
-local function validateCharacter(player: playerMarshaller.player?)
+local function validateCharacter(player: Player?)
 	if not player or not player.Character then
 		return false
 	end
@@ -88,26 +95,23 @@ local function validateCharacter(player: playerMarshaller.player?)
 	return true
 end
 
--- Core API Functions
-
 function orion.RegisterAttack(attackName: string, attackData: AttackData)
-	-- Validate attackData structure (optional but recommended)
 	if not attackData.Type or not attackData.Name then
 		warn("Orion: Attempted to register attack with missing Type or Name:", attackName)
 		return
+	end
+	if not attackData.OnExecuteServer then
+		warn("Orion: Attack", attackName, "registered without an OnExecuteServer callback. This attack will do nothing on the server.")
 	end
 	attackData.Name = attackName -- Ensure name consistency
 	orion.RegisteredAttacks[attackName] = attackData
 	print("Orion: Registered attack -", attackName)
 end
 
--- Server-side M1 Combo Tracking
-local serverPlayerComboData = {} -- [playerId] = { currentAttackName = "attackName", count = 1, lastAttackTime = tick() }
-local COMBO_WINDOW_DURATION = 0.8 -- Max time between M1 presses to continue a combo (adjust as needed)
-local SERVER_COMBO_WINDOW_DURATION: number = COMBO_WINDOW_DURATION + 0.2 -- Allow slightly more time on server for latency
+local serverPlayerComboData: { [number]: { currentAttackName: string, count: number, lastAttackTime: number } } = {}
+local SERVER_COMBO_WINDOW_DURATION: number = 0.8 + 0.2 -- Client window + latency buffer
 
--- SERVER-SIDE: Handles the validated request to execute an attack's server logic
-function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackName: string, equippedIdentifier: string?, targetInfo: {}?)
+function orion.ExecuteServerAttackLogic(player: Player, attackName: string, equippedIdentifier: string?, targetInfo: TargetInfoParams?)
 	if not validateCharacter(player) then
 		return
 	end
@@ -118,87 +122,72 @@ function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackN
 		return
 	end
 
-	-- Check Player State (e.g., cannot attack if stunned or already attacking)
-	local currentPlayerState = orion.GetPlayerState(player)
-	if currentPlayerState:getCurrentState() == states.Attacking or currentPlayerState:getCurrentState() == states.Stunned then
-		print("Orion Server:", player.Name, "cannot attack while in state:", currentPlayerState:getCurrentState())
+	local playerStateMachine = orion.GetPlayerState(player)
+	local currentState = playerStateMachine:getCurrentState()
+
+	if currentState == StateManager.ATTACKING or currentState == StateManager.STUNNED or currentState == StateManager.CHANNELING then
+		-- print("Orion Server:", player.Name, "cannot attack while in state:", currentState)
 		return
 	end
 
 	-- M1 Combo Validation (Server-Side)
 	if attackData.Type == "M1" then
-		local cardLibrary = require(ReplicatedStorage.Combat.CardLibrary) -- Corrected path
-		local cardInfo = equippedIdentifier and cardLibrary[equippedIdentifier]
+		local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary) -- Require here to avoid potential init order issues
+		local cardInfo = equippedIdentifier and CardLibrary[equippedIdentifier]
 
 		if not cardInfo then
-			warn("Orion Server: Could not find card info for", equippedIdentifier or "Unknown Identifier", "during M1 combo validation.")
-			serverPlayerComboData[player.UserId] = nil -- Clear combo on error
-			return -- Reject attack if card info is missing
+			warn("Orion Server: Could not find card info for", equippedIdentifier or "Unknown Identifier", "during M1 combo validation for player", player.Name)
+			serverPlayerComboData[player.UserId] = nil
+			return
 		end
 
 		local currentServerCombo = serverPlayerComboData[player.UserId]
 		local baseM1FromCard = cardInfo.Moveset and cardInfo.Moveset.M1
 
+		if not baseM1FromCard then
+			warn("Orion Server: Card", equippedIdentifier, "has no base M1 defined in Moveset for player", player.Name)
+			serverPlayerComboData[player.UserId] = nil
+			return
+		end
+
 		if currentServerCombo
 			and (tick() - currentServerCombo.lastAttackTime < SERVER_COMBO_WINDOW_DURATION)
-			and currentServerCombo.count < (cardInfo.MaxCombo or 1) -- Use MaxCombo from CardLibrary
+			and currentServerCombo.count < (attackData.MaxCombo or cardInfo.MaxCombo or 1) -- Prefer AttackData.MaxCombo if set
 		then
-			-- Try to continue combo
 			local lastAttackData = orion.RegisteredAttacks[currentServerCombo.currentAttackName]
 			if not lastAttackData or lastAttackData.NextComboAttack ~= attackName then
-				-- Invalid combo progression (e.g., client sent wrong attack or skipped)
-				-- Allow if it's the base M1 for the weapon (resets combo)
 				if attackName == baseM1FromCard then
-					-- print("Orion Server: Resetting M1 combo for", player.Name, "due to unexpected sequence, but allowing base M1.")
 					serverPlayerComboData[player.UserId] = { count = 1, currentAttackName = attackName, lastAttackTime = tick() }
 				else
-					warn("Orion Server: Invalid M1 combo sequence for", player.Name, ". Expected:", lastAttackData and lastAttackData.NextComboAttack or "N/A", "Got:", attackName, "Base M1:", baseM1FromCard or "N/A")
-					return -- Reject invalid combo step
+					warn("Orion Server: Invalid M1 combo sequence for", player.Name, ". Expected:", lastAttackData and lastAttackData.NextComboAttack or "N/A", "Got:", attackName, "Base M1:", baseM1FromCard)
+					return
 				end
 			else
-				-- Valid combo continuation
 				currentServerCombo.count += 1
 				currentServerCombo.currentAttackName = attackName
 				currentServerCombo.lastAttackTime = tick()
-				-- print("Orion Server: Valid M1 combo continuation for", player.Name, "to", attackName, "Count:", currentServerCombo.count)
 			end
 		else
-			-- Not a continuation or timed out, check if it's the base M1
 			if attackName == baseM1FromCard then
 				serverPlayerComboData[player.UserId] = { count = 1, currentAttackName = attackName, lastAttackTime = tick() }
-				-- print("Orion Server: Starting/Restarting M1 combo for", player.Name, "with", attackName)
 			else
-				warn("Orion Server: Invalid M1 combo start for", player.Name, ". Expected base M1:", baseM1FromCard or "N/A", "Got:", attackName)
-				return -- Not the base M1 and not a valid combo
+				warn("Orion Server: Invalid M1 combo start for", player.Name, ". Expected base M1:", baseM1FromCard, "Got:", attackName)
+				return
 			end
 		end
 	else
-		-- Not an M1 attack, clear server combo data for this player
 		serverPlayerComboData[player.UserId] = nil
 	end
 
-	-- Check Cooldowns (Authoritative server check)
-	-- For M1s, cooldown is typically on the first attack of the chain. Skills have their own.
-	local cooldownKey = attackName
-	if attackData.Type == "M1" then
-		-- If CardLibrary defines a specific cooldown for M1s, or if the base M1 attack has a cooldown field.
-		-- For simplicity, let's assume the first M1 in a chain holds the primary cooldown for the M1 sequence.
-		-- This means attackData.Cooldown for combo pieces might be 0 or very small,
-		-- while the base M1 (e.g., FrostGauntlet_M1_1) has the actual M1 sequence cooldown.
-		-- Here, we check cooldown for the *specific attack being executed*.
-		-- A more robust system might check cooldown on the *base* M1 if this is part of a chain.
-		-- For now, each attack has its own cooldown field.
-	end
-
+	-- Cooldown Check
+	local cooldownKey = attackName -- Cooldown is per specific attack
 	if orion.PlayerCooldowns[player.UserId]
-		and orion.PlayerCooldowns[player.UserId][cooldownKey] -- Check cooldown for the specific attack or its base
+		and orion.PlayerCooldowns[player.UserId][cooldownKey]
 		and tick() < orion.PlayerCooldowns[player.UserId][cooldownKey]
 	then
-		-- print("Orion Server:", player.Name, "attack", cooldownKey, "is on cooldown.")
 		return
 	end
 
-	-- Set Cooldown for this specific attack
 	if attackData.Cooldown and attackData.Cooldown > 0 then
 		if not orion.PlayerCooldowns[player.UserId] then
 			orion.PlayerCooldowns[player.UserId] = {}
@@ -206,86 +195,100 @@ function orion.ExecuteServerAttackLogic(player: playerMarshaller.player, attackN
 		orion.PlayerCooldowns[player.UserId][cooldownKey] = tick() + attackData.Cooldown
 	end
 
-	print("Orion Server:", player.Name, "is executing attack:", attackName)
-	-- Use "start_attack" event for state transition. Pass attackName for potential state-specific logic.
-	-- The state machine's onEnter for "Attacking" can use these params.
-	local stateParams = {
+	-- print("Orion Server:", player.Name, "is executing attack:", attackName)
+
+	local stateParams: StateManager.AttackingParams = {
 		attackName = attackName,
-		equippedIdentifier = equippedIdentifier,
-		duration = attackData.ActiveDuration
+		duration = attackData.ActiveDuration or 0.5, -- Default duration if not specified
 	}
-	-- Correctly use an event name from states.lua to transition to Attacking
-	-- Assuming 'start_attack' is the event defined in Idle (and other relevant states) to go to Attacking state.
 	orion.SetPlayerState(player, "start_attack", stateParams)
 
-
 	local character = player.Character
+	if not character then return end -- Should be caught by validateCharacter
 
-	-- Trigger animation (server-side for replication to other clients)
+	-- Animation (server-side for replication)
 	if attackData.AnimationId then
-		local humanoid: Humanoid = character:FindFirstChildOfClass("Humanoid")
+		local humanoid: Humanoid? = character:FindFirstChildOfClass("Humanoid")
 		local animator: Animator? = humanoid and humanoid:FindFirstChildOfClass("Animator")
 		if animator then
-			local animation = ReplicatedStorage.Assets.Animations:FindFirstChild(attackData.AnimationId) -- Example path
-			if animation and animation:IsA("Animation") then
-				local track = animator:LoadAnimation(animation)
+			-- Assuming AnimationId is a full rbxassetid string or a name of an Animation in a predefined location
+			local animationInstance: Animation?
+			if attackData.AnimationId:match("^rbxasset") then
+				animationInstance = Instance.new("Animation")
+				animationInstance.AnimationId = attackData.AnimationId
+			else
+				-- Example path, adjust as needed
+				local animsFolder = ReplicatedStorage:FindFirstChild("Assets", true) and ReplicatedStorage.Assets:FindFirstChild("Animations", true)
+				animationInstance = animsFolder and animsFolder:FindFirstChild(attackData.AnimationId) :: Animation?
+			end
+
+			if animationInstance and animationInstance:IsA("Animation") then
+				local track = animator:LoadAnimation(animationInstance)
 				track:Play()
-				-- TODO: Better animation handling, perhaps tie to attack duration or specific events
+				-- Auto-transition to Idle after animation is a common pattern, but might be attack-specific.
+				-- Consider if OnExecuteServer should manage this transition for more control.
 				track.Stopped:Connect(function()
-					if orion.GetPlayerState(player):getCurrentState() == states.Attacking then
-						orion.SetPlayerState(player, states.Idle)
+					if orion.GetPlayerState(player):getCurrentState() == StateManager.ATTACKING then
+						orion.SetPlayerState(player, "finish_attack")
 					end
 				end)
+				if animationInstance.AnimationId == attackData.AnimationId then animationInstance:Destroy() end -- Clean up temp instance
 			else
 				warn("Orion Server: Animation not found or not an Animation instance:", attackData.AnimationId)
+				-- Fallback if animation fails but attack should still have a duration
+				task.delay(attackData.ActiveDuration or 0.1, function()
+					if orion.GetPlayerState(player):getCurrentState() == StateManager.ATTACKING then
+						orion.SetPlayerState(player, "finish_attack")
+					end
+				end)
 			end
 		end
 	else
+		-- If no animation, transition based on ActiveDuration
 		task.delay(attackData.ActiveDuration or 0.1, function()
-			if orion.GetPlayerState(player):getCurrentState() == states.Attacking then
-				orion.SetPlayerState(player, states.Idle)
+			if orion.GetPlayerState(player):getCurrentState() == StateManager.ATTACKING then
+				orion.SetPlayerState(player, "finish_attack")
 			end
 		end)
 	end
 
-	-- Trigger sound (server-side for authority or replicate via effect notif)
+	-- Sound (replicated via effect notification)
 	if attackData.SoundId then
-		-- Option 1: Play directly on server (less responsive for attacker)
-		-- orion._audio:write_miscellaneous(orion._audio, { sound_1 = attackData.SoundId })
-		-- orion._audio:read_miscellaneous(orion._audio, "sound_1")
-		-- task.wait()
-		-- orion._audio:remove(orion._audio, "sound_1")
-		-- Option 2: Send as an effect to clients
-		Packet.Orion_PlayEffectNotif.sendToAll({
+		local soundParams: Packet.EffectParams = {
+			customData = { soundId = attackData.SoundId },
+			sourcePlayerId = player.UserId,
+		}
+		Packet.Orion_PlayEffectNotif.sendToAllClients({ -- Consider sendToPlayersInSphere if sound is localized
 			effectName = "PlaySound",
-			effectParams = { customData = { soundId = attackData.SoundId }, sourcePlayerId = player.UserId },
+			effectParams = soundParams,
 		})
 	end
 
-	-- Server-side OnExecute callback
+	-- Execute the core attack logic from the combat module
 	if attackData.OnExecuteServer then
-		attackData.OnExecuteServer(player, attackData, targetInfo)
+		-- Pass `player`, `attackData`, and `targetInfo`
+		-- The type of `targetInfo` here should match what `OnExecuteServer` expects.
+		-- It's currently defined as `TargetInfoParams?` which is `{ targetPosition: Vector3?, targetInstanceId: number? }?`
+		pcall(attackData.OnExecuteServer, player, attackData, targetInfo)
+	else
+		-- This case should have been warned during registration, but good to note.
+		-- print("Orion Server: No OnExecuteServer defined for attack:", attackName)
 	end
 
-	-- Server-side visual effects (e.g., for replication or server-owned elements)
+	-- Server-side visual effects (if any)
 	if attackData.VisualEffectServer then
 		local vfxMaid = Maid.new()
-		attackData.VisualEffectServer(player, attackData, vfxMaid)
-		-- Assuming VisualEffectServer cleans up its own long-term effects or uses the maid
-		-- For short term, could auto-clean after ActiveDuration
+		pcall(attackData.VisualEffectServer, player, attackData, vfxMaid)
 		task.delay(attackData.ActiveDuration or 2, function()
 			vfxMaid:Destroy()
 		end)
 	end
 end
 
--- CLIENT-SIDE: Player requests to execute an attack
-function orion.RequestExecuteAttack(attackName: string, equippedIdentifier: string, targetInfo: table?)
+function orion.RequestExecuteAttack(attackName: string, equippedIdentifier: string, targetInfo: TargetInfoParams?)
 	local player = Players.LocalPlayer
-	if not validateCharacter(player) then
-		-- print("Orion Client: Character invalid for attack request.")
-		return
-	end
+	if not player then return end -- Should not happen in client script
+	if not validateCharacter(player) then return end
 
 	local attackData = orion.RegisteredAttacks[attackName]
 	if not attackData then
@@ -293,24 +296,19 @@ function orion.RequestExecuteAttack(attackName: string, equippedIdentifier: stri
 		return
 	end
 
-	-- Client-side Cooldown Check (for responsiveness)
 	if orion.PlayerCooldowns[player.UserId]
 		and orion.PlayerCooldowns[player.UserId][attackName]
 		and tick() < orion.PlayerCooldowns[player.UserId][attackName]
 	then
-		-- print("Orion Client:", player.Name, "attack", attackName, "is on cooldown.")
-		-- TODO: Play cooldown error sound/visual
+		return -- Client-side cooldown check for responsiveness
+	end
+
+	local playerStateMachine = orion.GetPlayerState(player)
+	local currentState = playerStateMachine:getCurrentState()
+	if currentState == StateManager.ATTACKING or currentState == StateManager.STUNNED or currentState == StateManager.CHANNELING then
 		return
 	end
 
-	-- Client-side Player State Check
-	local currentPlayerState = orion.GetPlayerState(player)
-	if currentPlayerState:getCurrentState() == states.Attacking or currentPlayerState:getCurrentState() == states.Stunned then
-		-- print("Orion Client:", player.Name, "cannot attack while in state:", currentPlayerState:getCurrentState())
-		return
-	end
-
-	-- Set client-side cooldown immediately for responsiveness
 	if attackData.Cooldown and attackData.Cooldown > 0 then
 		if not orion.PlayerCooldowns[player.UserId] then
 			orion.PlayerCooldowns[player.UserId] = {}
@@ -318,81 +316,61 @@ function orion.RequestExecuteAttack(attackName: string, equippedIdentifier: stri
 		orion.PlayerCooldowns[player.UserId][attackName] = tick() + attackData.Cooldown
 	end
 
-	-- Predictive client-side effects & state change
-	-- orion.SetPlayerState(player, states.Attacking) -- Server will confirm state
-
 	local attackMaid = Maid.new()
 
 	if attackData.OnExecuteClient then
-		attackData.OnExecuteClient(player, attackData, attackMaid)
+		pcall(attackData.OnExecuteClient, player, attackData, attackMaid)
 	end
 	if attackData.VisualEffectClient then
-		attackData.VisualEffectClient(player, attackData, attackMaid)
+		pcall(attackData.VisualEffectClient, player, attackData, attackMaid)
 	end
 
-	-- Client-side Hitbox Creation (using clientcast)
 	if attackData.HitboxProvider then
 		local hitboxConfig = attackData.HitboxProvider(player, attackData)
 		if hitboxConfig then
-			hitboxConfig.Duration = attackData.ActiveDuration or hitboxConfig.Duration or 0.5 -- Ensure duration
-			local hitbox = clientcast.new(hitboxConfig)
-			attackMaid:GiveTask(hitbox) -- Add hitbox to maid for cleanup
+			hitboxConfig.Duration = attackData.ActiveDuration or hitboxConfig.Duration or 0.5
+			local hitbox = ClientCast.new(hitboxConfig)
+			attackMaid:GiveTask(hitbox)
 
-			hitbox.HitDetected:Connect(function(hitResult)
+			hitbox.HitDetected:Connect(function(hitResult: ClientCast.HitResult)
 				local targetPart = hitResult.Part
 				local targetModel = targetPart:FindFirstAncestorWhichIsA("Model")
 				local targetPlayer = targetModel and Players:GetPlayerFromCharacter(targetModel)
 
-				if targetPlayer and targetPlayer ~= player then -- Check if it's another player
-					print("Orion Client: Hit detected on", targetPlayer.Name, "by", attackName)
-					Packet.Orion_ClientHitNotif.sendToServer({
-						targetInstanceId = targetPlayer.Character.PrimaryPart.InstanceId, -- Example, send ID of HRP or Model
+				if targetPlayer and targetPlayer ~= player then
+					local hitNotifData: typeof(Packet.Orion_ClientHitNotif.value) = {
+						targetInstanceId = targetPlayer.Character and targetPlayer.Character.PrimaryPart and targetPlayer.Character.PrimaryPart.InstanceId or 0,
 						hitPosition = hitResult.Position,
 						attackName = attackName,
 						weaponIdentifier = equippedIdentifier,
 						-- validationRaycastData = { ... } -- If clientcast provides specific validation data
-					})
-				elseif targetModel then -- Hit a non-player model part
-					-- Handle hitting environment objects if needed
-					-- print("Orion Client: Hit detected on environment part", targetPart.Name, "by", attackName)
-					-- Potentially send a different notification for environment interaction
+					}
+					Packet.Orion_ClientHitNotif.sendToServer(hitNotifData)
 				end
 			end)
 			hitbox:Start()
 		end
 	end
 
-	-- Send request to server
-	Packet.Orion_ExecuteAttackRequest.sendToServer({
+	local requestData: typeof(Packet.Orion_ExecuteAttackRequest.value) = {
 		attackName = attackName,
 		equippedIdentifier = equippedIdentifier,
-		targetInfo = targetInfo,
-	})
+		targetInfo = targetInfo, -- This should be serializable by bytenet
+	}
+	Packet.Orion_ExecuteAttackRequest.sendToServer(requestData)
 
-	-- Clean up client-side attack effects after duration
 	task.delay(attackData.ActiveDuration or 0.5, function()
 		attackMaid:Destroy()
 	end)
 end
 
-
--- SERVER-SIDE: Handles damage and related effects after a hit is validated
-function orion.HandleDamage(
-	sourcePlayer: Player,
-	targetPlayer: Player,
-	damageAmount: number,
-	attackName: string
-)
+function orion.HandleDamage(sourcePlayer: Player, targetPlayer: Player, damageAmount: number, attackName: string)
 	local targetCharacter = targetPlayer.Character
-	if not validateCharacter(targetPlayer) then -- Validate targetPlayer too
-		return
-	end
-	local sourceCharacter = sourcePlayer.Character -- Should be valid if they initiated attack
+	if not validateCharacter(targetPlayer) then return end
+	local sourceCharacter = sourcePlayer.Character
 
-	local targetHumanoid = targetCharacter:FindFirstChildOfClass("Humanoid")
-	if not targetHumanoid or targetHumanoid.Health <= 0 then
-		return
-	end
+	local targetHumanoid: Humanoid? = targetCharacter and targetCharacter:FindFirstChildOfClass("Humanoid")
+	if not targetHumanoid or targetHumanoid.Health <= 0 then return end
 
 	local attackData = orion.RegisteredAttacks[attackName]
 	if not attackData then
@@ -402,277 +380,247 @@ function orion.HandleDamage(
 
 	local finalDamage = damageAmount
 
-	-- Apply blocking modifier
-	local targetState = orion.GetPlayerState(targetPlayer):getCurrentState()
-	if targetState == states.Blocking then
-		local damageAbsorption = CombatStructure.Blocking.DamageAbsorbtion or 0.6
+	if orion.GetPlayerState(targetPlayer):getCurrentState() == StateManager.BLOCKING then
+		local damageAbsorption = CombatStructure.Blocking.DamageAbsorbtion or 0.6 -- From config
 		finalDamage = finalDamage * (1 - damageAbsorption)
-		print("Orion Server:", targetPlayer.Name, "blocked, damage reduced to", finalDamage)
 		if attackData.OnBlockServer then
-			attackData.OnBlockServer(sourcePlayer, targetPlayer, attackData)
+			pcall(attackData.OnBlockServer, sourcePlayer, targetPlayer, attackData)
 		end
-		-- TODO: Notify client about block for feedback (sound, visual)
-		Packet.Orion_PlayEffectNotif.sendToAllClients({ -- Or specific clients
+		local blockEffectParams: Packet.EffectParams = {
+			sourcePlayerId = sourcePlayer.UserId,
+			targetPlayerId = targetPlayer.UserId,
+			position = targetCharacter and targetCharacter.PrimaryPart and targetCharacter.PrimaryPart.Position or targetPlayer.Character and targetPlayer.Character.HumanoidRootPart.Position,
+		}
+		Packet.Orion_PlayEffectNotif.sendToAllClients({
 			effectName = "BlockedHit",
-			effectParams = {
-				sourcePlayerId = sourcePlayer.UserId,
-				targetPlayerId = targetPlayer.UserId,
-				position = targetCharacter.PrimaryPart.Position,
-			}
+			effectParams = blockEffectParams,
 		})
 	end
 
-	print(
-		"Orion Server:",
-		sourcePlayer.Name,
-		"damaged",
-		targetPlayer.Name,
-		"for",
-		finalDamage,
-		"HP with",
-		attackName
-	)
 	targetHumanoid:TakeDamage(finalDamage)
+	-- print("Orion Server:", sourcePlayer.Name, "damaged", targetPlayer.Name, "for", finalDamage, "HP with", attackName)
 
-	-- Server-side OnHit callback (after damage, before death/knockback)
-	if attackData.OnHitServer then
-		attackData.OnHitServer(sourcePlayer, targetPlayer, finalDamage, attackData)
+	-- Trigger passives after damage application
+	if CombatModuleManager then -- Ensure manager is loaded
+		pcall(CombatModuleManager.TriggerPassive_OnPlayerDealtDamage, sourcePlayer, targetPlayer, finalDamage, attackData)
+		pcall(CombatModuleManager.TriggerPassive_OnPlayerDamaged, targetPlayer, sourcePlayer, finalDamage, attackData)
 	end
 
-	-- Client-side OnHit notification (for impact effects)
-	Packet.Orion_PlayEffectNotif.sendToAllClients({ -- Or just relevant clients
-		effectName = "GenericImpact", -- Client will map this to a specific effect via attackData
-		effectParams = {
-			customData = { attackName = attackName }, -- So client can get more OnHitClient details
-			sourcePlayerId = sourcePlayer.UserId,
-			targetPlayerId = targetPlayer.UserId,
-			position = targetCharacter.PrimaryPart.Position, -- Or actual hit position if available
-		}
+	if attackData.OnHitServer then
+		pcall(attackData.OnHitServer, sourcePlayer, targetPlayer, finalDamage, attackData)
+	end
+
+	local impactEffectParams: Packet.EffectParams = {
+		customData = { attackName = attackName },
+		sourcePlayerId = sourcePlayer.UserId,
+		targetPlayerId = targetPlayer.UserId,
+		position = targetCharacter and targetCharacter.PrimaryPart and targetCharacter.PrimaryPart.Position or targetPlayer.Character and targetPlayer.Character.HumanoidRootPart.Position,
+	}
+	Packet.Orion_PlayEffectNotif.sendToAllClients({
+		effectName = "GenericImpact",
+		effectParams = impactEffectParams,
 	})
 
 	if targetHumanoid.Health <= 0 then
-		print("Orion Server:", targetPlayer.Name, "was defeated by", sourcePlayer.Name)
-		orion.SetPlayerState(targetPlayer, "died") -- Event to transition to Defunct state
-		-- Handle other defeat logic (e.g., rewards for sourcePlayer)
+		orion.SetPlayerState(targetPlayer, "died")
 	else
-		-- Handle knockback (SERVER-SIDE)
 		if attackData.Knockback and sourceCharacter and sourceCharacter.PrimaryPart then
-			print("Orion Server: Applying knockback to", targetPlayer.Name)
-			local knockbackForce = attackData.Knockback.Force
-				or CombatStructure.Knockback.DamageScale * finalDamage
-			local knockbackDuration = attackData.Knockback.Duration or CombatStructure.Knockback.Duration
+			local knockbackForce = attackData.Knockback.Force or (CombatStructure.Knockback.DamageScale and CombatStructure.Knockback.DamageScale * finalDamage or 10)
+			local knockbackDuration = attackData.Knockback.Duration or CombatStructure.Knockback.Duration or 0.3
 
-			local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
+			local targetRoot: BasePart? = targetCharacter and targetCharacter:FindFirstChild("HumanoidRootPart") :: BasePart?
 			if targetRoot then
 				local direction: Vector3
 				if attackData.Knockback.Mode == "Omni" and attackData.Knockback.SourcePosition then
 					direction = (targetRoot.Position - attackData.Knockback.SourcePosition).Unit
-				else -- Default Directional from attacker
+				else
 					direction = (targetRoot.Position - sourceCharacter.PrimaryPart.Position).Unit
 				end
 
 				local bv = Instance.new("BodyVelocity")
-				bv.MaxForce = Vector3.new(1, 1, 1) * math.huge
-				bv.Velocity = direction * knockbackForce + Vector3.new(0, knockbackForce * 0.5, 0) -- Add some upward force
+				bv.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+				bv.Velocity = direction * knockbackForce + Vector3.new(0, knockbackForce * 0.3, 0) -- Reduced upward force a bit
 				bv.Parent = targetRoot
 				Debris:AddItem(bv, knockbackDuration)
 
-				-- Event to transition to Stunned state, params for duration
-				orion.SetPlayerState(targetPlayer, "got_stunned", { duration = knockbackDuration })
-				-- The Stunned state's onEnter should handle the timer to transition back to Idle
+				local stunParams: StateManager.StunnedParams = { duration = knockbackDuration }
+				orion.SetPlayerState(targetPlayer, "got_stunned", stunParams)
+				-- Stun recovery timer is now handled in SetPlayerState if new state is Stunned
 			end
 		end
 	end
 end
 
 function orion.SetPlayerState(player: Player, eventName: string, stateParams: table?)
-	local playerState = orion.GetPlayerState(player)
-	-- We don't check if playerState:getCurrentState() == eventName because eventName is an action, not a state.
-	-- However, we might want to check if the transition is valid from the current state.
-	-- The statemachine's :transition() method already handles this implicitly.
+	local playerStateMachine = orion.GetPlayerState(player)
+	local success = playerStateMachine:transition(eventName, stateParams)
 
-	local success = playerState:transition(eventName, stateParams) -- Pass params to state's onEnter/onExit
 	if success then
-		local newStateName = playerState:getCurrentState() -- Get the actual new state name after transition
-		print("Orion:", player.Name, "state changed to:", newStateName, "(via event:", eventName .. ")")
-		Packet.Orion_PlayerStateChangedNotif.sendToAllClients({ -- Consider sending only to relevant clients
+		local newStateName = playerStateMachine:getCurrentState()
+		-- print("Orion:", player.Name, "state changed to:", newStateName, "(via event:", eventName .. ")")
+
+		local notifData: typeof(Packet.Orion_PlayerStateChangedNotif.value) = {
 			playerId = player.UserId,
-			newState = newStateName, -- Send the actual resulting state
-			stateParams = stateParams,
-		})
+			newState = newStateName,
+			stateParams = stateParams, -- Assumes stateParams is serializable by bytenet
+		}
+		Packet.Orion_PlayerStateChangedNotif.sendToAllClients(notifData)
+
+		-- Handle timed state recovery (e.g., for stun)
+		if newStateName == StateManager.STUNNED and stateParams and typeof(stateParams.duration) == "number" and stateParams.duration > 0 then
+			task.delay(stateParams.duration, function()
+				-- Check if player is still in the same stunned state before recovering
+				-- This prevents recovery if another event (e.g., death, another stun) occurred.
+				local currentSM = orion.PlayerStates[player.UserId]
+				if currentSM and currentSM:getCurrentState() == StateManager.STUNNED then
+					orion.SetPlayerState(player, "recover_from_stun")
+				end
+			end)
+		end
 	else
-		warn("Orion: Failed to transition", player.Name, "from state", playerState:getCurrentState(), "with event:", eventName)
+		warn("Orion: Failed to transition", player.Name, "from state", playerStateMachine:getCurrentState(), "with event:", eventName)
 	end
 end
 
-function orion.GetPlayerState(player: playerMarshaller.player)
+function orion.GetPlayerState(player: Player): StateMachineType
 	local userId = player.UserId
 	if not orion.PlayerStates[userId] then
-		orion.PlayerStates[userId] = states.new(player) -- Assuming states.new() initializes the state machine
-		-- Example: orion.PlayerStates[userId]:addState(states.Idle, { transitions = { basic_attack = states.Attacking }})
-		-- This setup should happen in states.lua or when states.new is called.
+		orion.PlayerStates[userId] = StateManager.new(player)
 	end
 	return orion.PlayerStates[userId]
 end
 
--- SERVER-SIDE: Handler for client attack requests from Bytenet
-local function onExecuteAttackRequest(player: playerMarshaller.player, data: typeof(Packet.Orion_ExecuteAttackRequest.value))
-	print("Orion Server: Received Orion_ExecuteAttackRequest from", player.Name, "for", data.attackName)
-	-- Add more server-side validation if needed (e.g., sanity checks on equippedIdentifier)
-	orion.ExecuteServerAttackLogic(player, data.attackName, data.equippedIdentifier, data.targetInfo)
+local function onExecuteAttackRequest(player: Player, data: typeof(Packet.Orion_ExecuteAttackRequest.value))
+	-- Ensure targetInfo is passed correctly; bytenet might make it a non-optional empty table if sent as nil.
+	local targetInfoForLogic: TargetInfoParams? = nil
+	if data.targetInfo and next(data.targetInfo) ~= nil then
+		targetInfoForLogic = data.targetInfo :: TargetInfoParams
+	end
+	orion.ExecuteServerAttackLogic(player, data.attackName, data.equippedIdentifier, targetInfoForLogic)
 end
 
--- SERVER-SIDE: Handler for client hit notifications from Bytenet
-local function onClientHitNotif(player: playerMarshaller.player, data: typeof(Packet.Orion_ClientHitNotif.value))
-	print("Orion Server: Received Orion_ClientHitNotif from", player.Name, "for attack", data.attackName)
-
-	local targetInstance = game:GetInstanceFromId(data.targetInstanceId) -- Get instance by ID
+local function onClientHitNotif(player: Player, data: typeof(Packet.Orion_ClientHitNotif.value))
+	local targetInstance = game:GetInstanceFromId(data.targetInstanceId)
 	local targetCharacter = targetInstance and targetInstance:FindFirstAncestorWhichIsA("Model")
-	local targetPlayer = targetCharacter and Players:GetPlayerFromCharacter(targetCharacter)
+	local targetPlayerOther = targetCharacter and Players:GetPlayerFromCharacter(targetCharacter)
 
-	if not targetPlayer or targetPlayer == player then
-		-- print("Orion Server: Invalid target in ClientHitNotif or self-hit.")
-		return
-	end
+	if not targetPlayerOther then return end
+	local targetPlayer = PlayerMarshaller.get(targetPlayerOther) -- Marshall the target player
+	if not targetPlayer or targetPlayer == player then return end
 
 	local attackData = orion.RegisteredAttacks[data.attackName]
-	if not attackData then
-		warn("Orion Server: ClientHitNotif for unregistered attack:", data.attackName)
-		return
-	end
+	if not attackData then return end
 
-	-- Basic validation: Check distance (example)
 	local sourcePos = player.Character and player.Character.PrimaryPart and player.Character.PrimaryPart.Position
-	if not sourcePos then return end -- Attacker character gone?
+	if not sourcePos then return end
 
 	local distance = (sourcePos - data.hitPosition).Magnitude
-	local expectedRange = attackData.Range or CombatStructure.DefaultAttackRange or 10 -- Define DefaultAttackRange
+	local expectedRange = attackData.Range or CombatStructure.DefaultAttackRange or 15 -- Increased default slightly
 
-	if distance > expectedRange * 1.2 then -- Allow some leeway for lag
+	if distance > expectedRange * 1.3 then -- Increased leeway slightly
 		warn("Orion Server: Hit validation failed for", player.Name, "- distance too far.", distance, ">", expectedRange)
 		return
 	end
+	-- TODO: More validation like Line of Sight, timing, etc.
 
-	-- TODO: Add more validation: Line of sight, timing, anti-cheat checks
-	-- if data.validationRaycastData then ... end
-
-	print("Orion Server: ClientHitNotif validated for", player.Name, "hitting", targetPlayer.Name)
 	orion.HandleDamage(player, targetPlayer, attackData.Damage, data.attackName)
 end
 
-
--- CLIENT-SIDE: Input Handling (Example, to be integrated into main client script)
-local function setupClientInput()
-	-- This function is illustrative. Actual input handling will be in Client.client.luau
-	-- and will call orion.RequestExecuteAttack with the correct attackName.
-	if not Players.LocalPlayer then return end
-
-	local function onInputBegan(input: InputObject, gameProcessedEvent: boolean)
-		if gameProcessedEvent then return end
-		local player = Players.LocalPlayer
-		if not validateCharacter(player) then return end
-
-		-- This logic needs to be smarter, using keybindlink and CardLibrary
-		-- For now, a placeholder:
-		if input.UserInputType == Enum.UserInputType.MouseButton1 then
-			-- Determine M1 attackName based on equipped card/weapon
-			-- local m1AttackName = determine_m1_attack_name_from_equipped()
-			-- orion.RequestExecuteAttack(m1AttackName, "current_weapon_id", { targetPosition = player:GetMouse().Hit.p })
-		elseif input.KeyCode == Enum.KeyCode.E then
-			-- Determine E skill attackName
-			-- local eSkillAttackName = determine_e_skill_attack_name_from_equipped()
-			-- orion.RequestExecuteAttack(eSkillAttackName, "current_weapon_id")
-		end
-	end
-	-- UserInputService.InputBegan:Connect(onInputBegan) -- Connect in Client.client.luau
-end
-
--- CLIENT-SIDE: Handler for player state changes from Bytenet
 local function onPlayerStateChangedNotif(data: typeof(Packet.Orion_PlayerStateChangedNotif.value))
 	local localPlayer = Players.LocalPlayer
-	local targetPlayer = playerMarshaller.getByUserId(data.playerId)
+	local targetPlayerInstance = PlayerMarshaller.getByUserId(data.playerId) -- This gets our PlayerType
+	if not targetPlayerInstance then return end
 
-	if not targetPlayer then return end
+	local targetPlayer = PlayerMarshaller.get(targetPlayerInstance) -- ensure it's the correct type for GetPlayerState
 
-	-- Update local representation of player states
-	-- Note: Direct state machine transition on client might be complex if server is fully authoritative.
-	-- Client might just use this for visual/audio cues.
-	local playerState = orion.GetPlayerState(targetPlayer) -- Ensures state machine exists
-	-- For simplicity, let's assume the client just notes the state for its own predictive logic / visuals
-	-- playerState:_forceSetState(data.newState) -- If statemachine had such a method
+	-- print("Orion Client:", targetPlayer.Name, "received state update:", data.newState, data.stateParams)
 
-	print("Orion Client:", targetPlayer.Name, "received state update:", data.newState, data.stateParams)
+	-- Client might use this for visual cues or updating its local understanding of other players' states.
+	-- For the local player, the server's state notification is authoritative, but the client
+	-- might have already predictively entered a state (e.g., Attacking).
+	-- The actual state machine on the client for the local player is mostly for prediction and input locking.
+	-- Server's `SetPlayerState` is the source of truth that gets replicated.
 
+	-- If it's the local player, and the server is forcing a state (like Stunned),
+	-- the client's own state machine should reflect that to prevent actions.
+	-- This part can be tricky. For now, this notification is mainly for visual/audio feedback.
 	if targetPlayer == localPlayer then
-		-- Handle local player state changes (e.g., update UI, play local sounds/VFX)
-		if data.newState == states.Stunned then
-			-- Play stun visual effect on self
+		if data.newState == StateManager.STUNNED then
+			-- Client can play stun VFX/SFX on self
 		end
+		-- Potentially force client state machine to sync if server dictates a non-predictable state
+		-- local clientSM = orion.GetPlayerState(localPlayer)
+		-- if clientSM:getCurrentState() ~= data.newState then
+		--    clientSM:_forceSetState(data.newState) -- If such a method existed on statemachine
+		-- end
 	else
-		-- Handle remote player state changes (e.g., show stun effect on other player)
+		-- Handle remote player state changes (e.g., show stun effect on other player model)
 	end
-
-	-- Actual state transition logic for client's own character might be better handled
-	-- by server commands if strict authority is needed, or client can predictively
-	-- transition and correct if server sends a different overriding state.
-	-- For now, this notification is mainly for other players' states or simple feedback.
 end
 
--- CLIENT-SIDE: Handler for generic effect playing
 local function onPlayEffectNotif(data: typeof(Packet.Orion_PlayEffectNotif.value))
-	print("Orion Client: Received Orion_PlayEffectNotif for effect", data.effectName)
+	-- print("Orion Client: Received Orion_PlayEffectNotif for effect", data.effectName)
 	local effectName = data.effectName
-	local params = data.effectParams
+	local params = data.effectParams :: Packet.EffectParams -- Cast to the documented type
 	local player = Players.LocalPlayer
-	local maid = Maid.new() -- Effects should be temporary
+	if not player then return end
 
-	-- Example: Generic Impact effect based on attackName
+	local maid = Maid.new() -- Effects are often temporary
+
 	if effectName == "GenericImpact" and params.customData and params.customData.attackName then
 		local attackData = orion.RegisteredAttacks[params.customData.attackName]
 		if attackData and attackData.OnHitClient then
-			local sourcePlayer = params.sourcePlayerId and playerMarshaller.getByUserId(params.sourcePlayerId)
-			-- Call OnHitClient, ensuring targetPosition is available from params
-			attackData.OnHitClient(sourcePlayer or player, params.position or Vector3.new(), attackData, maid)
+			local sourcePlayerInstance = params.sourcePlayerId and PlayerMarshaller.getByUserId(params.sourcePlayerId)
+			local sourcePlayer = sourcePlayerInstance and PlayerMarshaller.get(sourcePlayerInstance)
+
+			pcall(attackData.OnHitClient, sourcePlayer or player, params.position or Vector3.new(), attackData, maid)
 		end
 	elseif effectName == "PlaySound" and params.customData and params.customData.soundId then
-		-- Play sound locally
 		orion._audio:write_miscellaneous(orion._audio, { effect_sound = params.customData.soundId })
 		orion._audio:read_miscellaneous(orion._audio, "effect_sound")
-		task.delay(2, function() orion._audio:remove(orion._audio, "effect_sound") maid:Destroy() end) -- Clean up sound & maid
+		task.delay(3, function() -- Increased delay slightly for sound to play out
+			if orion._audio then -- Check if audio module still exists (e.g. during cleanup)
+				orion._audio:remove(orion._audio, "effect_sound")
+			end
+			maid:Destroy()
+		end)
 		return -- Maid is handled for this specific case
 	elseif effectName == "BlockedHit" then
-		-- Play block sparks, sound at params.position
-		print("Orion Client: BlockedHit effect at", params.position)
+		-- print("Orion Client: BlockedHit effect at", params.position)
+		-- TODO: Client-side visual/audio for block
 	end
-	-- TODO: Create a registry for client-side effect handlers
-	-- local effectHandler = ClientEffectRegistry[effectName]
-	-- if effectHandler then effectHandler(params, maid) end
+	-- TODO: Implement a client-side effect registry: ClientEffectRegistry[effectName](params, maid)
 
-	task.delay(2, function() maid:Destroy() end) -- Default cleanup for maid
+	task.delay(3, function() maid:Destroy() end) -- Default cleanup for other effects
 end
 
-
--- Initialization
 function orion.InitServer()
-	-- Initialize player states and cooldowns for existing players
-	for _, p in ipairs(Players:GetPlayers()) do
-		orion.PlayerStates[p.UserId] = states.new(p)
+	-- Require CombatModuleManager here to avoid cyclic dependencies at script load time
+	CombatModuleManager = require(ServerScriptService.Server.CombatModuleManager)
+
+	for _, pInstance in ipairs(Players:GetPlayers()) do
+		local p = PlayerMarshaller.get(pInstance)
+		orion.PlayerStates[p.UserId] = StateManager.new(p)
 		orion.PlayerCooldowns[p.UserId] = {}
 	end
 
-	orion._maid:GiveTask(Players.PlayerAdded:Connect(function(p)
-		orion.PlayerStates[p.UserId] = states.new(p)
+	orion._maid:GiveTask(Players.PlayerAdded:Connect(function(pInstance: RobloxPlayer)
+		local p = PlayerMarshaller.get(pInstance)
+		orion.PlayerStates[p.UserId] = StateManager.new(p)
 		orion.PlayerCooldowns[p.UserId] = {}
-		print("Orion Server: Player", p.Name, "initialized.")
+		-- print("Orion Server: Player", p.Name, "initialized.")
 	end))
 
-	orion._maid:GiveTask(Players.PlayerRemoving:Connect(function(p)
+	orion._maid:GiveTask(Players.PlayerRemoving:Connect(function(pInstance: RobloxPlayer)
+		local p = PlayerMarshaller.get(pInstance)
+		if orion.PlayerStates[p.UserId] and orion.PlayerStates[p.UserId].Destroy then
+			orion.PlayerStates[p.UserId]:Destroy()
+		end
 		orion.PlayerStates[p.UserId] = nil
 		orion.PlayerCooldowns[p.UserId] = nil
-		print("Orion Server: Player", p.Name, "removed.")
+		-- print("Orion Server: Player", p.Name, "removed.")
 	end))
 
-	-- Connect to Bytenet packets
 	orion._maid:GiveTask(Packet.Orion_ExecuteAttackRequest.listen(onExecuteAttackRequest))
 	orion._maid:GiveTask(Packet.Orion_ClientHitNotif.listen(onClientHitNotif))
 
@@ -680,55 +628,54 @@ function orion.InitServer()
 end
 
 function orion.InitClient()
-	if not Players.LocalPlayer then
+	local localPlayerInstance = Players.LocalPlayer
+	if not localPlayerInstance then
 		warn("Orion Client: No LocalPlayer found during InitClient.")
 		return
 	end
+	local localPlayer = PlayerMarshaller.get(localPlayerInstance)
 
-	-- Initialize for existing players (primarily for LocalPlayer's own state tracking)
-	for _, p in ipairs(Players:GetPlayers()) do
-		if not orion.PlayerStates[p.UserId] then -- Check if already initialized by a potential earlier call or server join
-			orion.PlayerStates[p.UserId] = states.new(p)
+	for _, pInstance in ipairs(Players:GetPlayers()) do
+		local p = PlayerMarshaller.get(pInstance)
+		if not orion.PlayerStates[p.UserId] then
+			orion.PlayerStates[p.UserId] = StateManager.new(p)
 		end
-		if p == Players.LocalPlayer and not orion.PlayerCooldowns[p.UserId] then
-			orion.PlayerCooldowns[p.UserId] = {} -- Cooldowns are client-authoritative for prediction, server re-checks
+		if p == localPlayer and not orion.PlayerCooldowns[p.UserId] then
+			orion.PlayerCooldowns[p.UserId] = {}
 		end
 	end
 
-	orion._maid:GiveTask(Players.PlayerAdded:Connect(function(p)
+	orion._maid:GiveTask(Players.PlayerAdded:Connect(function(pInstance: RobloxPlayer)
+		local p = PlayerMarshaller.get(pInstance)
 		if not orion.PlayerStates[p.UserId] then
-			orion.PlayerStates[p.UserId] = states.new(p)
+			orion.PlayerStates[p.UserId] = StateManager.new(p)
 		end
-		if p == Players.LocalPlayer and not orion.PlayerCooldowns[p.UserId] then
+		if p == localPlayer and not orion.PlayerCooldowns[p.UserId] then
 			orion.PlayerCooldowns[p.UserId] = {}
 		end
-		print("Orion Client: Player", p.Name, "added.")
 	end))
 
-	orion._maid:GiveTask(Players.PlayerRemoving:Connect(function(p)
-		if orion.PlayerStates[p.UserId] then
-			orion.PlayerStates[p.UserId]:Destroy() -- Assuming statemachine has a Destroy method
-			orion.PlayerStates[p.UserId] = nil
+	orion._maid:GiveTask(Players.PlayerRemoving:Connect(function(pInstance: RobloxPlayer)
+		local p = PlayerMarshaller.get(pInstance)
+		if orion.PlayerStates[p.UserId] and orion.PlayerStates[p.UserId].Destroy then
+			orion.PlayerStates[p.UserId]:Destroy()
 		end
-		if p == Players.LocalPlayer then
+		orion.PlayerStates[p.UserId] = nil
+		if p == localPlayer then
 			orion.PlayerCooldowns[p.UserId] = nil
 		end
-		print("Orion Client: Player", p.Name, "removed.")
 	end))
 
-	-- Connect to Bytenet packets
 	orion._maid:GiveTask(Packet.Orion_PlayerStateChangedNotif.listen(onPlayerStateChangedNotif))
 	orion._maid:GiveTask(Packet.Orion_PlayEffectNotif.listen(onPlayEffectNotif))
 
-	-- setupClientInput() -- Input handling should be managed by the main Client.client.luau script
 	print("Orion Combat Framework Initialized on Client.")
 end
 
--- Make sure to call orion:Destroy() when the game ends or the framework is no longer needed
 function orion:Destroy()
 	self._maid:Destroy()
 	for _, stateMachine in pairs(self.PlayerStates) do
-		if stateMachine.Destroy then -- Check if statemachine has a destroy method
+		if stateMachine and stateMachine.Destroy then
 			stateMachine:Destroy()
 		end
 	end
@@ -737,342 +684,5 @@ function orion:Destroy()
 	table.clear(self.PlayerCooldowns)
 	print("Orion Combat Framework Destroyed.")
 end
-
-return orion
-		result = false
-	end
-	local humanoid = character.Character.Humanoid :: Humanoid
-	if not humanoid or humanoid.Health <= 0 then
-		result = false
-	end
-end
-
--- Core API Functions
-
-function orion.RegisterAttack(attackName: string, attackData: {})
-	-- Validate attackData structure (optional but recommended)
-	if not attackData.Type or not attackData.Input then
-		warn("Orion: Attempted to register attack with missing Type or Input:", attackName)
-		return
-	end
-	orion.RegisteredAttacks[attackName] = attackData
-	print("Orion: Registered attack -", attackName)
-end
-
-function orion.ExecuteAttack(player: playerMarshaller.player, attackName: string)
-	local character = player.Character
-	if not validateCharacter(player) then
-		return
-	end
-
-	local attackData = orion.RegisteredAttacks[attackName]
-	if not attackData then
-		warn("Orion: Attempted to execute unregistered attack by", player.Name, "-", attackName)
-		return
-	end
-
-	-- Check Player State (e.g., cannot attack if stunned or already attacking)
-	local currentPlayerState = orion.GetPlayerState(player)
-	if currentPlayerState == states.Attacking or currentPlayerState == states.Stunned then
-		-- print("Orion:", player.Name, "cannot attack while in state:", currentPlayerState)
-		return
-	end
-
-	-- Check Cooldowns
-	if
-		orion.PlayerCooldowns[player.UserId]
-		and orion.PlayerCooldowns[player.UserId][attackName]
-		and tick() < orion.PlayerCooldowns[player.UserId][attackName]
-	then
-		-- print("Orion:", player.Name, "attack", attackName, "is on cooldown.")
-		return
-	end
-
-	-- Set Cooldown
-	if attackData.Cooldown and attackData.Cooldown > 0 then
-		if not orion.PlayerCooldowns[player.UserId] then
-			orion.PlayerCooldowns[player.UserId] = {}
-		end
-		orion.PlayerCooldowns[player.UserId][attackName] = tick() + attackData.Cooldown
-	end
-
-	print("Orion:", player.Name, "is executing attack:", attackName)
-	orion.SetPlayerState(player, states.Attacking)
-
-	-- Trigger animation (server-side)
-	if attackData.AnimationId then
-		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		local animator = humanoid and humanoid:FindFirstChildOfClass("Animator")
-		if animator then
-			-- This assumes AnimationId is a string path to an Animation instance
-			-- or an rbxassetid if animations are uploaded to Roblox
-			local animation = ReplicatedStorage.Assets.Animations:FindFirstChild(attackData.AnimationId) -- Example path
-			if animation and animation:IsA("Animation") then
-				local track = animator:LoadAnimation(animation)
-				track:Play()
-				-- Consider stopping the track after its duration or on state change
-				track.Stopped:Wait() -- simple way to wait, might need adjustment
-				if orion.GetPlayerState(player) == states.Attacking then -- if still attacking after animation
-					orion.SetPlayerState(player, states.Idle)
-				end
-			else
-				warn("Orion: Animation not found or not an Animation instance:", attackData.AnimationId)
-			end
-		end
-	else
-		-- If no animation, set state to idle after a short delay (e.g. for instant attacks)
-		task.delay(0.1, function()
-			if orion.GetPlayerState(player) == states.Attacking then
-				orion.SetPlayerState(player, states.Idle)
-			end
-		end)
-	end
-
-	-- Trigger sound (can be done on client via remote event for responsiveness, or server for authority)
-	if attackData.SoundId then
-		-- Example: Play sound on server
-		orion._audio:write_miscellaneous(orion._audio, { sound_1 = attackData.SoundId })
-		orion._audio:read_miscellaneous(orion._audio, "sound_1")
-		task.wait()
-		orion._audio:remove(orion._audio, "sound_1")
-	end
-
-	-- Hitbox detection and damage application (SERVER-SIDE)
-	-- This is a critical part and will need robust implementation.
-	-- For now, let's assume a simple proximity check if no specific hitbox logic is provided.
-	if attackData.Hitbox then
-		-- Placeholder for more complex hitbox logic (e.g., raycasting, part checks)
-		-- This would ideally be in orion.Utils.CheckHitbox(player, attackData)
-		print("Orion: Checking hitbox for", attackName)
-		for _, otherPlayer in ipairs(Players:GetPlayers()) do
-			if otherPlayer ~= player and otherPlayer.Character then
-				local distance = (character.PrimaryPart.Position - otherPlayer.Character.PrimaryPart.Position).Magnitude
-				if distance < (attackData.Range or 5) then -- Default range of 5 if not specified
-					print("Orion:", attackName, "hit", otherPlayer.Name)
-					orion.HandleDamage(player, otherPlayer, attackData.Damage or 10, attackName) -- Default damage 10
-				end
-			end
-		end
-	end
-
-	-- Trigger visual effects (could be client-side via remote event)
-	if attackData.VisualEffect then
-		-- attackData.VisualEffect(player, attackData) -- This would need to be a function
-		print("Orion: Triggering visual effect for", attackName)
-	end
-
-	-- Trigger cutscene (likely client-side via remote event)
-	if attackData.Cutscene then
-		print("Orion: Triggering cutscene", attackData.Cutscene)
-	end
-
-	-- After attack logic (e.g., return to idle if no animation or animation finished)
-	-- This is partially handled by animation track.Stopped, but may need refinement
-end
-
-function orion.HandleDamage(
-	sourcePlayer: Player,
-	targetPlayer: Player,
-	damageAmount: number,
-	attackName: string
-)
-	local targetCharacter = targetPlayer.Character
-	if not targetCharacter then
-		return
-	end
-
-	local targetHumanoid = targetCharacter:FindFirstChildOfClass("Humanoid")
-	if not targetHumanoid or targetHumanoid.Health <= 0 then
-		return
-	end
-
-	local attackData = orion.RegisteredAttacks[attackName] -- May be nil if damage is from other source
-	local finalDamage = damageAmount
-
-	-- Apply blocking modifier
-	if orion.GetPlayerState(targetPlayer) == states.Blocking then
-		local damageAbsorption = CombatStructure.Blocking.DamageAbsorbtion or 0.6
-		finalDamage = finalDamage * (1 - damageAbsorption)
-		print("Orion:", targetPlayer.Name, "blocked, damage reduced to", finalDamage)
-		if attackData and attackData.OnBlock then
-			-- attackData.OnBlock(sourcePlayer, targetPlayer, attackData) -- This would be a function
-			print("Orion: OnBlock event for", attackName)
-		end
-	end
-
-	print(
-		"Orion:",
-		sourcePlayer.Name,
-		"damaged",
-		targetPlayer.Name,
-		"for",
-		finalDamage,
-		"HP with",
-		attackName or "Unknown Attack"
-	)
-	targetHumanoid:TakeDamage(finalDamage)
-
-	if targetHumanoid.Health <= 0 then
-		print("Orion:", targetPlayer.Name, "was defeated by", sourcePlayer.Name)
-		-- Handle defeat logic (e.g., respawn, rewards for sourcePlayer)
-		orion.SetPlayerState(targetPlayer, states.Defeated) -- Example state
-	else
-		-- Handle knockback (SERVER-SIDE)
-		if attackData and attackData.Knockback then
-			print("Orion: Applying knockback to", targetPlayer.Name)
-			local knockbackForce = attackData.Knockback.Force
-				or CombatStructure.Knockback.DamageScale * finalDamage
-			local knockbackDuration = attackData.Knockback.Duration or CombatStructure.Knockback.Duration
-
-			local targetRoot = targetCharacter:FindFirstChild("HumanoidRootPart")
-			if targetRoot then
-				local direction: Vector3 = (targetRoot.Position - sourcePlayer.Character.PrimaryPart.Position).Unit
-				local bv = Instance.new("BodyVelocity")
-				bv.MaxForce = Vector3.new(1, 1, 1) * math.huge
-				bv.Velocity = direction * knockbackForce + Vector3.new(0, knockbackForce * 0.5, 0) -- Add some upward force
-				bv.Parent = targetRoot
-				Debris:AddItem(bv, knockbackDuration)
-				orion.SetPlayerState(targetPlayer, states.Stunned) -- Apply stun during knockback
-				task.delay(knockbackDuration, function()
-					if orion.GetPlayerState(targetPlayer) == states.Stunned then
-						orion.SetPlayerState(targetPlayer, states.Idle)
-					end
-				end)
-			end
-		end
-	end
-
-	if attackData and attackData.OnHit then
-		-- attackData.OnHit(sourcePlayer, targetPlayer, finalDamage, attackData) -- This would be a function
-		print("Orion: OnHit event for", attackName)
-	end
-end
-
-function orion.SetPlayerState(player: Player, state: string)
-	if orion.PlayerStates[player.UserId] == state then
-		return
-	end -- No change
-
-	orion.PlayerStates[player.UserId]:transition(state)
-	print("Orion:", player.Name, "state changed to:", state)
-	-- Fire remote event to update client-side visuals for the state (e.g., blocking animation, stun effect)
-	playerStateChangedEvent:FireClient(player, state)
-	-- If multiple clients need to know (e.g. for other players' animations), use :FireAllClients()
-	-- or :FireClient(otherPlayer, player, state) for each otherPlayer
-end
-
-function orion.GetPlayerState(player: playerMarshaller.player)
-	local state = orion.PlayerStates[player.UserId]
-	if not state then
-		orion.PlayerStates[player.UserId] = states.new(player)
-	end
-	return state
-end
-
--- SERVER-SIDE: Handler for client attack requests
-local function onServerExecuteAttack(player: playerMarshaller.player, attackName: string)
-	-- Add server-side validation if needed (e.g., sanity checks)
-	print("Orion Server: Received attack request from", player.Name, "for", attackName)
-	orion.ExecuteAttack(player, attackName)
-end
-
--- CLIENT-SIDE: Input Handling
-local function setupClientInput()
-	if not Players.LocalPlayer then
-		return
-	end -- Should not happen in a LocalScript context but good check
-
-	local function onInputBegan(input: InputObject, gameProcessedEvent: boolean)
-		if gameProcessedEvent then
-			return
-		end
-
-		local player = Players.LocalPlayer
-		if not player or not player.Character or orion.GetPlayerState(player) == states.Defeated then
-			return
-		end
-
-		-- Iterate through registered attacks to find a match for the input
-		for attackName, attackData in pairs(orion.RegisteredAttacks) do
-			if attackData.Type == "M1" and input.UserInputType == Enum.UserInputType.MouseButton1 then
-				print("Client: M1 input detected for", attackName)
-				executeAttackEvent:FireServer(attackName)
-				return -- Process only one M1 attack per click
-			elseif
-				attackData.Input == input.KeyCode
-				and (attackData.Type == "Skill" or attackData.Type == "Ultimate")
-			then
-				print("Client:", attackData.Type, "input (", input.KeyCode.Name, ") detected for", attackName)
-				executeAttackEvent:FireServer(attackName)
-				return -- Process one skill/ultimate per key press
-			end
-			-- Add more complex input checks if needed (e.g., key combinations)
-		end
-	end
-	UserInputService.InputBegan:Connect(onInputBegan)
-
-	-- Handle player state changes from server (for visual feedback)
-	playerStateChangedEvent.OnClientEvent:Connect(function(newState: string)
-		local localPlayer = Players.LocalPlayer
-		if localPlayer then
-			orion.PlayerStates[localPlayer.UserId] = newState -- Keep client state somewhat synced for its own logic
-			print("Client:", localPlayer.Name, "received state update:", newState)
-			-- Here, you would trigger client-side visual changes based on state
-			-- e.g., if newState == states.Blocking, play blocking animation locally
-			-- if newState == states.Stunned, play stun animation/effect
-		end
-	end)
-end
-
--- Initialization
-function orion.InitServer()
-	Players.PlayerAdded:Connect(function(player)
-		orion.PlayerStates[player.UserId] = states.Idle
-		orion.PlayerCooldowns[player.UserId] = {}
-		print("Orion: Player", player.Name, "initialized on server.")
-	end)
-	Players.PlayerRemoving:Connect(function(player)
-		orion.PlayerStates[player.UserId] = nil
-		orion.PlayerCooldowns[player.UserId] = nil
-		print("Orion: Player", player.Name, "removed from server.")
-	end)
-
-	for _, player in ipairs(Players:GetPlayers()) do
-		orion.PlayerStates[player.UserId] = states.Idle
-		orion.PlayerCooldowns[player.UserId] = {}
-	end
-
-	executeAttackEvent.OnServerEvent:Connect(onServerExecuteAttack)
-	print("Orion Combat Framework Initialized on Server.")
-end
-
-function orion.InitClient()
-	-- Request initial states for all players or rely on PlayerAdded on client
-	for _, player in ipairs(Players:GetPlayers()) do
-		orion.PlayerStates[player.UserId] = states.Idle -- Initial assumption
-	end
-
-	Players.PlayerAdded:Connect(function(player)
-		orion.PlayerStates[player.UserId] = states.Idle
-		print("Orion: Player", player.Name, "added on client.")
-	end)
-	Players.PlayerRemoving:Connect(function(player)
-		orion.PlayerStates[player.UserId] = nil
-		print("Orion: Player", player.Name, "removed on client.")
-	end)
-
-	setupClientInput()
-	print("Orion Combat Framework Initialized on Client.")
-end
-
--- This module will be required by both server and client scripts.
--- The InitServer() or InitClient() should be called appropriately.
--- For example, a server script would do:
--- local orion = require(ReplicatedStorage.Combat.orion)
--- orion.InitServer()
---
--- A LocalScript would do:
--- local orion = require(ReplicatedStorage.Combat.orion)
--- orion.InitClient()
 
 return orion
