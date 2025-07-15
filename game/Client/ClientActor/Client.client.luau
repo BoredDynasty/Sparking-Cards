@@ -18,38 +18,42 @@ local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient"))
 local Hint = require(script.Parent.Parent:WaitForChild("Components"):WaitForChild("hint"))
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
-local Keyboard = require(script.Parent.Parent.Parent.Parent.ReplicatedStorage.Utility.input.Keyboard)
 local Maid = require(ReplicatedStorage.Utility.Maid)
-local Mouse = require(script.Parent.Parent.Parent.Parent.ReplicatedStorage.Utility.input.Mouse)
 local Movement = require(script.Parent.Parent.Movement.Movement)
 local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("OnIdle"))
-local OverShoulder = require(StarterPlayer.StarterPlayerScripts.Modules.OverShoulder)
+local OverShoulder = require(script.Parent.Parent.Modules.OverShoulder)
 local Packet = require(ReplicatedStorage.Packet)
 local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio).new()
+local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.dialog)
-local dictionary = require(script.Parent.Parent.Parent.Parent.ReplicatedStorage.Utility.dictionary)
+local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
+local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
+local input = require(ReplicatedStorage.Packages.input)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local limits = require(script.Parent.Parent.Utilities.limits)
+local lucide = require(ReplicatedStorage.Packages.lucide)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local retryer = require(ReplicatedStorage.Utility.retryer)
-local yoink = require(script.Parent.Parent.Utilities.yoink)
+local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local yoink = require(ReplicatedStorage.Utility.yoink)
+local keyboard = input.Keyboard.new()
+local mouse = input.Mouse.new()
 
 print("Client Requirements")
 
 -- // Variables -- //
-local clientMaid = Maid.new()
 
 local player = playerMarshaller.get()
-local profile: typeof(profilestructure) = yoink:grab("profile_data")
+local profile: typeof(profilestructure) = yoink.client:grab("profile_data")
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
 local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
@@ -71,10 +75,8 @@ audio:write_miscellaneous(audio, {
 
 print("client starting")
 
-local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
+local function initializeMarket()
 	local shopGui = PlayerGui:WaitForChild("Shop") :: ScreenGui
-	local shopOpenFrame = shopGui:WaitForChild("Open") :: TextButton -- Floating Action Button
-	local shopOpenButton = shopOpenFrame:WaitForChild("HitBox") :: TextButton
 	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
 
@@ -93,6 +95,30 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 		end
 		return #(itemHolder:GetChildren()) * task.wait()
 	end
+
+	local function displaySpendings()
+		local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
+		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
+		local profile: typeof(profilestructure) = yoink.client:grab("profile_data")
+		local big_cards = tostring(profile["Big-Cards"])
+		TextPlus.Create(moneyFrame, big_cards, {
+			Font = Font.new(
+				"rbxasset://fonts/families/Montserrat.json", -- Family.
+				Enum.FontWeight.SemiBold, -- Weight.
+				Enum.FontStyle.Normal -- Style.
+			),
+			Size = 16,
+			Color = Color3.fromHex("#ffffff"),
+			XAlignment = "Left",
+			YAlignment = "Center",
+			LineSorting = true,
+			WordSorting = true,
+			Dynamic = true,
+		})
+	end
+	Packet.profileChanged.listen(displaySpendings)
+	shadow(shopFrame, Color3.new(), 0.5, 14)
+	shadow(shopNavigation, Color3.new(), 0.5, 14)
 
 	local function populateShop(t: {}?)
 		local newRelease = shopFrame:FindFirstChild("NewRelease") :: TextLabel
@@ -129,6 +155,8 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 				Color = Color3.fromHex("#ffffff"),
 				XAlignment = "Left",
 				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
 				Dynamic = true,
 			})
 			TextPlus.Create(price, "$" .. tostring(item.Price), {
@@ -138,11 +166,16 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 					Enum.FontStyle.Normal -- Style.
 				),
 				Size = 12.5,
-				Color = Color3.fromHex("#39302e"),
+				Color = Color3.fromHex("#f5f5f5"),
 				XAlignment = "Left",
 				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
 				Dynamic = true,
 			})
+
+			characterIteration:jump(title)
+			characterIteration:jump(price)
 
 			itemTemplate.Visible = true
 			if item.ExperimentsEnabled == true then
@@ -184,6 +217,7 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 					end
 				end
 			end
+			print("setting up buttons")
 			local purchaseDebounce = false -- exception too
 			purchaseButton.MouseEnter:Connect(function()
 				audio:read_miscellaneous(audio, "hover")
@@ -196,27 +230,19 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 					return
 				end
 				print("Purchasing card: " .. item.Name)
-				Packet.buyCard.send({
-					item.Name,
-				})
+				Packet.BuyCard.send({ cardName = item.Name })
 				pop(purchaseButton)
 				purchaseDebounce = true
 				limits.debounce(purchaseDebounce)
 			end)
-			task.wait()
+			print("done")
+			--task.wait()
 		end
 	end
-	keyboard_singleton.KeyDown:Connect(function(key: Enum.KeyCode)
-		if key ~= Enum.KeyCode.B then
-			return
-		end
-		populateShop()
-		displayorder:setDisplayOrder("shop")
-	end)
 	local function populateInventory()
 		local unloaded = unloadShop()
 		task.wait(unloaded)
-		profile = yoink:grab("profile_data")
+		profile = yoink.client:grab("profile_data")
 		assert(profile, "Profile does not exist on the client!")
 		for itemName: string, i in pairs(profile.Data.Cards) do
 			-- print("got item: " .. itemName)
@@ -238,7 +264,7 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 			local sellButton = itemTemplate.Buy -- lol
 			local experimentButton = itemTemplate.Test
 
-			title = TextPlus.Create(title, itemName, {
+			TextPlus.Create(title, itemName, {
 				Font = Font.new(
 					"rbxasset://fonts/families/Montserrat.json", -- Family.
 					Enum.FontWeight.SemiBold, -- Weight.
@@ -248,6 +274,8 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 				Color = Color3.fromHex("#ffffff"),
 				XAlignment = "Left",
 				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
 				Dynamic = true,
 			})
 			--title.Text = itemName
@@ -261,8 +289,14 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 				Color = Color3.fromHex("#39302e"),
 				XAlignment = "Left",
 				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
 				Dynamic = true,
 			})
+
+			characterIteration:jump(title)
+			characterIteration:jump(quantity)
+
 			itemTemplate.Visible = true
 
 			experimentButton.Visible = false
@@ -277,7 +311,7 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 				local result = dialog(dialog_title, description)
 				result:Once(function(a0: boolean)
 					if a0 == true then
-						Packet.sellCard.send({ player, itemName })
+						Packet.SellCard.send({ cardName = itemName, playerInstance = player })
 					else
 						return
 					end
@@ -286,234 +320,58 @@ local function initializeMarket(keyboard_singleton: typeof(Keyboard.new()))
 			task.wait()
 		end
 	end
-	keyboard_singleton.KeyDown:Connect(function(key: Enum.KeyCode)
-		if key ~= Enum.KeyCode.I then
+	local debounce = false
+	local function callback()
+		if debounce then
 			return
 		end
-		populateInventory()
-		displayorder:setDisplayOrder("shop")
-	end)
+		limits.debounce(debounce)
+		displayorder:changeVisibility(not shopCanvas.Visible, shopCanvas)
+		if shopCanvas.Visible then
+			populateShop()
+		end
+	end
+	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
+	hud:render()
 end
-
-local interface_keybindlinks = {
-	shop = keybindlink.new("Shop", Enum.KeyCode.B, Enum.KeyCode.ButtonY, 1),
-	inventory = keybindlink.new("Inventory", Enum.KeyCode.I, Enum.KeyCode.ButtonX, 2),
-}
-local interface_keybinds = {
-	shop = Keyboard.new(),
-	inventory = Keyboard.new(),
-}
-
-for i: string, key in pairs(interface_keybindlinks) do
-	key:Show()
-	key.KeyDown:Connect(function()
-		interface_keybinds[i]:Down()
-	end)
-	key.KeyUp:Connect(function()
-		interface_keybinds[i]:Up()
-	end)
-end
-
-initializeMarket(interface_keybinds.shop)
+initializeMarket()
 
 print("client almost done")
 
-local movementSingleton = Movement.new() :: Movement.Movement
+local movementSingleton = Movement.new()
 movementSingleton:sprint(movementSingleton)
 movementSingleton:jump(movementSingleton)
 movementSingleton:slide(movementSingleton)
 print("client movement")
-gamecamera:bobble()
 gamecamera:sway()
 gamecamera:trail()
 print("game camera")
 -- control
 
-local mouse_one = keybindlink.new("M1", Enum.KeyCode.MouseLeftButton, Enum.KeyCode.ButtonB, 1)
-local skill = keybindlink.new("Primary", Enum.KeyCode.E, Enum.KeyCode.ButtonX, 2)
-local ultimate = keybindlink.new("Ultimate", Enum.KeyCode.Q, Enum.KeyCode.ButtonY, 3)
-local support = keybindlink.new("Support", Enum.KeyCode.R, Enum.KeyCode.ButtonA, 4)
-mouse_one:Show()
-skill:Show()
-ultimate:Show()
-support:Show()
-
-local attack_keybinds = {
-	mouse_one = Mouse.new(),
-	skill = Keyboard.new(),
-	ultimate = Keyboard.new(),
-	support = Keyboard.new(),
-}
-
-for _, key in pairs(attack_keybinds) do
-	key:Show()
-	if key ~= attack_keybinds.mouse_one then
-		key.KeyUp:Connect(function()
-			key:Up()
-		end)
-	end
+local function getAttackTypeFromKey(key: Enum.KeyCode)
+	-- profile = yoink.client:grab("profile_data")
+	local attackTypes = {
+		[Enum.KeyCode.MouseLeftButton] = "M1",
+		[Enum.KeyCode.E] = "Skill",
+		[Enum.KeyCode.Q] = "Ultimate",
+		[Enum.KeyCode.R] = "Support",
+	}
+	local attackType = attackTypes[key]
+	--assert(attackType, "Invalid key for attack type: " .. tostring(key))
+	return attackType
 end
 
-print("controls")
-
--- Initialize Orion Combat Framework on Client
-orion.InitClient()
-
--- Helper function to get the Orion attack name for a given action and card
-local function getOrionAttackName(actionType: string): string?
-	if not profile or not profile.EquippedCard then
-		warn("Client: No profile or equipped card found.")
-		return nil
-	end
-	local equippedCardName: string = profile.EquippedCard -- This should be the key like "FrostGauntlet" or "FireSword"
-	local cardInfo: CardLibrary.Card? = CardLibrary[table.find(CardLibrary, equippedCardName)]
-		or CardLibrary[equippedCardName]
-
-	if not cardInfo or not cardInfo.Moveset then
-		warn("Client: Card info or moveset not found in CardLibrary for equipped card:", equippedCardName)
-		return nil
-	end
-
-	local attackName: string?
-
-	if actionType == "M1" then
-		attackName = cardInfo.Moveset.M1
-	elseif actionType == "Primary" then -- Corresponds to 'E' key, mapped to Skill
-		attackName = cardInfo.Moveset.Skill
-	elseif actionType == "Ultimate" then -- Corresponds to 'Q' key
-		attackName = cardInfo.Moveset.Ultimate
-	elseif actionType == "Support" then -- Corresponds to 'R' key
-		attackName = cardInfo.Moveset.Support
-	else
-		warn("Client: Unknown actionType provided to getOrionAttackName:", actionType)
-		return nil
-	end
-
-	if attackName and orion.RegisteredAttacks[attackName] then
-		return attackName
-	elseif attackName then
-		-- This warning means the CardLibrary specifies an attack name, but it hasn't been registered in Orion yet.
-		-- This is expected if the attack module for it hasn't been created or loaded.
-		warn(
-			"Client: Attack '",
-			attackName,
-			"' for card '",
-			equippedCardName,
-			"' (action: ",
-			actionType,
-			") is defined in CardLibrary but not registered in Orion."
-		)
-		return nil
-	else
-		warn(
-			"Client: No attackName defined in CardLibrary for card '",
-			equippedCardName,
-			"' action '",
-			actionType,
-			"'."
-		)
-		return nil
-	end
-end
-
--- Variables for M1 Combo Tracking
-local clientPlayerComboData: {
-	[number]: {
-		currentAttackName: string, -- The current attack name in the combo
-		count: number, -- How many M1 attacks have been executed in this combo
-		lastAttackTime: number, -- The last time an M1 attack was executed (tick())
-	},
-} =
-	{}
-local COMBO_WINDOW_DURATION = 0.8 -- Max time between M1 presses to continue a combo (adjust as needed)
-
--- Connect keybinds to Orion framework
-attack_keybinds.mouse_one.LeftDown:Connect(function()
-	if not profile or not profile.EquippedCard then
-		return
-	end
-	mouse_one:Down()
-	local equippedCardName = profile.EquippedCard
-	local cardInfo = CardLibrary[equippedCardName]
-	if not cardInfo then
-		return
-	end
-
-	local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
-	local currentComboData = clientPlayerComboData[player.UserId]
-	local attackNameToExecute: string?
-
-	if
-		currentComboData
-		and (tick() - currentComboData.lastAttackTime < COMBO_WINDOW_DURATION)
-		and currentComboData.count < (cardInfo.MaxCombo or 1)
-	then
-		-- Try to continue combo
-		local lastAttackData = orion.RegisteredAttacks[currentComboData.currentAttackName]
-		if lastAttackData and lastAttackData.NextComboAttack then
-			attackNameToExecute = lastAttackData.NextComboAttack
-			currentComboData.count += 1
-			-- print("Client: Continuing combo to", attackNameToExecute, "Count:", currentComboData.count)
-		else
-			-- No next attack or last attack data missing, reset combo
-			attackNameToExecute = getOrionAttackName("M1") -- Get base M1
-			clientPlayerComboData[player.UserId] =
-				dictionary.reconcile({ count = 1 }, clientPlayerComboData[player.UserId])
-			-- print("Client: Resetting combo (no next attack), starting with", attackNameToExecute)
-		end
-	else
-		-- Start or restart combo
-		attackNameToExecute = getOrionAttackName("M1") -- Get base M1
-		clientPlayerComboData[player.UserId] =
-			dictionary.reconcile({ count = 1 }, clientPlayerComboData[player.UserId])
-		-- print("Client: Starting new combo with", attackNameToExecute)
-	end
-
-	if attackNameToExecute then
-		orion.RequestExecuteAttack(attackNameToExecute, equippedCardName, targetInfo)
-		if clientPlayerComboData[player.UserId] then -- Ensure it was initialized
-			clientPlayerComboData[player.UserId].currentAttackName = attackNameToExecute
-			clientPlayerComboData[player.UserId].lastAttackTime = tick()
-		end
-	else
-		warn("Client: No M1 attack found for", equippedCardName)
-		clientPlayerComboData[player.UserId] = nil -- Clear combo data if no attack found
+keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
+	local attack_type = getAttackTypeFromKey(key)
+	if attack_type then
+		orion:execute(player, attack_type)
 	end
 end)
 
-attack_keybinds.skill.KeyDown:Connect(function(key: Enum.KeyCode)
-	if key ~= Enum.KeyCode.E and key ~= Enum.KeyCode.ButtonX then
-		return -- Only respond to E or ButtonX
-	end
-	skill:Down()
-	local attackName = getOrionAttackName("Primary")
-	if attackName and profile and profile.EquippedCard then
-		local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
-		orion.RequestExecuteAttack(attackName, profile.EquippedCard, targetInfo)
-	end
-end)
-
-attack_keybinds.ultimate.KeyDown:Connect(function(key: Enum.KeyCode)
-	if key ~= Enum.KeyCode.Q and key ~= Enum.KeyCode.ButtonY then
-		return -- Only respond to Q or ButtonY
-	end
-	ultimate:Down()
-	local attackName = getOrionAttackName("Ultimate")
-	if attackName and profile and profile.EquippedCard then
-		local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
-		orion.RequestExecuteAttack(attackName, profile.EquippedCard, targetInfo)
-	end
-end)
-
-attack_keybinds.support.KeyDown:Connect(function(key: Enum.KeyCode)
-	if key ~= Enum.KeyCode.Q and key ~= Enum.KeyCode.ButtonB then
-		return -- Only respond to Q or ButtonB
-	end
-	support:Down()
-	local attackName = getOrionAttackName("Support")
-	if attackName and profile and profile.EquippedCard then
-		local targetInfo = { targetPosition = player:GetMouse().Hit.Position }
-		orion.RequestExecuteAttack(attackName, profile.EquippedCard, targetInfo)
+mouse.LeftDown:Connect(function()
+	local attack_type = "M1"
+	if attack_type then
+		orion:execute(player, attack_type)
 	end
 end)
 

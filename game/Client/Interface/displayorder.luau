@@ -5,9 +5,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
-local LightingManipulation = require(script.Parent.LightingManipulation)
 local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
-local promise = require(ReplicatedStorage.Packages.promise)
+local fade = require(script.Parent.fade)
 
 local DisplayOrder = {}
 DisplayOrder.__index = DisplayOrder
@@ -29,7 +28,20 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 			{ Position = DisplayOrder.canvasPositions.middle },
 			{ Time = Emphasis.emphasized, EasingDirection = "InOut", EasingStyle = "Circular" }
 		):Start()
-		LightingManipulation:blur(true)
+		--[[
+		coroutine.wrap(function()
+			fade.fadeIn(canvas)
+				:andThen(function()
+					print("visible")
+				end)
+				:catch(function(err)
+					warn("Fade failed:", err)
+				end)
+		end)
+		]]
+		print("visible")
+
+		--LightingManipulation:blur(true)
 		print("visible")
 	elseif v == false then
 		TweenPlus(
@@ -37,8 +49,18 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 			{ Position = DisplayOrder.canvasPositions.lower },
 			{ Time = Emphasis.emphasized_accelerate, EasingDirection = "Out", EasingStyle = "Circular" }
 		):Start()
-		LightingManipulation:blur(true)
-		task.wait(0.200)
+		--[[
+			fade.fadeOut(canvas)
+			:andThen(function()
+				task.wait(0.2)
+				canvas.Visible = false
+				print("invisible")
+			end)
+			:catch(function(err)
+				warn("fade failed: ", err)
+			end)
+		]]
+		task.wait(0.2)
 		canvas.Visible = false
 		print("invisible")
 	end

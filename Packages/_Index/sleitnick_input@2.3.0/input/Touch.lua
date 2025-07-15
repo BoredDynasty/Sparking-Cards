@@ -2,11 +2,10 @@
 -- Stephen Leitnick
 -- March 14, 2021
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+local Trove = require(script.Parent.Parent.Trove)
+local Signal = require(script.Parent.Parent.Signal)
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
-local trove = require(ReplicatedStorage.Utility.trove)
+local UserInputService = game:GetService("UserInputService")
 
 --[=[
 	@class Touch
@@ -88,18 +87,18 @@ Touch.__index = Touch
 function Touch.new()
 	local self = setmetatable({}, Touch)
 
-	self._trove = trove.new()
+	self._trove = Trove.new()
 
-	self.TouchTap = self._trove:Construct(SignalPlus, UserInputService.TouchTap)
-	self.TouchTapInWorld = self._trove:Construct(SignalPlus, UserInputService.TouchTapInWorld)
-	self.TouchMoved = self._trove:Construct(SignalPlus, UserInputService.TouchMoved)
-	self.TouchLongPress = self._trove:Construct(SignalPlus, UserInputService.TouchLongPress)
-	self.TouchPan = self._trove:Construct(SignalPlus, UserInputService.TouchPan)
-	self.TouchPinch = self._trove:Construct(SignalPlus, UserInputService.TouchPinch)
-	self.TouchRotate = self._trove:Construct(SignalPlus, UserInputService.TouchRotate)
-	self.TouchSwipe = self._trove:Construct(SignalPlus, UserInputService.TouchSwipe)
-	self.TouchStarted = self._trove:Construct(SignalPlus, UserInputService.TouchStarted)
-	self.TouchEnded = self._trove:Construct(SignalPlus, UserInputService.TouchEnded)
+	self.TouchTap = self._trove:Construct(Signal.Wrap, UserInputService.TouchTap)
+	self.TouchTapInWorld = self._trove:Construct(Signal.Wrap, UserInputService.TouchTapInWorld)
+	self.TouchMoved = self._trove:Construct(Signal.Wrap, UserInputService.TouchMoved)
+	self.TouchLongPress = self._trove:Construct(Signal.Wrap, UserInputService.TouchLongPress)
+	self.TouchPan = self._trove:Construct(Signal.Wrap, UserInputService.TouchPan)
+	self.TouchPinch = self._trove:Construct(Signal.Wrap, UserInputService.TouchPinch)
+	self.TouchRotate = self._trove:Construct(Signal.Wrap, UserInputService.TouchRotate)
+	self.TouchSwipe = self._trove:Construct(Signal.Wrap, UserInputService.TouchSwipe)
+	self.TouchStarted = self._trove:Construct(Signal.Wrap, UserInputService.TouchStarted)
+	self.TouchEnded = self._trove:Construct(Signal.Wrap, UserInputService.TouchEnded)
 
 	return self
 end

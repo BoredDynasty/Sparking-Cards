@@ -32,7 +32,7 @@ return {
 		},
 	},
 	["combatBindings"] = {
-		["attack"] = "LMB", -- melee
+		["attack"] = "MouseLeftButton", -- melee
 		["special_One"] = "E", -- primary
 		["special_Two"] = "Q", -- ultimate
 		["special_Three"] = "R", -- support

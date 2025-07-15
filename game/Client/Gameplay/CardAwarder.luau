@@ -42,7 +42,7 @@ return function()
 				CardManager:Drop(player, dropAmount)
 				local character = player.Character
 				Fireworks:PlayFireworks(character.HumanoidRootPart)
-				Packet.payBigCards.send({ amount, player.Name })
+				Packet.PayBigCards.send({ amount = amount, recipientUsername = player.Name })
 				print("sent req. to pay big cards!")
 				task.delay(debounceDelay, function()
 					card:Destroy()

@@ -74,7 +74,7 @@ type PreferredInput = {
 
 local PreferredInput: PreferredInput
 
-local subscribers: { () -> any? } = {}
+local subscribers = {}
 
 PreferredInput = {
 
@@ -104,7 +104,7 @@ local function SetPreferred(preferred: InputType)
 	end
 	PreferredInput.Current = preferred
 
-	for _, subscriber: () -> any? in subscribers do
+	for _, subscriber in subscribers do
 		task.spawn(subscriber, preferred)
 	end
 end

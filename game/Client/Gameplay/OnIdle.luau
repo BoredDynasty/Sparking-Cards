@@ -48,7 +48,7 @@ return function()
 				local minutes = (elapsed // 60) % 60
 				local hours = elapsed // 3600
 				print(string.format("Idle for %02d:%02d:%02d", hours, minutes, seconds))
-				local dialog = dialogues[random.dict_random(dialogues)]
+				local dialog: { speaker: string, text: string } = dialogues[random.integer(1, #dialogues)]
 				print(string.format("%s: %s", dialog.speaker, dialog.text))
 				local params = {
 					speaker = dialog.speaker,

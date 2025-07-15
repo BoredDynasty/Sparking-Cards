@@ -14,7 +14,7 @@ return function(parent: Instance, color: Color3, transparency: number, spread: n
 			sum += weight
 		end
 		for i = 1, #weights do
-			weights[i] = (weights[i] / sum) * (1 - transparency)
+			weights[i] = (weights[i] :: number / sum) * (1 - transparency)
 		end
 		return weights
 	end
@@ -23,7 +23,7 @@ return function(parent: Instance, color: Color3, transparency: number, spread: n
 	local layers = Instance.new("Folder")
 	layers.Name = "ShadowLayers"
 	layers.Parent = parent
-	for i, opacity in ipairs(weights) do
+	for i, opacity in ipairs(weights :: { number }) do
 		local index = i - #weights // 2
 		local offset = math.abs(index) - 1
 		local layer = Instance.new("Frame")

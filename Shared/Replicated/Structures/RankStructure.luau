@@ -1,38 +1,52 @@
 return {
-	["Bronze"] = {
-		["Name"] = "Bronze",
+	["Bronze I"] = {
+		["Name"] = "Bronze I",
 		["Experience"] = 0,
-		["Description"] = "Just starting out!",
 		["Reward"] = 20,
 	},
-	["Gold"] = {
-		["Name"] = "Gold",
-		["Experience"] = 50000,
-		["Description"] = "Going Golden, huh?",
-		["Reward"] = 1500,
+	["Iron II"] = {
+		Name = "Iron II",
+		Experience = 1000,
+		Reward = 1000,
 	},
-	["Platinum"] = {
-		["Name"] = "Platinum",
-		["Experience"] = 100000,
-		["Description"] = "You can make jewelry out of this!",
-		["Reward"] = 15000,
+	["Gold III"] = {
+		["Name"] = "Gold II",
+		["Experience"] = 2500,
+		["Reward"] = 5000,
 	},
-	["Emerald"] = {
-		["Name"] = "Emerald",
-		["Experience"] = 200000,
-		["Description"] = "A precious gem!",
-		["Reward"] = 25000,
+	["Platinum IV"] = {
+		["Name"] = "Platinum IV",
+		["Experience"] = 4000,
+		["Reward"] = 10000,
 	},
-	["Master"] = {
+	["Emerald V"] = {
+		["Name"] = "Emerald V",
+		["Experience"] = 5500,
+		["Reward"] = 22000,
+	},
+	["Master VI"] = {
 		["Name"] = "Master",
-		["Experience"] = 350000,
-		["Description"] = "You've mastered this one!",
-		["Reward"] = 19500,
+		["Experience"] = 8500,
+		["Reward"] = 60000,
 	},
-	["Sparking"] = {
-		["Name"] = "Sparking",
-		["Experience"] = 100000,
-		["Description"] = "Sparking Cards!",
-		["Reward"] = 50000,
+	["Elite VII"] = {
+		Name = "Elite VII",
+		Experience = 10000,
+		Reward = 155000,
+	},
+	["Ruby VIII"] = {
+		Name = "Ruby VIII",
+		Experience = 15000,
+		Reward = 220000,
+	},
+	["Prismatic IX"] = {
+		Name = "Prismatic IX",
+		Experience = 225000,
+		Reward = 300000,
+	},
+	["Sparking X"] = {
+		["Name"] = "Sparking X",
+		["Experience"] = 68000,
+		["Reward"] = 650000,
 	},
 }

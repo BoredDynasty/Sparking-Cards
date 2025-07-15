@@ -67,14 +67,18 @@ function Timer:Reset()
 	self.startTime = 0
 	self.elapsedTime = 0
 	self.running = false
-	return self
 	if self.incrementThread :: thread? then
 		task.cancel(self.incrementThread)
 	end
+	return self
 end
 
 function Timer:GetTime(): number
-	return if self.running then os.clock() - self.startTime else self.elapsedTime
+	local currentTime = os.clock()
+	if self.running then
+		self.elapsedTime = currentTime - self.startTime
+	end
+	return self.elapsedTime
 end
 
 function Timer:FormatTime(): string

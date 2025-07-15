@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 -- gamecamera.luau
 
@@ -37,9 +37,19 @@ local maxTilt = 8
 
 function GameCamera:sway()
 	task.spawn(function()
+		local mouseDelta = Vector2.new(0, 0)
+		local lastMousePosition = Vector2.new(mouse.X, mouse.Y)
+		UserInputService.InputChanged:Connect(function(input)
+			if input.UserInputType == Enum.UserInputType.MouseMovement then
+				local currentMousePosition = Vector2.new(mouse.X, mouse.Y)
+
+				-- Calculate the delta
+				mouseDelta = currentMousePosition - lastMousePosition
+			end
+		end)
 		RunService:BindToRenderStep("sway", priority + 1, function(delta: number)
 			debug.profilebegin("sway")
-			local mouseDelta: Vector2 = UserInputService:GetMouseDelta()
+			local mouseDelta: Vector2 = mouseDelta -- UserInputService:GetMouseDelta()
 			swayTurn = lerp(swayTurn, math.clamp(mouseDelta.X, -6, 6), (10 * delta))
 			camera.CFrame *= CFrame.Angles(0, 0, math.rad(swayTurn))
 			debug.profileend()
@@ -173,8 +183,10 @@ function GameCamera:remove()
 		return
 	end
 	for name, _ in connections do
-		_:Disconnect()
-		_ = nil
+		if _ then
+			_:Disconnect()
+			_ = nil
+		end
 	end
 	RunService:UnbindFromRenderStep("sway")
 	print("removed gamecamera")

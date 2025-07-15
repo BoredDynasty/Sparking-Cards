@@ -2,11 +2,10 @@
 -- Stephen Leitnick
 -- October 10, 2021
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
+local Trove = require(script.Parent.Parent.Trove)
+local Signal = require(script.Parent.Parent.Signal)
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
-local trove = require(ReplicatedStorage.Utility.trove)
+local UserInputService = game:GetService("UserInputService")
 
 --[=[
 	@class Keyboard
@@ -55,9 +54,9 @@ Keyboard.__index = Keyboard
 ]=]
 function Keyboard.new()
 	local self = setmetatable({}, Keyboard)
-	self._trove = trove.new()
-	self.KeyDown = self._trove:Construct(SignalPlus)
-	self.KeyUp = self._trove:Construct(SignalPlus)
+	self._trove = Trove.new()
+	self.KeyDown = self._trove:Construct(Signal)
+	self.KeyUp = self._trove:Construct(Signal)
 	self:_setup()
 	return self
 end

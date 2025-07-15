@@ -14,7 +14,7 @@ type self = {
 	miscellaneous: { [string]: string },
 	playlist: {},
 	events: {
-		playing: SignalPlus.Signal<Sound, string>,
+		played: SignalPlus.Signal<Sound, string>,
 		stopped: SignalPlus.Signal<Sound, string>,
 	},
 	create: (data: create_data) -> Sound,
@@ -54,7 +54,7 @@ end
 --[[
     Writes a compiled `table` to the `miscellaneous` dictionary.
 ]]
-function Audio:write_miscellaneous(self: self, compiled: { [string]: number })
+function Audio:write_miscellaneous(self: Audio, compiled: { [string]: number })
 	-- dictionary.merge(self.miscellaneous, compiled)
 	for name, identification in pairs(compiled) do
 		if not table.find(self.miscellaneous, name) then
@@ -66,7 +66,7 @@ end
 --[[
     Plays an `Audio` from the miscellaneous dictionary.
 ]]
-function Audio:read_miscellaneous(self: self, name: string, data: create_data?)
+function Audio:read_miscellaneous(self: Audio, name: string, data: create_data?)
 	local create_data: create_data = {}
 	data = data or {}
 	data = dictionary.reconcile(data, {
@@ -80,7 +80,7 @@ function Audio:read_miscellaneous(self: self, name: string, data: create_data?)
 	audio.Name = name
 	audio.Parent = self.player
 	audio:Play()
-	self.events.playing:Fire(audio, audio.Name)
+	self.events.played:Fire(audio, audio.Name)
 	task.delay(audio.TimeLength + math.random(), function()
 		self.events.stopped:Fire(audio, audio.Name)
 		audio:Destroy()

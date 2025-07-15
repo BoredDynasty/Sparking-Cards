@@ -5,6 +5,7 @@ local MessagingService = game:GetService("MessagingService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 
 local MatchmakingModule = {}
@@ -76,6 +77,19 @@ function MatchmakingModule.RemovePlayerFromQueue(player: Player)
 	else
 		print("Player not found in queue.")
 	end
+	promise
+		.new(function(resolve, reject)
+			local needle = table.find(localQueue, player)
+			if needle then
+				resolve(needle)
+			else
+				reject("Player not found in queue")
+			end
+		end)
+		:andThen(function(needle: number)
+			table.remove(localQueue, needle)
+		end)
+		:catch(warn)
 end
 
 MessagingService:SubscribeAsync("MatchmakingQueueUpdate", function()

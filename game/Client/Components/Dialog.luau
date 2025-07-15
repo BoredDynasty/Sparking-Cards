@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
+local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
@@ -98,6 +99,9 @@ return function(title: string, description: string)
 		YAlignment = "Center",
 		Dynamic = true,
 	})
+	characterIteration:fadeIn(dialog.Frame.Title)
+	characterIteration:fadeIn(dialog.Frame.Description)
+	dialog.Frame.Description.Text = description
 	local activated: signal = SignalPlus()
 	dialog.Frame.Confirm.Activated:Connect(function()
 		activated:Fire(true)

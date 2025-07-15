@@ -1,6 +1,6 @@
 --!strict
 
--- DataModel.client.lua
+-- DataModel.client.luau
 
 local ContentProvider = game:GetService("ContentProvider")
 local Players = game:GetService("Players")
@@ -33,7 +33,8 @@ local loader = background:FindFirstChild("LoaderImage") :: ImageLabel -- the spi
 local connection: RBXScriptConnection | nil
 
 local BATCH_SIZE = 12
-local MAX_PARALLEL_LOADS = 8 ^ 2
+local MAX_PARALLEL_LOADS = bit32.lshift(8, 1)
+-- 8 ^ 2 replaced with bitwise left shift (8 << 1 = 16)
 
 local function skipPreloading()
 	loadingUI:Destroy()
@@ -57,6 +58,7 @@ local function preload()
 	-- Combine assets into one table
 	local pre_allocated = 2000
 	local assets = table.create(pre_allocated) -- pre-allocate approximate size
+	-- for a more accurate maxAssets count, make it asynchronous
 	task.spawn(function()
 		for _, asset in ipairs(player:GetDescendants()) do
 			table.insert(assets, asset)
@@ -94,7 +96,7 @@ local function preload()
 	end
 
 	local activeThreads = 0
-	local success, err
+	local success, err = nil, nil
 	-- process batches in parallel hehe
 	for _, batch in ipairs(batches) do
 		while activeThreads >= MAX_PARALLEL_LOADS do
@@ -114,7 +116,8 @@ local function preload()
 				banner.Image = assetPrefix .. errorImage
 				local concatenated_batch: string
 				for k, v in pairs(batch) do
-					concatenated_batch = concatenated_batch .. k .. ":" .. v .. "\n" -- concatenate key/value pairs, with a newline in-between
+					concatenated_batch = concatenated_batch .. k .. ":" .. v .. "\n"
+					-- concatenate key/value pairs, with a newline in-between
 				end
 				status.Text = "Couldn't download batch: "
 					.. table.concat(
@@ -124,16 +127,16 @@ local function preload()
 						", "
 					)
 				print("Couldn't download batch: ", concatenated_batch)
-				--
+				-- Update status image to indicate error
 				local statusImage = statusBar:FindFirstChild("statusImage") :: ImageLabel
 				local statusImg = "10747384394"
 				statusImage.Image = assetPrefix .. statusImg
 			end
 			loadedCount += #batch
-			status.Text = string.format("Loaded: %d/%d", loadedCount, maxAssets)
+			status.Text = string.format("Loaded: %d/%d", loadedCount, maxAssets or #assets)
 
 			activeThreads -= 1
-			if activeThreads == 0 and loadedCount >= maxAssets then
+			if activeThreads == 0 and loadedCount >= maxAssets or #assets then
 				completed:Fire()
 			end
 		end)
@@ -144,7 +147,8 @@ local function preload()
 	completed:Destroy()
 
 	status.Text = "Loading..."
-	local endTime = math.round((os.clock() - startTime) * 10000) / 10000
+	local rawEndTime = os.clock() - startTime
+	local endTime = ("%.2f seconds"):format(rawEndTime)
 	print("Loaded in: " .. tostring(endTime))
 
 	loadingUI:Destroy()

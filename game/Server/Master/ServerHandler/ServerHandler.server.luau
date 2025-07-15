@@ -18,9 +18,13 @@ local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+local observer = require(ReplicatedStorage.Utility.observer)
+local orion = require(ReplicatedStorage.Combat.orion)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 
 -- local ActorGroup = require(ReplicatedStorage.Utility.ActorGroup)
@@ -29,6 +33,7 @@ local remoteEvents = ReplicatedStorage.RemoteEvents
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
 
 local productFunctions = {} :: { (receipt: (any | string)?, player: Player) -> boolean }
+local playerObservers = {}
 
 print("GameAnalytics is enabled.")
 
@@ -136,6 +141,18 @@ local function processReceipt(receiptInfo: { PlayerId: number, ProductId: number
 
 	local player = Players:GetPlayerByUserId(userId) :: Player
 	if player then
+		local handler = productFunctions[productId]
+		promise
+			.try(handler, receiptInfo, player)
+			:andThen(function()
+				return Enum.ProductPurchaseDecision.PurchaseGranted
+			end)
+			:catch(function(...)
+				warn(`product purchase went wrong somewhere : {receiptInfo}, {...}`)
+			end)
+	end
+	--[[
+	if player then
 		-- Get the handler function associated with the developer product ID and attempt to run it
 		local handler = productFunctions[productId]
 		local success, result = pcall(handler, receiptInfo, player)
@@ -147,6 +164,7 @@ local function processReceipt(receiptInfo: { PlayerId: number, ProductId: number
 			warn("Failed to process receipt: ", receiptInfo, result)
 		end
 	end
+	]]
 
 	-- The user's benefits couldn't be awarded
 	-- Return "NotProcessedYet" to try again next time the user joins
@@ -168,7 +186,7 @@ local function cancelMatch(player: Player)
 	MatchHandler.RemovePlayerFromQueue(player)
 end
 
-local function onPlayerAdded(player: Player)
+local function onPlayerAdded(player: playerMarshaller.player & Player)
 	-- Start profile session with timeout
 	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
 		Cancel = function()
@@ -217,14 +235,25 @@ local function onPlayerAdded(player: Player)
 	character:SetAttribute("MaxStamina", 100)
 
 	GameAnalytics:PlayerJoined(player)
+	orion.registerPlayer(player)
+
+	local playerObserver = observer.new(profile)
+	playerObservers[player] = playerObserver
+	playerObserver.Changed:Connect(function()
+		Packet.profileChanged.send({ nil }, player)
+	end)
 
 	-- Optimize character cleanup
 	player.CharacterRemoving:Connect(function(char: Model)
-		task.defer(function()
-			if char and char.Parent then
-				char:Destroy()
-			end
-		end)
+		promise
+			.defer(function(resolve, reject)
+				if resolve and resolve.Parent then
+					resolve:Destroy()
+				else
+					reject("Couldn't optimize character cleanup.")
+				end
+			end)
+			:andThen(character, warn)
 	end)
 end
 
@@ -242,6 +271,7 @@ end)
 local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
 	local profile = profiles[player]
+	--[[
 	if profile ~= nil then
 		profile:Save()
 		print("saving data for: " .. player.DisplayName)
@@ -250,23 +280,37 @@ local function onPlayerRemoving(player: Player)
 	else
 		print("couldn't save in time for " .. player.DisplayName)
 	end
+	--]]
+	promise
+		.new(function(resolve, reject)
+			if resolve then
+				resolve:Save()
+				print("saving data for: " .. player.DisplayName)
+				resolve:EndSession()
+				print("ending session for: " .. player.DisplayName)
+			else
+				reject("couldn't save in time for " .. player.DisplayName)
+			end
+		end)
+		:andThen(profile, print)
+		:catch(print)
 	task.defer(player.Destroy, player)
 end
 
 local function purchaseCard(player: Player, cardName: string)
 	local profile = profiles[player]
 	if not profile then
-		Packet.sendNotification.sendTo({
-			"Error",
-			"Profile not found for player: " .. player.Name,
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "Profile not found for player: " .. player.Name,
 		}, player)
 		warn("Profile not found for player: " .. player.Name)
 		return
 	end
 	if not Items[cardName] then
-		Packet.sendNotification.sendTo({
-			"Error",
-			"Card does not exist.",
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "Card does not exist.",
 		}, player)
 		warn("Card does not exist: " .. cardName)
 		return
@@ -289,12 +333,19 @@ local function purchaseCard(player: Player, cardName: string)
 		profile:Save()
 		profile:Reconcile()
 		local result = "success"
-		Packet.buyCard.sendTo({ result }, player)
+		Packet.SendNotification.sendTo({
+			message = "Card Purchased",
+			title = `You have purchased a {cardName} card.`,
+		}, player)
 		print("Card purchased successfully.")
 	else
-		Packet.sendNotification.sendTo({ "Error", "Not enough Big-Cards." }, player)
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "Not enough Big-Cards.",
+		}, player)
 		warn("Not enough Big Cards for player: " .. player.Name)
 	end
+	Packet.profileChanged.send({ nil }, player)
 end
 
 local function streamArea(player: Player, area: Vector3)
@@ -314,9 +365,9 @@ local function payCards(amount: number, playerName: string)
 	end
 	local profile = profiles[player]
 	if not profile then
-		Packet.sendNotification.sendTo({
-			"Error",
-			"Profile not found for player: " .. player.Name,
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "Profile not found for player: " .. player.Name,
 		}, player)
 		warn("Profile not found for player: " .. player.Name)
 		return
@@ -334,6 +385,7 @@ local function payCards(amount: number, playerName: string)
 		itemId = "Big-Cards",
 	}
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+	Packet.profileChanged.send({ nil }, player)
 	profile:Save()
 	profile:Reconcile()
 end
@@ -341,9 +393,9 @@ end
 local function sellCards(player: Player, cardName: string)
 	local profile = profiles[player]
 	if not profile then
-		Packet.sendNotification.sendTo({
-			"Error",
-			"Profile not found for player: " .. player.Name,
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "Profile not found for player: " .. player.Name,
 		}, player)
 		warn("Profile not found for player: " .. player.Name)
 		return
@@ -353,17 +405,17 @@ local function sellCards(player: Player, cardName: string)
 
 	-- validate card exists
 	if not Items[cardName] then
-		Packet.sendNotification.sendTo({
-			"Error",
-			"Invalid card type.",
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "Invalid card type.",
 		}, player)
 		warn("Invalid card to sell: ", cardName)
 		return
 	end
 	if not profile.Data.Cards[cardName] or profile.Data.Cards[cardName] <= 0 then
-		Packet.sendNotification.sendTo({
-			"Error",
-			"You don't have any " .. cardName .. " cards to sell.",
+		Packet.SendNotification.sendTo({
+			message = "Error",
+			title = "You don't have any " .. cardName .. " cards to sell.",
 		}, player)
 		return
 	end
@@ -387,6 +439,7 @@ local function sellCards(player: Player, cardName: string)
 	}
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
 
+	Packet.profileChanged.send({ nil }, player)
 	-- Save changes
 	profile:Save()
 	profile:Reconcile()
@@ -438,26 +491,26 @@ MarketplaceService.ProcessReceipt = processReceipt
 --("SetPlayerExperience", setPlayerExperience)
 --("GetStats", getStats)
 
-Packet.streamArea.listen(function(area, player: Player)
-	streamArea(player, area[1])
+Packet.StreamArea.listen(function(area, player: Player)
+	streamArea(player, area)
 end)
-Packet.createMatch.listen(function(_, player: Player)
+Packet.CreateMatch.listen(function(_, player: Player)
 	enterMatch(player)
 end)
-Packet.buyCard.listen(function(cardName, player: Player)
-	purchaseCard(player, cardName[1])
+Packet.BuyCard.listen(function(data, player: Player)
+	purchaseCard(player, data.cardName)
 end)
-Packet.payBigCards.listen(function(data)
-	payCards(data[1], data[2])
+Packet.PayBigCards.listen(function(data)
+	payCards(data.amount, data.recipientUsername)
 end)
-Packet.sprintRemote.listen(function(data: { boolean | buffer }, player: Player)
-	handleSprint(player, data[1], data[2])
+Packet.SprintRemote.listen(function(data, player: Player)
+	handleSprint(player, data.walkSpeed, data.isSprinting)
 end)
-Packet.cancelMatch.listen(function(_: nil?, player: Player)
+Packet.CancelMatch.listen(function(_, player: Player)
 	cancelMatch(player)
 end)
-Packet.sellCard.listen(function(data: { Instance | string }, player: Player)
-	local cardName = data[2]
+Packet.SellCard.listen(function(data, player: Player)
+	local cardName = data.cardName
 	sellCards(player, cardName)
 end)
 

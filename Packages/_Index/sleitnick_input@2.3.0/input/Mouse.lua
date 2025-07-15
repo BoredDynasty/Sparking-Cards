@@ -2,12 +2,10 @@
 -- Stephen Leitnick
 -- November 07, 2020
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Signal = require(script.Parent.Parent.Signal)
+local Trove = require(script.Parent.Parent.Trove)
+
 local UserInputService = game:GetService("UserInputService")
-
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
-
-local trove = require(ReplicatedStorage.Utility.trove)
 
 local RAY_DISTANCE = 1000
 
@@ -83,16 +81,16 @@ Mouse.__index = Mouse
 function Mouse.new()
 	local self = setmetatable({}, Mouse)
 
-	self._trove = trove.new()
+	self._trove = Trove.new()
 
-	self.LeftDown = self._trove:Construct(SignalPlus)
-	self.LeftUp = self._trove:Construct(SignalPlus)
-	self.RightDown = self._trove:Construct(SignalPlus)
-	self.RightUp = self._trove:Construct(SignalPlus)
-	self.MiddleDown = self._trove:Construct(SignalPlus)
-	self.MiddleUp = self._trove:Construct(SignalPlus)
-	self.Scrolled = self._trove:Construct(SignalPlus)
-	self.Moved = self._trove:Construct(SignalPlus)
+	self.LeftDown = self._trove:Construct(Signal)
+	self.LeftUp = self._trove:Construct(Signal)
+	self.RightDown = self._trove:Construct(Signal)
+	self.RightUp = self._trove:Construct(Signal)
+	self.MiddleDown = self._trove:Construct(Signal)
+	self.MiddleUp = self._trove:Construct(Signal)
+	self.Scrolled = self._trove:Construct(Signal)
+	self.Moved = self._trove:Construct(Signal)
 
 	self._trove:Connect(UserInputService.InputBegan, function(input, processed)
 		if processed then
@@ -172,7 +170,6 @@ end
 	Getting the mouse delta is only intended for when the mouse is locked. If the
 	mouse is _not_ locked, this will return a zero Vector2. The mouse can be locked
 	using the `mouse:Lock()` and `mouse:LockCenter()` method.
-	:::
 ]=]
 function Mouse:GetDelta(): Vector2
 	return UserInputService:GetMouseDelta()
@@ -183,7 +180,7 @@ end
 	position (or the override position if provided).
 ]=]
 function Mouse:GetRay(overridePos: Vector2?): Ray
-	local mousePos = overridePos or UserInputService:GetMouseLocation() :: Vector2
+	local mousePos = overridePos or UserInputService:GetMouseLocation()
 	local viewportMouseRay = workspace.CurrentCamera:ViewportPointToRay(mousePos.X, mousePos.Y)
 	return viewportMouseRay
 end
@@ -210,7 +207,7 @@ end
 	```
 ]=]
 function Mouse:Raycast(raycastParams: RaycastParams, distance: number?, overridePos: Vector2?): RaycastResult?
-	local viewportMouseRay: Ray = self:GetRay(overridePos)
+	local viewportMouseRay = self:GetRay(overridePos)
 	local result = workspace:Raycast(
 		viewportMouseRay.Origin,
 		viewportMouseRay.Direction * (distance or RAY_DISTANCE),
@@ -242,7 +239,7 @@ end
 	```
 ]=]
 function Mouse:Project(distance: number?, overridePos: Vector2?): Vector3
-	local viewportMouseRay: Ray = self:GetRay(overridePos)
+	local viewportMouseRay = self:GetRay(overridePos)
 	return viewportMouseRay.Origin + (viewportMouseRay.Direction.Unit * (distance or RAY_DISTANCE))
 end
 
@@ -254,7 +251,6 @@ end
 	Be sure to explicitly call `mouse:Unlock()` before cleaning up the mouse.
 	The `Destroy` method does _not_ unlock the mouse since there is no way
 	to guarantee who "owns" the mouse lock.
-	:::
 ]=]
 function Mouse:Lock()
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCurrentPosition
@@ -266,7 +262,6 @@ end
 
 	:::caution Must explicitly unlock
 	See cautionary in `Lock` method above.
-	:::
 ]=]
 function Mouse:LockCenter()
 	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter

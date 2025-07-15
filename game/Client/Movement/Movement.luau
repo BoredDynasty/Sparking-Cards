@@ -10,8 +10,8 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 -- local MovementStructure = require(ReplicatedStorage.Structures.MovementStructure)
-local Keyboard = require(ReplicatedStorage.Utility.input.Keyboard)
 local Stamina = require(Players.LocalPlayer.PlayerScripts.Movement.Stamina)
+local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local audio = require(ReplicatedStorage.Modules.audio)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
@@ -40,7 +40,6 @@ type self = {
 
 	keybinds: { string: Enum.KeyCode },
 	_animate: typeof(animate.new()),
-	_keyboard: typeof(Keyboard.new()),
 	_audio: typeof(audio.new()),
 	_debounces: {
 		jump: {
@@ -116,7 +115,6 @@ function Movement.new(): Movement
 				dash = Enum.KeyCode.C,
 			},
 			_animate = animate.new(character),
-			_keyboard = Keyboard.new(),
 			_audio = audio.new(),
 			_debounces = {
 				--[[
@@ -209,6 +207,13 @@ function Movement:walk(self: self)
 
 	-- Set base walking speed
 	self.character.Humanoid.WalkSpeed = self.baseSpeed
+	TweenPlus(self.character.Humanoid, {
+		WalkSpeed = self.baseSpeed,
+	}, {
+		duration = 0.75,
+		easingStyle = Enum.EasingStyle.Quad,
+		easingDirection = Enum.EasingDirection.Out,
+	}):Start()
 
 	-- Handle walking animation
 	local connection = RunService.Heartbeat:Connect(function()
@@ -381,13 +386,13 @@ function Movement:jump(self: self)
 				-- take stamina
 				local currentStamina = self.character:GetAttribute("Stamina") :: number
 				if currentStamina and currentStamina > 0 then
-					local staminaDrain = self.staminaRate * 0.5 -- Jumping drains less stamina
+					local staminaDrain: number = self.staminaRate * 0.5 -- Jumping drains less stamina
 					currentStamina = math.max(currentStamina - staminaDrain, 0)
 					self.character:SetAttribute("AntiRegenerate", true) -- prevent stamina regeneration
 					-- once the player has landed, deduct stamina.
 					-- we can use the quadratic formula to calculate the time it takes to land
 
-					task.wait(0.2) -- wait a bit to ensure the jump is registered
+					task.wait(0.8) -- wait a bit to ensure the jump is registered
 
 					-- Quadratic formula to solve for time t in:
 					-- y(t) = y0 + v0*t + 0.5*g*t^2  where final y = 0 (ground level assumed)
@@ -414,14 +419,16 @@ function Movement:jump(self: self)
 					local t1 = (-b + sqrtDisc) / (2 * a)
 					local t2 = (-b - sqrtDisc) / (2 * a)
 
-					landingTime = math.max(t1, t2) or 1 / 0.5 -- Fallback to a small value if no valid time found
-					task.delay(landingTime, function()
-						if self.character and self.character:IsDescendantOf(game.Workspace) then
-							self.character:SetAttribute("Stamina", currentStamina)
-							task.wait(0.5) -- wait a bit before allowing stamina regeneration
-							self.character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
-						end
-					end)
+					landingTime = math.max(t1, t2)
+					if landingTime <= 0 or landingTime > 200 then
+						landingTime = 1 -- Ensure non-negative or infinite time
+					end
+					task.wait(landingTime)
+					if self.character and self.character:IsDescendantOf(game.Workspace) then
+						self.character:SetAttribute("Stamina", currentStamina)
+						task.wait(0.5) -- wait a bit before allowing stamina regeneration
+						self.character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
+					end
 				end
 			else
 				self.character.Humanoid:SetStateEnabled(state, false)
@@ -433,8 +440,8 @@ end
 
 function Movement:slide(self: self)
 	-- // instances
-	local velocity: BodyVelocity? = nil
-	local gyro: BodyGyro? = nil
+	local velocity: LinearVelocity? = nil
+	local align: AlignOrientation? = nil
 	local isOnCooldown = false -- cooldown flag
 
 	local raycastParams = RaycastParams.new()
@@ -458,9 +465,9 @@ function Movement:slide(self: self)
 			velocity:Destroy() -- clean up the BodyVelocity instance
 			velocity = nil
 		end
-		if gyro then
-			gyro:Destroy() -- clean up the BodyGyro instance
-			gyro = nil
+		if align then
+			align:Destroy() -- clean up the AlignOrientation instance
+			align = nil
 		end
 		for i, conn in pairs(self.connections) do
 			if conn.name == "slidePositionCheck" then
@@ -497,15 +504,20 @@ function Movement:slide(self: self)
 				return -- already sliding or on cooldown
 			end
 
-			velocity = Instance.new("BodyVelocity")
-			velocity.Parent = self.character.HumanoidRootPart
-			velocity.MaxForce = Vector3.new(40000, 0, 40000) -- Allow horizontal movement only
-			velocity.Velocity = self.character.HumanoidRootPart.CFrame.LookVector * baseSpeed -- Double speed while sliding
+			local attachment = Instance.new("Attachment")
+			attachment.Parent = self.character.HumanoidRootPart
 
-			gyro = Instance.new("BodyGyro")
-			gyro.Parent = self.character.HumanoidRootPart
-			gyro.MaxTorque = Vector3.new(3e5, 3e5, 3e5) -- Allow rotation
-			gyro.P = 10000
+			velocity = Instance.new("LinearVelocity")
+			velocity.Parent = self.character.HumanoidRootPart
+			velocity.Attachment0 = attachment
+			velocity.MaxForce = math.huge
+			velocity.VectorVelocity = self.character.HumanoidRootPart.CFrame.LookVector * baseSpeed -- Double speed while sliding
+
+			align = Instance.new("AlignOrientation")
+			align.Attachment0 = attachment
+			align.Parent = self.character.HumanoidRootPart
+			align.MaxTorque = Vector3.new(3e5, 3e5, 3e5) -- Allow rotation
+			align.Responsiveness = 200
 
 			self._statemachine:transition("sliding")
 
@@ -595,18 +607,17 @@ function Movement:slide(self: self)
 				-- [play slide cancel sound]
 				-- push on cancel logic
 
-				local pushVelocity = Instance.new("BodyVelocity")
+				local pushVelocity = Instance.new("LinearVelocity")
 				pushVelocity.Parent = self.character.HumanoidRootPart
-				pushVelocity.MaxForce = Vector3.new(40000, 40000, 40000) -- Allow horizontal movement only
-				pushVelocity.Velocity = (
+				pushVelocity.Attachment0 = Instance.new("Attachment", self.character.HumanoidRootPart)
+				pushVelocity.MaxForce = math.huge
+				pushVelocity.VectorVelocity = (
 					self.character.HumanoidRootPart.CFrame.LookVector
 					* (self._push_velocity.forward * cancelMultiplier)
 				) + (self.character.HumanoidRootPart.CFrame.UpVector * self._push_velocity.upward)
 				task.delay(0.1, function()
-					-- could've just use debris but who cares
 					if pushVelocity then
-						pushVelocity:Destroy() -- clean up the BodyVelocity instance
-						pushVelocity = nil
+						pushVelocity:Destroy()
 					end
 				end)
 				stop()

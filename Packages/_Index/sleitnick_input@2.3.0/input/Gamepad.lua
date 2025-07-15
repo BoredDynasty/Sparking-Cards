@@ -2,14 +2,13 @@
 -- Stephen Leitnick
 -- December 23, 2021
 
-local GuiService = game:GetService("GuiService")
-local HapticService = game:GetService("HapticService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
+local Trove = require(script.Parent.Parent.Trove)
+local Signal = require(script.Parent.Parent.Signal)
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
-local trove = require(ReplicatedStorage.Utility.trove)
+local UserInputService = game:GetService("UserInputService")
+local HapticService = game:GetService("HapticService")
+local GuiService = game:GetService("GuiService")
+local RunService = game:GetService("RunService")
 
 local function ApplyDeadzone(value: number, threshold: number): number
 	if math.abs(value) < threshold then
@@ -232,13 +231,13 @@ Gamepad.__index = Gamepad
 ]=]
 function Gamepad.new(gamepad: Enum.UserInputType?)
 	local self = setmetatable({}, Gamepad)
-	self._trove = trove.new()
-	self._gamepadTrove = self._trove:Construct(trove)
-	self.ButtonDown = self._trove:Construct(SignalPlus)
-	self.ButtonUp = self._trove:Construct(SignalPlus)
-	self.Connected = self._trove:Construct(SignalPlus)
-	self.Disconnected = self._trove:Construct(SignalPlus)
-	self.GamepadChanged = self._trove:Construct(SignalPlus)
+	self._trove = Trove.new()
+	self._gamepadTrove = self._trove:Construct(Trove)
+	self.ButtonDown = self._trove:Construct(Signal)
+	self.ButtonUp = self._trove:Construct(Signal)
+	self.Connected = self._trove:Construct(Signal)
+	self.Disconnected = self._trove:Construct(Signal)
+	self.GamepadChanged = self._trove:Construct(Signal)
 	self.DefaultDeadzone = 0.05
 	self.SupportsVibration = false
 	self.State = {}
