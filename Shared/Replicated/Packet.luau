@@ -8,21 +8,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local bytenet = require(ReplicatedStorage.Packages.bytenet)
 
--- Define a type for the TargetInfo dictionary to improve clarity
-type TargetInfo = {
-	targetPosition: Vector3?, -- Optional world position (e.g., mouse hit)
-	targetInstanceId: number?, -- Optional InstanceId of a target object (e.g., for targeted abilities)
-}
-
--- Define a type for common effect parameters
-type EffectParams = {
-	position: Vector3?, -- World position for the effect
-	sourcePlayerId: number?, -- UserId of the player initiating the effect
-	targetPlayerId: number?, -- UserId of the player targeted by the effect
-	attachToInstanceId: number?, -- InstanceId to attach the effect to
-	customData: { [string]: any }?, -- For any other effect-specific data
-}
-
 return bytenet.defineNamespace("MainNet", function()
 	-- General Game Packets (Non-Combat)
 	local newMatchStruct = bytenet.struct({

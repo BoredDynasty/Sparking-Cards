@@ -29,7 +29,7 @@ return {
 		},
 	},
 	ClientRun = function(_, amount: number, player: Player)
-		Packet.payBigCards.send({ amount, player.Name })
+		Packet.PayBigCards.send({ amount = amount, recipientUsername = player.Name })
 
 		return "Payout executed"
 	end,

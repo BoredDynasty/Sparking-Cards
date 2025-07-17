@@ -26,7 +26,7 @@ function debounce.new(params: debounces)
 	return setmetatable(proxyTable, debounce)
 end
 
-function debounce:__call(moveName: string)
+function debounce:__call<s, b>(moveName: s): b
 	local currentTime = tick()
 	local lastCall = self[moveName].lastCall
 	local delayTime = self[moveName].delayTime

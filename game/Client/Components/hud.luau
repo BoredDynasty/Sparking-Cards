@@ -47,6 +47,8 @@ function hud:render()
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
 
+		local icon = button.icon.IconName or "file"
+
 		local TextButton = Instance.new("TextButton")
 		local UICorner = Instance.new("UICorner")
 		local Icon = Instance.new("ImageLabel")
@@ -77,9 +79,10 @@ function hud:render()
 		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
 		Icon.BackgroundTransparency = 1
 		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
-		Icon.Size = UDim2.fromScale(0.20, 0.20)
+		Icon.Size = UDim2.fromScale(0.40, 0.40)
 
-		local defaultIcon = lucide.GetAsset("file") -- blank file icon
+		local defaultIcon = lucide.GetAsset(icon, 256 * 2) -- blank file icon
+		assert(defaultIcon, "Failed to fetch asset!")
 		Icon.ImageRectOffset = defaultIcon.ImageRectOffset
 		Icon.ImageRectSize = defaultIcon.ImageRectSize
 		Icon.Image = defaultIcon.Url

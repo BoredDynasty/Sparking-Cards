@@ -1,10 +1,12 @@
---!nonstrict
+--!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local CardLibrary = require(script.Parent.CardLibrary)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
+local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local yoink = require(ReplicatedStorage.Utility.yoink)
@@ -22,6 +24,8 @@ local orion = {
 	passives = script.Parent.Passives,
 	strike = script.Parent.Strike,
 	visuals = script.Parent.Visuals,
+	libray = CardLibrary,
+	arbitrary_data = {},
 }
 
 -- Type definitons
@@ -35,27 +39,26 @@ export type attack_module = {
 
 function orion.registerPlayer(player: playerMarshaller.player & Player)
 	local identification = player.UserId
-	local profile: typeof(profilestructure) = yoink.boundary:grab("profile_data")
+	local profile = nil :: typeof(profilestructure)?
+	local profilePromise = promise.new(function(resolve, reject)
+		if profileMarshaller.server[player] then
+			resolve(profileMarshaller.server[player])
+		else
+			reject("Couldn't get profile from the profileMarshaller")
+		end
+		return profile
+	end)
+	local worked, result = profilePromise:await()
+	assert(worked, result)
+	profile = result :: typeof(profilestructure)
 	local equippedCard = profile.EquippedCard
 	local data = {
 		profile = profile,
 		equippedCard = equippedCard,
 	}
-	-- check for changes
-	local equipped_observer = observer.new(equippedCard)
-	equipped_observer.Changed:Connect(function()
-		-- re-register
-		print("Re-registering player:", player.Name, "with new equipped card:", equippedCard)
-		orion.registerPlayer(player)
-
-		task.defer(function()
-			equipped_observer:Destroy()
-		end)
-	end)
 	playerMarshaller.removing(function(otherPlayer: playerMarshaller.player)
 		if otherPlayer == player then
 			task.defer(function()
-				equipped_observer:Destroy()
 				table.clear(orion.player_data[otherPlayer.UserId])
 			end)
 		end
@@ -67,7 +70,7 @@ end
 function orion:execute(player: playerMarshaller.player, attack_type: attack_type, ...: any?): any?
 	local attack_module = nil
 	local playerData = orion.player_data[player.UserId]
-	local equippedCard = playerData.EquippedCard or playerData.profile.EquippedCard
+	local equippedCard = playerData.equippedCard
 	if not equippedCard then
 		warn("No equipped card found for player:", player.Name)
 		return nil
@@ -83,10 +86,11 @@ function orion:execute(player: playerMarshaller.player, attack_type: attack_type
 		end
 	end)
 	local worked, result = attackModulePromise:await()
+	assert(worked, "Couldn't require attack module")
 	attack_module = result :: attack_module & any
 	local ret_value = nil
 	if attack_module and attack_module[attack_type] then
-		local attack_function = attack_module[attack_type]
+		local attack_function = attack_module[attack_type] :: (playerMarshaller.player, ...any?) -> ...any?
 		if attack_function and type(attack_function) == "function" then
 			ret_value = attack_function(player, ...)
 		end

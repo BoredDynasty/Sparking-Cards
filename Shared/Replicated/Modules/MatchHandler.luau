@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 
 local DataStoreService = game:GetService("DataStoreService")
 local MessagingService = game:GetService("MessagingService")

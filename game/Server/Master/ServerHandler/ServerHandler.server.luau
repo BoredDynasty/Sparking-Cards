@@ -21,6 +21,7 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
@@ -29,7 +30,7 @@ local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 
 -- local ActorGroup = require(ReplicatedStorage.Utility.ActorGroup)
 
-local remoteEvents = ReplicatedStorage.RemoteEvents
+local remoteEvents = ReplicatedStorage.Events
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
 
 local productFunctions = {} :: { (receipt: (any | string)?, player: Player) -> boolean }
@@ -59,6 +60,7 @@ local resourceItemTypes = {
 local serverStartTime = os.clock()
 
 Cmdr:RegisterDefaultCommands() -- This loads the default set of commands that Cmdr comes with. (Optional)
+Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
 
 -- selene:allow(mixed_table)
 GameAnalytics:initialize(gameAnalyticsConfig)
@@ -80,7 +82,7 @@ if RunService:IsStudio() then
 end
 --]]
 -- This product Id gives the player more cards (cards as in money)
-productFunctions[1904591683] = function(receipt: any | string?, player: Player)
+productMarshaller.product_callbacks[1904591683] = function(receipt: any | string?, player: Player)
 	local profile = profiles[player]
 	if not profile then
 		print("Profile not found for player: " .. player.Name)
@@ -101,7 +103,7 @@ productFunctions[1904591683] = function(receipt: any | string?, player: Player)
 	return true -- indicate a successful purchase
 end
 
-productFunctions[1906572512] = function(receipt: any | string?, player: Player)
+productMarshaller.product_callbacks[1906572512] = function(receipt: any | string?, player: Player)
 	print(`Donated Successfully: {player.Name}.`)
 
 	print(receipt) -- debug
@@ -135,41 +137,6 @@ end)
 local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model
 ServerAsset.Parent = game.Workspace
 
-local function processReceipt(receiptInfo: { PlayerId: number, ProductId: number })
-	local userId = receiptInfo.PlayerId :: number
-	local productId = receiptInfo.ProductId :: number
-
-	local player = Players:GetPlayerByUserId(userId) :: Player
-	if player then
-		local handler = productFunctions[productId]
-		promise
-			.try(handler, receiptInfo, player)
-			:andThen(function()
-				return Enum.ProductPurchaseDecision.PurchaseGranted
-			end)
-			:catch(function(...)
-				warn(`product purchase went wrong somewhere : {receiptInfo}, {...}`)
-			end)
-	end
-	--[[
-	if player then
-		-- Get the handler function associated with the developer product ID and attempt to run it
-		local handler = productFunctions[productId]
-		local success, result = pcall(handler, receiptInfo, player)
-		if success then
-			-- The user has received their benefits
-			-- Return "PurchaseGranted" to confirm the transaction
-			return Enum.ProductPurchaseDecision.PurchaseGranted
-		else
-			warn("Failed to process receipt: ", receiptInfo, result)
-		end
-	end
-	]]
-
-	-- The user's benefits couldn't be awarded
-	-- Return "NotProcessedYet" to try again next time the user joins
-	return Enum.ProductPurchaseDecision.NotProcessedYet
-end
 local function enterMatch(player: Player?)
 	print("player entered match")
 	if not player then
@@ -186,7 +153,7 @@ local function cancelMatch(player: Player)
 	MatchHandler.RemovePlayerFromQueue(player)
 end
 
-local function onPlayerAdded(player: playerMarshaller.player & Player)
+local function onPlayerAdded(player: Player)
 	-- Start profile session with timeout
 	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
 		Cancel = function()
@@ -211,7 +178,7 @@ local function onPlayerAdded(player: playerMarshaller.player & Player)
 
 	if (player.Parent == Players) or player:FindFirstAncestor("Players") then
 		profiles[player] = profile
-		print("Data Loaded for " .. player.DisplayName, unpack(profile.Data))
+		print("Data Loaded for " .. player.DisplayName, table.unpack(profile.Data))
 		profile.Data.LastLogin = os.time()
 		profile:Reconcile()
 		profile:Save()
@@ -222,13 +189,14 @@ local function onPlayerAdded(player: playerMarshaller.player & Player)
 	end
 
 	-- for the client to mess around with
-	local editConfig = Instance.new("BindableEvent")
-	editConfig.Parent = player
-	editConfig.Name = "EditConfig"
-	local toggleShiftLock = Instance.new("BindableEvent")
-	toggleShiftLock.Parent = player
-	toggleShiftLock.Name = "ToggleShiftLock"
-	print("yay, installed bindable events to player")
+	coroutine.wrap(function()
+		local editConfig = Instance.new("BindableEvent")
+		editConfig.Parent = player
+		editConfig.Name = "EditConfig"
+		local toggleShiftLock = Instance.new("BindableEvent")
+		toggleShiftLock.Parent = player
+		toggleShiftLock.Name = "ToggleShiftLock"
+	end)
 
 	local character: Model = player.Character or player.CharacterAdded:Wait()
 	character:SetAttribute("Stamina", 100)
@@ -240,20 +208,22 @@ local function onPlayerAdded(player: playerMarshaller.player & Player)
 	local playerObserver = observer.new(profile)
 	playerObservers[player] = playerObserver
 	playerObserver.Changed:Connect(function()
-		Packet.profileChanged.send({ nil }, player)
+		Packet.profileChanged.sendTo({ nil }, player)
 	end)
 
 	-- Optimize character cleanup
 	player.CharacterRemoving:Connect(function(char: Model)
 		promise
 			.defer(function(resolve, reject)
-				if resolve and resolve.Parent then
-					resolve:Destroy()
+				if char and char.Parent then
+					char:Destroy()
+					resolve("Optimized Character Cleanup.")
 				else
 					reject("Couldn't optimize character cleanup.")
 				end
 			end)
-			:andThen(character, warn)
+			:andThen(print)
+			:catch(warn)
 	end)
 end
 
@@ -271,7 +241,11 @@ end)
 local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
 	local profile = profiles[player]
-	--[[
+	local needle = table.find(playerObservers, player)
+	if needle then
+		playerObservers[needle]:Destroy()
+	end
+
 	if profile ~= nil then
 		profile:Save()
 		print("saving data for: " .. player.DisplayName)
@@ -280,20 +254,7 @@ local function onPlayerRemoving(player: Player)
 	else
 		print("couldn't save in time for " .. player.DisplayName)
 	end
-	--]]
-	promise
-		.new(function(resolve, reject)
-			if resolve then
-				resolve:Save()
-				print("saving data for: " .. player.DisplayName)
-				resolve:EndSession()
-				print("ending session for: " .. player.DisplayName)
-			else
-				reject("couldn't save in time for " .. player.DisplayName)
-			end
-		end)
-		:andThen(profile, print)
-		:catch(print)
+
 	task.defer(player.Destroy, player)
 end
 
@@ -332,7 +293,7 @@ local function purchaseCard(player: Player, cardName: string)
 		profile.Data.Cards[cardName] = (profile.Data.Cards[cardName] or 0) + 1
 		profile:Save()
 		profile:Reconcile()
-		local result = "success"
+		--local result = "success"
 		Packet.SendNotification.sendTo({
 			message = "Card Purchased",
 			title = `You have purchased a {cardName} card.`,
@@ -345,7 +306,7 @@ local function purchaseCard(player: Player, cardName: string)
 		}, player)
 		warn("Not enough Big Cards for player: " .. player.Name)
 	end
-	Packet.profileChanged.send({ nil }, player)
+	Packet.profileChanged.sendTo({ nil }, player)
 end
 
 local function streamArea(player: Player, area: Vector3)
@@ -358,7 +319,7 @@ local function streamArea(player: Player, area: Vector3)
 end
 
 local function payCards(amount: number, playerName: string)
-	local player: Player? = Players:FindFirstChild(playerName)
+	local player = playerMarshaller.getByName(playerName)
 	if not player then
 		warn("player not found: " .. playerName)
 		return
@@ -385,7 +346,7 @@ local function payCards(amount: number, playerName: string)
 		itemId = "Big-Cards",
 	}
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
-	Packet.profileChanged.send({ nil }, player)
+	Packet.profileChanged.sendTo({ nil }, player)
 	profile:Save()
 	profile:Reconcile()
 end
@@ -439,7 +400,7 @@ local function sellCards(player: Player, cardName: string)
 	}
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
 
-	Packet.profileChanged.send({ nil }, player)
+	Packet.profileChanged.sendTo({ nil }, player)
 	-- Save changes
 	profile:Save()
 	profile:Reconcile()
@@ -472,7 +433,11 @@ local function handleSprint(player: Player, v: number, b: boolean)
 end
 
 -- Set the callback; this can only be done once by one server-side script
-MarketplaceService.ProcessReceipt = processReceipt
+MarketplaceService.ProcessReceipt = function(receiptInfo: {
+	[any]: any,
+})
+	productMarshaller.processReceipt(receiptInfo, productMarshaller.product_callbacks)
+end
 
 -- Register Events
 -- ("NewMatch")
@@ -514,8 +479,12 @@ Packet.SellCard.listen(function(data, player: Player)
 	sellCards(player, cardName)
 end)
 
-local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
-getProfileRF.OnServerInvoke = getProfile
+coroutine.wrap(function()
+	local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
+	getProfileRF.OnServerInvoke = getProfile
+	local getProfileBoundary = remoteEvents:FindFirstChild("GetProfileBoundary") :: BindableFunction
+	getProfileBoundary.OnInvoke = getProfile
+end)
 
 -- TODO) add player saving options
 

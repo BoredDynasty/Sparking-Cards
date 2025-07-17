@@ -30,7 +30,7 @@ export type Card = {
 
 local CardLibrary: { [string]: Card } = {
 	FrostGauntlet = {
-		DisplayName = "Frost Gauntlets",
+		DisplayName = "Frost Gauntlet",
 		WeaponType = "Gauntlet",
 		BaseDamageMultiplier = 1.0,
 		MaxCombo = 3,

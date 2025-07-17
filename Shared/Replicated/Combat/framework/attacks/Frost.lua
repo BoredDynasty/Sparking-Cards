@@ -22,9 +22,12 @@ local debounce = require(ReplicatedStorage.Combat.framework.utils.debounce).new(
 	Ultimate = 14,
 	Support = 15,
 })
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local promise = require(ReplicatedStorage.Packages.promise)
+local random = require(ReplicatedStorage.Utility.random)
 
 type Player = PlayerMarshaller.player
-type TargetInfoParams = { targetPosition: Vector3?, targetInstanceId: number? }
 
 local assetsFolder = ReplicatedStorage:FindFirstChild("Assets")
 if not assetsFolder or not assetsFolder:IsA("Folder") then
@@ -33,19 +36,11 @@ end
 
 -- ==== Private Helper Functions for Frost Abilities ====
 
-local function _getAsset(name: string): Instance?
-	local asset = assetsFolder:FindFirstChild(name)
-	if not asset then
-		warn("Frost module: Asset not found -", name)
-		return nil
-	end
-	return asset:Clone()
-end
-
 -- ==== Moveset Implementation ====
+-- Frost.moveset[move](player, ...)
 local Frost = {
 	moveset = {
-		M1 = nil, -- Snowball Attack
+		M1 = nil, -- Gauntlet
 		Skill = nil, -- Ice Shards
 		Ultimate = nil, -- Blizzard Rush (Placeholder)
 		Support = nil, -- Cryo Barrier (Placeholder)
@@ -54,12 +49,18 @@ local Frost = {
 
 -- M1: Snowball Attack
 
-function Frost.moveset.M1(player: Player, attackData, targetInfo: TargetInfoParams?)
+function Frost.moveset.M1(player: Player, attackData, targetInfo)
+	print("M1 not finished")
 	--
 end
 
 -- Skill: Ice Shards
-function Frost.moveset.Skill(player: Player, attackData, targetInfo: TargetInfoParams?)
+function Frost.moveset.Skill(
+	player: playerMarshaller.player,
+	targetPosition: Vector3,
+	range: number,
+	position: Vector3
+)
 	if not debounce.__call("Skill") then
 		return
 	end
@@ -72,9 +73,8 @@ function Frost.moveset.Skill(player: Player, attackData, targetInfo: TargetInfoP
 		return
 	end
 
-	local targetPosition = targetInfo and targetInfo.targetPosition
 	if not targetPosition then
-		targetPosition = rootPart.Position + rootPart.CFrame.LookVector * (attackData.Range or 25)
+		targetPosition = rootPart.Position + rootPart.CFrame.LookVector * (range or 25)
 		-- warn(player.Name .. " Frost.Skill (IceShards): No targetPosition provided, using default.")
 	end
 
@@ -85,11 +85,16 @@ function Frost.moveset.Skill(player: Player, attackData, targetInfo: TargetInfoP
 	local startPosition = CFrame.new(rootPart.Position, position)
 	-- local goal = startPosition.LookVector * multiplier
 
-	local shardsNum = math.random(8, 15)
+	local shardsNum = random.integer(8, 15)
 
 	local shardIncrements = multiplier / shardsNum
 
-	local shard = assets:FindFirstChild("IceShard") :: UnionOperation
+	local shard = fetchAsset("IceShard") :: BasePart
+	promise.delay(10):andThen(function()
+		shard:Destroy()
+	end)
+
+	local TInfo = TweenInfo.new(1, Enum.EasingStyle.Circular, Enum.EasingDirection.InOut)
 
 	for i = 1, shardsNum do
 		local newShard = shard:Clone()
@@ -97,11 +102,14 @@ function Frost.moveset.Skill(player: Player, attackData, targetInfo: TargetInfoP
 		newShard.CanCollide = false
 
 		local x, y, z =
-			math.random(30, 50) / 30 * i, math.random(30, 50) / 30 * i * 2, math.random(30, 50) / 30 * i
+			random.integer(30, 50) / 30 * i,
+			random.integer(30, 50) / 30 * i * 2,
+			random.integer(30, 50) / 30 * i
 
 		newShard.Size = Vector3.new(0, 0, 0)
 
-		local orientation = Vector3.new(math.random(-30, 30), math.random(-180, 180), math.random(-30, 30))
+		local orientation =
+			Vector3.new(random.integer(-30, 30), random.integer(-180, 180), random.integer(-30, 30))
 		newShard.Orientation = orientation
 
 		local shardPosition = rootPart.Position + startPosition.LookVector * (shardIncrements * i)
@@ -126,9 +134,11 @@ function Frost.moveset.Skill(player: Player, attackData, targetInfo: TargetInfoP
 				local humanoid_ = parent:FindFirstChild("Humanoid") :: Humanoid
 				local damagePoints = 30
 				if humanoid_ then
+					local otherPlayer = Players[humanoid_.Parent.Name] :: playerMarshaller.player
+					local otherIdentification = otherPlayer.UserId
 					damage({
 						amount = damagePoints,
-						target = Players[humanoid_.Parent.Name].UserId,
+						target = otherIdentification,
 					})
 				end
 			end
@@ -152,118 +162,13 @@ function Frost.moveset.Skill(player: Player, attackData, targetInfo: TargetInfoP
 end
 
 -- Ultimate: Blizzard Rush (Placeholder)
-function Frost.moveset.Ultimate(player: Player, attackData: AttackData, targetInfo: TargetInfoParams?)
-	local character = player.Character
-	if not character then
-		return
-	end
-	local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not rootPart then
-		return
-	end
-
-	-- print(player.Name .. " executing Frost Ultimate (BlizzardRush) with targetInfo:", targetInfo)
-
-	local targetPos = targetInfo and targetInfo.targetPosition
-		or rootPart.Position + rootPart.CFrame.LookVector * (attackData.Range or 15)
-
-	-- Example: Simple AoE damage at target position
-	local explosion = Instance.new("Explosion")
-	explosion.BlastPressure = 0 -- No physics force from this example
-	explosion.BlastRadius = attackData.Range or 15
-	explosion.Position = targetPos
-	explosion.ExplosionType = Enum.ExplosionType.NoCraters
-	explosion.DestroyJointRadiusPercent = 0
-	explosion.Visible = false -- Visuals handled by effect notification
-	explosion.Parent = Workspace
-
-	-- Hit detection for AoE
-	local hitModels = {} ---@type {[Model]:boolean}
-	local region = Region3.new(
-		targetPos - Vector3.one * explosion.BlastRadius,
-		targetPos + Vector3.one * explosion.BlastRadius
-	)
-	local partsInRegion = Workspace:FindPartsInRegion3(region, character, math.huge)
-
-	for _, partInRegion in ipairs(partsInRegion) do
-		local model = partInRegion:FindFirstAncestorWhichIsA("Model")
-		if model and model ~= character and not hitModels[model] then
-			local humanoid = model:FindFirstChildOfClass("Humanoid")
-			if humanoid then
-				hitModels[model] = true
-				local hitPlayer = game:GetService("Players"):GetPlayerFromCharacter(model)
-				if hitPlayer then
-					Orion.HandleDamage(
-						player,
-						PlayerMarshaller.get(hitPlayer),
-						attackData.Damage,
-						attackData.Name
-					)
-				else
-					humanoid:TakeDamage(attackData.Damage) -- Non-player humanoid
-				end
-			end
-		end
-	end
-
-	local effectParams: Packet.EffectParams =
-		{ position = targetPos, customData = { radius = explosion.BlastRadius } }
-	Packet.Orion_PlayEffectNotif.sendToAllClients({
-		effectName = "FrostUltimateExplosion",
-		effectParams = effectParams,
-	})
-
-	-- print("Frost Ultimate activated by", player.Name, "at", targetPos)
+function Frost.moveset.Ultimate(player: Player, attackData, targetInfo)
+	--
 end
 
 -- Support: Cryo Barrier (Placeholder)
-function Frost.moveset.Support(player: Player, attackData: AttackData, targetInfo: TargetInfoParams?)
-	local character = player.Character
-	if not character then
-		return
-	end
-	local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart?
-	if not rootPart then
-		return
-	end
-
-	-- print(player.Name .. " executing Frost Support (CryoBarrier)")
-
-	local barrier = _getAsset("IceWall") :: Part?
-	if not barrier then
-		warn("Frost Support: IceWall asset not found.")
-		return
-	end
-
-	barrier.Anchored = true
-	barrier.CanCollide = true
-	local barrierSize = Vector3.new(12, 8, 1.5)
-	barrier.Size = barrierSize
-
-	local spawnPos = rootPart.CFrame
-		* CFrame.new(
-			0,
-			-rootPart.Size.Y / 2 + barrierSize.Y / 2,
-			-(rootPart.Size.Z / 2 + barrierSize.Z / 2 + 2)
-		)
-	barrier.CFrame = spawnPos
-
-	barrier.Transparency = 0.4
-	barrier.Color = Color3.fromRGB(173, 216, 230)
-	barrier.Material = Enum.Material.Ice
-	barrier.Parent = Workspace
-
-	Debris:AddItem(barrier, attackData.ActiveDuration or 8)
-	-- print("Frost Support (CryoBarrier) created by", player.Name)
-
-	local effectParams: Packet.EffectParams = {
-		position = barrier.Position,
-		customData = { size = barrier.Size, orientation = barrier.Orientation },
-	}
-	Packet.Orion_PlayEffectNotif.sendToAllClients({
-		effectName = "CryoBarrierSpawn",
-		effectParams = effectParams,
-	})
+function Frost.moveset.Support(player: Player, attackData, targetInfo)
+	--
 end
 
 return Frost

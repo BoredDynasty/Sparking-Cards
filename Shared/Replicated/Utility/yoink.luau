@@ -10,7 +10,7 @@ local yoink = {
 	boundary = {},
 }
 
-local events = ReplicatedStorage.RemoteEvents
+local events = ReplicatedStorage.Events
 
 export type registered = "profile_data"
 
@@ -18,7 +18,7 @@ yoink.client.registeredValues =
 	{ profile_data = events:FindFirstChild("GetProfile") :: RemoteFunction } :: { [registered]: RemoteFunction }
 
 yoink.boundary.registeredValues = {
-	profile_data = events:FindFirstChild("GetProfileBoundary", true) :: BindableFunction,
+	profile_data = events:FindFirstChild("GetProfileBoundary") :: BindableFunction,
 } :: { [registered]: BindableFunction }
 
 --[[

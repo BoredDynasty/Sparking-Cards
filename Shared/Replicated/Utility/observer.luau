@@ -31,6 +31,7 @@ export type Observer<T> = {
 function Observer.new<T>(initialValue: T): Observer<T>
 	local self = setmetatable({
 		_value = initialValue,
+		Changed = SignalPlus(),
 	}, Observer)
 
 	return self

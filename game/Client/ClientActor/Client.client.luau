@@ -21,7 +21,7 @@ local Items = require(ReplicatedStorage.Market.Items)
 local Maid = require(ReplicatedStorage.Utility.Maid)
 local Movement = require(script.Parent.Parent.Movement.Movement)
 local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("OnIdle"))
-local OverShoulder = require(script.Parent.Parent.Modules.OverShoulder)
+-- local OverShoulder = require(script.Parent.Parent.Modules.OverShoulder)
 local Packet = require(ReplicatedStorage.Packet)
 local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
@@ -43,6 +43,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local retryer = require(ReplicatedStorage.Utility.retryer)
+-- local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local yoink = require(ReplicatedStorage.Utility.yoink)
 local keyboard = input.Keyboard.new()
@@ -57,14 +58,17 @@ local profile: typeof(profilestructure) = yoink.client:grab("profile_data")
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
 local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
-local remoteEvents = ReplicatedStorage:WaitForChild("RemoteEvents") :: Folder
+local remoteEvents = ReplicatedStorage.Events
 
 ---------------------------------- Client --------------------------------
 
 local interfaceStartTime = os.clock()
 
 local PlayerGui = player.PlayerGui
-local templates = ReplicatedStorage:WaitForChild("Interfaces") :: Folder
+local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
+
+Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
+Cmdr:SetActivationUnlocksMouse(true)
 
 audio:write_miscellaneous(audio, {
 	["click"] = 90092163763441,
@@ -76,6 +80,7 @@ audio:write_miscellaneous(audio, {
 print("client starting")
 
 local function initializeMarket()
+	print("init marker")
 	local shopGui = PlayerGui:WaitForChild("Shop") :: ScreenGui
 	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
@@ -85,6 +90,8 @@ local function initializeMarket()
 	local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
 	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
 	local shopFolder = templates:FindFirstChild("Shop") :: Folder
+
+	print("got market gui")
 
 	local function unloadShop()
 		for _, item in itemHolder:GetChildren() do
@@ -99,8 +106,9 @@ local function initializeMarket()
 	local function displaySpendings()
 		local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
-		local profile: typeof(profilestructure) = yoink.client:grab("profile_data")
-		local big_cards = tostring(profile["Big-Cards"])
+		profile = yoink.client:grab("profile_data") :: typeof(profilestructure)
+		print("got profile for displaying spendings!!!!11!")
+		local big_cards = tostring(profile.Data["Big-Cards"])
 		TextPlus.Create(moneyFrame, big_cards, {
 			Font = Font.new(
 				"rbxasset://fonts/families/Montserrat.json", -- Family.
@@ -116,14 +124,18 @@ local function initializeMarket()
 			Dynamic = true,
 		})
 	end
+	coroutine.wrap(displaySpendings)
 	Packet.profileChanged.listen(displaySpendings)
-	shadow(shopFrame, Color3.new(), 0.5, 14)
-	shadow(shopNavigation, Color3.new(), 0.5, 14)
+	coroutine.wrap(function()
+		retryer.delay(10, math.huge, displaySpendings)
+	end)
+	shadow(shopFrame, Color3.new(), 0, 14)
+	shadow(shopNavigation, Color3.new(), 0, 14)
 
 	local function populateShop(t: {}?)
 		local newRelease = shopFrame:FindFirstChild("NewRelease") :: TextLabel
 		unloadShop()
-		t = t or Items
+		t = Items
 		for _, item in pairs(t) do
 			-- print("got item: " .. item.Name)
 			local itemTemplate = shopFolder:FindFirstChild("ItemTemplate") :: Frame & {
@@ -174,51 +186,74 @@ local function initializeMarket()
 				Dynamic = true,
 			})
 
-			characterIteration:jump(title)
-			characterIteration:jump(price)
+			coroutine.wrap(function()
+				characterIteration:jump(title)
+				characterIteration:jump(price)
+			end)
 
 			itemTemplate.Visible = true
-			if item.ExperimentsEnabled == true then
-				experimentButton.Visible = true
-				experimentButton.MouseButton1Click:Connect(function()
-					print("Testing card: " .. item.Name)
-				end)
-			else
-				experimentButton.Visible = false
-			end
+			coroutine.wrap(function()
+				if item.ExperimentsEnabled == true then
+					experimentButton.Visible = true
+					experimentButton:FindFirstChildOfClass("ImageLabel").Visible = true
+					experimentButton.MouseButton1Click:Connect(function()
+						print("Testing card: " .. item.Name)
+					end)
+				else
+					experimentButton.Visible = false
+				end
+			end)
 
-			if item.Tags then
-				itemTemplate.Tags.Visible = true
-				for _, tagName in pairs(item.Tags) do
-					if ItemTags[tagName] then
-						local tag = ItemTags[tagName]
+			itemTemplate.Tags.Visible = false
+			coroutine.wrap(function()
+				if item.Tags then
+					itemTemplate.Tags.Visible = true
+					for _, tagName in pairs(item.Tags) do
+						if ItemTags[tagName] then
+							local tag = ItemTags[tagName]
 
-						local image = Instance.new("ImageLabel")
-						local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+							local image = Instance.new("ImageLabel")
+							local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
 
-						--Properties:
+							--Properties:
 
-						image.Parent = itemTemplate.Tags
-						image.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-						image.BackgroundTransparency = 1.000
-						image.BorderColor3 = Color3.fromRGB(0, 0, 0)
-						image.BorderSizePixel = 0
-						image.Size = UDim2.new(0, 20, 0, 20)
-						image.Visible = false
-						image.Image = tag.Identification
-						--[[
+							image.Parent = itemTemplate.Tags
+							image.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+							image.BackgroundTransparency = 1.000
+							image.BorderColor3 = Color3.fromRGB(0, 0, 0)
+							image.BorderSizePixel = 0
+							image.Size = UDim2.new(0, 20, 0, 20)
+							image.Visible = false
+							image.Image = tag.Identification
+							--[[
 						local thread = task.spawn(Hint, tag.Description, itemTemplate.Tags)
 						itemTemplate.Destroying:Once(function()
 							-- cleaner
 							task.cancel(thread)
 						end)
 						--]]
-						UIAspectRatioConstraint.Parent = image
+							UIAspectRatioConstraint.Parent = image
+						end
 					end
 				end
-			end
+			end)
+
 			print("setting up buttons")
 			local purchaseDebounce = false -- exception too
+			TextPlus.Create(purchaseButton:FindFirstChild("TextHolder") :: Frame, "Purchase", {
+				Font = Font.new(
+					"rbxasset://fonts/families/Montserrat.json", -- Family.
+					Enum.FontWeight.Bold, -- Weight.
+					Enum.FontStyle.Normal -- Style.
+				),
+				Size = 12.5,
+				Color = Color3.fromHex("#f5f5f5"),
+				XAlignment = "Left",
+				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
+				Dynamic = true,
+			})
 			purchaseButton.MouseEnter:Connect(function()
 				audio:read_miscellaneous(audio, "hover")
 			end)
@@ -231,6 +266,7 @@ local function initializeMarket()
 				end
 				print("Purchasing card: " .. item.Name)
 				Packet.BuyCard.send({ cardName = item.Name })
+				--ripple(Color3.new())
 				pop(purchaseButton)
 				purchaseDebounce = true
 				limits.debounce(purchaseDebounce)

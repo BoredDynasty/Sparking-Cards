@@ -112,7 +112,7 @@ function Movement.new(): Movement
 				sprint = Enum.KeyCode.LeftShift,
 				slide = Enum.KeyCode.C,
 				cancel_slide = Enum.KeyCode.Space,
-				dash = Enum.KeyCode.C,
+				dash = Enum.KeyCode.V,
 			},
 			_animate = animate.new(character),
 			_audio = audio.new(),
@@ -252,7 +252,7 @@ end
 function Movement:sprint(self: self)
 	-- load animations
 	self._animate:LoadAnimation("run", {
-		Id = "rbxassetid://14608790956",
+		Id = "rbxassetid://14243308122",
 		Weight = 1,
 		Speed = 1,
 	})
