@@ -1,12 +1,15 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local batch = require(ReplicatedStorage.Utility.batch)
 local leventine = require(ReplicatedStorage.Utility.leventine)
 
 -- fetchAsset.luau
 -- a module for getting combat assets
 
 local assetFolder = ReplicatedStorage.Assets
+
+batch(assetFolder:GetDescendants())
 
 local function fetch(abbreviation: string)
 	local startTime = os.clock() -- benchmarks

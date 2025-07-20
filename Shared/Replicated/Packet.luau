@@ -52,6 +52,12 @@ return bytenet.defineNamespace("MainNet", function()
 	local profileChangedStruct = bytenet.struct({
 		[1] = bytenet.nothing,
 	})
+	local replicateAnimation = bytenet.struct({
+		identification = bytenet.string, -- The animation ID should be formatted into a string.
+	})
+	local cancelAnimation = bytenet.struct({
+		identification = bytenet.string,
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -66,5 +72,7 @@ return bytenet.defineNamespace("MainNet", function()
 		SprintRemote = bytenet.definePacket({ value = sprintStruct }),
 		RayValidation = bytenet.definePacket({ value = raycastValidationStruct }), -- For general client-side raycast validation
 		profileChanged = bytenet.definePacket({ value = profileChangedStruct }),
+		ReplicateAnimation = bytenet.definePacket({ value = replicateAnimation }),
+		CancelAnimation = bytenet.definePacket({ value = cancelAnimation }),
 	}
 end)

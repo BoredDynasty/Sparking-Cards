@@ -11,7 +11,7 @@ return function(assetsDict: { any })
 	local startTime = os.clock()
 
 	-- Combine assets into one table
-	local pre_allocated = 2000
+	local pre_allocated = #assetsDict or 2000
 	local assets = table.create(pre_allocated) -- pre-allocate approximate size
 	task.spawn(function()
 		for _, asset in ipairs(assetsDict) do

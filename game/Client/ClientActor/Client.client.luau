@@ -33,7 +33,7 @@ local dialog = require(script.Parent.Parent.Components.dialog)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
-local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
+local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local limits = require(script.Parent.Parent.Utilities.limits)
@@ -41,10 +41,12 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(script.Parent.Parent.Interface.pop)
+local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local retryer = require(ReplicatedStorage.Utility.retryer)
+local shadow = require(script.Parent.Parent.Interface.shadow)
+local sway = require(script.Parent.Parent.Interface.sway)
 -- local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
-local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local yoink = require(ReplicatedStorage.Utility.yoink)
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
@@ -54,7 +56,7 @@ print("Client Requirements")
 -- // Variables -- //
 
 local player = playerMarshaller.get()
-local profile: typeof(profilestructure) = yoink.client:grab("profile_data")
+local profile: typeof(profilestructure) = profileMarshaller.client[player]
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
 local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
@@ -90,6 +92,7 @@ local function initializeMarket()
 	local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
 	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
 	local shopFolder = templates:FindFirstChild("Shop") :: Folder
+	local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 
 	print("got market gui")
 
@@ -104,7 +107,6 @@ local function initializeMarket()
 	end
 
 	local function displaySpendings()
-		local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
 		profile = yoink.client:grab("profile_data") :: typeof(profilestructure)
 		print("got profile for displaying spendings!!!!11!")
@@ -131,6 +133,7 @@ local function initializeMarket()
 	end)
 	shadow(shopFrame, Color3.new(), 0, 14)
 	shadow(shopNavigation, Color3.new(), 0, 14)
+	shadow(spendings, Color3.new(), 0, 14)
 
 	local function populateShop(t: {}?)
 		local newRelease = shopFrame:FindFirstChild("NewRelease") :: TextLabel
@@ -150,6 +153,8 @@ local function initializeMarket()
 			itemTemplate = itemTemplate:Clone()
 			itemTemplate:SetAttribute("name", item.Name)
 			itemTemplate.Parent = itemHolder
+
+			shadow(itemTemplate, Color3.new(), 0, 14)
 
 			local title = itemTemplate.Title
 			local price = itemTemplate.Price
@@ -365,6 +370,9 @@ local function initializeMarket()
 		displayorder:changeVisibility(not shopCanvas.Visible, shopCanvas)
 		if shopCanvas.Visible then
 			populateShop()
+			sway:on(shopCanvas)
+		else
+			sway:off(shopCanvas)
 		end
 	end
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
@@ -375,12 +383,16 @@ initializeMarket()
 print("client almost done")
 
 local movementSingleton = Movement.new()
+
+movementSingleton:dash(movementSingleton)
 movementSingleton:sprint(movementSingleton)
 movementSingleton:jump(movementSingleton)
 movementSingleton:slide(movementSingleton)
+movementSingleton:walk(movementSingleton)
+
 print("client movement")
 gamecamera:sway()
-gamecamera:trail()
+-- gamecamera:trail()
 print("game camera")
 -- control
 

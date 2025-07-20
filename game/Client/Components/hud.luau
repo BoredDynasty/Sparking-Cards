@@ -31,7 +31,7 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		callback = callback,
 		icon = icon,
 	}
-	table.insert(self.buttons, button)
+	table.insert(hud.buttons, button)
 end
 
 function hud:render()
@@ -102,7 +102,7 @@ function hud:render()
 end
 
 function hud:clear()
-	self.buttons = {}
+	table.clear(hud.buttons)
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	for _, button in ipairs(hudContainer:GetChildren()) do
 		if button:IsA("TextButton") then

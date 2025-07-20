@@ -22,16 +22,6 @@
       "$className": "ReplicatedStorage",
       "$ignoreUnknownInstances": true,
       "$path": "Shared/Replicated",
-      "Assets": {
-        "$className": "Folder",
-        "$ignoreUnknownInstances": true,
-        "$path": "Shared/Replicated/Assets.rbxm"
-      },
-      "Interfaces": {
-        "$className": "Folder",
-        "$ignoreUnknownInstances": true,
-        "$path": "Shared/Replicated/Interfaces.rbxm"
-      },
       "Packages": {
         "$className": "Folder",
         "$ignoreUnknownInstances": false,

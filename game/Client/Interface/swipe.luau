@@ -24,13 +24,13 @@ type self = {
 	_setupInputHandlers: (self: self) -> (),
 }
 
-export type direction = "up" | "down" | "left" | "right"
+export type direction = "up" | "down" | "left" | "right" | "none"
 
 -- Default settings
 local DEFAULT_SWIPE_THRESHOLD = 10 -- Minimum distance in pixels to trigger a swipe
 
 function SwipeDetector.new(guiObject: GuiObject): SwipeDetector
-	local self = setmetatable({}, SwipeDetector)
+	local self = setmetatable({} :: self, SwipeDetector)
 
 	self._gui = guiObject
 	self._threshold = DEFAULT_SWIPE_THRESHOLD
@@ -77,7 +77,7 @@ function SwipeDetector:_setupInputHandlers(self: self)
 					-- Check if movement exceeds threshold
 					if delta.Magnitude >= self._threshold then
 						-- Determine direction
-						local direction: direction
+						local direction: direction = "none"
 						if math.abs(delta.X) > math.abs(delta.Y) then
 							-- Horizontal swipe
 							direction = delta.X > 0 and "right" or "left"
@@ -106,6 +106,9 @@ function SwipeDetector:Destroy(self: self)
 
 	-- Cleanup signal
 	self.OnSwipe:Destroy()
+
+	setmetatable(self, nil) -- Remove metatable to prevent further access
+	self = nil
 end
 
 return SwipeDetector

@@ -16,6 +16,7 @@ local Items = require(ReplicatedStorage.Market.Items)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
+local batch = require(ReplicatedStorage.Utility.batch)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -180,6 +181,11 @@ local function onPlayerAdded(player: Player)
 		profiles[player] = profile
 		print("Data Loaded for " .. player.DisplayName, table.unpack(profile.Data))
 		profile.Data.LastLogin = os.time()
+		profileMarshaller.client[player] = {
+			Data = profile.Data,
+			Key = profile.Key,
+			LastSaved = profile.LastSavedData,
+		}
 		profile:Reconcile()
 		profile:Save()
 	else
@@ -225,6 +231,7 @@ local function onPlayerAdded(player: Player)
 			:andThen(print)
 			:catch(warn)
 	end)
+	batch(player:GetDescendants())
 end
 
 -- just in case the players have joined the server before the script loaded

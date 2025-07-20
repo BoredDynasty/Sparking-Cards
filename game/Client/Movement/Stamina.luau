@@ -1,8 +1,7 @@
---!nonstrict
+--!strict
 
 -- Stamina.luau
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -23,15 +22,31 @@ function Stamina:initialize()
 	-- maximum stamina value
 	local lastDrain = 0
 	local isRegenerating = false
+
+	-- Cache for attributes
+	local currentStamina: number = character:GetAttribute("Stamina") :: number or max_stamina
+	local isAntiRegenerate = false
+
+	-- Set up attribute changed listeners outside the Heartbeat
+	character:GetAttributeChangedSignal("Stamina"):Connect(function()
+		currentStamina = character:GetAttribute("Stamina") :: number
+	end)
+
+	character:GetAttributeChangedSignal("AntiRegenerate"):Connect(function()
+		isAntiRegenerate = character:GetAttribute("AntiRegenerate") :: boolean
+	end)
+
+	-- Accumulator for stamina changes
+	local staminaAccumulator = 0
+	-- local lastUpdate = tick()
+
 	RunService.Heartbeat:Connect(function(deltaTime: number)
-		local stamina = character:GetAttribute("Stamina") :: number
-		local anti_regenerate = character:GetAttribute("AntiRegenerate") :: boolean
 		--[[
          were using this chunk of code to prevent the
          stamina from regenerating too fast or
          while it's being drained
       ]]
-		if anti_regenerate then
+		if isAntiRegenerate then
 			lastDrain = 0
 			isRegenerating = false
 		else
@@ -40,10 +55,15 @@ function Stamina:initialize()
 				isRegenerating = true
 			end
 		end
-		if isRegenerating and stamina < max_stamina then
+		if isRegenerating and currentStamina < max_stamina then
 			local regenAmount = regeneration_rate * deltaTime
-			stamina = math.min(stamina + regenAmount, max_stamina)
-			character:SetAttribute("Stamina", stamina)
+			staminaAccumulator += regenAmount
+			currentStamina = math.min(currentStamina + regenAmount, max_stamina)
+			-- Only update attribute if accumulated change is significant
+			if staminaAccumulator >= 1 or currentStamina == max_stamina then
+				character:SetAttribute("Stamina", currentStamina)
+				staminaAccumulator = 0
+			end
 		end
 	end)
 	local changed = character:GetAttributeChangedSignal("Stamina")
@@ -67,14 +87,14 @@ function Stamina:initialize()
 		end
 		local percentage = stamina / max_stamina
 		-- make it fit 0.97 y scale
-		sprintBar.Frame.Bar.Size = UDim2.fromScale(barSize.X.Scale, barSize.Y.Scale * percentage)
-		if stamina == 100 then
-			TweenPlus(sprintBar.Frame, {
-				GroupTransparency = 0,
-			}, {
-				Time = 1.5,
-			}):Start()
-		end
+		-- sprintBar.Frame.Bar.Size = UDim2.fromScale(barSize.X.Scale, barSize.Y.Scale * percentage)
+		local scale = UDim2.fromScale(barSize.X.Scale, barSize.Y.Scale * percentage)
+		TweenPlus(sprintBar.Frame.Bar, {
+			Size = scale,
+		}, {
+			EasingDirection = "Out",
+			EasingStyle = "Back",
+		}):Start()
 	end)
 end
 return Stamina

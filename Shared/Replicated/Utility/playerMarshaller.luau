@@ -58,6 +58,15 @@ function playerMarshaller.get(): player
 	return localPlayer :: any
 end
 
+--  Asynchronous utility to get all players
+function playerMarshaller.all(): { player }
+	local list: { Player } = {}
+	for _, player in Players:GetPlayers() do
+		table.insert(list, player)
+	end
+	return list
+end
+
 -- Listen for when a player joins
 function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing_players: boolean?): player
 	local connections = {}

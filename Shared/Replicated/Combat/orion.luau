@@ -41,12 +41,13 @@ function orion.registerPlayer(player: playerMarshaller.player & Player)
 	local identification = player.UserId
 	local profile = nil :: typeof(profilestructure)?
 	local profilePromise = promise.new(function(resolve, reject)
-		if profileMarshaller.server[player] then
-			resolve(profileMarshaller.server[player])
+		local _profile = yoink.boundary:grab("profile_data")
+		if _profile and profile ~= nil then
+			profile = _profile
+			resolve(_profile)
 		else
 			reject("Couldn't get profile from the profileMarshaller")
 		end
-		return profile
 	end)
 	local worked, result = profilePromise:await()
 	assert(worked, result)
@@ -63,7 +64,6 @@ function orion.registerPlayer(player: playerMarshaller.player & Player)
 			end)
 		end
 	end)
-
 	orion.player_data[identification] = data
 end
 

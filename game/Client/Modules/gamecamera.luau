@@ -36,24 +36,12 @@ local previousMousePosition = CFrame.new()
 local maxTilt = 8
 
 function GameCamera:sway()
-	task.spawn(function()
-		local mouseDelta = Vector2.new(0, 0)
-		local lastMousePosition = Vector2.new(mouse.X, mouse.Y)
-		UserInputService.InputChanged:Connect(function(input)
-			if input.UserInputType == Enum.UserInputType.MouseMovement then
-				local currentMousePosition = Vector2.new(mouse.X, mouse.Y)
-
-				-- Calculate the delta
-				mouseDelta = currentMousePosition - lastMousePosition
-			end
-		end)
-		RunService:BindToRenderStep("sway", priority + 1, function(delta: number)
-			debug.profilebegin("sway")
-			local mouseDelta: Vector2 = mouseDelta -- UserInputService:GetMouseDelta()
-			swayTurn = lerp(swayTurn, math.clamp(mouseDelta.X, -6, 6), (10 * delta))
-			camera.CFrame *= CFrame.Angles(0, 0, math.rad(swayTurn))
-			debug.profileend()
-		end)
+	RunService:BindToRenderStep("sway", priority + 1, function(delta: number)
+		debug.profilebegin("sway")
+		local mouseDelta: Vector2 = UserInputService:GetMouseDelta()
+		swayTurn = lerp(swayTurn, math.clamp(mouseDelta.X, -6, 6), (10 * delta))
+		camera.CFrame *= CFrame.Angles(0, 0, math.rad(swayTurn))
+		debug.profileend()
 	end)
 end
 
@@ -81,82 +69,25 @@ function GameCamera:follow()
 end
 
 function GameCamera:trail()
-	local offset = Vector3.new(0, 5, -10) -- Desired offset from the player
-	local smoothSpeed = 0.1 -- Lower = more lag/delay
-	local currentCameraPosition = humanoid.RootPart.Position + offset
-
-	-- Rotation values
-	local yaw = 0
-	local pitch = -10
-	local sensitivity = Vector2.new(0.3, 0.2)
-
-	-- Clamp for vertical look
-	local MIN_PITCH = -60
-	local MAX_PITCH = 70
-
-	-- Camera lag settings
-	local cameraHeight = 4
-
-	-- Raycast settings
-	local raycastParams = RaycastParams.new()
-	raycastParams.FilterType = Enum.RaycastFilterType.Exclude
-	raycastParams.FilterDescendantsInstances = { character }
-	raycastParams.IgnoreWater = true
-
-	-- Zoom settings
-	local zoomDistance = 10
-	local targetZoom = zoomDistance
-	local minZoom = 5
-	local maxZoom = 20
-	local zoomStep = 1
-
-	-- Enable mouse look
-	UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
-
-	UserInputService.InputChanged:Connect(function(input)
-		task.spawn(function()
-			if input.UserInputType == Enum.UserInputType.MouseMovement then
-				yaw -= input.Delta.X * sensitivity.X
-				pitch = math.clamp(pitch - input.Delta.Y * sensitivity.Y, MIN_PITCH, MAX_PITCH)
-			elseif input.UserInputType == Enum.UserInputType.MouseWheel then
-				targetZoom = math.clamp(targetZoom - input.Position.Z * zoomStep, minZoom, maxZoom)
-			end
-		end)
-	end)
-
+	local offset = Vector3.new(0, 0, -10) -- Backwards
+	local trailAlpha = 0.1
 	local connection = nil
-	if connections["camera_trail"] then
+	local rootPart = humanoid.RootPart :: BasePart
+	if connections["trail"] then
 		return
 	end
-	connection = RunService.RenderStepped:Connect(function()
-		debug.profilebegin("camera_trail")
-
-		-- Smooth zoom transition
-		zoomDistance = zoomDistance + (targetZoom - zoomDistance) * 0.15
-
-		local rootPosition = humanoid.RootPart.Position + Vector3.new(0, cameraHeight, 0)
-		local rotation = CFrame.Angles(0, math.rad(yaw), 0) * CFrame.Angles(math.rad(pitch), 0, 0)
-
-		local desiredCameraPosition = rootPosition + (rotation.LookVector * -zoomDistance)
-
-		-- Raycast from root toward desired camera position to avoid clipping
-		local direction = desiredCameraPosition - rootPosition
-		local result = workspace:Raycast(rootPosition, direction, raycastParams)
-
-		if result then
-			-- Hit something: move camera closer
-			desiredCameraPosition = result.Position + result.Normal * 0.5
-		end
-
-		-- Smooth camera movement (lag effect)
-		currentCameraPosition = currentCameraPosition:Lerp(desiredCameraPosition, smoothSpeed)
-
-		-- Set final camera frame
-		camera.CFrame = CFrame.new(currentCameraPosition, rootPosition)
+	connection = RunService.RenderStepped:Connect(function(deltaTime: number)
+		debug.profilebegin("trail")
+		local velocity = rootPart.AssemblyLinearVelocity
+		local speed = humanoid.WalkSpeed
+		offset = Vector3.new(0, velocity.Y, -10)
+		local newOffset = offset * velocity.Magnitude / (speed * 2)
+		local cameraOffset = humanoid.CameraOffset:Lerp(newOffset, trailAlpha)
+		humanoid.CameraOffset = cameraOffset
 		debug.profileend()
 	end)
 	if connection ~= nil then
-		connections["camera_trail"] = connection
+		connections["trail"] = connection
 	end
 end
 

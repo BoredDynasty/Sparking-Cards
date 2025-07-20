@@ -86,6 +86,7 @@ type self = {
 	jump: (self: self) -> (),
 	slide: (self: self) -> (),
 	dash: (self: self) -> (),
+	walk: (self: self) -> (),
 }
 export type Movement = { typeof(setmetatable({} :: self, Movement)) }
 
@@ -263,7 +264,7 @@ function Movement:sprint(self: self)
 			self.character.Humanoid.WalkSpeed -= self.maxSpeed
 			self._animate:Stop("run")
 			self.character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
-			gamecamera:disconnect("camera_trail")
+			--gamecamera:disconnect("camera_trail")
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- reset mouse behavior
 			local speedForce = self.character.HumanoidRootPart:FindFirstChild("SpeedForce")
 			if speedForce then
@@ -300,7 +301,7 @@ function Movement:sprint(self: self)
 			speedForce.Parent = self.character.HumanoidRootPart
 			speedForce.CFrame = self.character.HumanoidRootPart.CFrame
 
-			gamecamera:trail()
+			--gamecamera:trail()
 
 			connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 				if not self.isMoving() then
@@ -389,41 +390,9 @@ function Movement:jump(self: self)
 					local staminaDrain: number = self.staminaRate * 0.5 -- Jumping drains less stamina
 					currentStamina = math.max(currentStamina - staminaDrain, 0)
 					self.character:SetAttribute("AntiRegenerate", true) -- prevent stamina regeneration
-					-- once the player has landed, deduct stamina.
-					-- we can use the quadratic formula to calculate the time it takes to land
 
 					task.wait(0.8) -- wait a bit to ensure the jump is registered
 
-					-- Quadratic formula to solve for time t in:
-					-- y(t) = y0 + v0*t + 0.5*g*t^2  where final y = 0 (ground level assumed)
-
-					local landingTime: number = 0
-
-					local positionY: number = self.character.HumanoidRootPart.Position.Y
-					local velocityY: number = self.character.HumanoidRootPart.Velocity.Y
-
-					-- Coefficients for the quadratic equation: 0.5*g*t^2 + v0*t + y0 = 0
-					local a = 0.5 * workspace.Gravity -- 196.2 studs/s² / 2 or * .5
-					local b = velocityY
-					local c = positionY
-
-					local discriminant = b ^ 2 - 4 * a * c
-
-					if discriminant < 0 then
-						landingTime = 0 -- No real solution, possibly already on ground
-					end
-
-					local sqrtDisc = math.sqrt(discriminant)
-
-					-- We want the *positive* root of the quadratic
-					local t1 = (-b + sqrtDisc) / (2 * a)
-					local t2 = (-b - sqrtDisc) / (2 * a)
-
-					landingTime = math.max(t1, t2)
-					if landingTime <= 0 or landingTime > 200 then
-						landingTime = 1 -- Ensure non-negative or infinite time
-					end
-					task.wait(landingTime)
 					if self.character and self.character:IsDescendantOf(game.Workspace) then
 						self.character:SetAttribute("Stamina", currentStamina)
 						task.wait(0.5) -- wait a bit before allowing stamina regeneration
@@ -732,10 +701,11 @@ function Movement:dash(self: self)
 end
 
 function Movement:initialize(self: self)
-	self:dash()
-	self:sprint()
-	self:jump()
-	self:slide()
+	self:dash(self)
+	self:sprint(self)
+	self:jump(self)
+	self:slide(self)
+	self:walk(self)
 end
 
 function Movement.isMoving()
