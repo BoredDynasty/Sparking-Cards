@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -28,6 +28,8 @@ local orion = {
 	arbitrary_data = {},
 }
 
+local events = ReplicatedStorage.Events
+
 -- Type definitons
 export type attack_type = "M1" | "Skill" | "Ultimate" | "Support"
 export type attack_module = {
@@ -37,47 +39,33 @@ export type attack_module = {
 	Support: (any) -> any?,
 }
 
+--[[
+	Should be ran on the client side.
+]]
 function orion.registerPlayer(player: playerMarshaller.player & Player)
 	local identification = player.UserId
 	local profile = nil :: typeof(profilestructure)?
-	local profilePromise = promise.new(function(resolve, reject)
-		local _profile = yoink.boundary:grab("profile_data")
-		if _profile and profile ~= nil then
-			profile = _profile
-			resolve(_profile)
-		else
-			reject("Couldn't get profile from the profileMarshaller")
-		end
-	end)
-	local worked, result = profilePromise:await()
-	assert(worked, result)
-	profile = result :: typeof(profilestructure)
-	local equippedCard = profile.EquippedCard
+	profile = (events:FindFirstChild("GetProfile") :: RemoteFunction):InvokeServer(player)
+	local equippedCard = profile.EquippedCard or "Frost"
 	local data = {
 		profile = profile,
 		equippedCard = equippedCard,
 	}
-	playerMarshaller.removing(function(otherPlayer: playerMarshaller.player)
-		if otherPlayer == player then
-			task.defer(function()
-				table.clear(orion.player_data[otherPlayer.UserId])
-			end)
-		end
-	end)
 	orion.player_data[identification] = data
 end
 
 function orion:execute(player: playerMarshaller.player, attack_type: attack_type, ...: any?): any?
 	local attack_module = nil
 	local playerData = orion.player_data[player.UserId]
+	print(playerData)
 	local equippedCard = playerData.equippedCard
 	if not equippedCard then
-		warn("No equipped card found for player:", player.Name)
+		warn("No equipped card found for player:", player.Name, playerData.equippedCard)
 		return nil
 	end
 	-- use a promise
 	local attackModulePromise = promise.new(function(resolve, reject)
-		local modulePath = `{script.Parent}/framework/attacks/{equippedCard}`
+		local modulePath = `{script.Parent}/framework/attacks/{equippedCard or "Frost"}`
 		local success, result = pcall(require, modulePath)
 		if success then
 			resolve(result)

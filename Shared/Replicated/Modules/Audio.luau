@@ -1,24 +1,30 @@
+--!nonstrict
+
 --[=[
 	@class Audio
 	An advanced audio module for managing playlists and sound effects.
 ]=]
-local TweenService = game:GetService("TweenService")
 local SoundService = game:GetService("SoundService")
+local TweenService = game:GetService("TweenService")
 
 local Signal = require(script.Parent.Parent.Utility.SignalPlus)
+local TweenPlus = require(script.Parent.Parent.Utility.TweenPlus)
+local dictionary = require(script.Parent.Parent.Utility.dictionary)
+local random = require(script.Parent.Parent.Utility.random)
 
 local Audio = {}
 Audio.SoundEffects = {}
 Audio.Playlists = {}
 
 -- Private variables
-local currentPlaylist = nil
-local currentTrack = nil
+local currentPlaylist: Tracks? = nil
+local currentTrack: Sound? = nil
 local currentTrackIndex = -1
 local isPaused = false
 local isShuffling = false
 local isLooping = false
 local originalPlaylist = nil
+local assetPrefix = "rbxassetid://"
 
 local musicFolder = Instance.new("Folder")
 musicFolder.Name = "Music"
@@ -28,32 +34,38 @@ local sfxFolder = Instance.new("Folder")
 sfxFolder.Name = "SoundEffects"
 sfxFolder.Parent = SoundService
 
+export type Tracks = {
+	[string]: {
+		identification: number,
+	},
+}
+
 --[=[
 	Starts a playlist with the given tracks.
 	@param playlistName string
 	@param tracks table<string>
 	@param fade boolean
 ]=]
-function Audio:StartPlaylist(playlistName, tracks, fade)
+function Audio:StartPlaylist(playlistName: string, tracks: Tracks, fade: boolean)
 	if currentPlaylist then
 		self:Cleanup()
 	end
 
 	currentPlaylist = tracks
 	originalPlaylist = tracks
-	currentTrackIndex = 1
+	local currentTrackIndex = 1
 
 	if isShuffling then
 		self:_ShufflePlaylist()
 	end
 
 	local sound = Instance.new("Sound")
-	sound.SoundId = tracks[currentTrackIndex]
+	sound.SoundId = `{assetPrefix}{tracks[currentTrackIndex].identification}`
 	sound.Parent = musicFolder
 
 	local function playNextTrack()
-		currentTrackIndex = currentTrackIndex + 1
-		if currentTrackIndex > #currentPlaylist then
+		currentTrackIndex += 1
+		if currentTrackIndex > (#currentPlaylist) :: number then
 			if isLooping then
 				currentTrackIndex = 1
 				if isShuffling then
@@ -64,19 +76,27 @@ function Audio:StartPlaylist(playlistName, tracks, fade)
 				return
 			end
 		end
-		sound.SoundId = currentPlaylist[currentTrackIndex]
+		sound.SoundId = `{assetPrefix}{tracks[currentTrackIndex].identification}`
 		sound:Play()
 	end
 
 	sound.Ended:Connect(function()
 		if fade then
-			local fadeOutTween = TweenService:Create(sound, TweenInfo.new(1), { Volume = 0 })
+			local fadeOutTween = TweenPlus(sound, {
+				Volume = 0,
+			}, {
+				Time = 1,
+			})
+			fadeOutTween:Start()
 			fadeOutTween.Completed:Connect(function()
 				playNextTrack()
-				local fadeInTween = TweenService:Create(sound, TweenInfo.new(1), { Volume = 1 })
-				fadeInTween:Play()
+				local fadeInTween = TweenPlus(sound, {
+					Volume = 1,
+				}, {
+					Time = 1,
+				})
+				fadeInTween:Start()
 			end)
-			fadeOutTween:Play()
 		else
 			playNextTrack()
 		end
@@ -84,8 +104,11 @@ function Audio:StartPlaylist(playlistName, tracks, fade)
 
 	if fade then
 		sound.Volume = 0
-		local fadeInTween = TweenService:Create(sound, TweenInfo.new(1), { Volume = 1 })
-		fadeInTween:Play()
+		TweenPlus(sound, {
+			Volume = 1,
+		}, {
+			Time = 1,
+		}):Start()
 	end
 
 	sound:Play()
@@ -93,39 +116,46 @@ function Audio:StartPlaylist(playlistName, tracks, fade)
 end
 
 function Audio:_ShufflePlaylist()
-	local shuffledPlaylist = {}
-	local originalPlaylistCopy = table.clone(originalPlaylist)
+	random.shuffle(currentPlaylist)
+end
 
-	for i = #originalPlaylistCopy, 1, -1 do
-		local randomIndex = math.random(i)
-		table.insert(shuffledPlaylist, originalPlaylistCopy[randomIndex])
-		table.remove(originalPlaylistCopy, randomIndex)
-	end
-
-	currentPlaylist = shuffledPlaylist
+function Audio:writePlaylist(tracks: Tracks)
+	self:Stop()
 end
 
 --[=[
 	Plays a sound effect.
-	@param soundName string
-	@param soundId string
+	@param soundName string?
+	@param soundId number?
 ]=]
-function Audio:PlaySoundEffect(soundName, soundId)
+function Audio:SFX(soundName, soundId: number)
 	local sound = Instance.new("Sound")
-	sound.SoundId = soundId
-	sound.Name = soundName
+	sound.Name = soundName or "Sound"
 	sound.Parent = sfxFolder
 	sound:Play()
-	sound.Ended:Connect(function()
-		sound:Destroy()
+	if soundName and table.find(Audio.SoundEffects, soundName) then
+		sound.SoundId = `{assetPrefix}{Audio.SoundEffects[soundName]}`
+	elseif not table.find(Audio.Playlists, soundName) then
+		sound.SoundId = `{assetPrefix}{soundId}`
+	end
+	sound.Ended:Once(function()
+		task.defer(sound.Destroy, sound)
 	end)
+end
+
+function Audio:writeSFX(dict: { [string]: number })
+	for key, value in pairs(dict) do
+		if not table.find(Audio.SoundEffects, key) then
+			Audio.SoundEffects[key] = value
+		end
+	end
 end
 
 --[=[
 	Gets information about the current playing track.
 	@return table
 ]=]
-function Audio:GetCurrentTrackInfo()
+function Audio:GetCurrentTrackInfo(): {}?
 	if not currentTrack then
 		return nil
 	end
@@ -146,8 +176,12 @@ end
 	Sets the time position of the current playing track.
 	@param position number
 ]=]
-function Audio:SetTimePosition(position)
+function Audio:SetTimePosition(position: number)
 	if currentTrack then
+		if position > currentTrack.TimeLength then
+			warn("Time position cannot be longer than the song itself.")
+			return
+		end
 		currentTrack.TimePosition = position
 	end
 end
@@ -180,9 +214,13 @@ function Audio:SkipForward()
 		return
 	end
 
-	local fadeOutTween = TweenService:Create(currentTrack, TweenInfo.new(0.5), { Volume = 0 })
+	local fadeOutTween = TweenPlus(currentTrack, {
+		Volume = 1,
+	}, {
+		Time = 0.5,
+	})
 	fadeOutTween.Completed:Connect(function()
-		currentTrackIndex = currentTrackIndex + 1
+		currentTrackIndex += 1
 		if currentTrackIndex > #currentPlaylist then
 			if isLooping then
 				currentTrackIndex = 1
@@ -191,11 +229,11 @@ function Audio:SkipForward()
 				return
 			end
 		end
-		currentTrack.SoundId = currentPlaylist[currentTrackIndex]
+		currentTrack.SoundId = `{assetPrefix}{currentPlaylist[currentTrackIndex].identification}`
 		currentTrack.Volume = 1
 		currentTrack:Play()
 	end)
-	fadeOutTween:Play()
+	fadeOutTween:Start()
 end
 
 --[=[
@@ -206,17 +244,21 @@ function Audio:SkipBackward()
 		return
 	end
 
-	local fadeOutTween = TweenService:Create(currentTrack, TweenInfo.new(0.5), { Volume = 0 })
+	local fadeOutTween = TweenPlus(currentTrack, {
+		Volume = 0,
+	}, {
+		Time = 0.5,
+	})
 	fadeOutTween.Completed:Connect(function()
-		currentTrackIndex = currentTrackIndex - 1
+		currentTrackIndex -= 1
 		if currentTrackIndex < 1 then
 			currentTrackIndex = #currentPlaylist
 		end
-		currentTrack.SoundId = currentPlaylist[currentTrackIndex]
+		currentTrack.SoundId = `{assetPrefix}{currentPlaylist[currentTrackIndex].identification}`
 		currentTrack.Volume = 1
 		currentTrack:Play()
 	end)
-	fadeOutTween:Play()
+	fadeOutTween:Start()
 end
 
 --[=[
@@ -227,23 +269,32 @@ function Audio:Restart()
 		return
 	end
 
-	local fadeOutTween = TweenService:Create(currentTrack, TweenInfo.new(0.5), { Volume = 0 })
+	local fadeOutTween = TweenPlus(currentTrack, {
+		Volume = 0,
+	}, {
+		Time = 0.5,
+	})
 	fadeOutTween.Completed:Connect(function()
 		currentTrackIndex = 1
-		currentTrack.SoundId = currentPlaylist[currentTrackIndex]
+		currentTrack.SoundId = `{assetPrefix}{currentPlaylist[currentTrackIndex].identification}`
 		currentTrack.Volume = 1
 		currentTrack:Play()
 	end)
-	fadeOutTween:Play()
+	fadeOutTween:Start()
 end
 
 --[=[
 	Sets the volume of the music.
 	@param volume number
 ]=]
-function Audio:SetVolume(volume)
+function Audio:SetVolume(volume: number)
 	if currentTrack then
 		currentTrack.Volume = volume
+		TweenPlus(currentTrack, {
+			Volume = volume,
+		}, {
+			0.2,
+		})
 	end
 end
 

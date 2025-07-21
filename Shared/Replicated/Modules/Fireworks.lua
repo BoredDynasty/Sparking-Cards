@@ -5,9 +5,9 @@ local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
-local audio = require(script.Parent.audio).new()
+local audio = require(script.Parent.audio)
 
-audio:write_miscellaneous(audio, {
+audio:writeSFX({
 	blastoff = 551051176,
 	boom = 269146157,
 })
@@ -53,7 +53,7 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 			TweenInfo.new(Time / 10, Enum.EasingStyle.Linear),
 			{ CFrame = position + Vector3.new(0, Height, 0) }
 		):Play()
-		audio:read_miscellaneous(audio, "blastoff")
+		audio:SFX("blastoff")
 		task.wait(1)
 
 		Trail.Enabled = false
@@ -68,7 +68,7 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 		ExplosionParticle:Emit(25)
 		for _ = 1, 4 do
 			task.wait()
-			audio:read_miscellaneous(audio, "boom")
+			audio:SFX("boom")
 			task.wait()
 		end
 

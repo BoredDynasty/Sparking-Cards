@@ -26,7 +26,7 @@ local Packet = require(ReplicatedStorage.Packet)
 local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
-local audio = require(ReplicatedStorage.Modules.audio).new()
+local audio = require(ReplicatedStorage.Modules.audio)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.dialog)
@@ -72,7 +72,7 @@ local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
 Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
 Cmdr:SetActivationUnlocksMouse(true)
 
-audio:write_miscellaneous(audio, {
+audio:writeSFX({
 	["click"] = 90092163763441,
 	["hover"] = 119879668444252,
 	["leave"] = 85897203168160,
@@ -260,10 +260,10 @@ local function initializeMarket()
 				Dynamic = true,
 			})
 			purchaseButton.MouseEnter:Connect(function()
-				audio:read_miscellaneous(audio, "hover")
+				audio:SFX("hover")
 			end)
 			purchaseButton.MouseLeave:Connect(function()
-				audio:read_miscellaneous(audio, "leave")
+				audio:SFX("leave")
 			end)
 			purchaseButton.MouseButton1Click:Connect(function()
 				if purchaseDebounce == true then
@@ -273,6 +273,7 @@ local function initializeMarket()
 				Packet.BuyCard.send({ cardName = item.Name })
 				--ripple(Color3.new())
 				pop(purchaseButton)
+				audio:SFX("success")
 				purchaseDebounce = true
 				limits.debounce(purchaseDebounce)
 			end)
@@ -422,6 +423,8 @@ mouse.LeftDown:Connect(function()
 		orion:execute(player, attack_type)
 	end
 end)
+
+orion.registerPlayer(player)
 
 -- Listen for profile changes to update equipped card if necessary
 -- This assumes 'yoink' or the profile system has a way to notify changes.

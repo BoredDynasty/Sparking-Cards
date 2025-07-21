@@ -209,7 +209,7 @@ local function onPlayerAdded(player: Player)
 	character:SetAttribute("MaxStamina", 100)
 
 	GameAnalytics:PlayerJoined(player)
-	orion.registerPlayer(player)
+	--orion.registerPlayer(player)
 
 	local playerObserver = observer.new(profile)
 	playerObservers[player] = playerObserver
@@ -486,12 +486,10 @@ Packet.SellCard.listen(function(data, player: Player)
 	sellCards(player, cardName)
 end)
 
-coroutine.wrap(function()
-	local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
-	getProfileRF.OnServerInvoke = getProfile
-	local getProfileBoundary = remoteEvents:FindFirstChild("GetProfileBoundary") :: BindableFunction
-	getProfileBoundary.OnInvoke = getProfile
-end)
+local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
+getProfileRF.OnServerInvoke = getProfile
+local getProfileBoundary = remoteEvents:FindFirstChild("GetProfileBoundary") :: BindableFunction
+getProfileBoundary.OnInvoke = getProfile
 
 -- TODO) add player saving options
 

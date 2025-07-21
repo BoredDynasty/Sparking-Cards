@@ -39,12 +39,14 @@ local scopeLength = 10
 local function renderStepped(deltaTime: number, canvas: CanvasGroup | Frame, initialPosition: UDim2)
 	local delta = UserInputService:GetMouseDelta()
 	local currentTime = tick()
-	swayVector.X = lerp(swayVector.X, delta.X * 2.5, deltaTime * swaySpeed)
-	swayVector.Y = lerp(swayVector.Y, delta.Y * 2.5, deltaTime * swaySpeed)
+	local x = lerp(swayVector.X, delta.X * 2.5, deltaTime * swaySpeed)
+	local y = lerp(swayVector.Y, delta.Y * 2.5, deltaTime * swaySpeed)
+	swayVector = Vector2.new(x, y)
 	if humanoid.MoveDirection.Magnitude > 0 then
 		-- lowers speed, change divided by ...
-		bobbleVector.X = math.cos(currentTime * 10) * rootPart.AssemblyLinearVelocity.Magnitude / 2
-		bobbleVector.Y = math.abs(math.sin(currentTime * 10)) * rootPart.AssemblyLinearVelocity.Magnitude / 2
+		x = math.cos(currentTime * 10) * rootPart.AssemblyLinearVelocity.Magnitude / 2
+		y = math.abs(math.sin(currentTime * 10)) * rootPart.AssemblyLinearVelocity.Magnitude / 2
+		bobbleVector = Vector2.new(x, y)
 
 		canvas.Position = initialPosition
 			+ UDim2.fromOffset(bobbleVector.X + swayVector.X, bobbleVector.Y + swayVector.Y)

@@ -40,7 +40,7 @@ type self = {
 
 	keybinds: { string: Enum.KeyCode },
 	_animate: typeof(animate.new()),
-	_audio: typeof(audio.new()),
+	-- _audio: typeof(audio.new()),
 	_debounces: {
 		jump: {
 			active: boolean,
@@ -116,7 +116,7 @@ function Movement.new(): Movement
 				dash = Enum.KeyCode.V,
 			},
 			_animate = animate.new(character),
-			_audio = audio.new(),
+			-- _audio = audio.new(),
 			_debounces = {
 				--[[
 					These flags mean if you can use the action or not.
