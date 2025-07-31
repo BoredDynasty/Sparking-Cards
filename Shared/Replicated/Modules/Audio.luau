@@ -8,7 +8,7 @@ local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
 local Signal = require(script.Parent.Parent.Utility.SignalPlus)
-local TweenPlus = require(script.Parent.Parent.Utility.TweenPlus)
+local TweenPlus = require(script.Parent.Parent.Modules.TweenPlus)
 local dictionary = require(script.Parent.Parent.Utility.dictionary)
 local random = require(script.Parent.Parent.Utility.random)
 

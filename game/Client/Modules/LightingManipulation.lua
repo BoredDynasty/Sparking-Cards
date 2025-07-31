@@ -4,7 +4,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local LightingManipulation = {}
 
 function LightingManipulation:blur(v: boolean)

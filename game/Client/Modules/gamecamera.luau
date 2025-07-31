@@ -8,7 +8,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local random = require(ReplicatedStorage.Utility.random)
 

@@ -1,7 +1,7 @@
 --!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local promise = require(ReplicatedStorage.Packages.promise)
 -- fade.luau

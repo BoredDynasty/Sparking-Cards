@@ -1,8 +1,10 @@
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local hint = require(script.Parent.hint)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
@@ -38,7 +40,8 @@ function hud:render()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
 	for _, button in ipairs(hudContainer:GetChildren()) do
-		if button:IsA("TextButton") then
+		local attribute = button:GetAttribute("NonDestroyable")
+		if button:IsA("TextButton") and not attribute then
 			button:Destroy() -- Clear existing buttons
 		end
 	end
@@ -119,4 +122,9 @@ function hud:show()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	hudContainer.Enabled = true
 end
+
+function hud:bindHint(button: GuiButton, str: string)
+	hint(str, button)
+end
+
 return hud

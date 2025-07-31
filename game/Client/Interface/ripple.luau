@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local Saturation = require(script.Parent.Saturation)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 
 -- Ripple.lua
 

@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 
 -- characterIteration.luau
 -- this module requires both sorting options to be enabled.

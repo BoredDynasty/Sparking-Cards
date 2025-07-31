@@ -2,7 +2,7 @@
 local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local promise = require(ReplicatedStorage.Packages.promise)
 local random = require(ReplicatedStorage.Utility.random)

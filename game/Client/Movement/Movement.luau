@@ -11,7 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 
 -- local MovementStructure = require(ReplicatedStorage.Structures.MovementStructure)
 local Stamina = require(Players.LocalPlayer.PlayerScripts.Movement.Stamina)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local audio = require(ReplicatedStorage.Modules.audio)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
@@ -284,7 +284,7 @@ function Movement:sprint(self: self)
 
 	local start = function()
 		local condition = self._statemachine:getCurrentState() ~= "running"
-		local condition2 = self.character:GetAttribute("Stamina") :: number > 0
+		local condition2 = self.character:GetAttribute("Stamina") or 100 :: number > 0
 		if condition and condition2 then
 			self._statemachine:transition("running")
 			self.character.Humanoid.WalkSpeed += self.maxSpeed

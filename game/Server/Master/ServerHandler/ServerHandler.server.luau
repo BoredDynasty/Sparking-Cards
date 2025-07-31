@@ -17,6 +17,8 @@ local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local batch = require(ReplicatedStorage.Utility.batch)
+local characterMarshaller =
+	require(script.Parent.Parent.Parent.Parent.ReplicatedStorage.Utility.characterMarshaller)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -168,7 +170,6 @@ local function onPlayerAdded(player: Player)
 	-- Set up profile
 	profile:AddUserId(player.UserId)
 	profile:Reconcile()
-	task.wait(1)
 	profile:Save()
 
 	-- Handle session end
@@ -204,9 +205,11 @@ local function onPlayerAdded(player: Player)
 		toggleShiftLock.Name = "ToggleShiftLock"
 	end)
 
-	local character: Model = player.Character or player.CharacterAdded:Wait()
-	character:SetAttribute("Stamina", 100)
-	character:SetAttribute("MaxStamina", 100)
+	coroutine.wrap(function()
+		local character: Model = player.Character or player.CharacterAdded:Wait()
+		character:SetAttribute("Stamina", 100)
+		character:SetAttribute("MaxStamina", 100)
+	end)
 
 	GameAnalytics:PlayerJoined(player)
 	--orion.registerPlayer(player)
@@ -424,7 +427,7 @@ local function getProfile(player: Player)
 end
 
 local function handleSprint(player: Player, v: number, b: boolean)
-	local character = characterUtility.get(player)
+	local character = characterMarshaller.get(player)
 	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 
 	if b == true then

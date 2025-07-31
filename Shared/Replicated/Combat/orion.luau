@@ -9,6 +9,7 @@ local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
+local requirer = require(script.Parent.requirer)
 local yoink = require(ReplicatedStorage.Utility.yoink)
 
 --[[
@@ -45,7 +46,10 @@ export type attack_module = {
 function orion.registerPlayer(player: playerMarshaller.player & Player)
 	local identification = player.UserId
 	local profile = nil :: typeof(profilestructure)?
-	profile = (events:FindFirstChild("GetProfile") :: RemoteFunction):InvokeServer(player)
+	profile = (events:FindFirstChild("GetProfile") :: RemoteFunction):InvokeServer(
+			player
+		) :: typeof(profilestructure)
+	print(profile)
 	local equippedCard = profile.EquippedCard or "Frost"
 	local data = {
 		profile = profile,
@@ -58,30 +62,22 @@ function orion:execute(player: playerMarshaller.player, attack_type: attack_type
 	local attack_module = nil
 	local playerData = orion.player_data[player.UserId]
 	print(playerData)
-	local equippedCard = playerData.equippedCard
+	local equippedCard = playerData.equippedCard or "Frost"
 	if not equippedCard then
 		warn("No equipped card found for player:", player.Name, playerData.equippedCard)
 		return nil
 	end
-	-- use a promise
-	local attackModulePromise = promise.new(function(resolve, reject)
-		local modulePath = `{script.Parent}/framework/attacks/{equippedCard or "Frost"}`
-		local success, result = pcall(require, modulePath)
-		if success then
-			resolve(result)
-		else
-			reject("Attack module couldn't be loaded: " .. tostring(result))
-		end
-	end)
-	local worked, result = attackModulePromise:await()
-	assert(worked, "Couldn't require attack module")
-	attack_module = result :: attack_module & any
+	attack_module = requirer.require(equippedCard) :: attack_module
 	local ret_value = nil
 	if attack_module and attack_module[attack_type] then
 		local attack_function = attack_module[attack_type] :: (playerMarshaller.player, ...any?) -> ...any?
 		if attack_function and type(attack_function) == "function" then
 			ret_value = attack_function(player, ...)
+		else
+			print("no attack function?")
 		end
+	else
+		warn("no attack module??")
 	end
 	return ret_value
 end

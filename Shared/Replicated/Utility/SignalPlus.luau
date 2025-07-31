@@ -1,4 +1,3 @@
--- stylua: ignore start
 --!optimize 2
 
 --[[
@@ -21,7 +20,7 @@
  +++++++++++++++++++++++++                                                                          
       +++++                                                                                         
 
-v3.3.1
+v3.3.2
 
 An insanely fast, lightweight, fully typed and documented
 open-source signal module for Roblox, with dynamic types.
@@ -58,50 +57,26 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 --------------------------------------------------------------------------------
 
-]]--
+]]
+--
 
 -- Types.
 export type Connection = {
 	Connected: boolean,
-	Disconnect: typeof(
-		-- Disconnects the connection.
-		-- To reconnect, make a new connection.
-		function(connection: Connection) end
-	),
+	Disconnect: typeof(function(connection: Connection) end),
 }
 export type Signal<Parameters...> = {
-	Connect: typeof(
-		-- Connects the given function.
-		function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end
-	),
-	Once: typeof(
-		-- Connects the given function, but disconnects after first fire.
-		function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end
-	),
-	Wait: typeof(
-		-- Yields the current thread until the next fire.
-		function(signal: Signal<Parameters...>): Parameters... end
-	),
-	
-	Fire: typeof(
-		-- Fires all callbacks and resumes all waiting threads.
-		function(signal: Signal<Parameters...>, ...: Parameters...) end
-	),
-	
-	DisconnectAll: typeof(
-		-- Disconnects all connections.
-		function(signal: Signal<Parameters...>) end
-	),
-	Destroy: typeof(
-		-- Disconnects all connections, and makes the signal unusable.
-		function(signal: Signal<Parameters...>) end
-	),
+	Connect: typeof(function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end),
+	Once: typeof(function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end),
+	Wait: typeof(function(signal: Signal<Parameters...>): Parameters... end),
+
+	Fire: typeof(function(signal: Signal<Parameters...>, ...: Parameters...) end),
+
+	DisconnectAll: typeof(function(signal: Signal<Parameters...>) end),
+	Destroy: typeof(function(signal: Signal<Parameters...>) end),
 }
-type CreateSignal = typeof(
-	-- Creates a new signal.
-	function(): Signal end
-)
--- stylua: ignore end
+type CreateSignal = typeof(function(): Signal end)
+
 -- Setup thread recycling.
 local threads = {}
 local function reusableThreadCall(callback, thread, ...)
@@ -250,11 +225,11 @@ Signal.Fire = function(signal, ...)
 		if length == 0 then
 			local thread = coroutine.create(reusableThread)
 			coroutine.resume(thread)
-			task.spawn(thread, connection.Callback, thread, ...)
+			task.defer(thread, connection.Callback, thread, ...)
 		else
 			local thread = threads[length]
 			threads[length] = nil -- Remove from free threads list.
-			task.spawn(thread, connection.Callback, thread, ...)
+			task.defer(thread, connection.Callback, thread, ...)
 		end
 
 		-- Traverse.

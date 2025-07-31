@@ -5,7 +5,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local fade = require(script.Parent.fade)
 
 local DisplayOrder = {}
@@ -19,6 +19,18 @@ DisplayOrder.canvasPositions = {
 	lower = UDim2.fromScale(0.5, 0.7),
 	offscreen = UDim2.fromScale(0.5, 2),
 }
+DisplayOrder.canvasSizes = {
+	offscreen = 0,
+	visible = 1,
+}
+
+function DisplayOrder:_createScale(ancestor: Instance)
+	local scale = Instance.new("UIScale")
+	scale.Name = "visibility_scale"
+	scale.Parent = ancestor
+	scale.Scale = 1
+	return scale
+end
 
 function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 	if v == true then
@@ -26,40 +38,39 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 		TweenPlus(
 			canvas,
 			{ Position = DisplayOrder.canvasPositions.middle },
-			{ Time = Emphasis.emphasized, EasingDirection = "InOut", EasingStyle = "Circular" }
+			{ Time = 0.35, EasingDirection = "InOut", EasingStyle = "Back" }
 		):Start()
-		--[[
-		coroutine.wrap(function()
-			fade.fadeIn(canvas)
-				:andThen(function()
-					print("visible")
-				end)
-				:catch(function(err)
-					warn("Fade failed:", err)
-				end)
+		local scale = DisplayOrder:_createScale(canvas)
+		scale.Scale = 0
+		TweenPlus(scale, {
+			Scale = 1,
+		}, {
+			Time = 0.35,
+			EasingDirection = "InOut",
+			EasingStyle = "Back",
+		}):Start()
+		task.delay(0.36, function()
+			scale:Destroy()
 		end)
-		]]
-		print("visible")
-
-		--LightingManipulation:blur(true)
 		print("visible")
 	elseif v == false then
 		TweenPlus(
 			canvas,
 			{ Position = DisplayOrder.canvasPositions.lower },
-			{ Time = Emphasis.emphasized_accelerate, EasingDirection = "Out", EasingStyle = "Circular" }
+			{ Time = 0.25, EasingDirection = "Out", EasingStyle = "Back" }
 		):Start()
-		--[[
-			fade.fadeOut(canvas)
-			:andThen(function()
-				task.wait(0.2)
-				canvas.Visible = false
-				print("invisible")
-			end)
-			:catch(function(err)
-				warn("fade failed: ", err)
-			end)
-		]]
+		local scale = DisplayOrder:_createScale(canvas)
+		scale.Scale = 1
+		TweenPlus(scale, {
+			Scale = 0,
+		}, {
+			Time = 0.25,
+			EasingDirection = "InOut",
+			EasingStyle = "Back",
+		}):Start()
+		task.delay(0.36, function()
+			scale:Destroy()
+		end)
 		task.wait(0.2)
 		canvas.Visible = false
 		print("invisible")

@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local characterIteration = require(script.Parent.characterIteration)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local random = require(ReplicatedStorage.Utility.random)

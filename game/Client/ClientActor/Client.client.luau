@@ -1,41 +1,46 @@
 --!nonstrict
 
---# selene: allow(incorrect_standard_library_use)
-
 -- Client.client.luau
 
 print(script.Name)
+task.wait()
 
 -- // Services -- //
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 -- // Requires -- //
 
-local CardAwarder = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("CardAwarder"))()
+local CardAwarder = require("../Gameplay/CardAwarder")()
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary) -- Corrected Path
-local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient"))
+local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+print("0.5")
 local Hint = require(script.Parent.Parent:WaitForChild("Components"):WaitForChild("hint"))
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
 local Maid = require(ReplicatedStorage.Utility.Maid)
+print("1")
 local Movement = require(script.Parent.Parent.Movement.Movement)
 local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("OnIdle"))
 -- local OverShoulder = require(script.Parent.Parent.Modules.OverShoulder)
 local Packet = require(ReplicatedStorage.Packet)
 local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+print("2")
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local TweenPlus = require(ReplicatedStorage.Utility.TweenPlus)
+print("3")
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+print("3")
 local audio = require(ReplicatedStorage.Modules.audio)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.dialog)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
+print("4")
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
+print("5")
 local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
@@ -43,6 +48,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+print("5")
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local shadow = require(script.Parent.Parent.Interface.shadow)
 local sway = require(script.Parent.Parent.Interface.sway)
