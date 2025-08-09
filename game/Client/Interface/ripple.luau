@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local Saturation = require(script.Parent.Saturation)
+local Saturation = require("./saturation")
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 
 -- Ripple.lua
@@ -67,7 +67,7 @@ local function newRipple(color: Color3): ripple
 	return gui
 end
 
-local function newContainer<T, R, C>(x, y, rippleContainer: ripple, color: Color3): rippleContainer
+local function newContainer(x, y, rippleContainer: ripple, color: Color3): rippleContainer
 	local ripple = Instance.new("Frame")
 	ripple.Size = UDim2.new()
 	ripple.Position = UDim2.fromScale(x, y)

@@ -1,7 +1,7 @@
 --!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 
 -- timer.luau

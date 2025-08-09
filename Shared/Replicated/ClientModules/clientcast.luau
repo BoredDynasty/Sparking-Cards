@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Packet = require(ReplicatedStorage.Packet)
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 
 -- Type definitions
 type HitboxConfig = {

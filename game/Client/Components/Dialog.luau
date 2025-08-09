@@ -2,7 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local lucide = require(ReplicatedStorage.Packages.lucide)

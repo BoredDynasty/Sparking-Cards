@@ -141,7 +141,7 @@ end
 function packer.packNamed(data: { [string]: number }, schema: { [string]: number }): number
 	local values, widths = {}, {}
 	for key, width in pairs(schema) do
-		assert(data[key] ~= nil, `Missing field "{key}"`)
+		assert(data[key] ~= nil, `Missing field {key}("key")`)
 		table.insert(values, data[key])
 		table.insert(widths, width)
 	end

@@ -1,4 +1,5 @@
 --!nonstrict
+--!optimize 2
 
 -- Client.client.luau
 
@@ -6,41 +7,37 @@ print(script.Name)
 task.wait()
 
 -- // Services -- //
+local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 -- // Requires -- //
 
-local CardAwarder = require("../Gameplay/CardAwarder")()
-local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary) -- Corrected Path
+require("../Gameplay/CardAwarder")()
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local Options = require(StarterPlayer.StarterPlayerScripts.Components.Options)
 print("0.5")
-local Hint = require(script.Parent.Parent:WaitForChild("Components"):WaitForChild("hint"))
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
-local Maid = require(ReplicatedStorage.Utility.Maid)
 print("1")
 local Movement = require(script.Parent.Parent.Movement.Movement)
 local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("OnIdle"))
 -- local OverShoulder = require(script.Parent.Parent.Modules.OverShoulder)
-local Packet = require(ReplicatedStorage.Packet)
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
 print("2")
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-print("3")
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 print("3")
 local audio = require(ReplicatedStorage.Modules.audio)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
-local dialog = require(script.Parent.Parent.Components.dialog)
-local dictionary = require(ReplicatedStorage.Utility.dictionary)
+local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 print("4")
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
-local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 print("5")
+local Packet = require(ReplicatedStorage.Packet)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
@@ -93,7 +90,7 @@ local function initializeMarket()
 	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
 
-	displayorder.compiled["shop"] = shopCanvas
+	displayorder:add(shopCanvas)
 
 	local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
 	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
@@ -133,7 +130,6 @@ local function initializeMarket()
 		})
 	end
 	coroutine.wrap(displaySpendings)
-	Packet.profileChanged.listen(displaySpendings)
 	coroutine.wrap(function()
 		retryer.delay(10, math.huge, displaySpendings)
 	end)
@@ -385,7 +381,65 @@ local function initializeMarket()
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
 	hud:render()
 end
+local function initializeOptions()
+	print("init options")
+	local optionsGui = PlayerGui:WaitForChild("Options") :: ScreenGui
+	local optionsCanvas = optionsGui:WaitForChild("CanvasGroup") :: CanvasGroup
+	local optionsFrame = optionsCanvas:WaitForChild("Frame") :: Frame
+
+	displayorder:add(optionsCanvas)
+
+	local holder = optionsFrame:WaitForChild("Holder") :: Frame
+	--local templatesFolder = templates:FindFirstChild("Options") :: Folder
+
+	shadow(optionsFrame, Color3.new(), 0, 14)
+
+	local optionsList = {
+		-- add new options here
+
+		[1] = {
+			name = "Shadows",
+			description = "Toggle shadows on or off.",
+			overrideState = "on",
+			toggleFunctions = {
+				on = function()
+					Lighting.GlobalShadows = true
+				end,
+				off = function()
+					Lighting.GlobalShadows = false
+				end,
+			},
+		},
+	}
+
+	for _, option in pairs(optionsList) do
+		local onToggle, optionTemplate = Options.createOption(
+			option.name,
+			option.description,
+			option.overrideState,
+			option.toggleFunctions
+		)
+		onToggle:Connect(function(state: boolean)
+			if state then
+				print("Option " .. option.name .. " is ON")
+			else
+				print("Option " .. option.name .. " is OFF")
+			end
+		end)
+	end
+
+	hud:create("Options", function()
+		displayorder:changeVisibility(not optionsCanvas.Visible, optionsCanvas)
+		if optionsCanvas.Visible then
+			sway:on(optionsCanvas)
+		else
+			sway:off(optionsCanvas)
+		end
+	end, lucide.GetAsset("cog"))
+	hud:render()
+end
 initializeMarket()
+initializeOptions()
 
 print("client almost done")
 

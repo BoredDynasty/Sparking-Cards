@@ -59,16 +59,12 @@ local function preload()
 	local pre_allocated = 2000
 	local assets = table.create(pre_allocated) -- pre-allocate approximate size
 	-- for a more accurate maxAssets count, make it asynchronous
-	task.spawn(function()
-		for _, asset in ipairs(player:GetDescendants()) do
-			table.insert(assets, asset)
-		end
-	end)
-	task.spawn(function()
-		for _, asset in ipairs(ReplicatedStorage:GetDescendants()) do
-			table.insert(assets, asset)
-		end
-	end)
+	for _, asset in ipairs(player:GetDescendants()) do
+		table.insert(assets, asset)
+	end
+	for _, asset in ipairs(ReplicatedStorage:GetDescendants()) do
+		table.insert(assets, asset)
+	end
 	local completed = Instance.new("BindableEvent")
 	completed.Parent = ReplicatedFirst
 
@@ -136,7 +132,7 @@ local function preload()
 			status.Text = string.format("Loaded: %d/%d", loadedCount, maxAssets or #assets)
 
 			activeThreads -= 1
-			if activeThreads == 0 and loadedCount >= maxAssets or #assets then
+			if activeThreads == 0 and loadedCount >= maxAssets then
 				completed:Fire()
 			end
 		end)

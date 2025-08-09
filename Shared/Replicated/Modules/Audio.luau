@@ -7,7 +7,7 @@
 local SoundService = game:GetService("SoundService")
 local TweenService = game:GetService("TweenService")
 
-local Signal = require(script.Parent.Parent.Utility.SignalPlus)
+local Signal = require(script.Parent.Parent.Dependencies.SignalPlus)
 local TweenPlus = require(script.Parent.Parent.Modules.TweenPlus)
 local dictionary = require(script.Parent.Parent.Utility.dictionary)
 local random = require(script.Parent.Parent.Utility.random)
@@ -128,7 +128,7 @@ end
 	@param soundName string?
 	@param soundId number?
 ]=]
-function Audio:SFX(soundName, soundId: number)
+function Audio:SFX(soundName, soundId: number?)
 	local sound = Instance.new("Sound")
 	sound.Name = soundName or "Sound"
 	sound.Parent = sfxFolder

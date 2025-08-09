@@ -1,6 +1,6 @@
 --!nonstrict
 
--- MouseRaycast.luau
+-- mousecast.luau
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -19,7 +19,7 @@ return function(blacklist: { Instance })
 	params.FilterDescendantsInstances = blacklist
 
 	local epsilon = 1000 -- or the distance.
-	local ray = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * epsilon)
+	local ray = workspace:Raycast(mouseRay.Origin, mouseRay.Direction * epsilon, params)
 	if not ray then
 		return nil
 	end

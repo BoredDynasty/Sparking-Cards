@@ -34,7 +34,6 @@ export type objectList = {
 }
 
 local list: objectList = {}
-local scopeLength = 10
 
 local function renderStepped(deltaTime: number, canvas: CanvasGroup | Frame, initialPosition: UDim2)
 	local delta = UserInputService:GetMouseDelta()

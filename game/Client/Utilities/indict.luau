@@ -8,7 +8,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local DisplayOrder = require(script.Parent.Parent.Interface.displayorder).new()
 local Pop = require(script.Parent.Parent.Interface.pop)
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local promise = require(ReplicatedStorage.Packages.promise)
 
 -- indict.luau

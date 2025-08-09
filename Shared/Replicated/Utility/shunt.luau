@@ -1,11 +1,13 @@
 --!strict
-local SignalPlus = require(script.Parent.SignalPlus)
+local SignalPlus = require("../Dependencies/SignalPlus")
 
 --[[
     Given a tuple of Luau `signals`, to wait only for the first of them to fire without leaking memory
     
     ```luau
-    waitForFirst(humanoid.Died, character.AncestryChanged)
+	 local shunt = require(path.to.shunt)
+	 
+    shunt(humanoid.Died, character.AncestryChanged)
     ```
 ]]
 

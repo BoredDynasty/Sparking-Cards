@@ -2,7 +2,7 @@
 
 -- observer.luau
 
-local SignalPlus = require(script.Parent.SignalPlus)
+local SignalPlus = require("../Dependencies/SignalPlus")
 
 --[[
 	Observer class to handle state changes and notifications
@@ -20,10 +20,9 @@ export type Observer<T> = {
 }
 
 --[[
-    local Observer = require(path.to.observer)
-
-    
     ```luau
+
+	 local Observer = require(path.to.observer)
     -- Create a new observer with initial value
     local counter = Observer.new(0)
     ```
@@ -39,6 +38,7 @@ end
 
 --[[
     ```luau
+
     -- Access the current value
     local currentValue = counter:Get()
     print("Current value:", currentValue)
@@ -50,6 +50,7 @@ end
 
 --[[
     ```luau
+	 
     -- Set a new value
     counter:Set(5)
     print("New value set to: ", counter:Get())
@@ -67,6 +68,7 @@ end
 
 --[[
     ```luau
+
     -- Watch for changes
     local connection = counter:Watch(function(newValue, oldValue)
         print("Counter changed from", oldValue, "to", newValue)

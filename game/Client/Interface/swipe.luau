@@ -8,7 +8,7 @@ SwipeDetector.__index = SwipeDetector
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 
 export type SwipeDetector = { typeof(setmetatable({} :: self, SwipeDetector)) }
 

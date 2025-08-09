@@ -17,8 +17,7 @@ local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local batch = require(ReplicatedStorage.Utility.batch)
-local characterMarshaller =
-	require(script.Parent.Parent.Parent.Parent.ReplicatedStorage.Utility.characterMarshaller)
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -417,13 +416,36 @@ local function sellCards(player: Player, cardName: string)
 end
 
 local function getProfile(player: Player)
-	local profile = profiles[player]
-	assert(profile or profiles[player], "Profile does not exist!")
-	return {
-		Data = profile.Data,
-		Key = profile.Key,
-		LastSaved = profile.LastSavedData,
-	}
+	-- Retry logic for profile fetching
+	local maxRetries = 3
+	local retryDelay = 3.5
+	local attempt = 0
+	local result, data
+
+	while attempt < maxRetries do
+		attempt += 1
+		result, data = promise
+			.new(function(resolve, reject)
+				local profile = profiles[player]
+				if not profile then
+					reject("Profile does not exist!")
+					return
+				end
+				resolve({
+					Data = profile.Data,
+					Key = profile.Key,
+					LastSaved = profile.LastSavedData,
+				})
+			end)
+			:await()
+		if result then
+			return data
+		else
+			warn(`Profile fetch failed (attempt {attempt}): {data}`)
+			task.wait(retryDelay)
+		end
+	end
+	return nil
 end
 
 local function handleSprint(player: Player, v: number, b: boolean)

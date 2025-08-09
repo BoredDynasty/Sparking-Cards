@@ -21,6 +21,7 @@ end
 
 local player = playerMarshaller.get()
 local character = player.Character
+local head = character.Head
 local humanoid = character.Humanoid
 local mouse = player:GetMouse()
 
@@ -91,6 +92,75 @@ function GameCamera:trail()
 	end
 end
 
+function GameCamera:shake(strength: number?)
+	local connection = nil
+	if connections["shake"] then
+		return
+	end
+
+	local elaspedTime = 0
+
+	connection = RunService.PreRender:Connect(function(deltaTime: number)
+		debug.profilebegin("shake")
+
+		elaspedTime *= deltaTime
+
+		local x = math.noise(elaspedTime, 0, 0)
+		local y = math.noise(0, elaspedTime, 0)
+		local z = math.noise(0, 0, elaspedTime)
+
+		local offset = Vector3.new(x, y, z) * (strength or 5)
+
+		camera.CFrame *= CFrame.new(offset)
+
+		debug.profileend()
+	end)
+	if connection ~= nil then
+		connections["shake"] = connection
+	end
+end
+
+function GameCamera:shakeFromArea(origin: Vector3, maxDistance: number, strength: number)
+	local connection = nil
+	if connections["shakeFromArea"] then
+		return
+	end
+
+	local elaspedTime = 0
+
+	connection = RunService.PreRender:Connect(function(deltaTime: number)
+		debug.profilebegin("shakeFromArea")
+
+		elaspedTime *= deltaTime
+		local position = camera.CFrame.Position
+		local distance = (position - origin).Magnitude
+		local falloff = math.clamp(1 - (distance / maxDistance), 0, 1)
+
+		local x = math.noise(elaspedTime, 0, 0)
+		local y = math.noise(0, elaspedTime, 0)
+		local z = math.noise(0, 0, elaspedTime)
+
+		local offset = Vector3.new(x, y, z) * falloff * strength
+
+		camera.CFrame *= CFrame.new(offset)
+
+		debug.profileend()
+	end)
+	if connection ~= nil then
+		connections["shakeFromArea"] = connection
+	end
+end
+
+function GameCamera:followOffset()
+	local onStepped = function()
+		local offsetVector = Vector3.new(0, 1.5, 0)
+		local rootPosition = (humanoid.RootPart :: BasePart).CFrame
+		local headPosition = head.CFrame.Position
+		humanoid.CameraOffset *= (rootPosition + offsetVector):PointToObjectSpace(headPosition)
+	end
+	RunService:BindToRenderStep("CameraOffset", priority - 1, onStepped)
+end
+
 function GameCamera:changeFOV(change: number)
 	-- Usually 60 or 70.
 	TweenPlus(
@@ -120,6 +190,7 @@ function GameCamera:remove()
 		end
 	end
 	RunService:UnbindFromRenderStep("sway")
+	RunService:UnbindFromRenderStep("CameraOffset")
 	print("removed gamecamera")
 end
 

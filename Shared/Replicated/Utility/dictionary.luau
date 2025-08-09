@@ -13,7 +13,7 @@ local function copy<T>(t: T, deep: boolean?): T
 		local tCopy = table.clone(tbl)
 		for k, v in tCopy do
 			if type(v) == "table" then
-				tCopy[k] = DeepCopy(v)
+				tCopy[k] = DeepCopy(v :: { any })
 			end
 		end
 		return tCopy
@@ -60,10 +60,10 @@ local function reconcile<S, T>(src: S, template: T): S & T
 	assert(type(src) == "table", "First argument must be a table")
 	assert(type(template) == "table", "Second argument must be a table")
 
-	local tbl = table.clone(src)
+	local tbl: S = table.clone(src) :: S
 
-	for k, v in template do
-		local sv = src[k]
+	for k: any, v in template do
+		local sv = src[k :: any]
 		if sv == nil then
 			if type(v) == "table" then
 				tbl[k] = copy(v, true)

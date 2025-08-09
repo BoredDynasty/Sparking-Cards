@@ -3,6 +3,7 @@
 -- DisplayOrder.lua
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
@@ -32,49 +33,48 @@ function DisplayOrder:_createScale(ancestor: Instance)
 	return scale
 end
 
+function DisplayOrder:add(canvas: Instance)
+	DisplayOrder.compiled[(canvas.Parent :: ScreenGui).Name:lower()] = canvas
+end
+
 function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
-	if v == true then
-		canvas.Visible = true
-		TweenPlus(
-			canvas,
-			{ Position = DisplayOrder.canvasPositions.middle },
-			{ Time = 0.35, EasingDirection = "InOut", EasingStyle = "Back" }
-		):Start()
+	task.spawn(function()
+		local tweenInfo
+		local targetPosition
+		local targetScale
+
+		if v == true then
+			canvas.Visible = true
+			tweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.InOut)
+			targetPosition = DisplayOrder.canvasPositions.middle
+			targetScale = 1
+		else
+			tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			targetPosition = DisplayOrder.canvasPositions.lower
+			targetScale = 0
+		end
+
+		local positionTween = TweenService:Create(canvas, tweenInfo, { Position = targetPosition })
+		positionTween:Play()
+
 		local scale = DisplayOrder:_createScale(canvas)
-		scale.Scale = 0
-		TweenPlus(scale, {
-			Scale = 1,
-		}, {
-			Time = 0.35,
-			EasingDirection = "InOut",
-			EasingStyle = "Back",
-		}):Start()
-		task.delay(0.36, function()
+		scale.Scale = v and 0 or 1
+		local scaleTween = TweenService:Create(scale, tweenInfo, { Scale = targetScale })
+		scaleTween:Play()
+
+		task.delay(tweenInfo.Time + 0.01, function()
 			scale:Destroy()
+			if not v then
+				canvas.Visible = false
+			end
 		end)
-		print("visible")
-	elseif v == false then
-		TweenPlus(
-			canvas,
-			{ Position = DisplayOrder.canvasPositions.lower },
-			{ Time = 0.25, EasingDirection = "Out", EasingStyle = "Back" }
-		):Start()
-		local scale = DisplayOrder:_createScale(canvas)
-		scale.Scale = 1
-		TweenPlus(scale, {
-			Scale = 0,
-		}, {
-			Time = 0.25,
-			EasingDirection = "InOut",
-			EasingStyle = "Back",
-		}):Start()
-		task.delay(0.36, function()
-			scale:Destroy()
-		end)
-		task.wait(0.2)
-		canvas.Visible = false
-		print("invisible")
-	end
+
+		if v then
+			print("visible")
+		else
+			print("invisible")
+		end
+	end)
 end
 
 function DisplayOrder:setDisplayOrder(i: string)

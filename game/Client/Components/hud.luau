@@ -4,7 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local hint = require(script.Parent.hint)
+local hint = require(script.Parent.Hint)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)

@@ -3,7 +3,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 

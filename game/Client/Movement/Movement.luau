@@ -505,7 +505,7 @@ function Movement:slide(self: self)
 				previousY = currentY
 
 				-- align character to the slope
-				if ray and gyro then
+				if ray and align then
 					local currentRightVector = self.character.HumanoidRootPart.CFrame.RightVector
 					local upVector = ray.Normal
 					local newFacialVector = currentRightVector:Cross(upVector)
@@ -518,7 +518,7 @@ function Movement:slide(self: self)
 					gyro.CFrame = translation
 				end
 
-				if velocity then
+				if velocity and character:FindFirstChildOfClass("LinearVelocity") then
 					velocity.Velocity = self.character.HumanoidRootPart.CFrame.LookVector
 						* (baseSpeed * currentMultiplier) -- Adjust velocity based on multiplier
 				end

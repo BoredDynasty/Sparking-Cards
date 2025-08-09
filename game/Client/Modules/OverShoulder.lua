@@ -11,7 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local WorkspaceService = game:GetService("Workspace")
 
 local Maid = require(ReplicatedStorage.Utility.Maid)
-local SignalPlus = require(ReplicatedStorage.Utility.SignalPlus)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local Spring = require(ReplicatedStorage.Utility.Spring)
 
 local player = Players.LocalPlayer
