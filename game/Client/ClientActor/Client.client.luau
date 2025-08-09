@@ -443,13 +443,7 @@ initializeOptions()
 
 print("client almost done")
 
-local movementSingleton = Movement.new()
-
-movementSingleton:dash(movementSingleton)
-movementSingleton:sprint(movementSingleton)
-movementSingleton:jump(movementSingleton)
-movementSingleton:slide(movementSingleton)
-movementSingleton:walk(movementSingleton)
+Movement.initialize()
 
 print("client movement")
 gamecamera:sway()
