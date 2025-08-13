@@ -11,7 +11,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 -- local MovementStructure = require(ReplicatedStorage.Structures.MovementStructure)
-local Stamina = require(Players.LocalPlayer.PlayerScripts.Movement.Stamina)
+local Stamina = require("./Stamina")
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local audio = require(ReplicatedStorage.Modules.audio)
@@ -390,11 +390,7 @@ local function slide()
 			local direction = -character.HumanoidRootPart.CFrame.UpVector * 10
 			local ray = workspace:Raycast(character.HumanoidRootPart.Position, direction, raycastParams)
 
-			if
-				_statemachine:getCurrentState() == "sliding"
-				or not _debounces.slide.active
-				or not ray
-			then
+			if _statemachine:getCurrentState() == "sliding" or not _debounces.slide.active or not ray then
 				return -- already sliding or on cooldown
 			end
 
@@ -452,11 +448,8 @@ local function slide()
 				if verticalChange < 0.1 and verticalChange > -0.1 then
 					-- Slide forward (decrease speed until 0)
 					if currentMultiplier > 1 then
-						currentMultiplier = math.clamp(
-							currentMultiplier - _velocity.forward * deltaTime,
-							0,
-							maxMultiplier
-						)
+						currentMultiplier =
+							math.clamp(currentMultiplier - _velocity.forward * deltaTime, 0, maxMultiplier)
 					end
 					currentMultiplier =
 						math.clamp(currentMultiplier - (_velocity.forward * deltaTime), 0, maxMultiplier)

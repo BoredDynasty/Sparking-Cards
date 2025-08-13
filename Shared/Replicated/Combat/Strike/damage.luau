@@ -1,6 +1,7 @@
 --!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local damageIndict = require(ReplicatedStorage.Combat.framework.effects.damageIndict)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
@@ -14,12 +15,25 @@ export type Damage = {
 	target: playerMarshaller.player, -- player who received the damage
 }
 
-return function(parameters: Damage)
+local damage = setmetatable({}, {})
+damage.__index = damage
+
+export type incomingSignal = SignalPlus.Signal<Damage>
+
+damage.currentlyInflicting = {}
+damage.incoming = SignalPlus()
+damage.cancel = SignalPlus()
+
+function damage.__call(parameters: Damage)
 	-- Validate parameters
 	assert(type(parameters.amount) == "number", "Damage amount must be a number")
 	assert(
 		parameters.target == nil or type(parameters.target) == "table",
 		"Target must be a player object or nil"
+	)
+	assert(
+		parameters.source == nil or type(parameters.source) == "table",
+		"Source must be a player object or nil"
 	)
 
 	-- Process damage logic here
@@ -36,7 +50,19 @@ return function(parameters: Damage)
 	damageIndict(damageAmount, targetRoot)
 
 	local targetHumanoid = targetInstance:WaitForChild("Humanoid") :: Humanoid
-	targetHumanoid:TakeDamage(parameters.amount)
+	damage.incoming:Fire({
+		amount = damageAmount,
+		source = sourceInstance,
+		target = targetInstance,
+	})
+	damage.cancel:Once(function()
+		-- if the damage is cancelled, we don't apply it
+		return false
+	end)
+	task.wait(0.032)
+	targetHumanoid:TakeDamage(damageAmount)
 
 	return true -- Indicate success
 end
+
+return damage

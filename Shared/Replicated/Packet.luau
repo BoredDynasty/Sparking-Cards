@@ -58,6 +58,22 @@ return bytenet.defineNamespace("MainNet", function()
 	local cancelAnimation = bytenet.struct({
 		identification = bytenet.string,
 	})
+	local indictEffectStruct = bytenet.struct({
+		text = bytenet.string,
+	})
+	local deductStaminaStruct = bytenet.struct({
+		amount = bytenet.int16, -- Amount of stamina to deduct
+	})
+	local addStaminaStruct = bytenet.struct({
+		amount = bytenet.int16, -- Amount of stamina to add
+	})
+	local parrySuccess = bytenet.struct({
+		[1] = bytenet.nothing, -- Placeholder for future data
+	})
+	local parryResult = bytenet.struct({
+		[1] = bytenet.unknown,
+		[2] = bytenet.unknown,
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -74,5 +90,8 @@ return bytenet.defineNamespace("MainNet", function()
 		profileChanged = bytenet.definePacket({ value = profileChangedStruct }),
 		ReplicateAnimation = bytenet.definePacket({ value = replicateAnimation }),
 		CancelAnimation = bytenet.definePacket({ value = cancelAnimation }),
+		DeductStamina = bytenet.definePacket({ value = deductStaminaStruct }),
+		AddStamina = bytenet.definePacket({ value = addStaminaStruct }),
+		ParrySuccess = bytenet.definePacket({ value = parrySuccess }),
 	}
 end)

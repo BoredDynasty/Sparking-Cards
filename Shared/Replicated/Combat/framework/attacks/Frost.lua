@@ -132,7 +132,7 @@ function Frost.moveset.Skill(
 				if humanoid_ then
 					local otherPlayer = Players[humanoid_.Parent.Name] :: playerMarshaller.player
 					local otherIdentification = otherPlayer.UserId
-					damage({
+					damage.__call({
 						amount = damagePoints,
 						target = otherIdentification,
 					})

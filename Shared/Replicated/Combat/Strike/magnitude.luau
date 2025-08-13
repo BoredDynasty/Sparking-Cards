@@ -21,4 +21,6 @@ local function update(player: BasePart, victim: BasePart, range: number, limit: 
 	end
 end
 
-return update
+return {
+	magnitude = update,
+}
