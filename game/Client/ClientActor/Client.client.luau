@@ -15,7 +15,9 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 require("../Gameplay/CardAwarder")()
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local Navi = require(StarterPlayer.StarterPlayerScripts.Components.Navi)
 local Options = require(StarterPlayer.StarterPlayerScripts.Components.Options)
+local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 print("0.5")
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
@@ -82,6 +84,8 @@ audio:writeSFX({
 	["success"] = 76288726968959,
 })
 
+animate.initialize(character)
+
 print("client starting")
 
 local function initializeMarket()
@@ -98,6 +102,14 @@ local function initializeMarket()
 	local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 
 	print("got market gui")
+
+	local function populateNavigation()
+		local navi_button = Navi.create(shopNavigation, {
+			name = "Home",
+			icon = "rbxassetid://10723407389",
+		})
+		navi_button:render()
+	end
 
 	local function unloadShop()
 		for _, item in itemHolder:GetChildren() do
@@ -129,7 +141,6 @@ local function initializeMarket()
 			Dynamic = true,
 		})
 	end
-	coroutine.wrap(displaySpendings)
 	coroutine.wrap(function()
 		retryer.delay(10, math.huge, displaySpendings)
 	end)
@@ -380,6 +391,7 @@ local function initializeMarket()
 	end
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
 	hud:render()
+	--populateNavigation()
 end
 local function initializeOptions()
 	print("init options")
@@ -409,6 +421,32 @@ local function initializeOptions()
 					Lighting.GlobalShadows = false
 				end,
 			},
+			overrideIcons = {},
+		},
+		[2] = {
+			name = "Time",
+			description = "Adjust the in-game time.",
+			overrideState = "on",
+			toggleFunctions = {
+				on = function()
+					TweenPlus(
+						Lighting,
+						{ ClockTime = 12 },
+						{ Time = 1, EasingStyle = "Back", EasingDirection = "Out" }
+					):Start()
+				end,
+				off = function()
+					TweenPlus(
+						Lighting,
+						{ ClockTime = 4 },
+						{ Time = 1, EasingStyle = "Back", EasingDirection = "Out" }
+					):Start()
+				end,
+			},
+			overrideIcons = {
+				on = "rbxassetid://10734974297",
+				off = "rbxassetid://10734897102",
+			},
 		},
 	}
 
@@ -417,7 +455,8 @@ local function initializeOptions()
 			option.name,
 			option.description,
 			option.overrideState,
-			option.toggleFunctions
+			option.toggleFunctions,
+			option.overrideIcons
 		)
 		onToggle:Connect(function(state: boolean)
 			if state then
@@ -447,7 +486,8 @@ Movement.initialize()
 
 print("client movement")
 gamecamera:sway()
--- gamecamera:trail()
+--gamecamera:trail()
+gamecamera:followOffset()
 print("game camera")
 -- control
 
@@ -479,6 +519,14 @@ mouse.LeftDown:Connect(function()
 end)
 
 orion.registerPlayer(player)
+
+Packet.ReplicateAnimation.listen(function(data: { identification: string })
+	animate.loadAnimation(data.identification, {
+		Id = "rbxassetid://" .. data.identification,
+		Weight = 1,
+	})
+	animate.play(`rbxassetid://{data.identification}`, 0.25)
+end)
 
 -- Listen for profile changes to update equipped card if necessary
 -- This assumes 'yoink' or the profile system has a way to notify changes.

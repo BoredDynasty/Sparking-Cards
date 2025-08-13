@@ -77,6 +77,15 @@ return bytenet.defineNamespace("MainNet", function()
 	local attemptParryStruct = bytenet.struct({
 		[1] = bytenet.nothing,
 	})
+	local shakeCamera = bytenet.struct({
+		intensity = bytenet.float32, -- Intensity of the camera shake
+		duration = bytenet.float32, -- Duration of the camera shake
+	})
+	local shakeFromAreaStruct = bytenet.struct({
+		origin = bytenet.vec3, -- Origin point for the shake effect
+		maxDistance = bytenet.float32, -- Maximum distance for the shake effect
+		strength = bytenet.float32, -- Strength of the shake effect
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -97,5 +106,7 @@ return bytenet.defineNamespace("MainNet", function()
 		AddStamina = bytenet.definePacket({ value = addStaminaStruct }),
 		ParrySuccess = bytenet.definePacket({ value = parrySuccess }),
 		AttemptParry = bytenet.definePacket({ value = attemptParryStruct }),
+		ShakeCamera = bytenet.definePacket({ value = shakeCamera }),
+		ShakeFromArea = bytenet.definePacket({ value = shakeFromAreaStruct }),
 	}
 end)

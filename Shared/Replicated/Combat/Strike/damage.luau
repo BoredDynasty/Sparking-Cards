@@ -21,7 +21,7 @@ damage.__index = damage
 export type incomingSignal = SignalPlus.Signal<Damage>
 
 damage.currentlyInflicting = {}
-damage.incoming = SignalPlus()
+damage.incoming = SignalPlus() :: incomingSignal
 damage.cancel = SignalPlus()
 
 function damage.__call(parameters: Damage)

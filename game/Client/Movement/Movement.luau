@@ -46,7 +46,6 @@ local keybinds = {
 	cancel_slide = Enum.KeyCode.Space,
 	dash = Enum.KeyCode.V,
 }
-local _animate = animate.new(character)
 -- local _audio = audio.new()
 local _debounces = {
 	sprint = {
@@ -126,7 +125,7 @@ end
 
 local function walk()
 	-- Load walk animation
-	_animate:LoadAnimation("walk", {
+	animate.loadAnimation("walk", {
 		-- TODO: Verify this animation ID. If animations are not working, this is a likely culprit.
 		Id = "rbxassetid://94049151700764",
 		Weight = 1,
@@ -146,7 +145,7 @@ local function walk()
 	-- Handle walking animation
 	local connection = RunService.Heartbeat:Connect(function()
 		if isMoving() and _statemachine:getCurrentState() == "walking" then
-			local track = _animate:Play("walk", 0.25)
+			local track = animate.play("walk", 0.25)
 
 			if track then
 				-- Adjust animation speed based on movement
@@ -157,7 +156,7 @@ local function walk()
 				end
 			end
 		else
-			_animate:Stop("walk")
+			animate.stop("walk")
 		end
 	end)
 
@@ -176,7 +175,7 @@ end
 
 local function sprint()
 	-- load animations
-	_animate:LoadAnimation("run", {
+	animate.loadAnimation("run", {
 		-- TODO: Verify this animation ID. If animations are not working, this is a likely culprit.
 		Id = "rbxassetid://14243308122",
 		Weight = 1,
@@ -187,7 +186,7 @@ local function sprint()
 		if _statemachine:getCurrentState() ~= "walking" then
 			_statemachine:transition("walking")
 			character.Humanoid.WalkSpeed -= maxSpeed
-			_animate:Stop("run")
+			animate.stop("run")
 			character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
 			--gamecamera:disconnect("camera_trail")
 			UserInputService.MouseBehavior = Enum.MouseBehavior.Default -- reset mouse behavior
@@ -219,7 +218,7 @@ local function sprint()
 				return
 			end
 			_statemachine:transition("running")
-			local track = _animate:Play("run", 0.25)
+			local track = animate.play("run", 0.25)
 			local connection = nil
 
 			local visualEffects = ReplicatedStorage.Assets.VisualEffects :: Folder
@@ -343,7 +342,7 @@ local function slide()
 	local slideBaseSpeed = 50
 	local currentMultiplier = 1 -- Speed multiplier for sliding
 	local maxMultiplier = 2 -- Maximum speed multiplier
-	_animate:LoadAnimation("slide", {
+	animate.loadAnimation("slide", {
 		-- TODO: Verify this animation ID. If animations are not working, this is a likely culprit.
 		Id = "rbxassetid://14608790956",
 		Weight = 1,
@@ -353,7 +352,7 @@ local function slide()
 	local function stop()
 		_statemachine:transition("walking") -- stop sliding
 		character.Humanoid.HipHeight = _hip_height.normal -- reset hip height
-		_animate:Stop("slide")
+		animate.stop("slide")
 		if velocity then
 			velocity:Destroy() -- clean up the BodyVelocity instance
 			velocity = nil
@@ -412,7 +411,7 @@ local function slide()
 			_statemachine:transition("sliding")
 
 			character.Humanoid.HipHeight = _hip_height.slide -- Lower hip height for sliding
-			_animate:Play("slide", 0.25)
+			animate.play("slide", 0.25)
 
 			local previousY = character.HumanoidRootPart.Position.Y
 			currentMultiplier = 1 -- Reset multiplier when starting to slide
@@ -515,7 +514,7 @@ local function dash()
 		return -- already dashing
 	end
 	_statemachine:transition("dashing")
-	_animate:LoadAnimation("dash", {
+	animate.loadAnimation("dash", {
 		-- TODO: Verify this animation ID. If animations are not working, this is a likely culprit.
 		Id = "rbxassetid://14608790956",
 		Weight = 1,
@@ -530,7 +529,7 @@ local function dash()
 			if character and character:IsDescendantOf(game.Workspace) then
 				character:SetAttribute("AntiRegenerate", true) -- prevent stamina regeneration
 			end
-			_animate:Play("dash", 0.25) -- play dash animation
+			animate.play("dash", 0.25) -- play dash animation
 			_debounces.dash.active = true
 			task.delay(_debounces.dash.cooldown, function()
 				_debounces.dash.active = false
@@ -612,7 +611,7 @@ local function dash()
 				velocity:Destroy() -- clean up the BodyVelocity instance
 			end
 			_statemachine:transition("walking") -- transition back to walking state
-			_animate:Stop("dash") -- stop dash animation
+			animate.stop("dash") -- stop dash animation
 			if character and character:IsDescendantOf(game.Workspace) then
 				character:SetAttribute("AntiRegenerate", nil) -- allow stamina regeneration again
 			end
@@ -622,6 +621,7 @@ end
 
 function Movement.initialize()
 	Stamina:initialize()
+	--animate.initialize(character)
 	dash()
 	sprint()
 	jump()

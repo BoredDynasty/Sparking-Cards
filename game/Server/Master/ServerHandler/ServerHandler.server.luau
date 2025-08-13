@@ -15,6 +15,7 @@ local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
 local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
+local ParryHandler = require(ReplicatedStorage.Combat.framework.features.parry)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local batch = require(ReplicatedStorage.Utility.batch)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
@@ -22,7 +23,6 @@ local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion)
-local ParryHandler = require(ReplicatedStorage.Combat.ParryHandler)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
@@ -205,12 +205,6 @@ local function onPlayerAdded(player: Player)
 		toggleShiftLock.Name = "ToggleShiftLock"
 	end)
 
-	coroutine.wrap(function()
-		local character: Model = player.Character or player.CharacterAdded:Wait()
-		character:SetAttribute("Stamina", 100)
-		character:SetAttribute("MaxStamina", 100)
-	end)
-
 	GameAnalytics:PlayerJoined(player)
 	--orion.registerPlayer(player)
 
@@ -218,6 +212,22 @@ local function onPlayerAdded(player: Player)
 	playerObservers[player] = playerObserver
 	playerObserver.Changed:Connect(function()
 		Packet.profileChanged.sendTo({ nil }, player)
+	end)
+
+	player.CharacterAdded:Connect(function(character: Model)
+		coroutine.wrap(function()
+			character:SetAttribute("Stamina", 100)
+			character:SetAttribute("MaxStamina", 100)
+		end)
+		local highlight = Instance.new("Highlight")
+		highlight.Adornee = character
+		highlight.Parent = character
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		highlight.FillColor = Color3.fromRGB(255, 255, 255)
+		highlight.FillTransparency = 0.95
+		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		highlight.OutlineTransparency = 0.7
+		highlight.Enabled = true
 	end)
 
 	-- Optimize character cleanup
@@ -417,36 +427,20 @@ local function sellCards(player: Player, cardName: string)
 end
 
 local function getProfile(player: Player)
-	-- Retry logic for profile fetching
-	local maxRetries = 3
-	local retryDelay = 3.5
-	local attempt = 0
-	local result, data
-
-	while attempt < maxRetries do
-		attempt += 1
-		result, data = promise
-			.new(function(resolve, reject)
-				local profile = profiles[player]
-				if not profile then
-					reject("Profile does not exist!")
-					return
-				end
-				resolve({
-					Data = profile.Data,
-					Key = profile.Key,
-					LastSaved = profile.LastSavedData,
-				})
-			end)
-			:await()
-		if result then
-			return data
-		else
-			warn(`Profile fetch failed (attempt {attempt}): {data}`)
-			task.wait(retryDelay)
-		end
+	local canFail = function()
+		return promise.new(function(resolve, reject)
+			local profile = profiles[player]
+			if not profile then
+				reject("Profile does not exist!")
+			end
+			resolve({
+				Data = profile.Data,
+				Key = profile.Key,
+				LastSaved = profile.LastSavedData,
+			})
+		end)
 	end
-	return nil
+	return promise.retry(canFail, 10)
 end
 
 local function handleSprint(player: Player, v: number, b: boolean)

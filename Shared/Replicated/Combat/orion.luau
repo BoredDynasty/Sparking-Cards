@@ -10,6 +10,7 @@ local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local requirer = require(script.Parent.requirer)
+local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local yoink = require(ReplicatedStorage.Utility.yoink)
 
 --[[
@@ -51,9 +52,48 @@ function orion.registerPlayer(player: playerMarshaller.player & Player)
 		) :: typeof(profilestructure)
 	print(profile)
 	local equippedCard = profile.EquippedCard or "Frost"
+
+	-- change
+	local states = {
+		Idle = {
+			onEnter = function()
+				print("Entering Idle State")
+			end,
+			onExit = function()
+				print("Exiting Idle State")
+			end,
+			transitions = {
+				Attack = "Attacking",
+			},
+		},
+		Attacking = {
+			onEnter = function()
+				print("Entering Attacking State")
+			end,
+			onExit = function()
+				print("Exiting Attacking State")
+			end,
+			transitions = {
+				Idle = "Idle",
+			},
+		},
+		Blocking = {
+			onEnter = function()
+				print("Entering Blocking State")
+			end,
+			onExit = function()
+				print("Exiting Blocking State")
+			end,
+			transitions = {
+				Idle = "Idle",
+			},
+		},
+	}
+
 	local data = {
 		profile = profile,
 		equippedCard = equippedCard,
+		states = statemachine.new(states, "Idle"),
 	}
 	orion.player_data[identification] = data
 end

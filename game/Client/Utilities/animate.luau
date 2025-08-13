@@ -11,7 +11,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local player = playerMarshaller.get()
-local character = player.Character
 
 type AnimationObject = {
 	Animation: Animation,
@@ -21,28 +20,26 @@ type AnimationObject = {
 	IsLoaded: boolean,
 }
 
-export type AnimationData = {
+type AnimationData = {
 	Id: string,
 	Weight: number?,
 	Speed: number?,
 }
 
-local Animate = {}
-Animate.__index = Animate
+-- Store animations in a global table
+local animations: { [string]: AnimationObject } = {}
+local currentCharacter = nil
+local currentAnimator = nil
 
-function Animate.new(char: typeof(character))
-	local self = setmetatable({
-		_character = char,
-		_animator = char.Humanoid.Animator,
-		_animations = {} :: { [string]: AnimationObject },
-	}, Animate)
-
-	return self
+local function initialize(character: Model)
+	currentCharacter = character
+	currentAnimator = character.Humanoid.Animator
+	animations = {}
 end
 
-function Animate:LoadAnimation(name: string, data: AnimationData): AnimationObject
-	if self._animations[name] then
-		return self._animations[name]
+local function loadAnimation(name: string, data: AnimationData): AnimationObject
+	if animations[name] then
+		return animations[name]
 	end
 
 	local animation = Instance.new("Animation")
@@ -56,19 +53,24 @@ function Animate:LoadAnimation(name: string, data: AnimationData): AnimationObje
 		IsLoaded = false,
 	}
 
-	self._animations[name] = animObject
+	animations[name] = animObject
 	return animObject
 end
 
-function Animate:Play(name: string, fadeTime: number?): AnimationTrack?
-	local animObject: AnimationObject = self._animations[name]
+local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
+	if not currentAnimator then
+		warn("Animator not initialized. Call initialize() first.")
+		return nil
+	end
+
+	local animObject: AnimationObject = animations[name]
 	if not animObject then
 		warn(`No animation found with name: {name}`)
 		return nil
 	end
 
 	if not animObject.IsLoaded then
-		animObject.Track = self._animator:LoadAnimation(animObject.Animation)
+		animObject.Track = currentAnimator:LoadAnimation(animObject.Animation)
 		animObject.IsLoaded = true
 	end
 	fadeTime = fadeTime or 0.25
@@ -83,29 +85,35 @@ function Animate:Play(name: string, fadeTime: number?): AnimationTrack?
 	return nil
 end
 
-function Animate:Stop(name: string)
-	local animObject: AnimationObject = self._animations[name]
+local function stopAnimation(name: string)
+	local animObject: AnimationObject = animations[name]
 	if animObject and animObject.Track then
 		animObject.Track:Stop()
 	end
 end
 
-function Animate:StopAll(fadeTime: number?)
+local function stopAllAnimations(fadeTime: number?)
 	fadeTime = fadeTime or 0.25
-	for _, animObject: AnimationObject in self._animations do
+	for _, animObject: AnimationObject in animations do
 		if animObject.Track then
 			animObject.Track:Stop(fadeTime)
 		end
 	end
 end
 
-function Animate:Destroy()
-	self:StopAll()
-	table.clear(self._animations)
-	self._animations = nil :: any
-	self._animator = nil :: any
-	self._character = nil :: any
-	setmetatable(self, nil)
+local function cleanup()
+	stopAllAnimations()
+	table.clear(animations)
+	animations = {}
+	currentAnimator = nil
+	currentCharacter = nil
 end
 
-return Animate
+return {
+	initialize = initialize,
+	loadAnimation = loadAnimation,
+	play = playAnimation,
+	stop = stopAnimation,
+	stopAll = stopAllAnimations,
+	cleanup = cleanup,
+}
