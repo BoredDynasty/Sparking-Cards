@@ -74,6 +74,9 @@ return bytenet.defineNamespace("MainNet", function()
 		[1] = bytenet.unknown,
 		[2] = bytenet.unknown,
 	})
+	local attemptParryStruct = bytenet.struct({
+		[1] = bytenet.nothing,
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -93,5 +96,6 @@ return bytenet.defineNamespace("MainNet", function()
 		DeductStamina = bytenet.definePacket({ value = deductStaminaStruct }),
 		AddStamina = bytenet.definePacket({ value = addStaminaStruct }),
 		ParrySuccess = bytenet.definePacket({ value = parrySuccess }),
+		AttemptParry = bytenet.definePacket({ value = attemptParryStruct }),
 	}
 end)
