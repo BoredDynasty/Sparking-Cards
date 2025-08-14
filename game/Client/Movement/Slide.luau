@@ -5,13 +5,13 @@
 
 	Handles the sliding mechanic, including speed, hip height, and animations.
 ]=]
-local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local Trove = require(ReplicatedStorage.Packages.trove)
+local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local Slide = {}
 Slide.__index = Slide
@@ -42,7 +42,9 @@ end
 
 function Slide:_connectInputs()
 	self._trove:Connect(UserInputService.InputBegan, function(input, gameProcessedEvent)
-		if gameProcessedEvent then return end
+		if gameProcessedEvent then
+			return
+		end
 
 		if input.KeyCode == self._keybinds.Slide then
 			self:Start()
@@ -53,11 +55,15 @@ function Slide:_connectInputs()
 end
 
 function Slide:Start()
-	if self._isSliding or self._onCooldown then return end
+	if self._isSliding or self._onCooldown then
+		return
+	end
 
-	local direction = -self._character.PrimaryPart.CFrame.UpVector * 10
+	local direction: Vector3 = -self._character.PrimaryPart.CFrame.UpVector :: Vector3 * 10
 	local ray = workspace:Raycast(self._character.PrimaryPart.Position, direction, self._raycastParams)
-	if not ray then return end
+	if not ray then
+		return
+	end
 
 	self._isSliding = true
 	self._onCooldown = true
@@ -91,7 +97,9 @@ function Slide:Start()
 end
 
 function Slide:Stop()
-	if not self._isSliding then return end
+	if not self._isSliding then
+		return
+	end
 	self._isSliding = false
 
 	self._humanoid.HipHeight = MovementConfig.HipHeight.Normal
@@ -104,16 +112,24 @@ function Slide:Stop()
 end
 
 function Slide:Cancel()
-	if not self._isSliding then return end
+	if not self._isSliding then
+		return
+	end
 
 	local cancelMultiplier = self._currentMultiplier
 	self:Stop()
 
+	local vectorVelocity: Vector3 = (
+		self._character.PrimaryPart.CFrame.LookVector :: Vector3
+		* (self._config.CancelPushForward :: number * cancelMultiplier :: number)
+	)
+		+ (self._character.PrimaryPart.CFrame.UpVector :: Vector3 * self._config.CancelPushUpward :: number)
+
 	local pushVelocity = Instance.new("LinearVelocity")
 	pushVelocity.Parent = self._character.PrimaryPart
-	pushVelocity.Attachment0 = Instance.new("Attachment", self._character.PrimaryPart)
+	pushVelocity.Attachment0 = Instance.new("Attachment", self._character.PrimaryPart :: BasePart)
 	pushVelocity.MaxForce = math.huge
-	pushVelocity.VectorVelocity = (self._character.PrimaryPart.CFrame.LookVector * (self._config.CancelPushForward * cancelMultiplier)) + (self._character.PrimaryPart.CFrame.UpVector * self._config.CancelPushUpward)
+	pushVelocity.VectorVelocity = vectorVelocity
 
 	task.delay(0.2, function()
 		if pushVelocity and pushVelocity.Parent then
@@ -123,9 +139,11 @@ function Slide:Cancel()
 end
 
 function Slide:Update(deltaTime: number)
-	if not self._isSliding then return end
+	if not self._isSliding then
+		return
+	end
 
-	local direction = -self._character.PrimaryPart.CFrame.UpVector * 10
+	local direction = -self._character.PrimaryPart.CFrame.UpVector :: Vector3 * 10
 	local ray = workspace:Raycast(self._character.PrimaryPart.Position, direction, self._raycastParams)
 
 	if not ray then
@@ -137,23 +155,28 @@ function Slide:Update(deltaTime: number)
 	local currentRightVector = self._character.PrimaryPart.CFrame.RightVector
 	local upVector = ray.Normal
 	local newFacialVector = currentRightVector:Cross(upVector)
-	local translation = CFrame.fromMatrix(self._character.PrimaryPart.Position, currentRightVector, upVector, newFacialVector)
+	local translation =
+		CFrame.fromMatrix(self._character.PrimaryPart.Position, currentRightVector, upVector, newFacialVector)
 	if self._slideAlign then
-		self._slideAlign.CFrame = translation
+		(self._slideAlign :: AlignOrientation).CFrame = translation
 	end
 
 	-- Update velocity based on slope
 	local verticalChange = ray.Normal.Y
 	if verticalChange > 0.99 then -- Flat ground
-		self._currentMultiplier = math.max(0, self._currentMultiplier - (self._config.SpeedLossFlat * deltaTime))
+		self._currentMultiplier =
+			math.max(0, self._currentMultiplier - (self._config.SpeedLossFlat :: number * deltaTime))
 	elseif verticalChange < 0.99 and verticalChange > 0 then -- Downhill
-		self._currentMultiplier = math.min(2, self._currentMultiplier + (self._config.SpeedGainDown * deltaTime))
+		self._currentMultiplier =
+			math.min(2, self._currentMultiplier + (self._config.SpeedGainDown :: number * deltaTime))
 	else -- Uphill
-		self._currentMultiplier = math.max(0, self._currentMultiplier - (self._config.SpeedLossUp * deltaTime))
+		self._currentMultiplier =
+			math.max(0, self._currentMultiplier - (self._config.SpeedLossUp :: number * deltaTime))
 	end
 
-	if self._slideVelocity then
-		self._slideVelocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector * (self._config.BaseSpeed * self._currentMultiplier)
+	if self._slideVelocity :: LinearVelocity then
+		self._slideVelocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector :: Vector3
+			* (self._config.BaseSpeed :: number * self._currentMultiplier :: number)
 	end
 
 	if self._currentMultiplier <= 0 then

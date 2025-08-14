@@ -5,15 +5,14 @@
 
 	Handles the sprinting mechanic, including stamina drain, speed increase, and animations.
 ]=]
-local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
+local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
-local Trove = require(ReplicatedStorage.Packages.trove)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local Sprint = {}
 Sprint.__index = Sprint
@@ -33,7 +32,7 @@ function Sprint.new(movementController)
 	self._originalWalkSpeed = MovementConfig.Character.BaseSpeed
 	self._sprintWalkSpeed = self._originalWalkSpeed + self._config.SpeedIncrease
 
-	self._originalFOV = gamecamera:getFOV()
+	self._originalFOV = gamecamera:getBaseFOV()
 	self._sprintFOV = self._originalFOV + self._config.FieldOfViewIncrease
 
 	animate.loadAnimation("run", MovementConfig.Animations.Run)
@@ -58,16 +57,22 @@ function Sprint:_connectInputs()
 end
 
 function Sprint:Start()
-	if self._isSprinting then return end
-	if (self._character:GetAttribute("Stamina") or 0) <= 0 then return end
-	if self._humanoid.MoveDirection.Magnitude == 0 then return end
+	if self._isSprinting then
+		return
+	end
+	if (self._character:GetAttribute("Stamina") or 0) <= 0 then
+		return
+	end
+	if self._humanoid.MoveDirection.Magnitude == 0 then
+		return
+	end
 
 	self._isSprinting = true
 	self._humanoid.WalkSpeed = self._sprintWalkSpeed
 	self._character:SetAttribute("AntiRegenerate", true)
 	animate.play("run", 0.25)
 
-	TweenService:Create(workspace.CurrentCamera, TweenInfo.new(0.5), { FieldOfView = self._sprintFOV }):Play()
+	gamecamera:tweenFOV(self._sprintFOV, 0.5)
 
 	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")
 	self._speedForceEffect = visualEffects:WaitForChild("SpeedForce"):Clone()
@@ -75,14 +80,16 @@ function Sprint:Start()
 end
 
 function Sprint:Stop()
-	if not self._isSprinting then return end
+	if not self._isSprinting then
+		return
+	end
 
 	self._isSprinting = false
 	self._humanoid.WalkSpeed = self._originalWalkSpeed
 	self._character:SetAttribute("AntiRegenerate", false)
 	animate.stop("run")
 
-	TweenService:Create(workspace.CurrentCamera, TweenInfo.new(0.5), { FieldOfView = self._originalFOV }):Play()
+	gamecamera:tweenFOV(self._originalFOV, 0.5)
 
 	if self._speedForceEffect then
 		self._speedForceEffect:Destroy()
@@ -91,10 +98,12 @@ function Sprint:Stop()
 end
 
 function Sprint:Update(deltaTime: number)
-	if not self._isSprinting then return end
+	if not self._isSprinting then
+		return
+	end
 
-	local currentStamina = self._character:GetAttribute("Stamina") or 0
-	local newStamina = currentStamina - (self._config.StaminaDrainRate * deltaTime)
+	local currentStamina = self._character:GetAttribute("Stamina") :: number? or 0
+	local newStamina = currentStamina - (self._config.StaminaDrainRate :: number * deltaTime)
 	self._character:SetAttribute("Stamina", newStamina)
 
 	if newStamina <= 0 or self._humanoid.MoveDirection.Magnitude == 0 then

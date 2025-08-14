@@ -161,13 +161,22 @@ function GameCamera:followOffset()
 	RunService:BindToRenderStep("CameraOffset", priority - 1, onStepped)
 end
 
-function GameCamera:changeFOV(change: number)
-	-- Usually 60 or 70.
-	TweenPlus(
+function GameCamera:getFOV(): number
+	return camera.FieldOfView
+end
+
+function GameCamera:getBaseFOV(): number
+	return 70
+end
+
+function GameCamera:tweenFOV(targetFOV: number, duration: number)
+	local tween = TweenPlus(
 		camera,
-		{ FieldOfView = change },
-		{ Time = Emphasis.emphasized, EasingDirection = "Out", EasingStyle = "Circular" }
-	):Start()
+		{ FieldOfView = targetFOV },
+		{ Time = duration, EasingDirection = "Out", EasingStyle = "Circular" }
+	)
+	tween:Start()
+	return tween
 end
 
 function GameCamera:disconnect(scriptConnection: string)

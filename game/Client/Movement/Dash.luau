@@ -5,13 +5,13 @@
 
 	Handles the dashing mechanic, including speed, effects, and animations.
 ]=]
-local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local Trove = require(ReplicatedStorage.Packages.trove)
+local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local Dash = {}
 Dash.__index = Dash
@@ -43,10 +43,14 @@ function Dash:_connectInputs()
 end
 
 function Dash:Start()
-	if self._onCooldown then return end
+	if self._onCooldown then
+		return
+	end
 
-	local currentStamina = self._character:GetAttribute("Stamina") or 0
-	if currentStamina < self._config.StaminaCost then return end
+	local currentStamina = self._character:GetAttribute("Stamina") :: number? or 0
+	if currentStamina < self._config.StaminaCost then
+		return
+	end
 
 	self._onCooldown = true
 	task.delay(self._config.Cooldown, function()
@@ -60,10 +64,12 @@ function Dash:Start()
 
 	local dashTrove = Trove.new()
 
-	local velocity = dashTrove:Construct(Instance, "LinearVelocity")
-	velocity.Attachment0 = dashTrove:Construct(Instance, "Attachment", self._character.PrimaryPart)
+	local velocity: LinearVelocity = dashTrove:Construct(Instance, "LinearVelocity")
+	velocity.Attachment0 =
+		dashTrove:Construct(Instance, "Attachment", self._character.PrimaryPart) :: Attachment
 	velocity.MaxForce = 30000
-	velocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector * self._config.Force
+	velocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector :: Vector3
+		* self._config.Force :: number
 	velocity.Parent = self._character.PrimaryPart
 
 	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")
@@ -72,7 +78,7 @@ function Dash:Start()
 
 	task.delay(self._config.Duration, function()
 		dashTrove:Destroy()
-		if self._character and self._character.Parent then
+		if self._character :: Model? and self._character.Parent then
 			self._character:SetAttribute("AntiRegenerate", false)
 		end
 	end)

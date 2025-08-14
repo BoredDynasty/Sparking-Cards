@@ -7,6 +7,7 @@
 	It manages a central Trove instance for cleanup and operates on a single Heartbeat connection
 	for performance. It also handles the state of the character's movement.
 ]=]
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local MovementController = {}
@@ -15,7 +16,7 @@ MovementController.__index = MovementController
 function MovementController.new()
 	local self = setmetatable({}, MovementController)
 
-	self._trove = require(game.ReplicatedStorage.Packages.trove).new()
+	self._trove = require(ReplicatedStorage.Packages.trove).new()
 	self._movements = {}
 
 	return self

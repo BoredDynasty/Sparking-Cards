@@ -46,12 +46,12 @@ return {
 	},
 	Animations = {
 		Walk = {
-			Id = "rbxassetid://94049151700764",
+			Id = "rbxassetid://14608793266",
 			Weight = 1,
 			Speed = 1,
 		},
 		Run = {
-			Id = "rbxassetid://14243308122",
+			Id = "rbxassetid://14608790956",
 			Weight = 1,
 			Speed = 1,
 		},

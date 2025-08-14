@@ -142,6 +142,13 @@ function Options.createOption(
 
 	local onToggle = SignalPlus() :: SignalPlus.Signal<boolean>
 
+	Options.created[optionName] = {
+		interface = option,
+		optionName = optionName,
+		description = description,
+		state = statemachine.new(Options.states, overrideState or "on"),
+	}
+
 	option.Toggle.Activated:Connect(function()
 		local currentState = Options.created[optionName].state:getCurrentState()
 		if currentState == "on" then

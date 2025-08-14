@@ -101,6 +101,14 @@ local function stopAllAnimations(fadeTime: number?)
 	end
 end
 
+local function getTrack(name: string): AnimationTrack?
+	local animObject: AnimationObject = animations[name]
+	if animObject and animObject.Track then
+		return animObject.Track
+	end
+	return nil
+end
+
 local function cleanup()
 	stopAllAnimations()
 	table.clear(animations)
@@ -116,4 +124,5 @@ return {
 	stop = stopAnimation,
 	stopAll = stopAllAnimations,
 	cleanup = cleanup,
+	getTrack = getTrack,
 }

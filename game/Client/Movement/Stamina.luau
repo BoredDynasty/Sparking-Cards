@@ -22,7 +22,7 @@ function Stamina.new(movementController)
 	local self = setmetatable({}, Stamina)
 
 	self._movementController = movementController
-	self._trove = require(game.ReplicatedStorage.Packages.trove).new()
+	self._trove = require(ReplicatedStorage.Packages.trove).new()
 
 	self._regeneration_delay = 2.5
 	self._regeneration_rate = 10
@@ -67,8 +67,8 @@ function Stamina:_createUI()
 end
 
 function Stamina:Update(deltaTime: number)
-	local isAntiRegenerate = character:GetAttribute("AntiRegenerate") or false
-	local currentStamina = character:GetAttribute("Stamina") or max_stamina
+	local isAntiRegenerate = character:GetAttribute("AntiRegenerate") :: boolean or false
+	local currentStamina = character:GetAttribute("Stamina") :: number? or max_stamina
 
 	if isAntiRegenerate then
 		self._lastDrain = 0
@@ -81,7 +81,7 @@ function Stamina:Update(deltaTime: number)
 	end
 
 	if self._isRegenerating and currentStamina < max_stamina then
-		local regenAmount = self._regeneration_rate * deltaTime
+		local regenAmount = self._regeneration_rate :: number * deltaTime
 		currentStamina = math.min(currentStamina + regenAmount, max_stamina)
 		character:SetAttribute("Stamina", currentStamina)
 	end

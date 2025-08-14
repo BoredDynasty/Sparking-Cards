@@ -5,13 +5,13 @@
 
 	Handles the jumping mechanic, including stamina cost and double jump prevention.
 ]=]
-local UserInputService = game:GetService("UserInputService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local UserInputService = game:GetService("UserInputService")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local audio = require(ReplicatedStorage.Modules.audio)
+local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local Jump = {}
 Jump.__index = Jump
@@ -20,7 +20,7 @@ function Jump.new(movementController)
 	local self = setmetatable({}, Jump)
 
 	self._movementController = movementController
-	self._trove = require(game.ReplicatedStorage.Packages.trove).new()
+	self._trove = require(ReplicatedStorage.Packages.trove).new()
 	self._config = MovementConfig.Jump
 	self._character = playerMarshaller.get().Character
 	self._humanoid = self._character:WaitForChild("Humanoid")
@@ -69,7 +69,10 @@ end
 
 function Jump:_connectJumpRequest()
 	self._trove:Connect(UserInputService.JumpRequest, function()
-		if self._humanoid:GetState() == Enum.HumanoidStateType.Jumping or self._humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+		if
+			self._humanoid:GetState() == Enum.HumanoidStateType.Jumping
+			or self._humanoid:GetState() == Enum.HumanoidStateType.Freefall
+		then
 			return
 		end
 
@@ -87,10 +90,11 @@ function Jump:_connectJumpRequest()
 			end
 		end)
 
-		local dust = self._dustEffect:Clone()
-		dust.CFrame = self._character.PrimaryPart.CFrame * CFrame.new(0, -self._humanoid.HipHeight, 0)
-		dust.Parent = workspace
-		dust.ParticleEmitter:Emit(20)
+		local dust: BasePart = self._dustEffect:Clone()
+		dust.CFrame = self._character.PrimaryPart.CFrame
+			* CFrame.new(0, -self._humanoid.HipHeight :: number, 0)
+		dust.Parent = workspace;
+		(dust.ParticleEmitter :: ParticleEmitter):Emit(20)
 		task.delay(2, function()
 			if dust and dust.Parent then
 				dust:Destroy()
@@ -103,16 +107,11 @@ function Jump:_connectLanding()
 	self._trove:Connect(self._humanoid.StateChanged, function(oldState, newState)
 		if newState == Enum.HumanoidStateType.Landed then
 			-- Landing mechanic
-			gamecamera:shake("Small")
-			audio.play("LandingSound", {
-				-- placeholder sound
-				Id = "rbxassetid://150324322",
-				Volume = 0.5,
-			})
+			gamecamera:shake(1.2)
+			audio:SFX("LandingSound", 150324322)
 		end
 	end)
 end
-
 
 function Jump:Destroy()
 	self._trove:Destroy()
