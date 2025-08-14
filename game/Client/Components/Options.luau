@@ -193,7 +193,7 @@ function Options.createOption(
 	option.Toggle.MouseLeave:Connect(function()
 		audio:SFX("hover")
 	end)
-	Hint("Toggle the " .. optionName:lower() .. " option.", option.Toggle)
+	--Hint("Toggle the " .. optionName:lower() .. " option.", option.Toggle)
 	return onToggle, option :: optionTemplate
 end
 

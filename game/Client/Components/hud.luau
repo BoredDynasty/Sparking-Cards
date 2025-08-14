@@ -101,7 +101,7 @@ function hud:render()
 			end
 		end)
 		shadow(TextButton, Color3.new(), 0.5, 14)
-		hint("Toggle the " .. button.name:lower() .. " page.", TextButton)
+		--hint("Toggle the " .. button.name:lower() .. " page.", TextButton)
 	end
 end
 

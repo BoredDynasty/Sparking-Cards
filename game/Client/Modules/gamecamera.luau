@@ -169,6 +169,10 @@ function GameCamera:getBaseFOV(): number
 	return 70
 end
 
+function GameCamera:getLookAt(): Vector3
+	return camera.CFrame.LookVector
+end
+
 function GameCamera:tweenFOV(targetFOV: number, duration: number)
 	local tween = TweenPlus(
 		camera,

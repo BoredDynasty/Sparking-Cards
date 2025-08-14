@@ -46,12 +46,12 @@ return {
 	},
 	Animations = {
 		Walk = {
-			Id = "rbxassetid://14608793266",
+			Id = "rbxassetid://14243356529",
 			Weight = 1,
 			Speed = 1,
 		},
 		Run = {
-			Id = "rbxassetid://14608790956",
+			Id = "rbxassetid://14243308122",
 			Weight = 1,
 			Speed = 1,
 		},
@@ -85,7 +85,7 @@ return {
 	},
 	Dash = {
 		Cooldown = 3,
-		Force = 100,
+		Force = 25,
 		Duration = 0.3,
 		StaminaCost = 15,
 	},

@@ -69,9 +69,10 @@ function dialogue.client:speak(params: dialogueParams)
 		YAlignment = "Center",
 		LineSorting = true,
 		WordSorting = true,
+		Color = Color3.fromRGB(226, 224, 249),
 	})
 	characterIteration:fadeIn(dialog_frame)
-	task.wait(random.integer(2, 5)) -- Wait for 2 to 5 seconds before hiding the dialogue
+	task.wait(random.integer(6, 9)) -- Wait for 6 to 9 seconds before hiding the dialogue
 	toggle(dialog_frame, false)
 end
 

@@ -81,6 +81,8 @@ function Jump:_connectJumpRequest()
 			return
 		end
 
+		gamecamera:shakeFromArea(self._character.HumanoidRootPart.Position, 5, 0.5)
+
 		self._humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 		self._character:SetAttribute("Stamina", currentStamina - self._config.StaminaCost)
 		self._character:SetAttribute("AntiRegenerate", true)

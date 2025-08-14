@@ -6,11 +6,13 @@
 	Handles the dashing mechanic, including speed, effects, and animations.
 ]=]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local Dash = {}
@@ -68,8 +70,8 @@ function Dash:Start()
 	velocity.Attachment0 =
 		dashTrove:Construct(Instance, "Attachment", self._character.PrimaryPart) :: Attachment
 	velocity.MaxForce = 30000
-	velocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector :: Vector3
-		* self._config.Force :: number
+	velocity.VectorVelocity = gamecamera:getLookAt() * self._config.Force :: number
+	--self._character.PrimaryPart.CFrame.LookVector :: Vector3
 	velocity.Parent = self._character.PrimaryPart
 
 	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")

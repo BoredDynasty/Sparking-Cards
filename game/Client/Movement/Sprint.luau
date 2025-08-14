@@ -11,6 +11,7 @@ local UserInputService = game:GetService("UserInputService")
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
@@ -73,6 +74,11 @@ function Sprint:Start()
 	animate.play("run", 0.25)
 
 	gamecamera:tweenFOV(self._sprintFOV, 0.5)
+
+	dialogue.client:speak({
+		speaker = "You",
+		text = "Weee!",
+	})
 
 	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")
 	self._speedForceEffect = visualEffects:WaitForChild("SpeedForce"):Clone()
