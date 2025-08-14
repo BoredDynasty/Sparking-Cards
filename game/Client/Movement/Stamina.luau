@@ -1,9 +1,11 @@
 --!strict
+--[=[
+	Stamina
+	@class Stamina
 
--- Stamina.luau
-
+	Manages the player's stamina, including regeneration and UI updates.
+]=]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -12,62 +14,30 @@ local player = playerMarshaller.get()
 local character = player.Character
 
 local Stamina = {}
+Stamina.__index = Stamina
 
-function Stamina:initialize()
-	local regeneration_delay = 2.5
-	-- time before stamina starts regenerating
-	local regeneration_rate = 10
-	-- regeneration rate per second
-	local max_stamina = 100
-	-- maximum stamina value
-	local lastDrain = 0
-	local isRegenerating = false
+local max_stamina = 100
 
-	-- Cache for attributes
-	local currentStamina: number = character:GetAttribute("Stamina") :: number or max_stamina
-	local isAntiRegenerate = false
+function Stamina.new(movementController)
+	local self = setmetatable({}, Stamina)
 
-	-- Set up attribute changed listeners outside the Heartbeat
-	character:GetAttributeChangedSignal("Stamina"):Connect(function()
-		currentStamina = character:GetAttribute("Stamina") :: number
-	end)
+	self._movementController = movementController
+	self._trove = require(game.ReplicatedStorage.Packages.trove).new()
 
-	character:GetAttributeChangedSignal("AntiRegenerate"):Connect(function()
-		isAntiRegenerate = character:GetAttribute("AntiRegenerate") :: boolean
-	end)
+	self._regeneration_delay = 2.5
+	self._regeneration_rate = 10
+	self._lastDrain = 0
+	self._isRegenerating = false
 
-	-- Accumulator for stamina changes
-	local staminaAccumulator = 0
-	-- local lastUpdate = tick()
+	character:SetAttribute("Stamina", max_stamina)
+	character:SetAttribute("AntiRegenerate", false)
 
-	RunService.Heartbeat:Connect(function(deltaTime: number)
-		--[[
-         were using this chunk of code to prevent the
-         stamina from regenerating too fast or
-         while it's being drained
-      ]]
-		if isAntiRegenerate then
-			lastDrain = 0
-			isRegenerating = false
-		else
-			lastDrain += deltaTime
-			if lastDrain >= regeneration_delay then
-				isRegenerating = true
-			end
-		end
-		if isRegenerating and currentStamina < max_stamina then
-			local regenAmount = regeneration_rate * deltaTime
-			staminaAccumulator += regenAmount
-			currentStamina = math.min(currentStamina + regenAmount, max_stamina)
-			-- Only update attribute if accumulated change is significant
-			if staminaAccumulator >= 1 or currentStamina == max_stamina then
-				character:SetAttribute("Stamina", currentStamina)
-				staminaAccumulator = 0
-			end
-		end
-	end)
-	local changed = character:GetAttributeChangedSignal("Stamina")
-	-- interface changes
+	self:_createUI()
+
+	return self
+end
+
+function Stamina:_createUI()
 	type interface = BillboardGui & {
 		Frame: CanvasGroup & {
 			Bar: Frame,
@@ -75,19 +45,17 @@ function Stamina:initialize()
 		},
 	}
 	local sprintBar = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("SprintBar") :: interface
-	sprintBar = sprintBar:Clone()
+	sprintBar = self._trove:Clone(sprintBar)
 	sprintBar.Parent = character
 	sprintBar.Adornee = character.PrimaryPart
 
 	local barSize = UDim2.fromScale(0.5, 0.97)
-	changed:Connect(function()
+	self._trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
 		local stamina = character:GetAttribute("Stamina") :: number
 		if not stamina then
 			return
 		end
 		local percentage = stamina / max_stamina
-		-- make it fit 0.97 y scale
-		-- sprintBar.Frame.Bar.Size = UDim2.fromScale(barSize.X.Scale, barSize.Y.Scale * percentage)
 		local scale = UDim2.fromScale(barSize.X.Scale, barSize.Y.Scale * percentage)
 		TweenPlus(sprintBar.Frame.Bar, {
 			Size = scale,
@@ -97,4 +65,30 @@ function Stamina:initialize()
 		}):Start()
 	end)
 end
+
+function Stamina:Update(deltaTime: number)
+	local isAntiRegenerate = character:GetAttribute("AntiRegenerate") or false
+	local currentStamina = character:GetAttribute("Stamina") or max_stamina
+
+	if isAntiRegenerate then
+		self._lastDrain = 0
+		self._isRegenerating = false
+	else
+		self._lastDrain += deltaTime
+		if self._lastDrain >= self._regeneration_delay then
+			self._isRegenerating = true
+		end
+	end
+
+	if self._isRegenerating and currentStamina < max_stamina then
+		local regenAmount = self._regeneration_rate * deltaTime
+		currentStamina = math.min(currentStamina + regenAmount, max_stamina)
+		character:SetAttribute("Stamina", currentStamina)
+	end
+end
+
+function Stamina:Destroy()
+	self._trove:Destroy()
+end
+
 return Stamina
