@@ -30,6 +30,7 @@ local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local windshake = require(ReplicatedStorage.Packages.windshake)
 
 -- local ActorGroup = require(ReplicatedStorage.Utility.ActorGroup)
 
@@ -515,6 +516,10 @@ getProfileBoundary.OnInvoke = getProfile
 
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
+
+windshake:Init({
+	MatchWorkspaceWind = true,
+})
 
 local serverEndTime = os.clock()
 local serverTime = math.round((serverEndTime - serverStartTime) * 10000) / 10000

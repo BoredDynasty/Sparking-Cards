@@ -63,7 +63,7 @@ local holder = optionsFrame:WaitForChild("Holder") :: ScrollingFrame
 
 local optionTemplate = templates:WaitForChild("OptionTemplate") :: optionTemplate
 
-local function createOption(optionName: string, description: string, initialIcon: string): optionTemplate
+local function createOption(optionName: string, description: string, initialIcon: string?): optionTemplate
 	local option: optionTemplate = optionTemplate:Clone()
 	option.Name = optionName
 	option.Parent = holder
@@ -134,17 +134,13 @@ function Options.createOption(
 	toggleFunctions: toggleFunctions?,
 	overrideIcons: { [string]: string? }?
 ): (SignalPlus.Signal<boolean>, optionTemplate)
-	local option = createOption(optionName, description)
+	local initialIcon = if overrideIcons and overrideIcons.off
+		then overrideIcons.off :: string
+		else "rbxassetid://7733715400" -- Default off icon
+	local option = createOption(optionName, description, initialIcon)
 	option.Parent = holder
 
 	local onToggle = SignalPlus() :: SignalPlus.Signal<boolean>
-
-	Options.created[optionName] = {
-		interface = option,
-		optionName = optionName,
-		description = description,
-		state = statemachine.new(Options.states, overrideState or "on"),
-	}
 
 	option.Toggle.Activated:Connect(function()
 		local currentState = Options.created[optionName].state:getCurrentState()

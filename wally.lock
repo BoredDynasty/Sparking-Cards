@@ -8,9 +8,14 @@ version = "0.1.0"
 dependencies = []
 
 [[package]]
+name = "boatbomber/windshake"
+version = "2.0.3"
+dependencies = []
+
+[[package]]
 name = "dynas/sparking-cards"
 version = "0.1.0"
-dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["cmdr", "evaera/cmdr@1.12.0"], ["gameanalytics-sdk", "gameanalytics/gameanalytics-sdk@2.2.6"], ["input", "sleitnick/input@2.3.0"], ["lucide", "latte-soft/lucide-icons@0.1.3"], ["profilestore", "2jammers/profilestore@0.1.0"], ["promise", "evaera/promise@4.0.0"], ["trove", "sleitnick/trove@1.5.1"]]
+dependencies = [["bytenet", "ffrostflame/bytenet@0.4.6"], ["cmdr", "evaera/cmdr@1.12.0"], ["gameanalytics-sdk", "gameanalytics/gameanalytics-sdk@2.2.6"], ["input", "sleitnick/input@2.3.0"], ["lucide", "latte-soft/lucide-icons@0.1.3"], ["profilestore", "2jammers/profilestore@0.1.0"], ["promise", "evaera/promise@4.0.0"], ["trove", "sleitnick/trove@1.5.1"], ["windshake", "boatbomber/windshake@2.0.3"]]
 
 [[package]]
 name = "evaera/cmdr"
