@@ -24,7 +24,6 @@ local debounce = require(ReplicatedStorage.Combat.framework.utils.debounce).new(
 })
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local nearest = require(ReplicatedStorage.Combat.framework.utils.nearest)
-local orion = require(ReplicatedStorage.Combat.orion)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 local random = require(ReplicatedStorage.Utility.random)
