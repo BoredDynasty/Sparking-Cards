@@ -13,7 +13,16 @@ local requirer = {}
 
 requirer.require = function(name: string): any
 	local attack_module = nil
-	return require(ReplicatedStorage.Combat.framework.attacks["Frost"]) --placeholder
+	local success, module = pcall(function()
+		return require(ReplicatedStorage.Combat.framework.attacks[name])
+	end)
+
+	if success then
+		return module
+	else
+		warn("Could not require attack module:", name, module)
+		return nil
+	end
 end
 
 return requirer
