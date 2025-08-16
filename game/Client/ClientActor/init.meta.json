@@ -1,4 +1,4 @@
 {
     "className": "Actor",
-    "ignoreUnknownInstances": false
+    "ignoreUnknownInstances": true
 }

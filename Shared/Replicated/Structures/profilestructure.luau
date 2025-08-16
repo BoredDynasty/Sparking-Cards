@@ -15,11 +15,14 @@ return {
 	["Experience"] = 0,
 	["LastLogin"] = os.time(),
 	["EquippedCard"] = "Frost",
+	["victories"] = 0,
 	-- Other
 	["options"] = {
 		["clockTime"] = 12,
-		["description"] = "Destined for awesomeness!",
-		["profileBannerLink"] = "rbxassetid://95864343491678",
+		["showDamageNumbers"] = true,
+		["autoEquipBestCard"] = false,
+		["shadows"] = true,
+		["showOtherPlayers"] = true,
 	},
 	equippedEmotes = {
 		17782874968,

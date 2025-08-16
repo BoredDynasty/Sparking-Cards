@@ -13,25 +13,7 @@ local requirer = {}
 
 requirer.require = function(name: string): any
 	local attack_module = nil
-	-- use a promise
-	local attackModulePromise = promise.new(function(resolve, reject)
-		local modulePath = ReplicatedStorage.Combat.framework.attacks[name] :: ModuleScript?
-		if not modulePath then
-			reject("Module path is incorrect")
-			return
-		end
-		local success, result = pcall(require, modulePath)
-		if success then
-			resolve(result)
-		else
-			reject("Attack module couldn't be loaded: " .. result)
-			return
-		end
-	end)
-	local worked, result = attackModulePromise:await()
-	assert(worked and result, result)
-	attack_module = result :: any
-	return attack_module
+	return require(ReplicatedStorage.Combat.framework.attacks["Frost"]) --placeholder
 end
 
 return requirer

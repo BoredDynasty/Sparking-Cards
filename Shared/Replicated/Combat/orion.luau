@@ -35,10 +35,12 @@ local events = ReplicatedStorage.Events
 -- Type definitons
 export type attack_type = "M1" | "Skill" | "Ultimate" | "Support"
 export type attack_module = {
-	M1: (any) -> any?,
-	Skill: (any) -> any?,
-	Ultimate: (any) -> any?,
-	Support: (any) -> any?,
+	moveset: {
+		["M1"]: ((playerMarshaller.player, ...any?) -> ...any?)?,
+		["Skill"]: ((playerMarshaller.player, ...any?) -> ...any?)?,
+		["Ultimate"]: ((playerMarshaller.player, ...any?) -> ...any?)?,
+		["Support"]: ((playerMarshaller.player, ...any?) -> ...any?)?,
+	},
 }
 
 --[[
@@ -101,16 +103,19 @@ end
 function orion:execute(player: playerMarshaller.player, attack_type: attack_type, ...: any?): any?
 	local attack_module = nil
 	local playerData = orion.player_data[player.UserId]
-	print(playerData)
+	print(table.unpack(playerData))
 	local equippedCard = playerData.equippedCard or "Frost"
 	if not equippedCard then
 		warn("No equipped card found for player:", player.Name, playerData.equippedCard)
 		return nil
 	end
+	print(1)
 	attack_module = requirer.require(equippedCard) :: attack_module
 	local ret_value = nil
-	if attack_module and attack_module[attack_type] then
-		local attack_function = attack_module[attack_type] :: (playerMarshaller.player, ...any?) -> ...any?
+	print(2)
+	if attack_module and attack_module.moveset[attack_type] then
+		local attack_function =
+			attack_module.moveset[attack_type] :: (playerMarshaller.player, ...any?) -> ...any?
 		if attack_function and type(attack_function) == "function" then
 			ret_value = attack_function(player, ...)
 		else
@@ -119,6 +124,7 @@ function orion:execute(player: playerMarshaller.player, attack_type: attack_type
 	else
 		warn("no attack module??")
 	end
+	print(3)
 	return ret_value
 end
 

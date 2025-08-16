@@ -40,33 +40,30 @@ local function getMetrics(metricTable: metricTypes): Vector3
 	return force
 end
 function Projectile.new(object: BasePart, metricTable: metricTypes)
-	task.spawn(function()
-		local force = getMetrics(metricTable)
-		if object:IsA("Model") then
-			local primaryPart = nil
-			local totalMass = 0
-			local clone = object:Clone()
-			primaryPart = clone.PrimaryPart
-			primaryPart.Position = metricTable.position1
-			clone.Parent = game.Workspace
+	local force = getMetrics(metricTable)
+	if object:IsA("Model") then
+		local primaryPart = nil
+		local totalMass = 0
+		local clone = object:Clone()
+		primaryPart = clone.PrimaryPart
+		primaryPart.Position = metricTable.position1
+		clone.Parent = game.Workspace
 
-			for _, part: BasePart in clone:GetDescendants() do
-				if part:IsA("BasePart") then
-					totalMass = totalMass + part:GetMass()
-				end
-				task.wait()
+		for _, part: BasePart in clone:GetDescendants() do
+			if part:IsA("BasePart") then
+				totalMass = totalMass + part:GetMass()
 			end
-
-			primaryPart:ApplyImpulse(force * totalMass)
-			primaryPart:SetNetworkOwner(nil)
-		else
-			local clone = object:Clone()
-			clone.Position = metricTable.position1
-			clone.Parent = game.Workspace
 			task.wait()
-			clone:ApplyImpulse(force * clone.AssemblyMass)
-			clone:SetNetworkOwner(nil)
 		end
-	end)
+
+		primaryPart:ApplyImpulse(force * totalMass)
+		primaryPart:SetNetworkOwner(nil)
+	else
+		object.Position = metricTable.position1
+		object.Parent = game.Workspace
+		task.wait()
+		object:ApplyImpulse(force * object.AssemblyMass)
+		object:SetNetworkOwner(nil)
+	end
 end
 return Projectile

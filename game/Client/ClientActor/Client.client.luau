@@ -27,13 +27,13 @@ local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChil
 print("2")
 
 -- Movement System
-local MovementController = require(script.Parent.Parent.Movement.MovementController)
-local Walk = require(script.Parent.Parent.Movement.Walk)
-local Jump = require(script.Parent.Parent.Movement.Jump)
-local Sprint = require(script.Parent.Parent.Movement.Sprint)
-local Slide = require(script.Parent.Parent.Movement.Slide)
 local Dash = require(script.Parent.Parent.Movement.Dash)
+local Jump = require(script.Parent.Parent.Movement.Jump)
+local MovementController = require(script.Parent.Parent.Movement.MovementController)
+local Slide = require(script.Parent.Parent.Movement.Slide)
+local Sprint = require(script.Parent.Parent.Movement.Sprint)
 local Stamina = require(script.Parent.Parent.Movement.Stamina)
+local Walk = require(script.Parent.Parent.Movement.Walk)
 
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 print("3")
@@ -457,6 +457,30 @@ local function initializeOptions()
 				off = "rbxassetid://10734897102",
 			},
 		},
+		[3] = {
+			name = "Show Other Players",
+			description = "Toggle visibility of other players.",
+			overrideState = "on",
+			toggleFunctions = {
+				on = function()
+					local characterFolder = ReplicatedStorage:WaitForChild("Characters") :: Folder
+					for _, character in ipairs(characterFolder:GetChildren()) do
+						if character:IsA("Model") and character:FindFirstChild("HumanoidRootPart") then
+							character.Parent = workspace
+						end
+					end
+				end,
+				off = function()
+					local characterFolder = workspace:GetChildren() :: Folder
+					for _, character in ipairs(characterFolder:GetChildren()) do
+						if character:IsA("Model") and playerMarshaller.getByName(character.Name) then
+							character.Parent = ReplicatedStorage:WaitForChild("Characters")
+						end
+					end
+				end,
+			},
+			overrideIcons = {},
+		},
 	}
 
 	for _, option in pairs(optionsList) do
@@ -564,5 +588,9 @@ local defaultFootstep = _rootPart:FindFirstChild("Running")
 if defaultFootstep then
 	defaultFootstep:Destroy()
 end
+
+local characterFolder = Instance.new("Folder")
+characterFolder.Name = "Characters"
+characterFolder.Parent = ReplicatedStorage
 
 OnIdle()

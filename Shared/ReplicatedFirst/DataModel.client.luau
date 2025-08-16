@@ -11,6 +11,7 @@ local StarterGui = game:GetService("StarterGui")
 
 if RunService:IsStudio() then
 	-- peace of mind for me :)
+	script.Disabled = true
 	script:Destroy()
 end
 

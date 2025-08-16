@@ -1,0 +1,3 @@
+--!strict
+
+-- visuals.luau
