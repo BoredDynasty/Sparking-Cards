@@ -15,7 +15,6 @@ local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local navi = {
 	compiled = {},
 }
-navi.__index = navi
 
 local templates = (ReplicatedStorage.Interfaces :: Folder).Navi :: Folder
 
@@ -59,7 +58,7 @@ function navi._createState(name: string): statemachine.State
 	}
 end
 
-function navi.create(rail: Frame, defaultBtn: button?)
+function navi.new(rail: Frame, defaultBtn: button?)
 	defaultBtn = defaultBtn or {
 		name = "Home",
 		icon = "rbxassetid://10723407389",
@@ -67,53 +66,42 @@ function navi.create(rail: Frame, defaultBtn: button?)
 	local name = defaultBtn.name
 	local railDescriptor = rail:GetFullName()
 	local states = navi._createState(name)
-	local self = setmetatable({
+	local tbl = {
 		rail = rail,
+		name = name,
 		railDescriptor = railDescriptor,
 		buttons = {
 			[name] = {
 				state = states,
 			},
 		},
-	}, navi)
-	navi.compiled[railDescriptor] = self
-	return self, railDescriptor
-end
-
-function navi:newButton(name: string, icon: string): button
-	local newButton = {
-		name = name,
-		icon = icon,
 	}
-	self.buttons[name] = {
-		state = navi._createState(name),
-	}
-	return newButton
+	table.insert(navi.compiled, tbl)
 end
 
 function navi:render(): signals
-	local signals = table.create(#self.buttons + 1)
-	for name, button: button in pairs(self.buttons) do
-		print("Rendering button:", name)
+	local signals = {}
+	for _, button in ipairs(navi.compiled) do
+		print("Rendering button:", button.name)
 		-- Here you would add the actual rendering logic for each button
 		local buttonTemplate: buttonRendering = templates.ButtonTemplate:Clone() :: buttonRendering
-		buttonTemplate.Name = name
-		buttonTemplate.Icon.ImageContent = Content.fromAssetId(button.icon)
-		buttonTemplate.Parent = self.rail
+		buttonTemplate.Name = button.name
+		--buttonTemplate.Icon.Image = Content.none  -- filter out the prefix
+		buttonTemplate.Parent = button.rail
 
 		signals[buttonTemplate] = SignalPlus()
 
 		buttonTemplate.MouseButton1Click:Connect(function()
-			print("Button clicked:", name)
+			print("Button clicked:", button.name)
 			audio:SFX("click")
-			self.buttons[name].state:transition("activated")
-			for _, otherButton in self.buttons do
+			button.state:transition("activated")
+			for _, otherButton in ipairs(navi.compiled) do
 				if otherButton ~= button then
 					otherButton.state:transition("deactivated")
 				end
 			end
 			promise.retryWithDelay(function()
-				button.signal:Fire(true, name)
+				button.signal:Fire(true, button.name)
 			end, 3, 3)
 		end)
 		buttonTemplate.MouseEnter:Connect(function()

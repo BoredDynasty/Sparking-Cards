@@ -41,7 +41,7 @@ return function(t: string, element: GuiObject)
 		return
 	end)
 
-	local scale = hintFrame.Size
+	--local scale = hintFrame.Size
 	if connection and typeof(connection) == "RBXScriptConnection" then
 		connection:Disconnect()
 		connection = nil
@@ -52,24 +52,15 @@ return function(t: string, element: GuiObject)
 
 	if not connection then
 		connection = RunService.RenderStepped:Connect(function(deltaTime: number)
-			local viewSize = camera.ViewportSize
-			local offset = (scale.X.Scale * viewSize)
+			--local viewSize = camera.ViewportSize
+			--local offset = (scale.X.Scale * viewSize)
 
 			-- Update target position
 			hintSpring:SetTarget(hintSpring, Vector2.new(mouse.X, mouse.Y))
 
 			-- Update spring physics
 			hintSpring:Update(hintSpring, deltaTime)
-
-			-- Determine which side of the screen the mouse is on
-			local isMouseOnRightHalf = mouse.X > viewSize.X / 2
-
-			-- Calculate the offset based on mouse position
-			local xOffset = isMouseOnRightHalf and -offset.X - 440 -- Move to left of cursor
-				or 440 -- Move to right of cursor
-
-			-- Apply position with spring effect
-			local finalPosition = UDim2.new(0, (hintSpring.Position.X + xOffset), 0, hintSpring.Position.Y)
+			local finalPosition = UDim2.new(0, hintSpring.Position.X, 0, hintSpring.Position.Y)
 
 			hintFrame.Position = finalPosition
 		end)

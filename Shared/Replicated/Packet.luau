@@ -58,6 +58,9 @@ return bytenet.defineNamespace("MainNet", function()
 	local cancelAnimation = bytenet.struct({
 		identification = bytenet.string,
 	})
+	local stopAllAnimations = bytenet.struct({
+		[1] = bytenet.nothing,
+	})
 	local indictEffectStruct = bytenet.struct({
 		text = bytenet.string,
 	})
@@ -102,6 +105,7 @@ return bytenet.defineNamespace("MainNet", function()
 		profileChanged = bytenet.definePacket({ value = profileChangedStruct }),
 		ReplicateAnimation = bytenet.definePacket({ value = replicateAnimation }),
 		CancelAnimation = bytenet.definePacket({ value = cancelAnimation }),
+		StopAllAnimations = bytenet.definePacket({ value = stopAllAnimations }),
 		DeductStamina = bytenet.definePacket({ value = deductStaminaStruct }),
 		AddStamina = bytenet.definePacket({ value = addStaminaStruct }),
 		ParrySuccess = bytenet.definePacket({ value = parrySuccess }),

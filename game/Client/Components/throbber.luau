@@ -6,17 +6,17 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local DisplayOrder = require(script.Parent.Parent.Interface.displayorder).new()
+local DisplayOrder = require(script.Parent.Parent.Interface.displayorder)
 local Pop = require(script.Parent.Parent.Interface.pop)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local promise = require(ReplicatedStorage.Packages.promise)
 
--- indict.luau
--- for indictating preloads
+-- throbber.luau
+-- for indicating preloads
 
 local templates = ReplicatedStorage:WaitForChild("Interfaces") :: Folder
 
-return function(element: GuiObject, signal: typeof(SignalPlus()))
+return function(element: GuiObject, signal: SignalPlus.Signal<>)
 	local loaderTemplates = templates:FindFirstChild("Loaders") :: Folder
 	local loader = loaderTemplates:WaitForChild("Basic"):Clone() :: ImageLabel
 
@@ -30,17 +30,18 @@ return function(element: GuiObject, signal: typeof(SignalPlus()))
 	local connection = RunService.Heartbeat:Connect(function(deltaTime: number)
 		loader.Rotation += circle * deltaTime
 	end)
-	local function cleanup()
-		if connection then
-			connection:Disconnect()
-		end
-		task.defer(function() -- at the end of the frame
-			loader:Destroy()
+	promise
+		.new(function(resolve, reject)
+			signal:Connect(function()
+				resolve()
+			end)
 		end)
-	end
-	signal:Once(cleanup)
-	return {
-		heartbeat_connection = connection,
-		icon = loader,
-	}
+		:andThen(function()
+			connection:Disconnect()
+			loader:Destroy()
+			signal:Destroy()
+		end)
+		:catch(function(err)
+			warn("Error in throbber promise: ", err)
+		end)
 end

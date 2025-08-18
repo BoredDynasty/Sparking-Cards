@@ -9,6 +9,7 @@ task.wait()
 -- // Services -- //
 local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 -- // Requires -- //
@@ -23,7 +24,6 @@ local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
 print("1")
 local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("OnIdle"))
--- local OverShoulder = require(script.Parent.Parent.Modules.OverShoulder)
 print("2")
 
 -- Movement System
@@ -113,11 +113,19 @@ local function initializeMarket()
 	print("got market gui")
 
 	local function populateNavigation()
-		local navi_button = Navi.create(shopNavigation, {
+		Navi.new(shopNavigation, {
 			name = "Home",
 			icon = "rbxassetid://10723407389",
 		})
-		navi_button:render()
+		Navi.new(shopNavigation, {
+			name = "Inventory",
+			icon = "rbxassetid://10709769841",
+		})
+		Navi.new(shopNavigation, {
+			name = "Passives",
+			icon = "rbxassetid://10734951847",
+		})
+		Navi:render()
 	end
 
 	local function unloadShop()
@@ -127,7 +135,7 @@ local function initializeMarket()
 				task.wait()
 			end
 		end
-		return #(itemHolder:GetChildren()) * task.wait()
+		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
 	end
 
 	local function displaySpendings()
@@ -191,7 +199,7 @@ local function initializeMarket()
 					Enum.FontStyle.Normal -- Style.
 				),
 				Size = 16,
-				Color = Color3.fromHex("#ffffff"),
+				Color = Color3.fromHex("#f5f5f5"),
 				XAlignment = "Left",
 				YAlignment = "Center",
 				LineSorting = true,
@@ -297,11 +305,14 @@ local function initializeMarket()
 				pop(purchaseButton)
 				audio:SFX("success")
 				purchaseDebounce = true
-				limits.debounce(purchaseDebounce)
+				task.delay(0.5, function()
+					purchaseDebounce = false
+				end)
 			end)
 			print("done")
 			--task.wait()
 		end
+		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
 	end
 	local function populateInventory()
 		local unloaded = unloadShop()
@@ -400,7 +411,7 @@ local function initializeMarket()
 	end
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
 	hud:render()
-	--populateNavigation()
+	populateNavigation()
 end
 local function initializeOptions()
 	print("init options")
@@ -472,7 +483,7 @@ local function initializeOptions()
 				end,
 				off = function()
 					local characterFolder = workspace:GetChildren() :: Folder
-					for _, character in ipairs(characterFolder:GetChildren()) do
+					for _, character: Instance in ipairs(characterFolder) do
 						if character:IsA("Model") and playerMarshaller.getByName(character.Name) then
 							character.Parent = ReplicatedStorage:WaitForChild("Characters")
 						end
@@ -567,16 +578,6 @@ Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	})
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
 end)
-
--- Listen for profile changes to update equipped card if necessary
--- This assumes 'yoink' or the profile system has a way to notify changes.
--- If yoink:grab("profile_data") always returns the latest, this might not be strictly needed
--- unless CardLibrary itself changes dynamically.
--- For simplicity, we'll assume 'profile' variable is updated when it changes.
--- yoink.updated("profile_data", function(newProfile)
--- profile = newProfile
--- print("Client: Profile updated, current equipped card:", profile and profile.EquippedCard)
--- end)
 
 local interfaceEndTime = os.clock()
 local totalExecutionTime = math.round((interfaceEndTime - interfaceStartTime) * 10000) / 10000

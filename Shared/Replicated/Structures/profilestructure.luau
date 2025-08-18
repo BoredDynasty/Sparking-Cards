@@ -8,7 +8,7 @@ return {
 		Fire = 10,
 		Frost = 1,
 		Plasma = 1,
-		Water = 0,
+		Hydro = 0,
 	},
 	["Big-Cards"] = 5,
 	["Level"] = "Bronze I",

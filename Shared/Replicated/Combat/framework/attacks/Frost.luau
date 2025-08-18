@@ -30,12 +30,6 @@ local random = require(ReplicatedStorage.Utility.random)
 local timer = require(ReplicatedStorage.Modules.timer)
 local trove = require(ReplicatedStorage.Packages.trove)
 
-type Player = PlayerMarshaller.player
-
--- ==== Private Helper Functions for Frost Abilities ====
-
--- ==== Moveset Implementation ====
--- Frost.moveset[move](player, ...)
 local Frost = {
 	moveset = {
 		M1 = nil, -- Gauntlet

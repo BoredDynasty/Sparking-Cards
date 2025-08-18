@@ -10,7 +10,7 @@ local Packet = require(ReplicatedStorage.Packet)
 
 local camera = workspace.CurrentCamera
 
-return function(blacklist: { Instance })
+return function(blacklist: { Instance }): RaycastResult?
 	local mousePosition = UserInputService:GetMouseLocation()
 	local mouseRay = camera:ViewportPointToRay(mousePosition.X, mousePosition.Y)
 

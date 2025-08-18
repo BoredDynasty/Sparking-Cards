@@ -27,7 +27,6 @@ local orion = {
 	strike = script.Parent.Strike,
 	visuals = script.Parent.Visuals,
 	libray = CardLibrary,
-	arbitrary_data = {},
 }
 
 local events = ReplicatedStorage.Events

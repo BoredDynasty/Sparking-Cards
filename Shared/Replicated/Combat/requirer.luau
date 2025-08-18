@@ -2,8 +2,6 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local promise = require(script.Parent.Parent.Packages.promise)
-
 -- requirer.luau
 
 -- a module for requiring module scripts in the directory
@@ -13,10 +11,9 @@ local requirer = {}
 
 requirer.require = function(name: string): any
 	local attack_module = nil
-	local success, module = pcall(function()
-		return require(ReplicatedStorage.Combat.framework.attacks[name])
-	end)
-
+	print(1.5)
+	local success, module = pcall(require, ReplicatedStorage.Combat.framework.attacks[name])
+	print(1.6)
 	if success then
 		return module
 	else

@@ -19,8 +19,7 @@ return {
 		Description = "Fire damage",
 		Price = 9.99,
 		ExperimentsEnabled = false,
-		-- Icon = "rbxassetid://1234567890",
-		Color = "Irish-Moss",
+
 		NewRelease = true,
 	},
 	["Frost"] = {
@@ -28,18 +27,14 @@ return {
 		Description = "Frost damage",
 		Price = 13.99,
 		ExperimentsEnabled = true,
-		-- Icon = "rbxassetid://1234567890",
-		-- Color = "Irish-Moss",
 		NewRelease = true,
 	},
-	["Healthy"] = {
-		Name = "Healthy",
-		Description = "+5% Additional Health",
-		Price = 44.99,
-		ExperimentsEnabled = false,
+	["Hydro"] = {
+		Name = "Hydro",
+		Description = "Hydro damage",
+		Price = 40.99,
+		ExperimentsEnabled = true,
+		Icon = "rbxassetid://1234567890",
 		NewRelease = true,
-		Tags = {
-			"Passive",
-		},
 	},
 } :: dataType
