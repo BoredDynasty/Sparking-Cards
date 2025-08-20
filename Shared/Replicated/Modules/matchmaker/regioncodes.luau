@@ -1,3 +1,10 @@
+--!strict
+--[=[
+	@module regioncodes
+	@server
+	A mapping of country codes to regional matchmaking codes.
+]=]
+
 return {
 	-- North America
 	US = "NA",
@@ -104,4 +111,4 @@ return {
 	FK = "LAS",
 	-- everything else default
 	DEFAULT = "EUW",
-}
+} :: { [string]: string }
