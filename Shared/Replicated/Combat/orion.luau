@@ -3,13 +3,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CardLibrary = require(script.Parent.CardLibrary)
+local compiler = require(script.Parent.compiler)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
-local requirer = require(script.Parent.requirer)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local yoink = require(ReplicatedStorage.Utility.yoink)
 
@@ -109,7 +109,7 @@ function orion:execute(player: playerMarshaller.player, attack_type: attack_type
 		return nil
 	end
 	print(1)
-	attack_module = requirer.require(equippedCard) :: attack_module
+	attack_module = compiler[equippedCard] :: attack_module
 	local ret_value = nil
 	print(2)
 	if attack_module and attack_module.moveset[attack_type] then

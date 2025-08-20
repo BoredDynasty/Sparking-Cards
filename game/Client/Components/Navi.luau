@@ -89,7 +89,7 @@ function navi:render(): signals
 		--buttonTemplate.Icon.Image = Content.none  -- filter out the prefix
 		buttonTemplate.Parent = button.rail
 
-		signals[buttonTemplate] = SignalPlus()
+		signals[button.name] = SignalPlus()
 
 		buttonTemplate.MouseButton1Click:Connect(function()
 			print("Button clicked:", button.name)

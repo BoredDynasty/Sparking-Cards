@@ -10,7 +10,6 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local Biome = require(ReplicatedStorage.Modules.Biome)
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
@@ -38,7 +37,6 @@ local windshake = require(ReplicatedStorage.Packages.windshake)
 local remoteEvents = ReplicatedStorage.Events
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
 
-local productFunctions = {} :: { (receipt: (any | string)?, player: Player) -> boolean }
 local playerObservers = {}
 
 print("GameAnalytics is enabled.")
@@ -459,35 +457,6 @@ local function handleSprint(player: Player, v: number, b: boolean)
 			humanoid.WalkSpeed = 14 or v
 		end
 	end
-end
-
-local function initializeBiomes()
-	local settings = {
-		biomeFolder = workspace:WaitForChild("Plains"),
-		biomeName = "Plains",
-		tintIndex = 1,
-		grassColor = Color3.fromRGB(144, 255, 177),
-		sizeVariation = 0.5,
-		downsizing = 1,
-		grassThickness = 0.1,
-		chunkDensity = 10,
-	}
-
-	promise
-		.new(function(resolve, reject)
-			local success, err = pcall(Biome.ConfigureBiome, Biome, settings)
-			if success then
-				resolve("Biome configured successfully.")
-			else
-				reject("Failed to configure biome: " .. tostring(err))
-			end
-		end)
-		:andThen(function(result)
-			print(result)
-		end)
-		:catch(function(err)
-			warn(err)
-		end)
 end
 
 -- Set the callback; this can only be done once by one server-side script

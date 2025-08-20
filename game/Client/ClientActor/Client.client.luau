@@ -16,17 +16,14 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 require("../Gameplay/CardAwarder")()
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
-local Navi = require(StarterPlayer.StarterPlayerScripts.Components.Navi)
-local Options = require(StarterPlayer.StarterPlayerScripts.Components.Options)
-local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
-print("0.5")
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
-print("1")
-local OnIdle = require(script.Parent.Parent:WaitForChild("Gameplay"):WaitForChild("OnIdle"))
-print("2")
+local Navi = require("../Components/Navi")
+local Options = require("../Components/Options")
+local animate = require("../Utilities/animate")
 
 -- Movement System
+
 local Dash = require(script.Parent.Parent.Movement.Dash)
 local Jump = require(script.Parent.Parent.Movement.Jump)
 local MovementController = require(script.Parent.Parent.Movement.MovementController)
@@ -35,20 +32,17 @@ local Sprint = require(script.Parent.Parent.Movement.Sprint)
 local Stamina = require(script.Parent.Parent.Movement.Stamina)
 local Walk = require(script.Parent.Parent.Movement.Walk)
 
+local Packet = require(ReplicatedStorage.Packet)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-print("3")
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
-print("4")
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
-print("5")
-local Packet = require(ReplicatedStorage.Packet)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
@@ -56,11 +50,8 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-print("5")
-local retryer = require(ReplicatedStorage.Utility.retryer)
 local shadow = require(script.Parent.Parent.Interface.shadow)
 local sway = require(script.Parent.Parent.Interface.sway)
--- local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local yoink = require(ReplicatedStorage.Utility.yoink)
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
@@ -112,6 +103,8 @@ local function initializeMarket()
 
 	print("got market gui")
 
+	local navigationBtnSignals = nil
+
 	local function populateNavigation()
 		Navi.new(shopNavigation, {
 			name = "Home",
@@ -125,7 +118,7 @@ local function initializeMarket()
 			name = "Passives",
 			icon = "rbxassetid://10734951847",
 		})
-		Navi:render()
+		navigationBtnSignals = Navi:render()
 	end
 
 	local function unloadShop()
@@ -159,7 +152,7 @@ local function initializeMarket()
 		})
 	end
 	coroutine.wrap(function()
-		retryer.delay(10, math.huge, displaySpendings)
+		--retryer.delay(10, math.huge, displaySpendings)
 	end)
 	shadow(shopFrame, Color3.new(), 0, 14)
 	shadow(shopNavigation, Color3.new(), 0, 14)
@@ -167,7 +160,7 @@ local function initializeMarket()
 
 	local function populateShop(t: {}?)
 		local newRelease = shopFrame:FindFirstChild("NewRelease") :: TextLabel
-		unloadShop()
+		task.wait(unloadShop())
 		t = Items
 		for _, item in pairs(t) do
 			-- print("got item: " .. item.Name)
@@ -412,6 +405,14 @@ local function initializeMarket()
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
 	hud:render()
 	populateNavigation()
+	navigationBtnSignals.Home:Connect(function()
+		print("Home button clicked")
+		populateShop()
+	end)
+	navigationBtnSignals.Inventory:Connect(function()
+		print("Inventory button clicked")
+		populateInventory()
+	end)
 end
 local function initializeOptions()
 	print("init options")
@@ -594,4 +595,9 @@ local characterFolder = Instance.new("Folder")
 characterFolder.Name = "Characters"
 characterFolder.Parent = ReplicatedStorage
 
-OnIdle()
+Packet.cleanupCharacter.listen(function()
+	-- Handle character cleanup logic here
+	animate.cleanup()
+	--audio:Cleanup()
+	movementController:Destroy()
+end)

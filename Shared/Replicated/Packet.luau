@@ -89,6 +89,9 @@ return bytenet.defineNamespace("MainNet", function()
 		maxDistance = bytenet.float32, -- Maximum distance for the shake effect
 		strength = bytenet.float32, -- Strength of the shake effect
 	})
+	local cleanupCharacter = bytenet.struct({
+		[1] = bytenet.nothing, -- Placeholder for future data
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -112,5 +115,6 @@ return bytenet.defineNamespace("MainNet", function()
 		AttemptParry = bytenet.definePacket({ value = attemptParryStruct }),
 		ShakeCamera = bytenet.definePacket({ value = shakeCamera }),
 		ShakeFromArea = bytenet.definePacket({ value = shakeFromAreaStruct }),
+		CleanupCharacter = bytenet.definePacket({ value = cleanupCharacter }),
 	}
 end)
