@@ -1,125 +1,145 @@
-local RegionalQueue = {}
-RegionalQueue.__index = RegionalQueue
+--!strict
+--[=[
+	@class RegionalQueue
+	@server
+	Manages a single regional matchmaking queue, including party management,
+	match creation, and coordinator server election.
+]=]
 
--- Variables
+-- Services
+local MemoryStoreService = game:GetService("MemoryStoreService")
+local HttpService = game:GetService("HttpService")
 
-local Release = "v0.2"
-local MemoryStore = game:GetService("MemoryStoreService")
-local MessagingService = game:GetService("MessagingService")
-local RunService = game:GetService("RunService")
-local RegionLockMap = MemoryStore:GetHashMap("RegionLocks" .. Release)
+-- Packages
+local Packages = game:GetService("ReplicatedStorage"):WaitForChild("Packages")
+local Promise = require(Packages:WaitForChild("Promise"))
+local Trove = require(Packages:WaitForChild("Trove"))
+local Signal = require(Packages._Index["sleitnick_signal@2.0.3"].signal)
 
-local PrivateServer = require(script.Parent.Parent:WaitForChild("PrivateServer"))
+-- Modules
+local PrivateServer = require(script.Parent:WaitForChild("private"))
 
-local Utils = game.ReplicatedStorage:WaitForChild("Utils")
-local Maid = require(Utils:WaitForChild("Maid"))
-local Promise = require(Utils:WaitForChild("Promise"))
-local Signal = require(Utils:WaitForChild("Signal"))
-local Thread = require(Utils:WaitForChild("Thread"))
+-- Types
+type Promise<T> = any
+type Trove = {
+	new: () -> Trove,
+	Add: (self: Trove, any) -> any,
+	Destroy: (self: Trove) -> (),
+}
+type Party = {
+	Id: string,
+	Mode: string,
+	RegionCode: string,
+	MemberIds: { number },
+	Data: { [string]: any },
+	QueueTimeStart: number,
+	MatchId: string?,
+	PartyLeft: boolean?,
+}
+type Match = {
+	Parties: { Party },
+	PlaceId: number,
+	AccessCode: string?,
+	PrivateServerId: string,
+	CreatedTime: number,
+	Mode: string,
+	RegionCode: string,
+	ServerState: string,
+}
+type MatchMaker = {
+	Name: string,
+	PartyAdded: Signal,
+	PartyRemoved: Signal,
+	RegionalQueues: { [string]: any },
+	MatchMaking: (parties: { Party }) -> { { any } },
+}
+type CacheTable = {
+	Trove: Trove,
+	JoinTime: number,
+	Party: Party,
+	AddedToSortedMap: boolean,
+	InQueue: boolean,
+}
+type RegionalQueue = {
+	RegionCode: string,
+	Mode: MatchMaker,
+	MainServer: boolean,
+	Active: boolean,
+	ID: string,
+	SortedMap: any,
+	Cache: { [string]: CacheTable },
+	Trove: Trove,
+}
 
-local QUEUE_TIMEOUT = 60 * 20 -- seconds
-local PARTY_TIMEOUT = 60 * 60 * 24 -- seconds
-local PARTY_REFRESH = 5 -- seconds
+-- Constants
+local RELEASE = "v0.2"
+local REGION_LOCK_MAP_NAME = "RegionLocks" .. RELEASE
+
+local QUEUE_TIMEOUT = 60 * 20
+local PARTY_TIMEOUT = 60 * 60 * 24
+local PARTY_REFRESH = 5
 
 local BIG_QUEUE_TIME = 9999999999
 
-local COORDINATOR_REFRESH = 5 -- seconds
-local COORDINATOR_TIMEOUT = 30 -- seconds
+local COORDINATOR_REFRESH = 5
+local COORDINATOR_TIMEOUT = 30
 
-local MATCHMAKING_TOTALCOUNT = 200 -- seconds
-local MATCHMAKING_SUBCOUNT = 50 -- seconds
+local MATCHMAKING_TOTAL_COUNT = 200
+local MATCHMAKING_SUB_COUNT = 50
 
--- Main
+-- Module
+local RegionalQueue = {}
+RegionalQueue.__index = RegionalQueue
 
-function RegionalQueue.new(Params)
-	--[[
-		Creates a new regional queue.
+-- Private Methods
+local function GetSortedMap(Mode: string, RegionCode: string)
+	return MemoryStoreService:GetSortedMap(Mode .. "-" .. RegionCode .. RELEASE)
+end
 
-		Parameters:
-			Params.RegionCode (string) — A short code (e.g., "NA", "EU") representing the region.
-			Params.Mode (matchmaker) — The parent matchmaker of the regional queue.
+local function Print(self: RegionalQueue, text: string)
+	print(`[MatchMakerService-{self.ID}] {text}`)
+end
 
-		Returns:
-			A new RegionalQueue instance.
-	]]
-	--
+local function Warn(self: RegionalQueue, text: string)
+	warn(`[MatchMakerService-{self.ID}] {text}`)
+end
 
-	local self = setmetatable(Params, RegionalQueue)
+-- Public Methods
 
-	self.RegionCode = self.RegionCode
+function RegionalQueue.new(Params: { RegionCode: string, Mode: MatchMaker }): RegionalQueue
+	local self = setmetatable({} :: any, RegionalQueue)
+
+	self.RegionCode = Params.RegionCode
+	self.Mode = Params.Mode
 	self.MainServer = false
 	self.Active = true
 	self.ID = self.Mode.Name .. "-" .. self.RegionCode
-	self.SortedMap = self:GetSortedMap(self.Mode.Name, self.RegionCode)
+	self.SortedMap = GetSortedMap(self.Mode.Name, self.RegionCode)
 	self.Cache = {}
-	self.Connections = Maid.new()
+	self.Trove = Trove.new()
 
 	self.Mode.RegionalQueues[self.RegionCode] = self
-
-	self:Print("New regional queue has been created")
+	Print(self, "New regional queue has been created")
 
 	return self
 end
 
---Players Management
-
-function RegionalQueue:GetSortedMap(Mode, RegionCode)
-	--[[
-		Returns a MemoryStore SortedMap unique to a mode-region pair.
-
-		Parameters:
-			Mode (string)
-			RegionCode (string)
-
-		Returns:
-			SortedMap object.
-	]]
-	--
-
-	return game:GetService("MemoryStoreService"):GetSortedMap(Mode .. "-" .. RegionCode .. Release)
-end
-
-function RegionalQueue:TeleportPartyAsync(Party, MatchId)
-	--[[
-		Handles teleporting party members to a server if a match is found.
-
-		Parameters:
-			Party (table)
-			MatchId (string)
-
-		Returns:
-			Promise<void> — Resolves after firing the PartyRemoved signal.
-	]]
-	--
-
+function RegionalQueue:TeleportPartyAsync(Party: Party, MatchId: string): Promise<void>
 	return PrivateServer:GetPrivateServerDataAsync(MatchId)
 		:catch(function(err)
 			return Promise.reject(tostring(err))
 		end)
 		:andThen(function(Match)
-			self:RemovePartyTable(Party.Id, Match)
+			self:_RemovePartyTable(Party.Id, Match)
 		end)
 end
 
-function RegionalQueue:CheckIfPartyFoundMatch(Party, LeaveQueue)
-	--[[
-		Checks if a party has already been matched in a queue.
-
-		Parameters:
-			Party (table)
-			LeaveQueue (boolean) — Mark party as left if true.
-
-		Returns:
-			Promise<MatchId | nil>
-	]]
-	--
-
-	local MatchId
+function RegionalQueue:CheckIfPartyFoundMatch(Party: Party, LeaveQueue: boolean?): Promise<string?>
+	local MatchId: string?
 
 	return Promise.try(function()
 		return self.SortedMap:UpdateAsync(Party.Id, function(oldValue, sortKey)
 			if not oldValue then
-				-- means the queue timed out
 				return nil
 			end
 
@@ -129,7 +149,6 @@ function RegionalQueue:CheckIfPartyFoundMatch(Party, LeaveQueue)
 			end
 
 			if oldValue.MatchId then
-				-- ayy we found a match !
 				MatchId = oldValue.MatchId
 			end
 
@@ -144,53 +163,44 @@ function RegionalQueue:CheckIfPartyFoundMatch(Party, LeaveQueue)
 		end)
 end
 
-function RegionalQueue:AddPartyAsync(PartyMemberIds, PartyData)
-	--[[
-		Adds a new party to the matchmaking queue.
-
-		Parameters:
-			PartyMemberIds (table<number>) — UserIds.
-			PartyData (optional table) — Metadata for the party.
-
-		Returns:
-			Promise<void>
-	]]
-	--
-
+function RegionalQueue:AddPartyAsync(
+	PartyMemberIds: { number },
+	PartyData: { [string]: any }
+): Promise<Party>
 	local JoinTime = os.time()
-	local Party = {
-		Id = game:GetService("HttpService"):GenerateGUID(false),
+	local Party: Party = {
+		Id = HttpService:GenerateGUID(false),
 		Mode = self.Mode.Name,
 		RegionCode = self.RegionCode,
 		MemberIds = PartyMemberIds,
-		Data = PartyData or {},
+		Data = PartyData,
 		QueueTimeStart = JoinTime,
 	}
 
-	local CacheTable = {
-		Connections = Maid.new(),
+	local CacheTable: CacheTable = {
+		Trove = Trove.new(),
 		JoinTime = JoinTime,
 		Party = Party,
+		AddedToSortedMap = false,
+		InQueue = false,
 	}
 
 	self.Cache[Party.Id] = CacheTable
 
-	self:Print("Adding a party to the queue")
+	Print(self, "Adding a party to the queue")
 
-	-- Adding Player to SortedMap
 	CacheTable.AddedToSortedMap = true
-
 	return Promise.try(function()
 		return self.SortedMap:SetAsync(Party.Id, Party, PARTY_TIMEOUT, JoinTime)
 	end)
 		:catch(function(err)
 			CacheTable.AddedToSortedMap = false
 			self:RemovePartyAsync(Party.Id, true)
-
 			return Promise.reject(tostring(err))
 		end)
 		:andThen(function()
-			CacheTable.Connections.RefreshConnection = Thread.DelayRepeat(PARTY_REFRESH, function()
+			local trove = CacheTable.Trove
+			trove:Add(task.delay(PARTY_REFRESH, function()
 				local TimeEllapsed = os.time() - JoinTime
 
 				if TimeEllapsed > QUEUE_TIMEOUT then
@@ -198,19 +208,20 @@ function RegionalQueue:AddPartyAsync(PartyMemberIds, PartyData)
 				else
 					self:CheckIfPartyFoundMatch(Party):andThen(function(MatchId)
 						if MatchId then
-							return self:TeleportPartyAsync(Party, MatchId)
+							self:TeleportPartyAsync(Party, MatchId)
 						end
 					end)
 				end
-			end)
+			end))
 
-			if not self.Connections.MainServerRefresh then
+			if not self.Trove:FindFirstChild("MainServerRefresh") then
 				task.spawn(function()
 					self:DoMatchmaking()
 				end)
-				self.Connections.MainServerRefresh = Thread.DelayRepeat(COORDINATOR_REFRESH, function()
+				local refreshThread = task.delay(COORDINATOR_REFRESH, function()
 					self:DoMatchmaking()
 				end)
+				self.Trove:Add(refreshThread, "MainServerRefresh")
 			end
 
 			self.Mode.PartyAdded:Fire(Party)
@@ -220,116 +231,51 @@ function RegionalQueue:AddPartyAsync(PartyMemberIds, PartyData)
 		end)
 end
 
-function RegionalQueue:RemovePartyTable(PartyId, Match)
-	--[[
-		Immediately removes a party from the in-memory queue and signals removal.
-
-		Parameters:
-			PartyId (string)
-	]]
-	--
-
-	local CacheTable = self.Cache[PartyId]
-	if not CacheTable then
-		self:RemoveEmptyQueue()
-		return
-	end
-
-	CacheTable.Connections:Destroy()
-
-	self.Cache[PartyId] = nil
-
-	self.Mode.PartyRemoved:Fire(CacheTable.Party, Match)
-
-	self:RemoveEmptyQueue()
-end
-
-function RegionalQueue:RemovePartyAsync(PartyId, Forced)
-	--[[
-		Safely removes a party from the queue, optionally forced. Teleports if a match is already found.
-
-		Parameters:
-			PartyId (string)
-			Forced (boolean)
-
-		Returns:
-			Promise<void>
-	]]
-	--
-
-	local Party
-	local CacheTable
-
-	self:Print("Removing a party from the queue")
+function RegionalQueue:RemovePartyAsync(PartyId: string, Forced: boolean?): Promise<void>
+	Print(self, "Removing a party from the queue")
 
 	return Promise.try(function()
-		CacheTable = self.Cache[PartyId]
-		assert(CacheTable ~= nil, "The following partyId " .. PartyId .. " is not in queue in this server")
+		local CacheTable = self.Cache[PartyId]
+		assert(CacheTable, `PartyId {PartyId} is not in queue in this server`)
 
-		Party = CacheTable.Party
-
+		local Party = CacheTable.Party
 		assert(CacheTable.InQueue or Forced, "Player is still being added to the queue, please try again")
+
+		if Forced then
+			self:_RemovePartyTable(Party.Id)
+		end
+
+		if CacheTable.AddedToSortedMap then
+			return self:CheckIfPartyFoundMatch(Party, true)
+		end
 	end)
-		:andThen(function()
-			if Forced then
-				self:RemovePartyTable(Party.Id)
-			end
-
-			if CacheTable.AddedToSortedMap then
-				return self:CheckIfPartyFoundMatch(Party, true)
-			end
-		end)
-		:andThen(function(Match)
-			if Match then
-				self:TeleportPartyAsync(Party, Match)
-
+		:andThen(function(MatchId)
+			if MatchId then
+				local Party = self.Cache[PartyId].Party
+				self:TeleportPartyAsync(Party, MatchId)
 				return Promise.reject("Player has already found a match, cannot cancel now")
 			end
-		end)
-		:andThen(function(Match)
-			self:RemovePartyTable(Party.Id)
+			self:_RemovePartyTable(PartyId)
 		end)
 		:finally(function(Status)
-			self:Print("Removing a party from the queue:" .. Status)
+			Print(self, "Removing a party from the queue:" .. Status)
 		end)
 end
 
---Queue Management
-
-function RegionalQueue:TryLockServer()
-	--[[
-		Attempts to claim coordination ownership for matchmaking in this region.
-
-		Returns:
-			Promise<table> — Metadata including serverId and timestamp.
-	]]
-	--
-
+function RegionalQueue:TryLockServer(): Promise<any>
 	local lockKey = self.ID
 	local myServerId = game.JobId
 	local Active = self.Active
 
 	return Promise.try(function()
+		local RegionLockMap = MemoryStoreService:GetHashMap(REGION_LOCK_MAP_NAME)
 		return RegionLockMap:UpdateAsync(lockKey, function(oldValue)
-			-- No one owns the lock OR lock expired
 			if not oldValue and Active then
-				return {
-					serverId = myServerId,
-					timestamp = os.time(),
-					Active = Active,
-				}
+				return { serverId = myServerId, timestamp = os.time(), Active = Active }
 			elseif oldValue and oldValue.serverId == myServerId then
-				return {
-					serverId = myServerId,
-					timestamp = os.time(),
-					Active = Active,
-				}
+				return { serverId = myServerId, timestamp = os.time(), Active = Active }
 			elseif oldValue and not oldValue.Active and Active then
-				return {
-					serverId = myServerId,
-					timestamp = os.time(),
-					Active = Active,
-				}
+				return { serverId = myServerId, timestamp = os.time(), Active = Active }
 			else
 				return oldValue
 			end
@@ -337,340 +283,226 @@ function RegionalQueue:TryLockServer()
 	end)
 end
 
-function RegionalQueue:IsServerMainServer()
-	--[[
-		Verifies and updates whether this server is the matchmaking coordinator for this region.
-
-		Returns:
-			Promise<void> — Rejects if not the main server.
-	]]
-	--
-
-	local lockKey = self.ID
+function RegionalQueue:IsServerMainServer(): Promise<void>
 	local myServerId = game.JobId
 
 	return self:TryLockServer()
 		:andThen(function(acquired)
-			assert(
-				acquired and acquired.serverId == myServerId and acquired.Active,
-				"This server is not the main server"
-			)
+			assert(acquired and acquired.serverId == myServerId and acquired.Active, "This server is not the main server")
 
 			if not self.MainServer then
-				self:Print("This server became the main server")
+				Print(self, "This server became the main server")
 			end
-
 			self.MainServer = true
 		end)
 		:catch(function(err)
 			if self.MainServer then
-				self:Print("This server stopped being the main server")
+				Print(self, "This server stopped being the main server")
 			end
-
 			self.MainServer = false
-
 			return Promise.reject(tostring(err))
 		end)
 end
 
-function RegionalQueue:CreateMatchAsync(Match)
-	--[[
-		Attempts to assign a match to a list of parties.
-
-		Parameters:
-			Match (table): Must contain Parties, PlaceId, and optionally AccessCode.
-
-		Returns:
-			Promise<void>
-	]]
-	--
-
+function RegionalQueue:CreateMatchAsync(Match: Match): Promise<void>
 	local PartiesRemoved = {}
-	local AllPartiesAvailable = true
 
 	Match.CreatedTime = os.time()
 	Match.Mode = self.Mode.Name
 	Match.RegionCode = self.RegionCode
 	if not Match.AccessCode then
-		local AccessCode, PrivateServerId = PrivateServer:ReserverServer(Match.PlaceId)
+		local AccessCode, PrivateServerId = PrivateServer:ReserveServer(Match.PlaceId)
 		Match.AccessCode = AccessCode
 		Match.PrivateServerId = PrivateServerId
 	end
 	Match.ServerState = "Created"
 
 	local partyPromises = {}
-
-	for _, Party in pairs(Match.Parties) do
-		table.insert(
-			partyPromises,
-			Promise.try(function()
-				local success = self.SortedMap:UpdateAsync(Party.Id, function(oldValue, sortKey)
-					if not oldValue then
-						-- means the party queue data was expired and they left queue
-						print(`HERE, NOT IN QUEUE`, oldValue)
-						return nil
-					end
-
-					if
-						oldValue.PartyLeft
-						or oldValue.MatchId and oldValue.MatchId ~= Match.PrivateServerId
-					then
-						-- means the party found another match or left the queue
-						print(`HERE, ALREADY IN A MATCH`)
-						return nil
-					end
-
-					if not AllPartiesAvailable then
-						print(`HERE, OTHER PARTIES UNAVAILABLE`)
-						return nil
-					end
-
-					-- means the party is available for the match
-					oldValue.MatchId = Match.PrivateServerId
-					sortKey = BIG_QUEUE_TIME
-					table.insert(PartiesRemoved, oldValue)
-
-					return oldValue, sortKey
-				end, PARTY_TIMEOUT)
-
-				if not success then
-					return Promise.reject("One of the parties was unable to receive the match data")
-				end
-			end)
-		)
+	for _, Party in ipairs(Match.Parties) do
+		table.insert(partyPromises, self:_UpdatePartyForMatch(Party, Match.PrivateServerId, PartiesRemoved))
 	end
 
-	return Promise.allSettled(partyPromises)
-		:andThen(function(results)
-			for _, result in ipairs(results) do
-				if result ~= "Resolved" then
-					return Promise.reject("One of the party could not be updated")
-				end
-			end
-		end)
-		:catch(function(err)
-			local partyPromises = {}
-
-			for _, Party in pairs(PartiesRemoved) do
-				table.insert(
-					partyPromises,
-					Promise.try(function()
-						self.SortedMap:UpdateAsync(Party.Id, function(oldValue, sortKey)
-							if not oldValue then
-								-- means the party queue data was expired and they left queue
-								return nil
-							end
-
-							if oldValue.MatchId and oldValue.MatchId == Match.PrivateServerId then
-								-- resetting the macth data if it was this match
-								oldValue.MatchId = nil
-							end
-
-							if oldValue.PartyLeft then
-								-- party left so making sure the party is not fetched first in the getrangeasync
-								sortKey = BIG_QUEUE_TIME
-							else
-								-- party still in queue, putting the party back in its original position
-								sortKey = oldValue.QueueTimeStart
-							end
-
-							return oldValue, sortKey
-						end, PARTY_TIMEOUT)
-					end)
-				)
-			end
-
-			return Promise.reject(tostring(err))
-		end)
+	return Promise.all(partyPromises)
 		:andThen(function()
 			return PrivateServer:RegisterAsync(Match)
 		end)
+		:catch(function(err)
+			local rollbackPromises = {}
+			for _, Party in ipairs(PartiesRemoved) do
+				table.insert(rollbackPromises, self:_RollbackPartyMatch(Party, Match.PrivateServerId))
+			end
+			return Promise.all(rollbackPromises):andThen(function()
+				return Promise.reject(tostring(err))
+			end)
+		end)
 end
 
-function RegionalQueue:CreateMatches(Matches)
-	--[[
-		Creates multiple matches concurrently and reports the outcome.
-
-		Parameters:
-			Matches (table<Match>)
-
-		Returns:
-			Promise<void>
-	]]
-	--
-
+function RegionalQueue:CreateMatches(Matches: { Match }): Promise<void>
 	local matchPromises = {}
-
-	for _, Match in pairs(Matches) do
+	for _, Match in ipairs(Matches) do
 		table.insert(matchPromises, self:CreateMatchAsync(Match))
 	end
 
 	return Promise.allSettled(matchPromises):andThen(function(results)
 		local successCount = 0
 		local failureCount = 0
-
 		for _, result in ipairs(results) do
-			if result == "Resolved" then
+			if result.status == "resolved" then
 				successCount += 1
 			else
 				failureCount += 1
 			end
 		end
-
-		print(results)
-
-		self:Print(`Created successfully {successCount}/{successCount + failureCount} matches`)
+		Print(self, `Created successfully {successCount}/{successCount + failureCount} matches`)
 	end)
 end
 
-function RegionalQueue:DoMatchmaking()
-	--[[
-		Runs the matchmaking loop for the current server (if it is the main coordinator). 
-		Fetches eligible parties and invokes matchmaking logic.
-
-		Returns:
-			Promise<void>
-	]]
-	--
-
-	local totalFetched = 0
-	local maxItems = MATCHMAKING_TOTALCOUNT
-	local batchSize = MATCHMAKING_SUBCOUNT
+function RegionalQueue:DoMatchmaking(): Promise<void>
 	local Parties = {}
 
-	self:IsServerMainServer()
+	return self:IsServerMainServer()
 		:andThen(function()
-			-- Fetching Parties
-
-			local exclusiveUpperBound = {
-				sortKey = os.time() + COORDINATOR_REFRESH,
-			}
-
-			local exclusiveLowerBound = {
-				sortKey = os.time() - QUEUE_TIMEOUT + COORDINATOR_REFRESH,
-			}
-
-			self:Print("Retrieving parties")
-
-			exclusiveLowerBound = nil
-
-			while totalFetched < maxItems do
-				local success, items = pcall(function()
-					return self.SortedMap:GetRangeAsync(
-						Enum.SortDirection.Ascending,
-						batchSize,
-						exclusiveLowerBound,
-						exclusiveUpperBound
-					)
-				end)
-
-				if not success then
-					return Promise.reject(items)
-				end
-
-				for _, item in ipairs(items) do
-					totalFetched += 1
-
-					local Party = item.value
-
-					if Party.MatchId or Party.PartyLeft then
-						break
-					end
-
-					table.insert(Parties, Party)
-
-					if totalFetched >= maxItems then
-						break
-					end
-				end
-
-				if #items < batchSize or totalFetched >= maxItems then
-					break
-				end
-
-				exclusiveLowerBound = {
-					key = items[#items].key,
-					sortKey = items[#items].sortKey,
-				}
-			end
-
-			self:Print(`Retrieved {#Parties} parties`)
+			return self:_FetchParties()
 		end)
-		:andThen(function()
+		:andThen(function(FetchedParties)
+			Parties = FetchedParties
+			Print(self, `Retrieved {#Parties} parties`)
 			return self.Mode.MatchMaking(Parties)
 		end)
 		:andThen(function(Matches)
 			if not Matches or #Matches == 0 then
-				self:Print(`No match to create`)
+				Print(self, `No match to create`)
 				return
 			end
-
-			self:Print(`Creating {#Matches} matches`)
-
+			Print(self, `Creating {#Matches} matches`)
 			return self:CreateMatches(Matches)
 		end)
 		:catch(function(err)
-			self:Warn(tostring(err))
+			Warn(self, tostring(err))
 		end)
 end
 
-function RegionalQueue:Print(Txt)
-	--[[
-		Logs a message with context for this queue.
-
-		Parameters:
-			Txt (string)
-	]]
-	--
-
-	print(`[MatchMakerService-{self.ID}] {Txt}`)
-end
-
-function RegionalQueue:Warn(Txt)
-	--[[
-		Logs a warning message with context for this queue.
-
-		Parameters:
-			Txt (string)
-	]]
-	--
-
-	warn(`[MatchMakerService-{self.ID}] {Txt}`)
-end
-
---Queue Removal
-
-function RegionalQueue:RemoveEmptyQueue()
-	--[[
-		Destroys the regional queue if no parties are in it.
-	]]
-	--
-
-	if not next(self.Cache) then
-		self:Destroy()
-	end
-end
-
 function RegionalQueue:Destroy()
-	--[[
-			Cleans up the regional queue instance, including connections and coordinator ownership.
-	]]
-	--
-
 	if not self.Active then
 		return
 	end
-
 	self.Active = false
 
-	self.Connections:Destroy()
+	self.Trove:Destroy()
 
 	if self.MainServer then
 		self:TryLockServer()
 	end
 
-	self:Print("Regional queue has been destroyed")
+	Print(self, "Regional queue has been destroyed")
 	self.Mode.RegionalQueues[self.RegionCode] = nil
+end
+
+-- Internal Methods
+
+function RegionalQueue:_RemovePartyTable(PartyId: string, Match: any?)
+	local CacheTable = self.Cache[PartyId]
+	if not CacheTable then
+		self:_RemoveEmptyQueue()
+		return
+	end
+
+	CacheTable.Trove:Destroy()
+	self.Cache[PartyId] = nil
+	self.Mode.PartyRemoved:Fire(CacheTable.Party, Match)
+	self:_RemoveEmptyQueue()
+end
+
+function RegionalQueue:_RemoveEmptyQueue()
+	if not next(self.Cache) then
+		self:Destroy()
+	end
+end
+
+function RegionalQueue:_FetchParties(): Promise<{ Party }>
+	return Promise.try(function()
+		local totalFetched = 0
+		local Parties = {}
+		local exclusiveLowerBound
+		local exclusiveUpperBound = os.time() + COORDINATOR_REFRESH
+
+		while totalFetched < MATCHMAKING_TOTAL_COUNT do
+			local success, items = pcall(function()
+				return self.SortedMap:GetRangeAsync(
+					Enum.SortDirection.Ascending,
+					MATCHMAKING_SUB_COUNT,
+					exclusiveLowerBound,
+					exclusiveUpperBound
+				)
+			end)
+
+			if not success then
+				return Promise.reject(items)
+			end
+
+			for _, item in ipairs(items) do
+				totalFetched += 1
+				local Party = item.value
+				if not Party.MatchId and not Party.PartyLeft then
+					table.insert(Parties, Party)
+				end
+
+				if totalFetched >= MATCHMAKING_TOTAL_COUNT then
+					break
+				end
+			end
+
+			if #items < MATCHMAKING_SUB_COUNT or totalFetched >= MATCHMAKING_TOTAL_COUNT then
+				break
+			end
+
+			exclusiveLowerBound = {
+				key = items[#items].key,
+				sortKey = items[#items].sortKey,
+			}
+		end
+		return Parties
+	end)
+end
+
+function RegionalQueue:_UpdatePartyForMatch(Party: Party, MatchId: string, PartiesRemoved: { Party }): Promise<void>
+	return Promise.try(function()
+		local success = self.SortedMap:UpdateAsync(Party.Id, function(oldValue, sortKey)
+			if not oldValue or oldValue.PartyLeft or (oldValue.MatchId and oldValue.MatchId ~= MatchId) then
+				return nil
+			end
+
+			oldValue.MatchId = MatchId
+			sortKey = BIG_QUEUE_TIME
+			table.insert(PartiesRemoved, oldValue)
+			return oldValue, sortKey
+		end, PARTY_TIMEOUT)
+
+		if not success then
+			return Promise.reject("Party was unable to receive the match data")
+		end
+	end)
+end
+
+function RegionalQueue:_RollbackPartyMatch(Party: Party, MatchId: string): Promise<void>
+	return Promise.try(function()
+		self.SortedMap:UpdateAsync(Party.Id, function(oldValue, sortKey)
+			if not oldValue then
+				return nil
+			end
+
+			if oldValue.MatchId and oldValue.MatchId == MatchId then
+				oldValue.MatchId = nil
+			end
+
+			if oldValue.PartyLeft then
+				sortKey = BIG_QUEUE_TIME
+			else
+				sortKey = oldValue.QueueTimeStart
+			end
+			return oldValue, sortKey
+		end, PARTY_TIMEOUT)
+	end)
 end
 
 return RegionalQueue
