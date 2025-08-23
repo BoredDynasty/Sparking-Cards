@@ -81,7 +81,7 @@ function Jump:_connectJumpRequest()
 			return
 		end
 
-		gamecamera:shakeFromArea(self._character.HumanoidRootPart.Position, 5, 0.5)
+		gamecamera:Shake(0.5, 0.1)
 
 		self._humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 		self._character:SetAttribute("Stamina", currentStamina - self._config.StaminaCost)
@@ -109,7 +109,7 @@ function Jump:_connectLanding()
 	self._trove:Connect(self._humanoid.StateChanged, function(oldState, newState)
 		if newState == Enum.HumanoidStateType.Landed then
 			-- Landing mechanic
-			gamecamera:shake(1.2)
+			gamecamera:Shake(1.2, 0.2)
 			audio:SFX("LandingSound", 150324322)
 		end
 	end)

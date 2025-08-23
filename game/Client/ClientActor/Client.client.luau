@@ -40,7 +40,7 @@ local characterIteration = require(ReplicatedStorage.ClientModules.characterIter
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
-local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
+require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
 local limits = require(script.Parent.Parent.Utilities.limits)
@@ -537,9 +537,6 @@ movementController:Add("Stamina", Stamina)
 movementController:Start()
 
 print("client movement")
-gamecamera:sway()
---gamecamera:trail()
-gamecamera:followOffset()
 print("game camera")
 -- control
 
