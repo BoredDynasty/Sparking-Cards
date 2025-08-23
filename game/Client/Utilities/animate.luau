@@ -9,6 +9,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local player = playerMarshaller.get()
 
@@ -31,9 +32,17 @@ local animations: { [string]: AnimationObject } = {}
 local currentCharacter = nil
 local currentAnimator = nil
 
-local function initialize(character: Model)
+local function initialize()
+	local character = player.Character
+
 	currentCharacter = character
-	currentAnimator = character.Humanoid.Animator
+
+	local humanoid = character.Humanoid
+	local animator = humanoid.Animator
+
+	assert(animator, "Animator not found in character")
+
+	currentAnimator = animator
 	animations = {}
 end
 
@@ -58,10 +67,7 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 end
 
 local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
-	if not currentAnimator then
-		warn("Animator not initialized. Call initialize() first.")
-		return nil
-	end
+	assert(currentAnimator, "Animator not initialized. Call initialize() first.")
 
 	local animObject: AnimationObject = animations[name]
 	if not animObject then

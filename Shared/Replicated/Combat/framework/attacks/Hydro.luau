@@ -140,3 +140,5 @@ function hydro.moveset.Ultimate(player: playerMarshaller.player, position: Vecto
 		end)
 	end
 end
+
+return hydro

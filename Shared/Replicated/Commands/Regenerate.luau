@@ -1,6 +1,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local regeneration = require(ReplicatedStorage.Combat.Passives.regeneration)
 -- Cmdr Command
@@ -42,7 +43,9 @@ return {
 	ClientRun = function(_, target: Player, interval: number, increment: number, cancelTime: number)
 		regeneration(target, interval, increment)
 
-		local character = playerMarshaller.getByName(target.Name).Character
+		local player = playerMarshaller.getByName(target.Name)
+		local character = player and characterMarshaller.get(player) or characterMarshaller.get(player)
+
 		if character then
 			task.delay(cancelTime, function()
 				character:SetAttribute("Regeneration", nil)

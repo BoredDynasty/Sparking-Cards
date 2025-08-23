@@ -32,7 +32,8 @@ end
 -- this function exists so u dont have to do
 -- local character = (player.Character :: any) :: character.Character?
 local function getCharacter(player: Player): Character
-	return player.Character :: any
+	local char = player.Character or player.CharacterAdded:Wait()
+	return char :: any
 end
 
 local character = {}

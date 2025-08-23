@@ -20,7 +20,7 @@ local function lerp(a: number, b: number, t: number)
 end
 
 local player = playerMarshaller.get()
-local character = player.Character
+local character = player.Character or player.CharacterAdded:Wait()
 local head = character.Head
 local humanoid = character.Humanoid
 local mouse = player:GetMouse()

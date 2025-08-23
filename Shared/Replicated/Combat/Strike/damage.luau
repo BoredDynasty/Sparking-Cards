@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local damageIndict = require(ReplicatedStorage.Combat.framework.effects.damageIndict)
+local damageIndict = require(ReplicatedStorage.Effects.damageIndict)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- damage.luau
@@ -25,17 +25,6 @@ damage.incoming = SignalPlus() :: incomingSignal
 damage.cancel = SignalPlus()
 
 function damage.__call(parameters: Damage)
-	-- Validate parameters
-	assert(type(parameters.amount) == "number", "Damage amount must be a number")
-	assert(
-		parameters.target == nil or type(parameters.target) == "table",
-		"Target must be a player object or nil"
-	)
-	assert(
-		parameters.source == nil or type(parameters.source) == "table",
-		"Source must be a player object or nil"
-	)
-
 	-- Process damage logic here
 	local damageAmount = parameters.amount
 	local sourcePlayerId = parameters.source and parameters.source.UserId
@@ -45,11 +34,13 @@ function damage.__call(parameters: Damage)
 	local sourceInstance = parameters.source and playerMarshaller.getByUserId(sourcePlayerId)
 	local targetInstance = parameters.target and playerMarshaller.getByUserId(targetPlayerId)
 
+	local targetCharacter = targetInstance.Character
+
 	-- do a nice lil visual effect for the damage
-	local targetRoot = targetInstance:WaitForChild("HumanoidRootPart") :: BasePart
+	local targetRoot = targetCharacter:WaitForChild("HumanoidRootPart") :: BasePart
 	damageIndict(damageAmount, targetRoot)
 
-	local targetHumanoid = targetInstance:WaitForChild("Humanoid") :: Humanoid
+	local targetHumanoid = targetCharacter:WaitForChild("Humanoid") :: Humanoid
 	damage.incoming:Fire({
 		amount = damageAmount,
 		source = sourceInstance,

@@ -1,4 +1,7 @@
 --!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local Packet = require(ReplicatedStorage.Packet)
 
 local Projectile = {}
 --[[
@@ -57,13 +60,13 @@ function Projectile.new(object: BasePart, metricTable: metricTypes)
 		end
 
 		primaryPart:ApplyImpulse(force * totalMass)
-		primaryPart:SetNetworkOwner(nil)
+		Packet.SetNetworkOwner.send({ player = nil, object = primaryPart })
 	else
 		object.Position = metricTable.position1
 		object.Parent = game.Workspace
 		task.wait()
 		object:ApplyImpulse(force * object.AssemblyMass)
-		object:SetNetworkOwner(nil)
+		Packet.SetNetworkOwner.send({ player = nil, object = object })
 	end
 end
 return Projectile

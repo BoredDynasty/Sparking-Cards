@@ -92,6 +92,10 @@ return bytenet.defineNamespace("MainNet", function()
 	local cleanupCharacter = bytenet.struct({
 		[1] = bytenet.nothing, -- Placeholder for future data
 	})
+	local setNetworkOwnerStruct = bytenet.struct({
+		player = bytenet.optional(bytenet.inst),
+		object = bytenet.inst,
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -116,5 +120,7 @@ return bytenet.defineNamespace("MainNet", function()
 		ShakeCamera = bytenet.definePacket({ value = shakeCamera }),
 		ShakeFromArea = bytenet.definePacket({ value = shakeFromAreaStruct }),
 		CleanupCharacter = bytenet.definePacket({ value = cleanupCharacter }),
+		IndictEffect = bytenet.definePacket({ value = indictEffectStruct }),
+		SetNetworkOwner = bytenet.definePacket({ value = setNetworkOwnerStruct }),
 	}
 end)

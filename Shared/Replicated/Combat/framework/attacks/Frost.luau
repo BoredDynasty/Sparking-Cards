@@ -14,7 +14,6 @@ local Workspace = game:GetService("Workspace")
 
 local Packet = require(ReplicatedStorage.Packet) -- For sending effects
 local PlayerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local Projectile = require(ReplicatedStorage.Modules.Projectile)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local debounce = require(ReplicatedStorage.Combat.framework.utils.debounce).new({
 	M1 = 0.23,
@@ -25,6 +24,7 @@ local debounce = require(ReplicatedStorage.Combat.framework.utils.debounce).new(
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local nearest = require(ReplicatedStorage.Combat.framework.utils.nearest)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local projectile = require(ReplicatedStorage.Combat.framework.handlers.projectile)
 local promise = require(ReplicatedStorage.Packages.promise)
 local random = require(ReplicatedStorage.Utility.random)
 local timer = require(ReplicatedStorage.Modules.timer)
@@ -55,7 +55,7 @@ function Frost.moveset.Skill(player: playerMarshaller.player, direction: Vector3
 	position2Object.Transparency = 1
 	position2Object.Position = rootPart.Position + Vector3.new(0, -5, 50)
 
-	Projectile.new(snowball, {
+	projectile.new(snowball, {
 		position1 = rootPart.Position + Vector3.new(0, 2, 0),
 		position2 = position2Object.Position,
 		duration = 5,
@@ -76,7 +76,7 @@ function Frost.moveset.Skill(player: playerMarshaller.player, direction: Vector3
 		end
 	end)
 
-	Frost._trove:Connect(snowball.Destroyed, function()
+	Frost._trove:Connect(snowball.Destroying, function()
 		Frost._trove:Clean()
 	end)
 end

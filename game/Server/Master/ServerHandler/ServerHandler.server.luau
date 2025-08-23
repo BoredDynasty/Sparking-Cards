@@ -156,7 +156,7 @@ local function cancelMatch(player: Player)
 	MatchHandler.RemovePlayerFromQueue(player)
 end
 
-local function onPlayerAdded(player: Player)
+local function onPlayerAdded(player: playerMarshaller.player)
 	-- Start profile session with timeout
 	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
 		Cancel = function()
@@ -180,7 +180,7 @@ local function onPlayerAdded(player: Player)
 
 	if (player.Parent == Players) or player:FindFirstAncestor("Players") then
 		profiles[player] = profile
-		print("Data Loaded for " .. player.DisplayName, table.unpack(profile.Data))
+		print("Data Loaded for " .. player.DisplayName, table.unpack(table.pack(profile.Data)))
 		profile.Data.LastLogin = os.time()
 		profileMarshaller.client[player] = {
 			Data = profile.Data,
@@ -192,7 +192,6 @@ local function onPlayerAdded(player: Player)
 	else
 		profile:EndSession()
 		warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
-		return
 	end
 
 	-- for the client to mess around with
@@ -214,11 +213,10 @@ local function onPlayerAdded(player: Player)
 		Packet.profileChanged.sendTo({ nil }, player)
 	end)
 
-	player.CharacterAdded:Connect(function(character: Model)
-		coroutine.wrap(function()
-			character:SetAttribute("Stamina", 100)
-			character:SetAttribute("MaxStamina", 100)
-		end)
+	characterMarshaller.added(player, function(character: Model)
+		character:SetAttribute("Stamina", 100)
+		character:SetAttribute("MaxStamina", 100)
+
 		local highlight = Instance.new("Highlight")
 		highlight.Adornee = character
 		highlight.Parent = character
@@ -228,17 +226,22 @@ local function onPlayerAdded(player: Player)
 		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
 		highlight.OutlineTransparency = 0.7
 		highlight.Enabled = true
+
+		print("new highlight", highlight)
+
+		batch(character:GetDescendants())
 	end)
 
 	-- Optimize character cleanup
-	player.CharacterRemoving:Connect(function(char: Model)
+	characterMarshaller.removing(player, function(character)
 		promise
-			.defer(function(resolve, reject)
-				if char and char.Parent then
-					char:Destroy()
+			.new(function(resolve, reject)
+				local success, err = pcall(character.Destroy, character)
+
+				if success then
 					resolve("Optimized Character Cleanup.")
-				else
-					reject("Couldn't optimize character cleanup.")
+				elseif not success and err then
+					reject("Couldn't optimize character cleanup")
 				end
 			end)
 			:andThen(print)
@@ -248,7 +251,7 @@ local function onPlayerAdded(player: Player)
 end
 
 -- just in case the players have joined the server before the script loaded
-for _, player in ipairs(Players:GetPlayers()) do
+for _, player in ipairs(playerMarshaller.all()) do
 	if player.Parent == Players then
 		task.spawn(onPlayerAdded, player)
 	end
@@ -258,7 +261,7 @@ ProfileStore.OnError:Connect(function(error_message, store_name, profile_key)
 	print(`DataStore error (Store:{store_name};Key:{profile_key}): {error_message}`)
 end)
 
-local function onPlayerRemoving(player: Player)
+local function onPlayerRemoving(player: playerMarshaller.player)
 	GameAnalytics:PlayerRemoved(player)
 	local profile = profiles[player]
 	local needle = table.find(playerObservers, player)
@@ -459,6 +462,13 @@ local function handleSprint(player: Player, v: number, b: boolean)
 	end
 end
 
+local function setNetworkOwner(player: Player?, object: BasePart)
+	if not object then
+		return
+	end
+	object:SetNetworkOwner(player)
+end
+
 -- Set the callback; this can only be done once by one server-side script
 MarketplaceService.ProcessReceipt = function(receiptInfo: {
 	[any]: any,
@@ -505,6 +515,9 @@ Packet.SellCard.listen(function(data, player: Player)
 	local cardName = data.cardName
 	sellCards(player, cardName)
 end)
+Packet.SetNetworkOwner.listen(function(data)
+	setNetworkOwner(data.player, data.object)
+end)
 
 local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
 getProfileRF.OnServerInvoke = getProfile
@@ -513,8 +526,12 @@ getProfileBoundary.OnInvoke = getProfile
 
 -- TODO) add player saving options
 
-Players.PlayerAdded:Connect(onPlayerAdded)
-Players.PlayerRemoving:Connect(onPlayerRemoving)
+playerMarshaller.added(function(player)
+	onPlayerAdded(player)
+end)
+playerMarshaller.removing(function(player)
+	onPlayerRemoving(player)
+end)
 
 windshake:Init({
 	MatchWorkspaceWind = true,

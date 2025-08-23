@@ -3,15 +3,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CardLibrary = require(script.Parent.CardLibrary)
-local compiler = require(script.Parent.compiler)
-local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
-local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
-local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-local promise = require(ReplicatedStorage.Packages.promise)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
-local yoink = require(ReplicatedStorage.Utility.yoink)
 
 --[[
 	orion.luau
@@ -27,6 +20,11 @@ local orion = {
 	strike = script.Parent.Strike,
 	visuals = script.Parent.Visuals,
 	libray = CardLibrary,
+}
+
+local attack_modules = {
+	Frost = require(script.Parent.framework.attacks.Frost),
+	Hydro = require(script.Parent.framework.attacks.Hydro),
 }
 
 local events = ReplicatedStorage.Events
@@ -47,11 +45,28 @@ export type attack_module = {
 ]]
 function orion.registerPlayer(player: playerMarshaller.player & Player)
 	local identification = player.UserId
-	local profile = nil :: typeof(profilestructure)?
-	profile = (events:FindFirstChild("GetProfile") :: RemoteFunction):InvokeServer(
-			player
-		) :: typeof(profilestructure)
-	print(profile)
+
+	-- Add error handling for the GetProfile remote
+	local getProfileRemote = events:FindFirstChild("GetProfile")
+	if not getProfileRemote then
+		warn("GetProfile remote function not found")
+		return
+	end
+
+	local success, profile = pcall(function()
+		return getProfileRemote:InvokeServer(player)
+	end)
+
+	if not success then
+		warn("Failed to get profile for player:", player.Name, "Error:", profile)
+		return
+	end
+
+	if not profile then
+		warn("No profile returned for player:", player.Name)
+		return
+	end
+
 	local equippedCard = profile.EquippedCard or "Frost"
 
 	-- change
@@ -102,26 +117,29 @@ end
 function orion:execute(player: playerMarshaller.player, attack_type: attack_type, ...: any?): any?
 	local attack_module = nil
 	local playerData = orion.player_data[player.UserId]
-	print(table.unpack(playerData))
-	local equippedCard = playerData.equippedCard or "Frost"
+	if not playerData then
+		warn("No player data found for player:", player.Name)
+		return nil
+	end
+	local equippedCard = playerData.equippedCard :: string
 	if not equippedCard then
 		warn("No equipped card found for player:", player.Name, playerData.equippedCard)
 		return nil
 	end
 	print(1)
-	attack_module = compiler[equippedCard] :: attack_module
+	attack_module = attack_modules[equippedCard] :: attack_module
 	local ret_value = nil
 	print(2)
+	print(typeof(attack_module))
 	if attack_module and attack_module.moveset[attack_type] then
 		local attack_function =
 			attack_module.moveset[attack_type] :: (playerMarshaller.player, ...any?) -> ...any?
 		if attack_function and type(attack_function) == "function" then
 			ret_value = attack_function(player, ...)
+			print("attack")
 		else
 			print("no attack function?")
 		end
-	else
-		warn("no attack module??")
 	end
 	print(3)
 	return ret_value

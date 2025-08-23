@@ -1,5 +1,4 @@
 --!nonstrict
---!optimize 2
 
 -- Client.client.luau
 
@@ -16,11 +15,14 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 require("../Gameplay/CardAwarder")()
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
 local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
 local animate = require("../Utilities/animate")
+local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
+print(1)
 
 -- Movement System
 
@@ -31,28 +33,42 @@ local Slide = require(script.Parent.Parent.Movement.Slide)
 local Sprint = require(script.Parent.Parent.Movement.Sprint)
 local Stamina = require(script.Parent.Parent.Movement.Stamina)
 local Walk = require(script.Parent.Parent.Movement.Walk)
+print(1)
 
 local Packet = require(ReplicatedStorage.Packet)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
+print(1)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
+print(1)
 local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
 local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+print(1)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
+local packer = require(ReplicatedStorage.Modules.packer)
+print(1)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+print(2)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+print(3)
+local promise = require(ReplicatedStorage.Packages.promise)
 local shadow = require(script.Parent.Parent.Interface.shadow)
+print(4)
+local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local sway = require(script.Parent.Parent.Interface.sway)
+print(5)
+local timer = require(ReplicatedStorage.Modules.timer)
 local yoink = require(ReplicatedStorage.Utility.yoink)
+print(6)
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
 
@@ -83,8 +99,6 @@ audio:writeSFX({
 	["leave"] = 85897203168160,
 	["success"] = 76288726968959,
 })
-
-animate.initialize(character)
 
 print("client starting")
 
@@ -403,7 +417,6 @@ local function initializeMarket()
 		end
 	end
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
-	hud:render()
 	populateNavigation()
 	navigationBtnSignals.Home:Connect(function()
 		print("Home button clicked")
@@ -484,11 +497,32 @@ local function initializeOptions()
 				end,
 				off = function()
 					local characterFolder = workspace:GetChildren() :: Folder
-					for _, character: Instance in ipairs(characterFolder) do
-						if character:IsA("Model") and playerMarshaller.getByName(character.Name) then
+					for _, otherCharacter: Instance in ipairs(characterFolder) do
+						local condition = otherCharacter:IsA("Model")
+							and playerMarshaller.getByName(otherCharacter.Name)
+
+						if condition and otherCharacter.Name ~= player.Name then
 							character.Parent = ReplicatedStorage:WaitForChild("Characters")
 						end
 					end
+				end,
+			},
+			overrideIcons = {},
+		},
+		[4] = {
+			name = "Clouds",
+			description = "Toggle clouds on or off.",
+			overrideState = "on",
+			toggleFunctions = {
+				on = function()
+					local clouds = workspace.Terrain:FindFirstChildWhichIsA("Clouds")
+					assert(clouds, "Clouds not found")
+					clouds.Enabled = true
+				end,
+				off = function()
+					local clouds = workspace.Terrain:FindFirstChildWhichIsA("Clouds")
+					assert(clouds, "Clouds not found")
+					clouds.Enabled = false
 				end,
 			},
 			overrideIcons = {},
@@ -520,10 +554,111 @@ local function initializeOptions()
 			sway:off(optionsCanvas)
 		end
 	end, lucide.GetAsset("cog"))
-	hud:render()
+end
+local function initializeMatchmaking()
+	print("init matchmaking")
+	local matchmakingGui = PlayerGui:WaitForChild("NewMatch") :: ScreenGui
+	local matchmakingCanvas = matchmakingGui:WaitForChild("CanvasGroup") :: CanvasGroup
+	local matchmakingFrame = matchmakingCanvas:WaitForChild("Frame") :: Frame
+
+	local timeLabel = matchmakingFrame:WaitForChild("Time") :: TextLabel
+
+	local state = statemachine.new({
+		searching = {
+			name = "searching",
+			onEnter = function()
+				print("Entering searching state")
+			end,
+			onExit = function()
+				print("Exiting searching state")
+			end,
+			transitions = {
+				notSearching = "notSearching",
+			},
+		},
+		notSearching = {
+			name = "notSearching",
+			onEnter = function()
+				print("Entering notSearching state")
+			end,
+			onExit = function()
+				print("Exiting notSearching state")
+			end,
+			transitions = {
+				searching = "searching",
+			},
+		},
+	}, "notSearching")
+
+	--displayorder:add(matchmakingCanvas)
+
+	shadow(matchmakingFrame, Color3.new(), 0, 14)
+
+	local function remove(clock: timer.Timer, _swipe: swipe.SwipeDetector)
+		Packet.CancelMatch.send({ player })
+		state:transition("notSearching")
+		promise
+			.new(function(resolve, reject)
+				TweenPlus(matchmakingFrame, {
+					Position = UDim2.fromScale(0.5, -0.2),
+				}, {
+					Time = 0.9,
+					EasingDirection = "Out",
+					EasingStyle = "Back",
+				}):Start()
+				clock:Stop()
+				clock:Destroy()
+				_swipe:Destroy()
+				resolve("cleaned up matchmaking")
+			end)
+			:andThen(print, warn)
+			:catch(warn)
+	end
+
+	local callback = function()
+		if state:getCurrentState() == "notSearching" then
+			state:transition("searching")
+			-- tween into position
+			TweenPlus(matchmakingFrame, {
+				Position = UDim2.fromScale(0.5, 0.1),
+			}, {
+				Time = 0.9,
+				EasingDirection = "Out",
+				EasingStyle = "Back",
+			}):Start()
+			-- start a timer
+			local clock = timer.new()
+			clock:Start()
+			promise
+				.new(function(resolve, reject)
+					if not clock then
+						reject("Clock does not exist.")
+					end
+					clock.onIncrement:Connect(function(currentTime: number)
+						local formatted = clock:FormatTime()
+						timeLabel.Text = formatted
+					end)
+					resolve("yay")
+				end)
+				:andThen(print)
+				:catch(warn)
+			-- enable swipe functionality
+			local _swipe: swipe.SwipeDetector = swipe.new(matchmakingFrame)
+			_swipe.OnSwipe:Connect(function(direction: swipe.direction)
+				if direction == "up" then
+					Packet.CancelMatch.send({ player })
+					remove(clock, _swipe)
+				end
+			end)
+		end
+	end
+
+	hud:create("Matchmaking", callback, lucide.GetAsset("gamepad-2"))
 end
 initializeMarket()
 initializeOptions()
+initializeMatchmaking()
+hud:render()
 
 print("client almost done")
 
@@ -541,6 +676,9 @@ gamecamera:sway()
 --gamecamera:trail()
 gamecamera:followOffset()
 print("game camera")
+
+animate.initialize(character)
+print("animate initialized")
 -- control
 
 local function getAttackTypeFromKey(key: Enum.KeyCode)
@@ -595,7 +733,7 @@ local characterFolder = Instance.new("Folder")
 characterFolder.Name = "Characters"
 characterFolder.Parent = ReplicatedStorage
 
-Packet.cleanupCharacter.listen(function()
+Packet.CleanupCharacter.listen(function()
 	-- Handle character cleanup logic here
 	animate.cleanup()
 	--audio:Cleanup()

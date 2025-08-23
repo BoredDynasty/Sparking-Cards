@@ -35,6 +35,7 @@ function Timer.new(): Timer
 		running = false,
 		elapsedTime = 0,
 		incrementThread = nil :: thread?,
+		onIncrement = SignalPlus(),
 	}, Timer)
 end
 

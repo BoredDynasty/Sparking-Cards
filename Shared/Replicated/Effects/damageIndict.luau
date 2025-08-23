@@ -1,6 +1,9 @@
 --!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local random = require(ReplicatedStorage.Utility.random)
+
 -- damageIndict.luau
 
 -- This module does a cool effect when a player is damaged.
@@ -17,25 +20,26 @@ type damageIndictPart = BasePart & {
 	},
 }
 
-local random = Random.new()
+local pseudorandom = random.create()
 
 return function(damage: number, parent: BasePart)
-	local effectInstance: damageIndictPart = vfxFolder.DamageIndict:Clone()
+	local effectInstance: damageIndictPart = fetchAsset("DamageIndict")
+	effectInstance.Anchored = false
 	effectInstance.Parent = parent
-	effectInstance.Position = parent.Position
+	effectInstance.Position = parent.Position + Vector3.new(0, 4, 0)
 
 	-- Set the size and transparency based on damage
 	local sizeMultiplier = math.clamp(damage / 100, 0.1, 1) -- Adjust size based on damage
 	effectInstance.Size = Vector3.new(sizeMultiplier, sizeMultiplier, sizeMultiplier)
 	effectInstance.Transparency = 0.5 -- Semi-transparent effect
 
-	local randomX = random:NextInteger(-5, 5)
-	local randomZ = random:NextInteger(-5, 5)
+	local randomX = pseudorandom:float(-5, 5)
+	local randomZ = pseudorandom:float(-5, 5)
 
 	local attachment = effectInstance:FindFirstChildOfClass("Attachment") :: Attachment
 
 	local maxForce = 250
-	local y = random:NextInteger(45, 55)
+	local y = pseudorandom:float(45, 55)
 	local vectorVelocity = Vector3.new(randomX, y, randomZ)
 
 	local linearVelocity = Instance.new("LinearVelocity")
