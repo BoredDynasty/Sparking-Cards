@@ -9,22 +9,21 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local CameraController = require(game.StarterPlayer.StarterPlayerScripts.Camera.CameraController)
+local CameraController = require("../Camera/CameraController")
 
 local GameCamera = {}
 
 local controller = CameraController.new()
 
 -- Add effects
-controller:Add("Sway", require(game.StarterPlayer.StarterPlayerScripts.Camera.Sway))
-controller:Add("Follow", require(game.StarterPlayer.StarterPlayerScripts.Camera.Follow))
-controller:Add("Trail", require(game.StarterPlayer.StarterPlayerScripts.Camera.Trail))
-controller:Add("Shake", require(game.StarterPlayer.StarterPlayerScripts.Camera.Shake))
-controller:Add("Recoil", require(game.StarterPlayer.StarterPlayerScripts.Camera.Recoil))
-controller:Add("Offset", require(game.StarterPlayer.StarterPlayerScripts.Camera.Offset))
-controller:Add("Idle", require(game.StarterPlayer.StarterPlayerScripts.Camera.Idle))
-local fovManager =
-	controller:Add("DynamicFOV", require(game.StarterPlayer.StarterPlayerScripts.Camera.DynamicFOV))
+controller:Add("Sway", require("../Camera/Sway"))
+controller:Add("Follow", require("../Camera/Follow"))
+controller:Add("Trail", require("../Camera/Trail"))
+controller:Add("Shake", require("../Camera/Shake"))
+controller:Add("Recoil", require("../Camera/Recoil"))
+controller:Add("Offset", require("../Camera/Offset"))
+controller:Add("Idle", require("../Camera/Idle"))
+local fovManager = controller:Add("DynamicFOV", require("../Camera/DynamicFOV"))
 
 -- Start the camera controller
 controller:Start()

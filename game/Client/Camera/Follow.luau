@@ -26,13 +26,17 @@ function Follow.new(cameraController)
 	return self
 end
 
-function Follow:Update(deltaTime: number, cframe: CFrame): CFrame
+function Follow:Update(deltaTime: number, coordinate: CFrame): CFrame
 	local newPosition = CFrame.Angles(
-		math.rad(((self._mouse.Y - self._mouse.ViewSizeY / 2) / self._mouse.ViewSizeY) * -self._config.MaxTilt),
-		math.rad(((self._mouse.X - self._mouse.ViewSizeX / 2) / self._mouse.ViewSizeX) * -self._config.MaxTilt),
+		math.rad(
+			((self._mouse.Y - self._mouse.ViewSizeY / 2) / self._mouse.ViewSizeY) * -self._config.MaxTilt
+		),
+		math.rad(
+			((self._mouse.X - self._mouse.ViewSizeX / 2) / self._mouse.ViewSizeX) * -self._config.MaxTilt
+		),
 		0
 	)
-	return cframe * newPosition
+	return coordinate * newPosition
 end
 
 function Follow:Destroy()

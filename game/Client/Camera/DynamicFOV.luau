@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local CameraConfig = require(ReplicatedStorage.Structures.CameraConfig)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 
 local DynamicFOV = {}
 DynamicFOV.__index = DynamicFOV
@@ -39,10 +40,14 @@ function DynamicFOV:TweenFOV(targetFOV: number, duration: number, override: bool
 	if self._currentTween then
 		self._currentTween:Cancel()
 	end
-
-	local tweenInfo = TweenInfo.new(duration, Enum.EasingStyle.Circular, Enum.EasingDirection.Out)
-	self._currentTween = TweenService:Create(self._camera, tweenInfo, { FieldOfView = targetFOV })
-	self._currentTween:Play()
+	self._currentTween = TweenPlus(self._camera, {
+		FieldOfView = targetFOV,
+	}, {
+		Time = duration,
+		EasingStyle = "Circular",
+		EasingDirection = "Out",
+	})
+	self._currentTween:Start()
 end
 
 function DynamicFOV:Update(deltaTime: number, cframe: CFrame): CFrame

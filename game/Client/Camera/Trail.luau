@@ -27,18 +27,18 @@ function Trail.new(cameraController)
 	return self
 end
 
-function Trail:Update(deltaTime: number, cframe: CFrame): CFrame
+function Trail:Update(deltaTime: number, coordinate: CFrame): CFrame
 	if not self._rootPart then
-		return cframe
+		return coordinate
 	end
 
-	local velocity = self._rootPart.AssemblyLinearVelocity
-	local speed = self._humanoid.WalkSpeed
-	local newOffset = self._config.Offset * velocity.Magnitude / (speed * 2)
-	local cameraOffset = self._humanoid.CameraOffset:Lerp(newOffset, self._config.TrailAlpha)
+	local velocity = self._rootPart.AssemblyLinearVelocity :: Vector3
+	local speed = self._humanoid.WalkSpeed :: number
+	local newOffset = self._config.Offset :: Vector3 * velocity.Magnitude :: number / (speed * 2)
+	local cameraOffset = self._humanoid.CameraOffset:Lerp(newOffset, self._config.TrailAlpha :: number)
 	self._humanoid.CameraOffset = cameraOffset
 
-	return cframe
+	return coordinate
 end
 
 function Trail:Destroy()

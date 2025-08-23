@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 --[=[
 	CameraController
 	@class CameraController
@@ -7,18 +7,24 @@
 	It operates on a single RenderStep connection for performance and uses Trove for cleanup.
 ]=]
 
-local RunService = game:GetService("RunService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-local Trove = require(ReplicatedStorage.Packages.trove)
+local trove = require(ReplicatedStorage.Packages.trove)
 
 local CameraController = {}
 CameraController.__index = CameraController
 
+export type cameraEffect = {
+	new: (self: cameraEffect) -> cameraEffect,
+	Update: (self: cameraEffect, deltaTime: number, cframe: CFrame) -> CFrame,
+	Destroy: (self: cameraEffect) -> (),
+}
+
 function CameraController.new()
 	local self = setmetatable({}, CameraController)
 
-	self._trove = Trove.new()
+	self._trove = trove.new()
 	self._effects = {}
 	self._camera = workspace.CurrentCamera
 
@@ -33,17 +39,19 @@ function CameraController:Add(effectName: string, effectModule: any)
 end
 
 function CameraController:Start()
-	self._trove:Connect(RunService:BindToRenderStep("Camera", Enum.RenderPriority.Camera.Value, function(deltaTime: number)
-		local cframe = self._camera.CFrame
+	(self._trove :: typeof(trove.new())):Connect(
+		RunService:BindToRenderStep("Camera", Enum.RenderPriority.Camera.Value, function(deltaTime: number)
+			local cframe = self._camera.CFrame
 
-		for _, effect in pairs(self._effects) do
-			if effect.Update then
-				cframe = effect:Update(deltaTime, cframe)
+			for _, effect: cameraEffect in pairs(self._effects) :: { cameraEffect } do
+				if effect.Update then
+					cframe = effect:Update(deltaTime, cframe)
+				end
 			end
-		end
 
-		self._camera.CFrame = cframe
-	end))
+			self._camera.CFrame = cframe
+		end)
+	)
 end
 
 function CameraController:Get(effectName: string)
