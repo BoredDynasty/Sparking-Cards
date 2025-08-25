@@ -23,7 +23,7 @@ local playerMarshaller = {}
 
 -- Utility to get a player by UserId
 function playerMarshaller.getByUserId(userId: number): player?
-	for _, player in Players:GetPlayers() do
+	for _, player in playerMarshaller.all() do
 		if player.UserId == userId then
 			return player :: any
 		end
@@ -33,7 +33,7 @@ end
 
 -- Utility to get a player by Name (case-sensitive)
 function playerMarshaller.getByName(name: string): player?
-	for _, player in Players:GetPlayers() do
+	for _, player in playerMarshaller.all() do
 		if player.Name == name then
 			return player :: any
 		end
@@ -43,7 +43,7 @@ end
 
 -- Utility to get a player by DisplayName (case-insensitive)
 function playerMarshaller.getByDisplayName(displayName: string): player?
-	for _, player in Players:GetPlayers() do
+	for _, player in playerMarshaller.all() do
 		if player.DisplayName:lower() == displayName:lower() then
 			return player :: any
 		end
@@ -63,6 +63,16 @@ function playerMarshaller.get(): player
 	return localPlayer :: any
 end
 
+-- Utility to get a player from a character instance
+function playerMarshaller.getFromCharacter(character: Instance): player?
+	for _, player in playerMarshaller.all() do
+		if player.Character == character then
+			return player :: any
+		end
+	end
+	return nil
+end
+
 --  Asynchronous utility to get all players
 function playerMarshaller.all(): { player }
 	local list: { Player } = {}
@@ -77,7 +87,7 @@ function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing
 	local connections = {}
 
 	if not dont_run_for_existing_players then
-		for _, player in Players:GetPlayers() do
+		for _, player in playerMarshaller.all() do
 			task.defer(f, player :: any)
 		end
 	end

@@ -2,12 +2,7 @@
 
 -- DisplayOrder.lua
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
-
-local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
-local fade = require(script.Parent.fade)
 
 local DisplayOrder = {}
 DisplayOrder.__index = DisplayOrder
@@ -38,6 +33,7 @@ function DisplayOrder:add(canvas: Instance)
 end
 
 function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
+	(canvas.Parent :: ScreenGui).Enabled = true
 	task.spawn(function()
 		local tweenInfo
 		local targetPosition
@@ -75,6 +71,7 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 			print("invisible")
 		end
 	end)
+	--DisplayOrder:setDisplayOrder(canvas.Parent.Name:lower())
 end
 
 function DisplayOrder:setDisplayOrder(i: string)

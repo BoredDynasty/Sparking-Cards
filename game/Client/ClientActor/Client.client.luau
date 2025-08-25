@@ -612,7 +612,7 @@ local function initializeMatchmaking()
 				_swipe:Destroy()
 				resolve("cleaned up matchmaking")
 			end)
-			:andThen(print, warn)
+			:andThen(print)
 			:catch(warn)
 	end
 

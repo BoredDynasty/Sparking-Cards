@@ -7,7 +7,7 @@
 
 > [!IMPORTANT]
 > We are on **Beta Phase.**
-> `0.1.0 (Major.Minor.Revision)
+> `0.2.0 (major.minor.patch)
 
 ### Update Logs
 

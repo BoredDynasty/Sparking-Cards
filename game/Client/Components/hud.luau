@@ -4,8 +4,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local hint = require(ReplicatedStorage.ClientModules.Hint)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 
@@ -17,7 +19,12 @@ local hud = {
 	buttons = {},
 }
 
-export type buttons = { { name: string, callback: () -> (), icon: icon? } }
+export type button = {
+	name: string,
+	callback: () -> (),
+	icon: icon?,
+	reactor: observer.Observer<string>,
+}
 
 export type icon = {
 	IconName: string, -- "icon-name"
@@ -32,8 +39,13 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		name = name,
 		callback = callback,
 		icon = icon,
+		reactor = observer.new("open"),
 	}
 	table.insert(hud.buttons, button)
+end
+
+local function getOppositeReactorValue(reactor: observer.Observer<string>): string
+	return reactor:Get() == "open" and "close" or "open"
 end
 
 function hud:render()
@@ -45,12 +57,12 @@ function hud:render()
 			button:Destroy() -- Clear existing buttons
 		end
 	end
-	for _, button in pairs(hud.buttons :: buttons) do
+	for _, button in pairs(hud.buttons) :: { button } do
 		print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
 
-		local icon = button.icon.IconName or "file"
+		local icon = button.icon and button.icon.IconName or "file"
 
 		local TextButton = Instance.new("TextButton")
 		local UICorner = Instance.new("UICorner")
@@ -93,15 +105,49 @@ function hud:render()
 		UIAspectRatioConstraint.Parent = Icon
 
 		TextButton.MouseButton1Click:Connect(function()
-			print("Button clicked:", button.name)
+			local value = getOppositeReactorValue(button.reactor)
+			button.reactor:Set(value)
+		end)
+		button.reactor:Watch(function(newValue: string)
+			local oppositeValue = getOppositeReactorValue(button.reactor)
+			print("Button state changed:", oppositeValue, "->", newValue)
+
 			if button.callback then
 				button.callback()
 			else
 				warn("No callback defined for button:", button.name)
 			end
+
+			-- tilt the icon
+			if newValue == "open" then
+				TweenPlus(
+					Icon,
+					{ Rotation = 15 },
+					{ Time = 0.25, EasingDirection = "Out", EasingStyle = "Back" }
+				):Start()
+			else
+				TweenPlus(
+					Icon,
+					{ Rotation = 0 },
+					{ Time = 0.25, EasingDirection = "Out", EasingStyle = "Back" }
+				):Start()
+			end
 		end)
 		shadow(TextButton, Color3.new(), 0.5, 14)
 		hint("Toggle the " .. button.name:lower() .. " page.", TextButton)
+	end
+end
+
+function hud:toggle(buttonName: string)
+	local button: button? = nil
+	for _, b in pairs(hud.buttons) :: { button } do
+		if b.name == buttonName then
+			button = b
+			break
+		end
+	end
+	if button then
+		button.reactor:Set(getOppositeReactorValue(button.reactor))
 	end
 end
 
