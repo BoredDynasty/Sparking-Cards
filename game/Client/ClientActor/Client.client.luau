@@ -15,6 +15,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 require("../Gameplay/CardAwarder")()
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local notify = require(StarterPlayer.StarterPlayerScripts.Components.notify)
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
@@ -22,6 +23,7 @@ local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
 local animate = require("../Utilities/animate")
 local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
+local yoink = require(StarterPlayer.StarterPlayerScripts.Utilities.yoink)
 print(1)
 
 -- Movement System
@@ -68,7 +70,6 @@ local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local sway = require(script.Parent.Parent.Interface.sway)
 print(5)
 local timer = require(ReplicatedStorage.Modules.timer)
-local yoink = require(ReplicatedStorage.Utility.yoink)
 print(6)
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
@@ -93,13 +94,6 @@ local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
 
 Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
 Cmdr:SetActivationUnlocksMouse(true)
-
-audio:writeSFX({
-	["click"] = 90092163763441,
-	["hover"] = 119879668444252,
-	["leave"] = 85897203168160,
-	["success"] = 76288726968959,
-})
 
 print("client starting")
 
@@ -143,14 +137,23 @@ local function initializeMarket()
 				task.wait()
 			end
 		end
+
 		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
 	end
 
 	local function displaySpendings()
 		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
-		profile = yoink.client:grab("profile_data") :: typeof(profilestructure)
-		print("got profile for displaying spendings!!!!11!")
+		yoink.getAsync("profile_data"):andThen(function(response)
+			if response.success then
+				print("Player stats:", response.value)
+				profile = response.value
+			else
+				warn("Error:", response.error)
+			end
+		end)
+
 		local big_cards = tostring(profile.Data["Big-Cards"])
+
 		TextPlus.Create(moneyFrame, big_cards, {
 			Font = Font.new(
 				"rbxasset://fonts/families/Montserrat.json", -- Family.
@@ -166,9 +169,9 @@ local function initializeMarket()
 			Dynamic = true,
 		})
 	end
-	coroutine.wrap(function()
-		--retryer.delay(10, math.huge, displaySpendings)
-	end)
+
+	task.spawn(displaySpendings)
+
 	shadow(shopFrame, Color3.new(), 0, 14)
 	shadow(shopNavigation, Color3.new(), 0, 14)
 	shadow(spendings, Color3.new(), 0, 14)
@@ -540,9 +543,9 @@ local function initializeOptions()
 		)
 		onToggle:Connect(function(state: boolean)
 			if state then
-				print("Option " .. option.name .. " is ON")
+				notify.success(option.name, " is enabled")
 			else
-				print("Option " .. option.name .. " is OFF")
+				notify.success(option.name, " is disabled")
 			end
 		end)
 	end
@@ -655,6 +658,9 @@ local function initializeMatchmaking()
 	end
 
 	hud:create("Matchmaking", callback, lucide.GetAsset("gamepad-2"))
+end
+local function initializeBadges()
+	print("init badges")
 end
 initializeMarket()
 initializeOptions()

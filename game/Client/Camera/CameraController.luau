@@ -31,7 +31,7 @@ function CameraController.new()
 	return self
 end
 
-function CameraController:Add(effectName: string, effectModule: any)
+function CameraController:Add<T>(effectName: string, effectModule: T): T
 	local effect = effectModule.new(self)
 	self._effects[effectName] = effect
 	self._trove:Add(effect)
@@ -39,28 +39,30 @@ function CameraController:Add(effectName: string, effectModule: any)
 end
 
 function CameraController:Start()
-	(self._trove :: typeof(trove.new())):Connect(
-		RunService:BindToRenderStep("Camera", Enum.RenderPriority.Camera.Value, function(deltaTime: number)
+	(self._trove :: typeof(trove.new())):BindToRenderStep(
+		"Camera",
+		Enum.RenderPriority.Camera.Value,
+		function(deltaTime: number)
 			local cframe = self._camera.CFrame
 
-			for _, effect: cameraEffect in pairs(self._effects) :: { cameraEffect } do
+			for _, effect: cameraEffect in pairs(self._effects) do
 				if effect.Update then
 					cframe = effect:Update(deltaTime, cframe)
 				end
 			end
 
 			self._camera.CFrame = cframe
-		end)
+		end
 	)
 end
 
-function CameraController:Get(effectName: string)
-	return self._effects[effectName]
+function CameraController:Get<T>(effectName: string)
+	return self._effects[effectName] :: T & cameraEffect & any
 end
 
 function CameraController:Destroy()
+	self._trove:Clean()
 	self._trove:Destroy()
-	RunService:UnbindFromRenderStep("Camera")
 end
 
 return CameraController

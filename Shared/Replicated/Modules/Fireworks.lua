@@ -7,11 +7,6 @@ local TweenService = game:GetService("TweenService")
 
 local audio = require(script.Parent.audio)
 
-audio:writeSFX({
-	blastoff = 551051176,
-	boom = 269146157,
-})
-
 local FireworkAssets =
 	ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Particles"):WaitForChild("Fireworks") :: Folder
 

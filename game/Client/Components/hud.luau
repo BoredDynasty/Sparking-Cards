@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local audio = require(ReplicatedStorage.Modules.audio)
 local hint = require(ReplicatedStorage.ClientModules.Hint)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -15,9 +16,8 @@ local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 
 local player = playerMarshaller.get()
 
-local hud = {
-	buttons = {},
-}
+local hud = {}
+hud.buttons = {}
 
 export type button = {
 	name: string,
@@ -57,7 +57,8 @@ function hud:render()
 			button:Destroy() -- Clear existing buttons
 		end
 	end
-	for _, button in pairs(hud.buttons) :: { button } do
+
+	for _, button: any in pairs(hud.buttons) do
 		print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
@@ -107,6 +108,7 @@ function hud:render()
 		TextButton.MouseButton1Click:Connect(function()
 			local value = getOppositeReactorValue(button.reactor)
 			button.reactor:Set(value)
+			audio:SFX("click")
 		end)
 		button.reactor:Watch(function(newValue: string)
 			local oppositeValue = getOppositeReactorValue(button.reactor)

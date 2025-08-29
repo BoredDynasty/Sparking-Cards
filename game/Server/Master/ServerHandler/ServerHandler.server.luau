@@ -32,7 +32,6 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
--- local ActorGroup = require(ReplicatedStorage.Utility.ActorGroup)
 
 local remoteEvents = ReplicatedStorage.Events
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
@@ -163,8 +162,11 @@ local function onPlayerAdded(player: playerMarshaller.player)
 			return player.Parent ~= Players
 		end,
 	})
+	task.wait(5)
 	if not profile or profile == nil then
-		player:Kick("Roblox Servers on fire. It's best to rejoin.")
+		task.delay(15, function()
+			player:Kick("Roblox Servers on fire. It's best to rejoin.")
+		end)
 		return
 	end
 	-- Set up profile
@@ -178,7 +180,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 		player:Kick("Session Locked, rejoin")
 	end)
 
-	if (player.Parent == Players) or player:FindFirstAncestor("Players") then
+	if (player.Parent == Players) or player:FindFirstAncestor("Players") or player ~= nil then
 		profiles[player] = profile
 		print("Data Loaded for " .. player.DisplayName, table.unpack(table.pack(profile.Data)))
 		profile.Data.LastLogin = os.time()
@@ -213,10 +215,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 		Packet.profileChanged.sendTo({ nil }, player)
 	end)
 
-	characterMarshaller.added(player, function(character: Model)
-		character:SetAttribute("Stamina", 100)
-		character:SetAttribute("MaxStamina", 100)
-
+	local function addHighlight(character: characterMarshaller.Character)
 		local highlight = Instance.new("Highlight")
 		highlight.Adornee = character
 		highlight.Parent = character
@@ -228,8 +227,13 @@ local function onPlayerAdded(player: playerMarshaller.player)
 		highlight.Enabled = true
 
 		print("new highlight", highlight)
+	end
 
-		batch(character:GetDescendants())
+	characterMarshaller.added(player, function(character: characterMarshaller.Character)
+		character:SetAttribute("Stamina", 100)
+		character:SetAttribute("MaxStamina", 100)
+
+		addHighlight(character)
 	end)
 
 	-- Optimize character cleanup
@@ -247,6 +251,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 			:andThen(print)
 			:catch(warn)
 	end)
+	addHighlight(player.Character or player.CharacterAdded:Wait())
 	batch(player:GetDescendants())
 end
 
@@ -430,20 +435,31 @@ local function sellCards(player: Player, cardName: string)
 end
 
 local function getProfile(player: Player)
-	local canFail = function()
-		return promise.new(function(resolve, reject)
+	local value = nil
+	promise
+		.new(function(resolve, reject)
 			local profile = profiles[player]
+
 			if not profile then
 				reject("Profile does not exist!")
 			end
+
+			value = {
+				Data = profile.Data,
+				Key = profile.Key,
+				LastSaved = profile.LastSavedData,
+			}
+
 			resolve({
 				Data = profile.Data,
 				Key = profile.Key,
 				LastSaved = profile.LastSavedData,
 			})
 		end)
-	end
-	return promise.retry(canFail, 10)
+		:andThen(print)
+		:catch(warn)
+
+	return value
 end
 
 local function handleSprint(player: Player, v: number, b: boolean)
@@ -467,6 +483,14 @@ local function setNetworkOwner(player: Player?, object: BasePart)
 		return
 	end
 	object:SetNetworkOwner(player)
+end
+
+local function handleYoinkRequest(player: playerMarshaller.player, key: string)
+	local value = nil
+	if key == "profile_data" then
+		value = getProfile(player)
+	end
+	return value
 end
 
 -- Set the callback; this can only be done once by one server-side script
@@ -519,10 +543,8 @@ Packet.SetNetworkOwner.listen(function(data)
 	setNetworkOwner(data.player, data.object)
 end)
 
-local getProfileRF = remoteEvents:FindFirstChild("GetProfile") :: RemoteFunction
-getProfileRF.OnServerInvoke = getProfile
-local getProfileBoundary = remoteEvents:FindFirstChild("GetProfileBoundary") :: BindableFunction
-getProfileBoundary.OnInvoke = getProfile
+local yoinkWrapper = ReplicatedStorage:FindFirstChild("YoinkWrapper") :: RemoteFunction
+yoinkWrapper.OnServerInvoke = handleYoinkRequest
 
 -- TODO) add player saving options
 

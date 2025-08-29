@@ -54,17 +54,19 @@ end
 -- Utility to get the local player
 function playerMarshaller.get(): player
 	local localPlayer = Players.LocalPlayer
+	--[[
 	localPlayer = playerMarshaller.added(function(p)
 		if localPlayer.Name == p.Name then
 			localPlayer = p
 		end
 	end)
+	]]
 	assert(localPlayer, "Local player is not available | ensure this is run on the client")
 	return localPlayer :: any
 end
 
 -- Utility to get a player from a character instance
-function playerMarshaller.getFromCharacter(character: Instance): player?
+function playerMarshaller.getFromCharacter(character: Model): player?
 	for _, player in playerMarshaller.all() do
 		if player.Character == character then
 			return player :: any

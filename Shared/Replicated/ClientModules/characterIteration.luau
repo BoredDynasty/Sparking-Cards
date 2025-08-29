@@ -1,8 +1,9 @@
---!strict
+--!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local promise = require(ReplicatedStorage.Packages.promise)
 
 -- characterIteration.luau
 -- this module requires both sorting options to be enabled.
@@ -12,7 +13,17 @@ local function iterate(container: Frame, thread: (number, TextLabel | ImageLabel
 	for characterNumber, character in TextPlus.GetCharacters(container) do
 		-- For Roblox fonts, 'character' will be a TextLabel.
 		-- For custom fonts, 'character' will be an ImageLabel.
-		thread(characterNumber, character)
+		promise
+			.new(function(resolve, reject)
+				local success, err = pcall(thread, characterNumber, character)
+				if success then
+					resolve()
+				else
+					reject(err)
+				end
+			end)
+			:andThen(print)
+			:catch(warn)
 	end
 end
 
@@ -23,6 +34,7 @@ function characterIteration:shake(container: Frame)
 			EasingDirection = "In",
 			EasingStyle = "Sine",
 		})
+		prior:Start()
 		prior.Completed:Wait()
 		TweenPlus(character, { Position = character.Position - UDim2.fromOffset(20, 0) }, {
 			Time = 0.1,
@@ -52,6 +64,7 @@ function characterIteration:jump(container: Frame)
 			EasingDirection = "Out",
 			EasingStyle = "Sine",
 		})
+		prior:Start()
 		prior.Completed:Wait()
 		local position = UDim2.fromScale(
 			character.Position.X.Scale,
