@@ -33,7 +33,7 @@ function Sprint.new(movementController)
 	self._originalWalkSpeed = MovementConfig.Character.BaseSpeed
 	self._sprintWalkSpeed = self._originalWalkSpeed + self._config.SpeedIncrease
 
-	self._originalFOV = gamecamera:getBaseFOV()
+	self._originalFOV = gamecamera:GetBaseFOV()
 	self._sprintFOV = self._originalFOV + self._config.FieldOfViewIncrease
 
 	animate.loadAnimation("run", MovementConfig.Animations.Run)
@@ -73,7 +73,7 @@ function Sprint:Start()
 	self._character:SetAttribute("AntiRegenerate", true)
 	animate.play("run", 0.25)
 
-	gamecamera:tweenFOV(self._sprintFOV, 0.5)
+	gamecamera:TweenFOV(self._sprintFOV, 0.5)
 
 	dialogue.client:speak({
 		speaker = "You",
@@ -95,7 +95,7 @@ function Sprint:Stop()
 	self._character:SetAttribute("AntiRegenerate", false)
 	animate.stop("run")
 
-	gamecamera:tweenFOV(self._originalFOV, 0.5)
+	gamecamera:TweenFOV(self._originalFOV, 0.5)
 
 	if self._speedForceEffect then
 		self._speedForceEffect:Destroy()

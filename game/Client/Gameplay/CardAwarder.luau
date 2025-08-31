@@ -36,14 +36,14 @@ return function()
 				return
 			end
 			if otherPlayer == player then
-				print("Touched big card: " .. card.Name)
+				print("Touched Prism: " .. card.Name)
 				local amount = card:GetAttribute("Award") :: number
 				local dropAmount = amount
 				CardManager:Drop(player, dropAmount)
 				local character = player.Character
 				Fireworks:PlayFireworks(character.HumanoidRootPart)
-				Packet.PayBigCards.send({ amount = amount, recipientUsername = player.Name })
-				print("sent req. to pay big cards!")
+				Packet.PayPrisms.send({ amount = amount, recipientUsername = player.Name })
+				print("sent req. to pay prisms!")
 				task.delay(debounceDelay, function()
 					card:Destroy()
 				end)

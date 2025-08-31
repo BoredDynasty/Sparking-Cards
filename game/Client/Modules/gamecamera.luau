@@ -17,7 +17,7 @@ local controller = CameraController.new()
 
 -- Add effects
 controller:Add("Sway", require("../Camera/Sway"))
-controller:Add("Follow", require("../Camera/Follow"))
+-- controller:Add("Follow", require("../Camera/Follow"))
 controller:Add("Trail", require("../Camera/Trail"))
 controller:Add("Shake", require("../Camera/Shake"))
 controller:Add("Offset", require("../Camera/Offset"))

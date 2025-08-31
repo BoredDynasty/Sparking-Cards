@@ -2,41 +2,36 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local Hint = require(ReplicatedStorage.ClientModules.Hint)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
-local lucide = require(ReplicatedStorage.Packages.lucide)
+local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local statemachine = require(ReplicatedStorage.Utility.statemachine)
 
 -- Options.luau
 
-local Options = {
-	created = {},
-	states = {
-		["on"] = {
-			name = "on",
-			onEnter = function(optionTemplate: optionTemplate)
-				print(optionTemplate)
-				--optionTemplate.Toggle.Icon.Image = "rbxassetid://7733715400" -- Replace with actual icon ID
-			end,
-			transitions = {
-				off = "off",
-			},
-		},
-		["off"] = {
-			name = "off",
-			onEnter = function(optionTemplate: optionTemplate)
-				print(optionTemplate)
-				--optionTemplate.Toggle.Icon.Image = "rbxassetid://10747384394" -- Replace with actual icon ID
-			end,
-			transitions = {
-				on = "on",
-			},
-		},
-	},
+local Options = {}
+Options.created = {}
+
+export type Option = {
+	name: string,
+	description: string,
+	toggleFunctions: {
+		on: (self: optionTemplate) -> boolean,
+		off: (self: optionTemplate) -> boolean,
+	}?,
+	icons: {
+		on: string?,
+		off: string?,
+	}?,
+	reactor: observer.Observer<string>,
+	interface: optionTemplate?,
 }
+
+export type Icons = {
+	on: string?,
+	off: string?,
+}?
 
 export type optionTemplate = Frame & {
 	Frame: Frame & {
@@ -46,155 +41,157 @@ export type optionTemplate = Frame & {
 		Icon: ImageLabel,
 	},
 }
-export type toggleFunctions = {
-	on: (self: optionTemplate) -> boolean, -- must return boolean indicating success
-	off: (self: optionTemplate) -> boolean, -- must return boolean indicating success
+
+local DEFAULT_ICONS = {
+	on = "rbxassetid://10747384394",
+	off = "rbxassetid://7733715400",
 }
 
 local templates = (ReplicatedStorage.Interfaces :: Folder).Options :: Folder
-
 local player = playerMarshaller.get()
 local optionsGui = player.PlayerGui:WaitForChild("Options") :: ScreenGui
-
 local optionsCanvas = optionsGui:WaitForChild("CanvasGroup") :: CanvasGroup
 local optionsFrame = optionsCanvas:WaitForChild("Frame") :: Frame
-
 local holder = optionsFrame:WaitForChild("Holder") :: ScrollingFrame
-
 local optionTemplate = templates:WaitForChild("OptionTemplate") :: optionTemplate
 
-local function createOption(optionName: string, description: string, initialIcon: string?): optionTemplate
-	local option: optionTemplate = optionTemplate:Clone()
-	option.Name = optionName
-	option.Parent = holder
+local function createOptionInterface(option: Option): optionTemplate
+	local interface: optionTemplate = optionTemplate:Clone()
+	interface.Name = option.name
+	interface.Parent = holder
 
-	local textDisplay = option.Frame.TextDisplay
+	local textDisplay = interface.Frame.TextDisplay
 
-	initialIcon = initialIcon or "rbxassetid://7733715400"
+	-- Create text display with TextPlus
+	TextPlus.Create(textDisplay, `{option.name}{"\n\n\n"}{option.description or " "}`, {
+		Font = Font.new(
+			"rbxasset://fonts/families/Montserrat.json",
+			Enum.FontWeight.Regular,
+			Enum.FontStyle.Normal
+		),
+		Size = 16,
+		Color = Color3.fromHex("#ffffff"),
+		XAlignment = "Left",
+		YAlignment = "Center",
+		LineSorting = true,
+		WordSorting = true,
+		Dynamic = true,
+	})
 
-	TextPlus.Create(
-		textDisplay,
-		`{optionName}{"\n\n\n"}{description or " "}`,
-		-- the name bolded and the description transparency 0.5
-		-- maybe the description should be italic
-		{
-			Font = Font.new(
-				"rbxasset://fonts/families/Montserrat.json", -- Family.
-				Enum.FontWeight.Regular, -- Weight.
-				Enum.FontStyle.Normal -- Style.
-			),
-			Size = 16,
-			Color = Color3.fromHex("#ffffff"),
-			XAlignment = "Left",
-			YAlignment = "Center",
-			LineSorting = true,
-			WordSorting = true,
-			Dynamic = true,
-		}
-	)
-	-- now we do manual rich text
-	-- please help
-	local line1 = textDisplay["1"] :: Folder -- line 1
-	-- Line and word sorting:
-	for wordNumber, word in line1:GetChildren() do
-		-- 'word' will be a folder.
-		for characterNumber, character in word:GetChildren() do
-			-- For Roblox fonts, 'character' will be a TextLabel.
-			-- For custom fonts, 'character' will be an ImageLabel.
+	-- Style the title text (first line)
+	local line1 = textDisplay["1"] :: Folder
+	for _, word in line1:GetChildren() do
+		for _, character in word:GetChildren() do
 			character.FontFace = Font.new(
-				"rbxasset://fonts/families/Montserrat.json", -- Family.
-				Enum.FontWeight.Bold, -- Weight.
-				Enum.FontStyle.Normal -- Style.
+				"rbxasset://fonts/families/Montserrat.json",
+				Enum.FontWeight.Bold,
+				Enum.FontStyle.Normal
 			)
 		end
 	end
+
+	-- Style the description text (second line)
 	local line2 = textDisplay["2"] :: Folder
-	-- Line and word sorting:
-	for wordNumber, word in line2:GetChildren() do
-		-- 'word' will be a folder.
-		for characterNumber, character: TextLabel in word:GetChildren() do
-			-- For Roblox fonts, 'character' will be a TextLabel.
-			-- For custom fonts, 'character' will be an ImageLabel.
+	for _, word in line2:GetChildren() do
+		for _, character: TextLabel in word:GetChildren() do
 			character.TextTransparency = 0.5
 			character.FontFace = Font.new(
-				"rbxasset://fonts/families/Montserrat.json", -- Family.
-				Enum.FontWeight.Regular, -- Weight.
-				Enum.FontStyle.Normal -- Style.
+				"rbxasset://fonts/families/Montserrat.json",
+				Enum.FontWeight.Regular,
+				Enum.FontStyle.Normal
 			)
 		end
 	end
 
-	return option :: optionTemplate
+	return interface
 end
 
-function Options.createOption(
-	optionName: string,
-	description: string,
-	overrideState: string?,
-	toggleFunctions: toggleFunctions?,
-	overrideIcons: { [string]: string? }?
-): (SignalPlus.Signal<boolean>, optionTemplate)
-	local initialIcon = if overrideIcons and overrideIcons.off
-		then overrideIcons.off :: string
-		else "rbxassetid://7733715400" -- Default off icon
-	local option = createOption(optionName, description, initialIcon)
-	option.Parent = holder
-
-	local onToggle = SignalPlus() :: SignalPlus.Signal<boolean>
-
-	Options.created[optionName] = {
-		interface = option,
-		optionName = optionName,
+function Options:create(name: string, description: string, toggleFunctions, icons: Icons?)
+	local option: Option = {
+		name = name,
 		description = description,
-		state = statemachine.new(Options.states, overrideState or "on"),
+		toggleFunctions = toggleFunctions,
+		icons = icons or DEFAULT_ICONS,
+		reactor = observer.new("off"),
 	}
 
-	option.Toggle.Activated:Connect(function()
-		local currentState = Options.created[optionName].state:getCurrentState()
-		if currentState == "on" then
-			Options.created[optionName].state:transition("off", option)
-			if toggleFunctions then
-				local offEvent = function()
-					if overrideIcons and overrideIcons.off then
-						option.Toggle.Icon.Image = overrideIcons.off :: string
-					else
-						-- Default off icon
-						option.Toggle.Icon.Image = "rbxassetid://7733715400"
-					end
-				end
-				offEvent()
-				toggleFunctions.off(option)
-			else
-				print("off")
-			end
-			onToggle:Fire(false)
-		elseif currentState == "off" then
-			Options.created[optionName].state:transition("on", option)
-			if toggleFunctions then
-				local onEvent = function()
-					if overrideIcons and overrideIcons.on then
-						option.Toggle.Icon.Image = overrideIcons.on :: string
-					else
-						-- Default on icon
-						option.Toggle.Icon.Image = "rbxassetid://10747384394"
-					end
-				end
-				onEvent()
-				toggleFunctions.on(option)
-			else
-				print("on")
-			end
-			onToggle:Fire(true)
+	option.interface = createOptionInterface(option)
+	Options.created[name] = option
+
+	return option
+end
+
+function Options:render()
+	for _, option in pairs(Options.created :: { Option }) do
+		if not option.interface then
+			continue
 		end
-	end)
-	option.Toggle.MouseEnter:Connect(function()
-		audio:SFX("hover")
-	end)
-	option.Toggle.MouseLeave:Connect(function()
-		audio:SFX("hover")
-	end)
-	--Hint("Toggle the " .. optionName:lower() .. " option.", option.Toggle)
-	return onToggle, option :: optionTemplate
+
+		local toggle = option.interface.Toggle
+
+		toggle.Activated:Connect(function()
+			local newState = option.reactor:Get() == "on" and "off" or "on"
+			option.reactor:Set(newState)
+			audio:SFX("click")
+		end)
+
+		toggle.MouseEnter:Connect(function()
+			audio:SFX("hover")
+		end)
+
+		toggle.MouseLeave:Connect(function()
+			audio:SFX("hover")
+		end)
+
+		option.reactor:Watch(function(newState: string)
+			local icon = if newState == "on"
+				then option.icons.on or DEFAULT_ICONS.on
+				else option.icons.off or DEFAULT_ICONS.off
+
+			toggle.Icon.Image = icon
+
+			if option.toggleFunctions then
+				if newState == "on" then
+					option.toggleFunctions.on(option.interface)
+				else
+					option.toggleFunctions.off(option.interface)
+				end
+			end
+		end)
+	end
+end
+
+function Options:toggle(optionName: string)
+	local option = Options.created[optionName] :: Option
+	local value = nil
+	if option then
+		local newState = option.reactor:Get() == "on" and "off" or "on"
+		option.reactor:Set(newState)
+
+		value = option.reactor:Get()
+	end
+	return value
+end
+
+function Options:clear()
+	for _, option in pairs(Options.created :: { Option }) do
+		if option.interface then
+			option.interface:Destroy()
+		end
+	end
+	table.clear(Options.created :: { Option })
+end
+
+function Options:hide()
+	if optionsGui then
+		optionsGui.Enabled = false
+	end
+end
+
+function Options:show()
+	if optionsGui then
+		optionsGui.Enabled = true
+	end
 end
 
 return Options

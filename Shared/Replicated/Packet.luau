@@ -22,6 +22,7 @@ return bytenet.defineNamespace("MainNet", function()
 	local sendNotificationStruct = bytenet.struct({
 		message = bytenet.string, -- Notification message content
 		title = bytenet.optional(bytenet.string), -- Optional title for the notification
+		type = bytenet.optional(bytenet.string),
 	})
 	local buyCardStruct = bytenet.struct({
 		cardName = bytenet.string, -- Name/ID of the card to purchase
@@ -37,7 +38,7 @@ return bytenet.defineNamespace("MainNet", function()
 		playerInstance = bytenet.inst, -- Player instance selling the card (server might get this from packet sender)
 		cardName = bytenet.string, -- Name/ID of the card to sell
 	})
-	local payBigCardsStruct = bytenet.struct({ -- Assuming "Big Cards" is a currency or item
+	local payPrismsStruct = bytenet.struct({
 		amount = bytenet.int16,
 		recipientUsername = bytenet.string,
 	})
@@ -106,7 +107,7 @@ return bytenet.defineNamespace("MainNet", function()
 		RewardExperience = bytenet.definePacket({ value = giveExperienceStruct }),
 		AscendRank = bytenet.definePacket({ value = rankUpStruct }),
 		SellCard = bytenet.definePacket({ value = sellCardStruct }),
-		PayBigCards = bytenet.definePacket({ value = payBigCardsStruct }),
+		PayPrisms = bytenet.definePacket({ value = payPrismsStruct }),
 		SprintRemote = bytenet.definePacket({ value = sprintStruct }),
 		RayValidation = bytenet.definePacket({ value = raycastValidationStruct }), -- For general client-side raycast validation
 		profileChanged = bytenet.definePacket({ value = profileChangedStruct }),

@@ -122,6 +122,15 @@ end
 	Find a value in the internal table value using a predicate function
 
 	Returns the first matching element, or nil if not found.
+
+	```luau
+
+	local object = Instance.new("Part")
+
+	local object = _observer:Find(function(dictionary)
+		return dictionary.object == object
+	end)
+	```
 ]]
 function Observer:Find(predicate: (value: any, key: any) -> boolean): (any?, any?)
 	assert(type(self._value) == "table", "Cannot use :Find, Observer value isn't a table.")

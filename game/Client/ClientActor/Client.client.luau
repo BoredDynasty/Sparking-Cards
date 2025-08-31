@@ -79,7 +79,7 @@ print("Client Requirements")
 -- // Variables -- //
 
 local player = playerMarshaller.get()
-local profile: typeof(profilestructure) = profileMarshaller.client[player]
+local profile: profilestructure.profile = profileMarshaller.client[player]
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
 local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
@@ -152,9 +152,9 @@ local function initializeMarket()
 			end
 		end)
 
-		local big_cards = tostring(profile.Data["Big-Cards"])
+		local prisms = tostring(profile.Data.Prisms)
 
-		TextPlus.Create(moneyFrame, big_cards, {
+		TextPlus.Create(moneyFrame, prisms, {
 			Font = Font.new(
 				"rbxasset://fonts/families/Montserrat.json", -- Family.
 				Enum.FontWeight.SemiBold, -- Weight.
@@ -232,57 +232,22 @@ local function initializeMarket()
 				Dynamic = true,
 			})
 
-			coroutine.wrap(function()
-				characterIteration:jump(title)
-				characterIteration:jump(price)
-			end)
+			characterIteration:jump(title)
+			characterIteration:jump(price)
 
 			itemTemplate.Visible = true
-			coroutine.wrap(function()
-				if item.ExperimentsEnabled == true then
-					experimentButton.Visible = true
-					experimentButton:FindFirstChildOfClass("ImageLabel").Visible = true
-					experimentButton.MouseButton1Click:Connect(function()
-						print("Testing card: " .. item.Name)
-					end)
-				else
-					experimentButton.Visible = false
-				end
-			end)
+
+			if item.ExperimentsEnabled == true then
+				experimentButton.Visible = true
+				experimentButton:FindFirstChildOfClass("ImageLabel").Visible = true
+				experimentButton.MouseButton1Click:Connect(function()
+					print("Testing card: " .. item.Name)
+				end)
+			else
+				experimentButton.Visible = false
+			end
 
 			itemTemplate.Tags.Visible = false
-			coroutine.wrap(function()
-				if item.Tags then
-					itemTemplate.Tags.Visible = true
-					for _, tagName in pairs(item.Tags) do
-						if ItemTags[tagName] then
-							local tag = ItemTags[tagName]
-
-							local image = Instance.new("ImageLabel")
-							local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
-
-							--Properties:
-
-							image.Parent = itemTemplate.Tags
-							image.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-							image.BackgroundTransparency = 1.000
-							image.BorderColor3 = Color3.fromRGB(0, 0, 0)
-							image.BorderSizePixel = 0
-							image.Size = UDim2.new(0, 20, 0, 20)
-							image.Visible = false
-							image.Image = tag.Identification
-							--[[
-						local thread = task.spawn(Hint, tag.Description, itemTemplate.Tags)
-						itemTemplate.Destroying:Once(function()
-							-- cleaner
-							task.cancel(thread)
-						end)
-						--]]
-							UIAspectRatioConstraint.Parent = image
-						end
-					end
-				end
-			end)
 
 			print("setting up buttons")
 			local purchaseDebounce = false -- exception too
@@ -398,6 +363,7 @@ local function initializeMarket()
 				result:Once(function(a0: boolean)
 					if a0 == true then
 						Packet.SellCard.send({ cardName = itemName, playerInstance = player })
+						notify.success("Sold Card", `Successfully sold card`)
 					else
 						return
 					end
@@ -406,19 +372,8 @@ local function initializeMarket()
 			task.wait()
 		end
 	end
-	local debounce = false
 	local function callback()
-		if debounce then
-			return
-		end
-		limits.debounce(debounce)
-		displayorder:changeVisibility(not shopCanvas.Visible, shopCanvas)
-		if shopCanvas.Visible then
-			populateShop()
-			sway:on(shopCanvas)
-		else
-			sway:off(shopCanvas)
-		end
+		displayorder:toggle(shopCanvas)
 	end
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
 	populateNavigation()
@@ -450,7 +405,6 @@ local function initializeOptions()
 		[1] = {
 			name = "Shadows",
 			description = "Toggle shadows on or off.",
-			overrideState = "on",
 			toggleFunctions = {
 				on = function()
 					Lighting.GlobalShadows = true
@@ -459,12 +413,11 @@ local function initializeOptions()
 					Lighting.GlobalShadows = false
 				end,
 			},
-			overrideIcons = {},
+			icons = {},
 		},
 		[2] = {
 			name = "Time",
 			description = "Adjust the in-game time.",
-			overrideState = "on",
 			toggleFunctions = {
 				on = function()
 					TweenPlus(
@@ -481,7 +434,7 @@ local function initializeOptions()
 					):Start()
 				end,
 			},
-			overrideIcons = {
+			icons = {
 				on = "rbxassetid://10734974297",
 				off = "rbxassetid://10734897102",
 			},
@@ -489,7 +442,6 @@ local function initializeOptions()
 		[3] = {
 			name = "Show Other Players",
 			description = "Toggle visibility of other players.",
-			overrideState = "on",
 			toggleFunctions = {
 				on = function()
 					local characterFolder = ReplicatedStorage:WaitForChild("Characters") :: Folder
@@ -501,7 +453,7 @@ local function initializeOptions()
 				end,
 				off = function()
 					local characterFolder = workspace:GetChildren() :: Folder
-					for _, otherCharacter: Instance in ipairs(characterFolder) do
+					for _, otherCharacter: Instance in ipairs(characterFolder) :: { Model } do
 						local condition = otherCharacter:IsA("Model")
 							and playerMarshaller.getByName(otherCharacter.Name)
 
@@ -511,12 +463,11 @@ local function initializeOptions()
 					end
 				end,
 			},
-			overrideIcons = {},
+			icons = {},
 		},
 		[4] = {
 			name = "Clouds",
 			description = "Toggle clouds on or off.",
-			overrideState = "on",
 			toggleFunctions = {
 				on = function()
 					local clouds = workspace.Terrain:FindFirstChildWhichIsA("Clouds")
@@ -529,34 +480,21 @@ local function initializeOptions()
 					clouds.Enabled = false
 				end,
 			},
-			overrideIcons = {},
+			icons = {},
 		},
 	}
 
 	for _, option in pairs(optionsList) do
-		local onToggle, optionTemplate = Options.createOption(
-			option.name,
-			option.description,
-			option.overrideState,
-			option.toggleFunctions,
-			option.overrideIcons
-		)
-		onToggle:Connect(function(state: boolean)
-			if state then
-				notify.success(option.name, " is enabled")
-			else
-				notify.success(option.name, " is disabled")
-			end
+		local onToggle, optionTemplate =
+			Options.create(option.name, option.description, option.toggleFunctions, option.icons)
+
+		onToggle.reactor:Watch(function(newValue)
+			notify.success("Options", `{option.name} is {newValue} now.`)
 		end)
 	end
 
 	hud:create("Options", function()
-		displayorder:changeVisibility(not optionsCanvas.Visible, optionsCanvas)
-		if optionsCanvas.Visible then
-			sway:on(optionsCanvas)
-		else
-			sway:off(optionsCanvas)
-		end
+		local state = displayorder:toggle(optionsCanvas)
 	end, lucide.GetAsset("cog"))
 end
 local function initializeMatchmaking()
@@ -617,6 +555,8 @@ local function initializeMatchmaking()
 			end)
 			:andThen(print)
 			:catch(warn)
+
+		hud:show()
 	end
 
 	local callback = function()
@@ -654,6 +594,8 @@ local function initializeMatchmaking()
 					remove(clock, _swipe)
 				end
 			end)
+
+			hud:hide()
 		end
 	end
 
@@ -662,9 +604,16 @@ end
 local function initializeBadges()
 	print("init badges")
 end
+local function initializeNotifiers()
+	Packet.SendNotification.listen(function(data: { message: string, title: string? }, player: Player?)
+		notify.info(data.title, data.message)
+	end)
+end
 initializeMarket()
 initializeOptions()
 initializeMatchmaking()
+initializeBadges()
+initializeNotifiers()
 hud:render()
 
 print("client almost done")

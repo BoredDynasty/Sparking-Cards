@@ -11,8 +11,8 @@ local Packet = require(ReplicatedStorage.Packet)
 
 return {
 	Name = "Payout",
-	Aliases = { "Pay", "GiveBigCards", "Award", "Card" },
-	Description = "Give a player Cards.",
+	Aliases = { "Pay", "Prisms", "Award", "Card" },
+	Description = "Give a player Prisms.",
 	Group = "Utility",
 	Args = {
 		{
@@ -29,7 +29,7 @@ return {
 		},
 	},
 	ClientRun = function(_, amount: number, player: Player)
-		Packet.PayBigCards.send({ amount = amount, recipientUsername = player.Name })
+		Packet.PayPrisms.send({ amount = amount, recipientUsername = player.Name })
 
 		return "Payout executed"
 	end,

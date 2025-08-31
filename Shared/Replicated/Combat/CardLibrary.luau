@@ -25,7 +25,6 @@ export type Card = {
 }
 
 -- It's crucial that the AttackNames listed in Moveset (e.g., "FrostGauntlet_M1_1")
--- are unique and are used by CombatModuleManager to register the corresponding functions
 -- from the combat modules (e.g., Frost.moveset.M1) with Orion.RegisterAttack.
 
 local CardLibrary: { [string]: Card } = {

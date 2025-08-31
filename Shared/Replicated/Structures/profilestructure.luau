@@ -1,6 +1,45 @@
 --!strict
 
--- profilestructure.lua
+-- profilestructure.luau
+
+export type profile = {
+	Cards: {
+		string: number,
+	},
+	Prisms: number,
+	Level: string,
+	Experience: number,
+	LastLogin: number,
+	EquippedCard: string,
+	victories: number,
+	emotes: {
+		{
+			name: string,
+			identification: number,
+			-- add more fields if necessary
+			-- e.g., description: string,
+			--       rarity: string,
+			--       etc.
+		}
+	},
+	options: {
+		string: any,
+	},
+	equippedEmotes: { number },
+	achievements: {
+		{
+			name: string,
+			description: string,
+			points: number,
+		}
+	},
+	combatBindings: {
+		["attack"]: string, -- melee
+		["special_One"]: string, -- primary
+		["special_Two"]: string, -- ultimate
+		["special_Three"]: string, -- support
+	},
+}
 
 return {
 	-- Template
@@ -10,7 +49,7 @@ return {
 		Plasma = 1,
 		Hydro = 0,
 	},
-	["Big-Cards"] = 5,
+	["Prisms"] = 5,
 	["Level"] = "Bronze I",
 	["Experience"] = 0,
 	["LastLogin"] = os.time(),
@@ -32,6 +71,18 @@ return {
 			-- starter
 			name = "Take The L",
 			identification = 17782874968,
+		},
+	},
+	achievements = {
+		{
+			name = "First Victory",
+			description = "Win your first match",
+			points = 10,
+		},
+		{
+			name = "Card Collector",
+			description = "Collect all card types",
+			points = 20,
 		},
 	},
 	["combatBindings"] = {

@@ -6,7 +6,6 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
-local hint = require(ReplicatedStorage.ClientModules.Hint)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -136,7 +135,6 @@ function hud:render()
 			end
 		end)
 		shadow(TextButton, Color3.new(), 0.5, 14)
-		hint("Toggle the " .. button.name:lower() .. " page.", TextButton)
 	end
 end
 
@@ -170,10 +168,6 @@ end
 function hud:show()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	hudContainer.Enabled = true
-end
-
-function hud:bindHint(button: GuiButton, str: string)
-	hint(str, button)
 end
 
 return hud

@@ -1,26 +1,37 @@
 --!strict
 
--- DisplayOrder.lua
+-- displayorder.luau
+
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TweenService = game:GetService("TweenService")
 
-local DisplayOrder = {}
-DisplayOrder.__index = DisplayOrder
+local observer = require(ReplicatedStorage.Utility.observer)
+local sway = require(script.Parent.sway)
 
-DisplayOrder.compiled = {}
-DisplayOrder.canvasPositions = {
+local displayorder = {}
+displayorder.__index = displayorder
+
+export type data = {
+	canvas: CanvasGroup,
+	layer_collector: LayerCollector,
+	state: observer.Observer<boolean>,
+}
+
+displayorder.compiled = {}
+displayorder.canvasPositions = {
 	middle = UDim2.fromScale(0.5, 0.5),
 	offscreen_high = UDim2.fromScale(0.5, -2),
 	higher = UDim2.fromScale(0.5, 0.053),
 	lower = UDim2.fromScale(0.5, 0.7),
 	offscreen = UDim2.fromScale(0.5, 2),
 }
-DisplayOrder.canvasSizes = {
+displayorder.canvasSizes = {
 	offscreen = 0,
 	visible = 1,
 }
 
-function DisplayOrder:_createScale(ancestor: Instance)
+function displayorder:_createScale(ancestor: Instance)
 	local scale = Instance.new("UIScale")
 	scale.Name = "visibility_scale"
 	scale.Parent = ancestor
@@ -28,32 +39,71 @@ function DisplayOrder:_createScale(ancestor: Instance)
 	return scale
 end
 
-function DisplayOrder:add(canvas: Instance)
-	DisplayOrder.compiled[(canvas.Parent :: ScreenGui).Name:lower()] = canvas
+function displayorder:_getData(value: CanvasGroup | string)
+	local data = nil
+	assert(data, "Missing data from compiled table. Did you forget to add canvas?")
+
+	if type(value) == "string" then
+		data = displayorder.compiled[value]
+	end
+
+	return data :: data
 end
 
-function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
-	(canvas.Parent :: ScreenGui).Enabled = true
-	task.spawn(function()
-		local tweenInfo
-		local targetPosition
-		local targetScale
+function displayorder:add(canvas: CanvasGroup)
+	local layer_collector = canvas.Parent :: ScreenGui
+	local name = layer_collector.Name:lower()
 
-		if v == true then
-			canvas.Visible = true
+	displayorder.compiled[name] = {
+		canvas = canvas,
+		layer_collector = layer_collector,
+		state = observer.new(canvas.Visible),
+	}
+
+	displayorder.compiled[name].state:Watch(function(newValue)
+		if newValue then
+			sway:on(displayorder.compiled[name].canvas)
+		else
+			sway:off(displayorder.compiled[name].canvas)
+		end
+	end)
+end
+
+function displayorder:changeVisibility(v: boolean, canvas: CanvasGroup | string)
+	local layer_collector = nil
+
+	local data = displayorder:_getData(canvas)
+
+	layer_collector = data.layer_collector
+	layer_collector.Enabled = true
+
+	task.spawn(function()
+		local tweenInfo = nil
+		local targetPosition = nil
+		local targetScale = nil
+
+		data.state:Set(true)
+
+		if v then
+			data.canvas.Visible = true
+
 			tweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.InOut)
-			targetPosition = DisplayOrder.canvasPositions.middle
+			targetPosition = displayorder.canvasPositions.middle
 			targetScale = 1
+
+			data.state:Set(true)
 		else
 			tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-			targetPosition = DisplayOrder.canvasPositions.lower
+			targetPosition = displayorder.canvasPositions.lower
 			targetScale = 0
+
+			data.state:Set(false)
 		end
 
-		local positionTween = TweenService:Create(canvas, tweenInfo, { Position = targetPosition })
+		local positionTween = TweenService:Create(data.canvas, tweenInfo, { Position = targetPosition })
 		positionTween:Play()
 
-		local scale = DisplayOrder:_createScale(canvas)
+		local scale = displayorder:_createScale(data.canvas)
 		scale.Scale = v and 0 or 1
 		local scaleTween = TweenService:Create(scale, tweenInfo, { Scale = targetScale })
 		scaleTween:Play()
@@ -61,28 +111,29 @@ function DisplayOrder:changeVisibility(v: boolean, canvas: CanvasGroup | Frame)
 		task.delay(tweenInfo.Time + 0.01, function()
 			scale:Destroy()
 			if not v then
-				canvas.Visible = false
+				data.canvas.Visible = false
 			end
 		end)
-
-		if v then
-			print("visible")
-		else
-			print("invisible")
-		end
 	end)
-	--DisplayOrder:setDisplayOrder(canvas.Parent.Name:lower())
 end
 
-function DisplayOrder:setDisplayOrder(i: string)
-	for _, t: CanvasGroup | Frame in DisplayOrder.compiled do
-		if t ~= DisplayOrder.compiled[i:lower()] then
+function displayorder:toggle(canvas: CanvasGroup | string)
+	local data = displayorder:_getData(canvas)
+
+	displayorder:changeVisibility(not data.state:Get(), canvas)
+
+	return not data.state:Get()
+end
+
+function displayorder:setDisplayOrder(i: string)
+	for _, t in displayorder.compiled do
+		if t ~= displayorder.compiled[i:lower()] then
 			print("setDisplayOrder: ", t)
-			DisplayOrder:changeVisibility(false, t)
+			displayorder:changeVisibility(false, t.canvas)
 		end
 	end
 end
 
 -- TODO) Add a sort order function
 
-return DisplayOrder
+return displayorder

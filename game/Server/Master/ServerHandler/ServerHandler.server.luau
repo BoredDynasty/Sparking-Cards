@@ -32,18 +32,15 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
-
 local remoteEvents = ReplicatedStorage.Events
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
-
-local playerObservers = {}
 
 print("GameAnalytics is enabled.")
 
 local gameAnalyticsConfig = {
 	enableInfoLog = false,
 	enableVerboseLog = false,
-	availableResourceCurrencies = { "BigCards" },
+	availableResourceCurrencies = { "Prisms" },
 	build = "0.2.0",
 	availableGamepasses = { "Extra Cards" },
 	automaticSendBusinessEvents = true,
@@ -71,7 +68,6 @@ GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
 
 local playerStore = ProfileStore.New("player-related", profilestructure)
 
-type profileType = { [Player]: typeof(playerStore:StartSessionAsync({})) }
 local profiles = profileMarshaller.server
 
 --[[
@@ -90,12 +86,12 @@ productMarshaller.product_callbacks[1904591683] = function(receipt: any | string
 		print("Profile not found for player: " .. player.Name)
 		return false -- indicate a failed purchase
 	end
-	local Card_int = profile.Data["Big-Cards"] :: number
+	local Card_int = profile.Data.Prisms :: number
 	if Card_int and player then
 		Card_int += 50
 		local resourceEventParams = {
 			flowType = GameAnalytics.EGAResourceFlowType.Source,
-			currency = "BigCards",
+			currency = "Prisms",
 			amount = 50,
 			itemType = "IAP", -- In-App Purchase
 		}
@@ -139,81 +135,82 @@ end)
 local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model
 ServerAsset.Parent = game.Workspace
 
-local function enterMatch(player: Player?)
+local function enterMatch(player: playerMarshaller.player)
 	print("player entered match")
+
 	if not player then
 		return
 	end
+
 	MatchHandler.AddPlayerToQueue(player)
+
+	Packet.SendNotification.sendTo({ message = "Joined matchmaking queue", title = "Matchmaking" }, player)
 end
 
-local function cancelMatch(player: Player)
+local function cancelMatch(player: playerMarshaller.player)
 	print("cancel match")
+
 	if not player then
 		return
 	end
+
 	MatchHandler.RemovePlayerFromQueue(player)
+
+	Packet.SendNotification.sendTo({ message = "Left matchmaking queue", title = "Matchmaking" }, player)
 end
 
 local function onPlayerAdded(player: playerMarshaller.player)
 	-- Start profile session with timeout
-	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
-		Cancel = function()
-			return player.Parent ~= Players
-		end,
-	})
-	task.wait(5)
-	if not profile or profile == nil then
-		task.delay(15, function()
-			player:Kick("Roblox Servers on fire. It's best to rejoin.")
-		end)
-		return
-	end
-	-- Set up profile
-	profile:AddUserId(player.UserId)
-	profile:Reconcile()
-	profile:Save()
+	local profile: typeof(playerStore:StartSessionAsync("", {}))?
 
-	-- Handle session end
-	profile.OnSessionEnd:Connect(function()
-		profiles[player] = nil
-		player:Kick("Session Locked, rejoin")
-	end)
+	profile = promise
+		.retry(function()
+			return playerStore:StartSessionAsync(`player:{player.UserId}`, {
+				Cancel = function()
+					return player.Parent ~= Players
+				end,
+			})
+		end, 20)
+		:await() :: typeof(playerStore:StartSessionAsync("", {}))?
 
-	if (player.Parent == Players) or player:FindFirstAncestor("Players") or player ~= nil then
-		profiles[player] = profile
-		print("Data Loaded for " .. player.DisplayName, table.unpack(table.pack(profile.Data)))
-		profile.Data.LastLogin = os.time()
-		profileMarshaller.client[player] = {
-			Data = profile.Data,
-			Key = profile.Key,
-			LastSaved = profile.LastSavedData,
-		}
+	if profile then
+		-- Set up profile
+		profile:AddUserId(player.UserId)
 		profile:Reconcile()
-		profile:Save()
+
+		-- Handle session end
+		profile.OnSessionEnd:Connect(function()
+			profiles[player] = nil
+			player:Kick("Session Locked, rejoin")
+		end)
+
+		if player:FindFirstAncestorOfClass("Players") then
+			profiles[player] = profile
+
+			profile.Data.LastLogin = os.time()
+
+			profile:Reconcile()
+			profile:Save()
+		else
+			profile:EndSession()
+
+			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
+		end
 	else
-		profile:EndSession()
-		warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
+		player:Kick("The Roblox Servers are on fire. Try rejoining.")
 	end
 
 	-- for the client to mess around with
-	coroutine.wrap(function()
-		local editConfig = Instance.new("BindableEvent")
-		editConfig.Parent = player
-		editConfig.Name = "EditConfig"
-		local toggleShiftLock = Instance.new("BindableEvent")
-		toggleShiftLock.Parent = player
-		toggleShiftLock.Name = "ToggleShiftLock"
-	end)
+	local editConfig = Instance.new("BindableEvent")
+	editConfig.Parent = player
+	editConfig.Name = "EditConfig"
+
+	local toggleShiftLock = Instance.new("BindableEvent")
+	toggleShiftLock.Parent = player
+	toggleShiftLock.Name = "ToggleShiftLock"
 
 	GameAnalytics:PlayerJoined(player)
 	--orion.registerPlayer(player)
-
-	local playerObserver = observer.new(profile)
-	playerObservers[player] = playerObserver
-	playerObserver.Changed:Connect(function()
-		Packet.profileChanged.sendTo({ nil }, player)
-	end)
 
 	local function addHighlight(character: characterMarshaller.Character)
 		local highlight = Instance.new("Highlight")
@@ -253,6 +250,8 @@ local function onPlayerAdded(player: playerMarshaller.player)
 	end)
 	addHighlight(player.Character or player.CharacterAdded:Wait())
 	batch(player:GetDescendants())
+
+	Packet.SendNotification.sendTo({ message = "Player fully loaded", title = "Server" }, player)
 end
 
 -- just in case the players have joined the server before the script loaded
@@ -269,10 +268,6 @@ end)
 local function onPlayerRemoving(player: playerMarshaller.player)
 	GameAnalytics:PlayerRemoved(player)
 	local profile = profiles[player]
-	local needle = table.find(playerObservers, player)
-	if needle then
-		playerObservers[needle]:Destroy()
-	end
 
 	if profile ~= nil then
 		profile:Save()
@@ -288,20 +283,27 @@ end
 
 local function purchaseCard(player: Player, cardName: string)
 	local profile = profiles[player]
+
 	if not profile then
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "Profile not found for player: " .. player.Name,
+			message = "Couldn't get data",
+			title = "Profile not found",
+			type = "error",
 		}, player)
+
 		warn("Profile not found for player: " .. player.Name)
+
 		return
 	end
 	if not Items[cardName] then
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "Card does not exist.",
+			message = "Couldn't get data",
+			title = "Card does not exist",
+			type = "error",
 		}, player)
+
 		warn("Card does not exist: " .. cardName)
+
 		return
 	end
 
@@ -309,31 +311,40 @@ local function purchaseCard(player: Player, cardName: string)
 
 	local resourceEventParams = {
 		flowType = GameAnalytics.EGAResourceFlowType.Sink,
-		currency = "BigCards",
+		currency = "Prisms",
 		amount = 1,
 		itemType = "Weapons",
 		itemId = cardName .. " Card",
 	}
+
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
-	local cards = profile.Data["Big-Cards"]
+
+	local cards = profile.Data.Prisms
+
 	if cards and cards >= math.ceil(Items[cardName].Price) then
-		profile.Data["Big-Cards"] -= math.ceil(Items[cardName].Price) or 1
+		profile.Data.Prisms -= math.ceil(Items[cardName].Price) or 1
 		profile.Data.Cards[cardName] = (profile.Data.Cards[cardName] or 0) + 1
+
 		profile:Save()
 		profile:Reconcile()
+
 		--local result = "success"
+
 		Packet.SendNotification.sendTo({
-			message = "Card Purchased",
-			title = `You have purchased a {cardName} card.`,
+			message = `You purchased a {cardName} Card.`,
+			title = `Card purchased`,
+			type = "success",
 		}, player)
-		print("Card purchased successfully.")
 	else
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "Not enough Big-Cards.",
+			message = `Could not buy {cardName}`,
+			title = "Not enough Prisms.",
+			type = "error",
 		}, player)
-		warn("Not enough Big Cards for player: " .. player.Name)
+
+		warn("Not enough Prisms for player: " .. player.Name)
 	end
+
 	Packet.profileChanged.sendTo({ nil }, player)
 end
 
@@ -341,6 +352,7 @@ local function streamArea(player: Player, area: Vector3)
 	if not player then
 		return
 	end
+
 	task.spawn(function()
 		player:RequestStreamAroundAsync(area)
 	end)
@@ -348,45 +360,61 @@ end
 
 local function payCards(amount: number, playerName: string)
 	local player = playerMarshaller.getByName(playerName)
+
 	if not player then
 		warn("player not found: " .. playerName)
 		return
 	end
+
 	local profile = profiles[player]
+
 	if not profile then
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "Profile not found for player: " .. player.Name,
+			message = "Couldn't get data",
+			title = "Profile not found",
+			type = "error",
 		}, player)
+
 		warn("Profile not found for player: " .. player.Name)
 		return
 	end
-	print("got req. from client to pay big cards!")
-	local bigCards = math.ceil(profile.Data["Big-Cards"] + (amount or 0))
-	profile.Data["Big-Cards"] = bigCards
-	print("added big cards for " .. player.DisplayName .. " and an amount of " .. tostring(amount))
-	print(player.DisplayName .. " now has " .. tostring(profile.Data["Big-Cards"]) .. " Big Cards!")
+
+	print("got req. from client to pay prisms!")
+
+	local prisms = math.ceil(profile.Data.Prisms + (amount or 0))
+	profile.Data.Prisms = prisms
+
+	print("added prisms for " .. player.DisplayName .. " and an amount of " .. tostring(amount))
+	print(player.DisplayName .. " now has " .. tostring(profile.Data.Prisms) .. " Prisms!")
+
 	local resourceEventParams = {
 		flowType = GameAnalytics.EGAResourceFlowType.Source,
-		currency = "BigCards",
+		currency = "Prisms",
 		amount = amount,
 		itemType = "Gameplay",
-		itemId = "Big-Cards",
+		itemId = "Prisms",
 	}
+
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+
 	Packet.profileChanged.sendTo({ nil }, player)
+
 	profile:Save()
 	profile:Reconcile()
 end
 
 local function sellCards(player: Player, cardName: string)
 	local profile = profiles[player]
+
 	if not profile then
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "Profile not found for player: " .. player.Name,
+			message = "Couldn't get data",
+			title = "Profile not found",
+			type = "error",
 		}, player)
+
 		warn("Profile not found for player: " .. player.Name)
+
 		return
 	end
 
@@ -395,17 +423,36 @@ local function sellCards(player: Player, cardName: string)
 	-- validate card exists
 	if not Items[cardName] then
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "Invalid card type.",
+			message = "Couldn't get data",
+			title = "Invalid Card",
+			type = "error",
 		}, player)
+
 		warn("Invalid card to sell: ", cardName)
+
 		return
 	end
+
 	if not profile.Data.Cards[cardName] or profile.Data.Cards[cardName] <= 0 then
 		Packet.SendNotification.sendTo({
-			message = "Error",
-			title = "You don't have any " .. cardName .. " cards to sell.",
+			message = "Couldn't get data",
+			title = "You don't have any " .. cardName .. " Cards to sell.",
+			type = "error",
 		}, player)
+
+		warn("Invalid card to sell: ", cardName)
+
+		return
+	end
+
+	if not profile.Data.Cards[cardName] or profile.Data.Cards[cardName] <= 0 then
+		Packet.SendNotification.sendTo({
+			message = "Couldn't get data",
+			title = "You don't have any " .. cardName .. " Cards to sell.",
+			type = "error",
+		}, player)
+
+		warn("No cards to sell for player: " .. player.Name)
 		return
 	end
 
@@ -413,19 +460,20 @@ local function sellCards(player: Player, cardName: string)
 	local sellPrice = Items[cardName].Price // 2
 
 	-- update profile
-	profile.Data["Big-Cards"] += sellPrice
+	profile.Data.Prisms += sellPrice
 	profile.Data.Cards[cardName] -= 1
 
-	print(player.DisplayName .. " sold " .. cardName .. " for " .. tostring(sellPrice) .. " Big Cards")
-	print(player.DisplayName .. " now has " .. tostring(profile.Data["Big-Cards"]) .. " Big Cards!")
+	print(player.DisplayName .. " sold " .. cardName .. " for " .. tostring(sellPrice) .. " Prisms")
+	print(player.DisplayName .. " now has " .. tostring(profile.Data.Prisms) .. " Prisms!")
 
 	local resourceEventParams = {
 		flowType = GameAnalytics.EGAResourceFlowType.Sink,
-		currency = "BigCards",
+		currency = "Prisms",
 		amount = sellPrice,
 		itemType = "Gameplay",
 		itemId = cardName .. "_Sell",
 	}
+
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
 
 	Packet.profileChanged.sendTo({ nil }, player)
@@ -436,6 +484,7 @@ end
 
 local function getProfile(player: Player)
 	local value = nil
+
 	promise
 		.new(function(resolve, reject)
 			local profile = profiles[player]
@@ -460,22 +509,6 @@ local function getProfile(player: Player)
 		:catch(warn)
 
 	return value
-end
-
-local function handleSprint(player: Player, v: number, b: boolean)
-	local character = characterMarshaller.get(player)
-	local humanoid = character:WaitForChild("Humanoid") :: Humanoid
-
-	if b == true then
-		-- sprint
-		if humanoid then
-			humanoid.WalkSpeed = v
-		end
-	else
-		if humanoid then
-			humanoid.WalkSpeed = 14 or v
-		end
-	end
 end
 
 local function setNetworkOwner(player: Player?, object: BasePart)
@@ -526,11 +559,8 @@ end)
 Packet.BuyCard.listen(function(data, player: Player)
 	purchaseCard(player, data.cardName)
 end)
-Packet.PayBigCards.listen(function(data)
+Packet.PayPrisms.listen(function(data)
 	payCards(data.amount, data.recipientUsername)
-end)
-Packet.SprintRemote.listen(function(data, player: Player)
-	handleSprint(player, data.walkSpeed, data.isSprinting)
 end)
 Packet.CancelMatch.listen(function(_, player: Player)
 	cancelMatch(player)

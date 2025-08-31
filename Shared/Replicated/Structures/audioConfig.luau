@@ -2,7 +2,7 @@
 
 -- audioConfig.luau
 
-local tbl = table.freeze({
+local tbl = {
 	click = {
 		id = 90092163763441,
 		name = "click",
@@ -27,7 +27,7 @@ local tbl = table.freeze({
 		id = 269146157,
 		name = "boom",
 	},
-})
+}
 
 local self = {
 	getAudioConfig = function()
