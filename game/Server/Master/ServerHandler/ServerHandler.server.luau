@@ -161,17 +161,19 @@ end
 
 local function onPlayerAdded(player: playerMarshaller.player)
 	-- Start profile session with timeout
-	local profile: typeof(playerStore:StartSessionAsync("", {}))?
+	local profile = playerStore:StartSessionAsync(`player:{player.UserId}`, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	}):await()
 
-	profile = promise
-		.retry(function()
-			return playerStore:StartSessionAsync(`player:{player.UserId}`, {
-				Cancel = function()
-					return player.Parent ~= Players
-				end,
-			})
-		end, 20)
-		:await() :: typeof(playerStore:StartSessionAsync("", {}))?
+	-- If player leaves during the async call, end the session and stop
+	if not player:IsDescendantOf(Players) then
+		if profile then
+			profile:EndSession()
+		end
+		return
+	end
 
 	if profile then
 		-- Set up profile
@@ -181,21 +183,18 @@ local function onPlayerAdded(player: playerMarshaller.player)
 		-- Handle session end
 		profile.OnSessionEnd:Connect(function()
 			profiles[player] = nil
-			player:Kick("Session Locked, rejoin")
+			if player:IsDescendantOf(Players) then
+				player:Kick("Session Locked, rejoin")
+			end
 		end)
 
-		if player:FindFirstAncestorOfClass("Players") then
-			profiles[player] = profile
+		-- The player is in the game, so we can proceed
+		profiles[player] = profile
 
-			profile.Data.LastLogin = os.time()
+		profile.Data.LastLogin = os.time()
 
-			profile:Reconcile()
-			profile:Save()
-		else
-			profile:EndSession()
-
-			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
-		end
+		profile:Reconcile()
+		profile:Save()
 	else
 		player:Kick("The Roblox Servers are on fire. Try rejoining.")
 	end
