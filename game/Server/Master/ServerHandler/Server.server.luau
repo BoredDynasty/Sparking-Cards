@@ -30,6 +30,7 @@ local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local stores = require(ReplicatedStorage.Datastore.stores)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
 local remoteEvents = ReplicatedStorage.Events
@@ -171,8 +172,8 @@ local function onPlayerAdded(player: playerMarshaller.player)
 				end,
 			})
 		end, 20)
-		:await() :: typeof(playerStore:StartSessionAsync("", {}))?
-
+		:expect() :: typeof(playerStore:StartSessionAsync("", {}))?
+	print(typeof(profile))
 	if profile then
 		-- Set up profile
 		profile:AddUserId(player.UserId)
@@ -196,7 +197,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
-	else
+	elseif not profile then
 		player:Kick("The Roblox Servers are on fire. Try rejoining.")
 	end
 
@@ -358,34 +359,10 @@ local function streamArea(player: Player, area: Vector3)
 	end)
 end
 
-local function payCards(amount: number, playerName: string)
+local function payPrisms(amount: number, playerName: string)
 	local player = playerMarshaller.getByName(playerName)
 
-	if not player then
-		warn("player not found: " .. playerName)
-		return
-	end
-
-	local profile = profiles[player]
-
-	if not profile then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-			title = "Profile not found",
-			type = "error",
-		}, player)
-
-		warn("Profile not found for player: " .. player.Name)
-		return
-	end
-
-	print("got req. from client to pay prisms!")
-
-	local prisms = math.ceil(profile.Data.Prisms + (amount or 0))
-	profile.Data.Prisms = prisms
-
-	print("added prisms for " .. player.DisplayName .. " and an amount of " .. tostring(amount))
-	print(player.DisplayName .. " now has " .. tostring(profile.Data.Prisms) .. " Prisms!")
+	stores:addPrisms(player, amount)
 
 	local resourceEventParams = {
 		flowType = GameAnalytics.EGAResourceFlowType.Source,
@@ -397,26 +374,11 @@ local function payCards(amount: number, playerName: string)
 
 	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
 
-	Packet.profileChanged.sendTo({ nil }, player)
-
-	profile:Save()
-	profile:Reconcile()
+	stores:wrapSave(player)
 end
 
 local function sellCards(player: Player, cardName: string)
-	local profile = profiles[player]
-
-	if not profile then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-			title = "Profile not found",
-			type = "error",
-		}, player)
-
-		warn("Profile not found for player: " .. player.Name)
-
-		return
-	end
+	local profile = stores.get(player)
 
 	print("Attempting to sell card: " .. cardName)
 

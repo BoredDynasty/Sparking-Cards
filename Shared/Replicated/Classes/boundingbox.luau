@@ -1,17 +1,24 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local trove = require(ReplicatedStorage.Packages.trove)
+local url = require(ReplicatedStorage.Modules.Serialization.url)
 
 export type BoundingBox = {
-	Position: Vector3,
-	Size: Vector3,
-	Rotation: Vector3,
-	OnEnter: SignalPlus.Signal<Vector3>, -- SignalPlus signal
-	LastPoints: { [Vector3]: boolean }, -- Track points that were inside
+	Position: vector,
+	Size: vector,
+	Rotation: vector,
+	OnEnter: SignalPlus.Signal<vector>, -- SignalPlus signal
+	LastPoints: { [vector]: boolean }, -- Track points that were inside
+	Id: string,
 }
 
-local BoundingBox = {}
+local BoundingBox = {
+	boxes = {},
+	_trove = trove.new(),
+}
 --[[
    Creates a new bounding box with the given parameters
    ```luau
@@ -25,46 +32,51 @@ local BoundingBox = {}
    ```
 )
    ]]
-function BoundingBox.new(position: Vector3, size: Vector3, rotation: Vector3?): BoundingBox
-	return {
+function BoundingBox.new(position: vector, size: vector, rotation: vector?): BoundingBox
+	local data = {
 		Position = position,
 		Size = size,
-		Rotation = rotation or Vector3.new(0, 0, 0),
-		OnEnter = SignalPlus(), -- Create new signal
+		Rotation = rotation or vector.create(0, 0, 0),
+		OnEnter = SignalPlus() :: SignalPlus.Signal<vector>,
 		LastPoints = {},
+		Id = url.generateShortUniqueId(),
 	}
+
+	BoundingBox.boxes[data.Id] = data
+
+	return data
 end
 
 -- Checks if a point is inside the bounding box
-function BoundingBox.isPointInside(box: BoundingBox, point: Vector3): boolean
+function BoundingBox.isPointInside(box: BoundingBox, point: vector): boolean
 	-- Transform point to local space
 	local relativePoint = point - box.Position
 
 	-- If there's rotation, transform the point
-	if box.Rotation ~= Vector3.new(0, 0, 0) then
-		local cx = math.cos(box.Rotation.X)
-		local sx = math.sin(box.Rotation.X)
-		local cy = math.cos(box.Rotation.Y)
-		local sy = math.sin(box.Rotation.Y)
-		local cz = math.cos(box.Rotation.Z)
-		local sz = math.sin(box.Rotation.Z)
+	if box.Rotation ~= vector.create(0, 0, 0) then
+		local cx = math.cos(box.Rotation.x)
+		local sx = math.sin(box.Rotation.x)
+		local cy = math.cos(box.Rotation.y)
+		local sy = math.sin(box.Rotation.y)
+		local cz = math.cos(box.Rotation.z)
+		local sz = math.sin(box.Rotation.z)
 
-		relativePoint = Vector3.new(
-			cy * cz * relativePoint.X + (-cy * sz) * relativePoint.Y + sy * relativePoint.Z,
-			(sx * sy * cz + cx * sz) * relativePoint.X
-				+ (-sx * sy * sz + cx * cz) * relativePoint.Y
-				+ (-sx * cy) * relativePoint.Z,
-			(-cx * sy * cz + sx * sz) * relativePoint.X
-				+ (cx * sy * sz + sx * cz) * relativePoint.Y
-				+ (cx * cy) * relativePoint.Z
+		relativePoint = vector.create(
+			cy * cz * relativePoint.x + (-cy * sz) * relativePoint.y + sy * relativePoint.z,
+			(sx * sy * cz + cx * sz) * relativePoint.x
+				+ (-sx * sy * sz + cx * cz) * relativePoint.y
+				+ (-sx * cy) * relativePoint.z,
+			(-cx * sy * cz + sx * sz) * relativePoint.x
+				+ (cx * sy * sz + sx * cz) * relativePoint.y
+				+ (cx * cy) * relativePoint.z
 		)
 	end
 
 	-- Check if point is within bounds
 	local halfSize = box.Size * 0.5
-	return math.abs(relativePoint.X) <= halfSize.X
-		and math.abs(relativePoint.Y) <= halfSize.Y
-		and math.abs(relativePoint.Z) <= halfSize.Z
+	return math.abs(relativePoint.x) <= halfSize.x
+		and math.abs(relativePoint.y) <= halfSize.y
+		and math.abs(relativePoint.z) <= halfSize.z
 end
 
 -- Checks if two bounding boxes intersect
@@ -74,13 +86,13 @@ function BoundingBox.intersects(box1: BoundingBox, box2: BoundingBox): boolean
 	local halfSize1 = box1.Size * 0.5
 	local halfSize2 = box2.Size * 0.5
 
-	return math.abs(box1.Position.X - box2.Position.X) <= (halfSize1.X + halfSize2.X)
-		and math.abs(box1.Position.Y - box2.Position.Y) <= (halfSize1.Y + halfSize2.Y)
-		and math.abs(box1.Position.Z - box2.Position.Z) <= (halfSize1.Z + halfSize2.Z)
+	return math.abs(box1.Position.x - box2.Position.x) <= (halfSize1.x + halfSize2.x)
+		and math.abs(box1.Position.y - box2.Position.y) <= (halfSize1.y + halfSize2.y)
+		and math.abs(box1.Position.z - box2.Position.z) <= (halfSize1.z + halfSize2.z)
 end
 
 -- Checks if a point is inside and fires OnEnter if it wasn't inside before
-function BoundingBox.checkPoint(box: BoundingBox, point: Vector3): boolean
+function BoundingBox.checkPoint(box: BoundingBox, point: vector): boolean
 	local isInside = BoundingBox.isPointInside(box, point)
 
 	-- If point is inside and wasn't before, fire OnEnter signal
@@ -92,6 +104,30 @@ function BoundingBox.checkPoint(box: BoundingBox, point: Vector3): boolean
 	end
 
 	return isInside
+end
+
+function BoundingBox.update(point: vector)
+	local list = {}
+	local connection = RunService.Heartbeat:Connect(function()
+		for id, box in pairs(BoundingBox.boxes) do
+			if BoundingBox.checkPoint(box, point) then
+				list[box.Id] = true
+			end
+		end
+	end)
+
+	BoundingBox._trove:Add(connection)
+
+	return list
+end
+
+function BoundingBox.halt()
+	-- allow for final processing
+	task.defer(BoundingBox._trove.Clean, BoundingBox._trove)
+end
+
+function BoundingBox.getBoxFromId(id: string): BoundingBox?
+	return BoundingBox.boxes[id]
 end
 
 return BoundingBox
