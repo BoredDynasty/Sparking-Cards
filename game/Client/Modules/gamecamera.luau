@@ -20,8 +20,6 @@ controller:Add("Sway", require("../Camera/Sway"))
 -- controller:Add("Follow", require("../Camera/Follow"))
 controller:Add("Trail", require("../Camera/Trail"))
 controller:Add("Shake", require("../Camera/Shake"))
-controller:Add("Offset", require("../Camera/Offset"))
-controller:Add("Idle", require("../Camera/Idle"))
 local fovManager = controller:Add("DynamicFOV", require("../Camera/DynamicFOV"))
 
 -- Start the camera controller
@@ -48,6 +46,14 @@ end
 
 function GameCamera:GetBaseFOV(): number
 	return fovManager:GetBaseFOV()
+end
+
+function GameCamera:Bind(name: string, f: (any) -> ...any?, ...)
+	controller:Bind(name, f, ...)
+end
+
+function GameCamera:UnBind(name: string)
+	controller:UnBind(name)
 end
 
 function GameCamera:Destroy()

@@ -28,13 +28,16 @@ function Sway.new(cameraController)
 end
 
 function Sway:Update(deltaTime: number, coordinate: CFrame): CFrame
+	debug.profilebegin("sway_update")
 	local mouseDelta = UserInputService:GetMouseDelta()
 	self._swayTurn = lerp(
 		self._swayTurn :: number,
 		math.clamp(mouseDelta.X, -self._config.MaxSway, self._config.MaxSway),
 		self._config.SwayLerpSpeed * deltaTime
 	)
-	return coordinate * CFrame.Angles(0, 0, math.rad(self._swayTurn))
+	local position = coordinate * CFrame.Angles(0, 0, math.rad(self._swayTurn))
+	debug.profileend()
+	return position
 end
 
 function Sway:Destroy()

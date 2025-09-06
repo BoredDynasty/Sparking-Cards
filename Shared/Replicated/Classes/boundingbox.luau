@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local space = require(ReplicatedStorage.Modules.Serialization.space)
 local trove = require(ReplicatedStorage.Packages.trove)
 local url = require(ReplicatedStorage.Modules.Serialization.url)
 
@@ -106,17 +107,28 @@ function BoundingBox.checkPoint(box: BoundingBox, point: vector): boolean
 	return isInside
 end
 
+-- Returns all BaseParts within the bounding box
+function BoundingBox.GetPartsInBox(box: BoundingBox, parent: Instance?): { BasePart }
+	local region = Region3.new(
+		space.toVector3(box.Position - box.Size * 0.5),
+		space.toVector3(box.Position + box.Size * 0.5)
+	)
+
+	local parts = workspace:GetPartBoundsInBox(region.CFrame, region.Size)
+
+	return parts
+end
+
 function BoundingBox.update(point: vector)
 	local list = {}
-	local connection = RunService.Heartbeat:Connect(function()
+
+	BoundingBox._trove:Connect(RunService.Heartbeat, function()
 		for id, box in pairs(BoundingBox.boxes) do
 			if BoundingBox.checkPoint(box, point) then
 				list[box.Id] = true
 			end
 		end
 	end)
-
-	BoundingBox._trove:Add(connection)
 
 	return list
 end

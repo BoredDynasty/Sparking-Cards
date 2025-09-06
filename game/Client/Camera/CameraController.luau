@@ -10,7 +10,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove)
+local url = require(ReplicatedStorage.Modules.Serialization.url)
 
 local CameraController = {}
 CameraController.__index = CameraController
@@ -27,14 +29,17 @@ function CameraController.new()
 	self._trove = trove.new()
 	self._effects = {}
 	self._camera = workspace.CurrentCamera
+	self._other = {} --@type { [string]: (any) -> ...any? }
 
 	return self
 end
 
 function CameraController:Add<T>(effectName: string, effectModule: T): T
 	local effect = effectModule.new(self)
+
 	self._effects[effectName] = effect
 	self._trove:Add(effect)
+
 	return effect
 end
 
@@ -43,6 +48,7 @@ function CameraController:Start()
 		"Camera",
 		Enum.RenderPriority.Camera.Value,
 		function(deltaTime: number)
+			debug.profilebegin("camera_update")
 			local cframe = self._camera.CFrame
 
 			for _, effect: cameraEffect in pairs(self._effects) do
@@ -51,9 +57,29 @@ function CameraController:Start()
 				end
 			end
 
+			for _, effect in pairs(self._other) do
+				if effect.update then
+					effect.update(deltaTime, table.unpack({ effect.params }))
+				end
+			end
+
 			self._camera.CFrame = cframe
+			debug.profileend()
 		end
 	)
+end
+
+function CameraController:Bind(name: string, f: (any) -> ...any?, ...)
+	self._other[name] = {
+		update = f,
+		params = ... or nil,
+	}
+end
+
+function CameraController:UnBind(name: string)
+	promise.new(function()
+		self._other[name] = nil
+	end)
 end
 
 function CameraController:Get<T>(effectName: string)

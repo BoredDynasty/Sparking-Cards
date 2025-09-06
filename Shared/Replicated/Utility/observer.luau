@@ -19,6 +19,7 @@ export type Observer<T> = {
 	Insert: (self: Observer<T>, key: any?, value: any) -> (),
 	Remove: (self: Observer<T>, key: any) -> (),
 	Find: (self: Observer<T>, predicate: (value: any, key: any) -> boolean) -> (any?, any?),
+	Calculate: (self: Observer<T>, fn: (current: T) -> T) -> (),
 	Destroy: (self: Observer<T>) -> (),
 }
 
@@ -47,7 +48,7 @@ end
     print("Current value:", currentValue)
     ```
 ]]
-function Observer:Get(): any
+function Observer:Get<T>(): T
 	return self._value
 end
 
@@ -142,6 +143,21 @@ function Observer:Find(predicate: (value: any, key: any) -> boolean): (any?, any
 	return nil
 end
 
+--[[
+	Calculate a new value based on the current value and a function
+
+	```luau
+	local observer = Observer.new(10)
+	observer:Calculate(function(current)
+		return current * 2
+	end)
+	-- observer:Get() is now 20
+	```
+]]
+function Observer:Calculate(fn: (current: any) -> any)
+	local newValue = fn(self:Get())
+	self:Set(newValue)
+end
 function Observer:Destroy()
 	self.Changed:Destroy()
 	setmetatable(self, nil)

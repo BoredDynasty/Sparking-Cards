@@ -23,9 +23,11 @@ function MovementController.new()
 end
 
 function MovementController:Add(movementName: string, movementModule: any)
-	local movement = movementModule.new(self)
-	self._movements[movementName] = movement
-	self._trove:Add(movement)
+	if movementModule.new then
+		local movement = movementModule.new(self)
+		self._movements[movementName] = movement
+		self._trove:Add(movement)
+	end
 end
 
 function MovementController:Start()

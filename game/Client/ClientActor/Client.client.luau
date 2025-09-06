@@ -15,10 +15,13 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 require("../Gameplay/CardAwarder")()
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local footsteps = require("../Gameplay/footsteps")
+local music = require(StarterPlayer.StarterPlayerScripts.Gameplay.music)
 local notify = require(StarterPlayer.StarterPlayerScripts.Components.notify)
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
+local Joint = require(StarterPlayer.StarterPlayerScripts.Movement.Joint)
 local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
 local animate = require("../Utilities/animate")
@@ -60,7 +63,6 @@ print(1)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 print(2)
 local pop = require(script.Parent.Parent.Interface.pop)
-local profileMarshaller = require(ReplicatedStorage.Datastore.profileMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 print(3)
 local promise = require(ReplicatedStorage.Packages.promise)
@@ -79,7 +81,17 @@ print("Client Requirements")
 -- // Variables -- //
 
 local player = playerMarshaller.get()
-local profile: profilestructure.profile = profileMarshaller.client[player]
+local profile = nil
+
+yoink.getAsync("profile_data"):andThen(function(response)
+	if response.success then
+		print("Player stats:", response.value)
+		profile = response.value
+	else
+		warn("Error:", response.error)
+	end
+end)
+
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
 local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
@@ -143,6 +155,7 @@ local function initializeMarket()
 
 	local function displaySpendings()
 		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
+
 		yoink.getAsync("profile_data"):andThen(function(response)
 			if response.success then
 				print("Player stats:", response.value)
@@ -170,7 +183,7 @@ local function initializeMarket()
 		})
 	end
 
-	task.spawn(displaySpendings)
+	--task.spawn(displaySpendings)
 
 	shadow(shopFrame, Color3.new(), 0, 14)
 	shadow(shopNavigation, Color3.new(), 0, 14)
@@ -293,7 +306,7 @@ local function initializeMarket()
 	local function populateInventory()
 		local unloaded = unloadShop()
 		task.wait(unloaded)
-		profile = yoink.client:grab("profile_data")
+		--profile = yoink.client:grab("profile_data")
 		assert(profile, "Profile does not exist on the client!")
 		for itemName: string, i in pairs(profile.Data.Cards) do
 			-- print("got item: " .. itemName)
@@ -605,9 +618,36 @@ local function initializeBadges()
 	print("init badges")
 end
 local function initializeNotifiers()
+	print("init notifiers")
+
 	Packet.SendNotification.listen(function(data: { message: string, title: string? }, player: Player?)
 		notify.info(data.title, data.message)
 	end)
+end
+local function initializeMusic()
+	print("init music")
+	local tracks = {
+		{
+			biome = "Baseplate",
+			id = "106260784933266",
+			name = "Gentle Groove",
+			artist = "Distrokid",
+			coordinates = {
+				position = vector.create(-1845, 228, 139),
+				size = vector.create(2048, 64, 2048),
+			},
+		},
+	}
+
+	for i, track in pairs(tracks) do
+		music.newBiome(track.biome, {
+			track,
+		}, track.coordinates.position, track.coordinates.size)
+
+		print("added biome track: " .. i .. tracks[i])
+	end
+
+	music.startTracking()
 end
 initializeMarket()
 initializeOptions()
@@ -625,12 +665,13 @@ movementController:Add("Sprint", Sprint)
 movementController:Add("Slide", Slide)
 movementController:Add("Dash", Dash)
 movementController:Add("Stamina", Stamina)
+movementController:Add("Joint", Joint)
 movementController:Start()
 
 print("client movement")
 print("game camera")
 
-animate.initialize(character)
+animate.initialize()
 print("animate initialized")
 -- control
 
@@ -642,8 +683,13 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 		[Enum.KeyCode.Q] = "Ultimate",
 		[Enum.KeyCode.R] = "Support",
 	}
-	local attackType = attackTypes[key]
-	--assert(attackType, "Invalid key for attack type: " .. tostring(key))
+
+	local attackType: string = promise
+		.new(function()
+			return attackTypes[key]
+		end)
+		:expect()
+
 	return attackType
 end
 
@@ -691,4 +737,6 @@ Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
 	--audio:Cleanup()
 	movementController:Destroy()
+	footsteps._trove:Clean()
+	music.cleanup()
 end)

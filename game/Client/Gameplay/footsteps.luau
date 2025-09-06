@@ -3,18 +3,20 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local space = require(ReplicatedStorage.Modules.Serialization.space)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- footsteps.luau
 
 local player = playerMarshaller.get()
-local character = player.Character
+local character = characterMarshaller.get(player)
 
-local humanoid = character.Humanoid
-local rootPart = character.HumanoidRootPart
+local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local rootPart = character:WaitForChild("HumanoidRootPart") :: BasePart
 
 local state = observer.new(humanoid:GetState())
 local previousMaterial = observer.new("Air")
@@ -57,13 +59,30 @@ state:Watch(function(newState, oldState)
 		dust.CFrame = rootPart.CFrame * CFrame.new(0, -3, 0)
 
 		local particle = dust:FindFirstChildOfClass("ParticleEmitter") :: ParticleEmitter
+
+		local lastPosition = observer.new(rootPart.CFrame * CFrame.new(0, -3, 0))
+		local distance = observer.new(0)
+
+		local PARTICLES_PER_STUD = 1
+
+		particle.Enabled = false
+
 		if dust and particle then
 			connection = _trove:Connect(RunService.Stepped :: RBXScriptSignal, function(deltaTime: number)
 				local position = rootPart.CFrame * CFrame.new(0, -3, 0)
 
+				local displacement = space.toVector3(position) - space.toVector3(lastPosition:Get())
+				distance:Calculate(function(current)
+					return math.abs(current + displacement.Magnitude)
+				end)
+
+				lastPosition:Set(position)
+
+				local n = math.floor(distance:Get() * PARTICLES_PER_STUD * deltaTime)
+
 				dust.CFrame = position
 
-				particle:Emit(1 * deltaTime)
+				particle:Emit(n)
 			end)
 		end
 	else
@@ -75,3 +94,8 @@ state:Watch(function(newState, oldState)
 		end
 	end
 end)
+
+return {
+	state = state,
+	_trove = _trove,
+}

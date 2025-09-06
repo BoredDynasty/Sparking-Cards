@@ -33,7 +33,7 @@ local currentCharacter = nil
 local currentAnimator = nil
 
 local function initialize()
-	local character = player.Character
+	local character = characterMarshaller.get(player)
 
 	currentCharacter = character
 
@@ -75,7 +75,7 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 		return nil
 	end
 
-	if not animObject.IsLoaded then
+	if not animObject.IsLoaded and currentAnimator :: Animator? then
 		animObject.Track = currentAnimator:LoadAnimation(animObject.Animation)
 		animObject.IsLoaded = true
 	end

@@ -31,6 +31,7 @@ function Shake:Shake(strength: number, duration: number)
 end
 
 function Shake:Update(deltaTime: number, cframe: CFrame): CFrame
+	debug.profilebegin("shake_update")
 	if self._shakeStrength == 0 then
 		return cframe
 	end
@@ -43,7 +44,11 @@ function Shake:Update(deltaTime: number, cframe: CFrame): CFrame
 	local offset = Vector3.new(x, y, 0) * self._shakeStrength
 	self._shakeStrength = math.max(0, self._shakeStrength - deltaTime * 5)
 
-	return cframe * CFrame.new(offset)
+	cframe *= CFrame.new(offset)
+
+	debug.profileend()
+
+	return cframe
 end
 
 function Shake:Destroy()

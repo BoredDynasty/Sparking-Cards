@@ -110,4 +110,43 @@ function characterIteration:fadeIn(container: Frame)
 	iterate(container, fadeIn)
 end
 
+function characterIteration.getLine(folder: Folder, line: number)
+	local value = nil
+
+	value = promise
+		.new(function()
+			return folder[line]
+		end)
+		:expect()
+
+	return value
+end
+
+--[[
+	Does a "bolden" effect on each character.
+]]
+function characterIteration:bolden(container: Frame)
+	local function bolden(_: number, character: TextLabel | ImageLabel)
+		if typeof(character) == "TextLabel" then
+			task.delay(0.2, function()
+				character.FontFace =
+					Font.new(character.Font.Name, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
+			end)
+		end
+	end
+	iterate(container, bolden)
+end
+
+function characterIteration:regularize(container: Frame)
+	local function regularize(_: number, character: TextLabel | ImageLabel)
+		if typeof(character) == "TextLabel" then
+			task.delay(0.2, function()
+				character.FontFace =
+					Font.new(character.Font.Name, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+			end)
+		end
+	end
+	iterate(container, regularize)
+end
+
 return characterIteration

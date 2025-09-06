@@ -22,28 +22,42 @@ return function()
 	for _, card: BasePart in CollectionService:GetTagged("collectible") :: { BasePart } do
 		-- print(card.Name)
 		local touchDebounce = false
+
 		card.Touched:Connect(function(otherPart: BasePart)
 			if touchDebounce then
 				return
 			end
+
 			touchDebounce = true
+
 			task.delay(debounceDelay, function()
 				touchDebounce = false
 			end)
+
 			local parent = otherPart.Parent :: Model
-			local otherPlayer = Players:GetPlayerFromCharacter(parent)
+
+			local otherPlayer = playerMarshaller.getFromCharacter(parent)
+
 			if not otherPlayer then
 				return
 			end
+
 			if otherPlayer == player then
 				print("Touched Prism: " .. card.Name)
+
 				local amount = card:GetAttribute("Award") :: number
 				local dropAmount = amount
+
 				CardManager:Drop(player, dropAmount)
+
 				local character = player.Character
+
 				Fireworks:PlayFireworks(character.HumanoidRootPart)
+
 				Packet.PayPrisms.send({ amount = amount, recipientUsername = player.Name })
+
 				print("sent req. to pay prisms!")
+
 				task.delay(debounceDelay, function()
 					card:Destroy()
 				end)

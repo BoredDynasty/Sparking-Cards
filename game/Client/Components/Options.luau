@@ -5,8 +5,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
+local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local promise = require(ReplicatedStorage.Packages.promise)
 
 -- Options.luau
 
@@ -79,29 +81,12 @@ local function createOptionInterface(option: Option): optionTemplate
 	})
 
 	-- Style the title text (first line)
-	local line1 = textDisplay["1"] :: Folder
-	for _, word in line1:GetChildren() do
-		for _, character in word:GetChildren() do
-			character.FontFace = Font.new(
-				"rbxasset://fonts/families/Montserrat.json",
-				Enum.FontWeight.Bold,
-				Enum.FontStyle.Normal
-			)
-		end
-	end
+	local line1 = characterIteration.getLine(textDisplay, 1)
+	characterIteration:bolden(line1)
 
 	-- Style the description text (second line)
-	local line2 = textDisplay["2"] :: Folder
-	for _, word in line2:GetChildren() do
-		for _, character: TextLabel in word:GetChildren() do
-			character.TextTransparency = 0.5
-			character.FontFace = Font.new(
-				"rbxasset://fonts/families/Montserrat.json",
-				Enum.FontWeight.Regular,
-				Enum.FontStyle.Normal
-			)
-		end
-	end
+	local line2 = characterIteration.getLine(textDisplay, 2)
+	characterIteration:regularize(line2)
 
 	return interface
 end

@@ -9,29 +9,32 @@ local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 
 -- stores.luau
--- a utility for profilestore
+-- a wrapper for profilestore
 
 local stores = {
 	server = {},
+	profile_key = "playerstore",
 }
 
 local profiles = stores.server
 
-local player_related = profilestore.New("player-related", profilestructure)
+local player_related = profilestore.New(stores.profile_key, profilestructure)
 
-function stores.onPlayerAdded(player: playerMarshaller.player)
+function stores.load(player: playerMarshaller.player)
 	-- Start profile session with timeout
 	local profile: typeof(player_related:StartSessionAsync("", {}))?
 
-	profile = promise
-		.retry(function()
-			return player_related:StartSessionAsync(`player:{player.UserId}`, {
-				Cancel = function()
-					return player.Parent ~= Players
-				end,
-			})
-		end, 20)
-		:expect() :: typeof(player_related:StartSessionAsync("", {}))?
+	profile =
+		--promise
+		--.retry(function()
+		-- return
+		player_related:StartSessionAsync(`player:{player.UserId}`, {
+			Cancel = function()
+				return player:IsDescendantOf(Players) == false
+			end,
+		})
+	--end, 9999)
+	--:expect() :: typeof(player_related:StartSessionAsync("", {}))?
 	print(typeof(profile))
 
 	if profile then
@@ -48,7 +51,7 @@ function stores.onPlayerAdded(player: playerMarshaller.player)
 		if player:FindFirstAncestorOfClass("Players") then
 			profiles[player] = profile
 
-			profile.Data.LastLogin = os.time()
+			profile.Data.LastLogin = DateTime.now().UnixTimestamp
 
 			profile:Reconcile()
 			profile:Save()
@@ -57,8 +60,8 @@ function stores.onPlayerAdded(player: playerMarshaller.player)
 
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
-	elseif not profile then
-		player:Kick("The Roblox Servers are on fire. Try rejoining.")
+		--elseif profile == nil then
+		--player:Kick("The Roblox Servers are on fire. Try rejoining.")
 	end
 
 	return profile
@@ -67,34 +70,23 @@ end
 function stores.get(player: playerMarshaller.player)
 	local value = nil
 
-	promise
-		.new(function(resolve, reject)
+	value = promise
+		.new(function()
 			local profile = profiles[player]
 
 			if not profile and profile == nil then
-				reject("Profile does not exist!")
-
 				Packet.SendNotification.sendTo({
 					message = "Couldn't get data",
 					title = "Profile not found",
 					type = "error",
 				}, player)
+
+				return nil
 			end
 
-			value = {
-				Data = profile.Data,
-				Key = profile.Key,
-				LastSaved = profile.LastSavedData,
-			}
-
-			resolve({
-				Data = profile.Data,
-				Key = profile.Key,
-				LastSaved = profile.LastSavedData,
-			})
+			return profile
 		end)
-		:andThen(print)
-		:catch(warn)
+		:awaitValue()
 
 	return value :: typeof(player_related:StartSessionAsync("", {}))
 end
@@ -108,9 +100,18 @@ function stores.wrapSave(player: playerMarshaller.player)
 	Packet.SendNotification.sendTo({
 		message = "Your data has just been saved.",
 		title = "Data Saved",
+		type = "info",
 	}, player)
 
 	return true
+end
+
+local function notifyWarning(player: playerMarshaller.player)
+	Packet.SendNotification.sendTo({
+		message = "Something went wrong with the current operation.",
+		title = "Task failed.",
+		type = "warning",
+	}, player)
 end
 
 -- native methods
@@ -123,7 +124,9 @@ function stores:deductPrims(player: playerMarshaller.player, amount: number)
 			profile.Data.Prisms -= amount
 		end)
 		:andThen(nil)
-		:catch(warn)
+		:catch(function()
+			notifyWarning(player)
+		end)
 
 	return true
 end
@@ -136,9 +139,77 @@ function stores:addPrisms(player: playerMarshaller.player, amount: number)
 			profile.Data.Prisms += amount
 		end)
 		:andThen(nil)
-		:catch(warn)
+		:catch(function()
+			notifyWarning(player)
+		end)
 
 	return true
+end
+
+function stores:deductCards(player: playerMarshaller.player, name: string, amount: number)
+	local profile = stores.get(player)
+
+	promise
+		.new(function()
+			if table.find(profile.Data.Cards, name) then
+				if profile.Data.Cards[name] <= 0 then
+					return
+				end
+				profile.Data.Cards[name] -= amount or 1
+			end
+		end)
+		:andThen(nil)
+		:catch(function()
+			notifyWarning(player)
+		end)
+
+	return true
+end
+
+function stores:resetCards(player: playerMarshaller.player)
+	local profile = stores.get(player)
+
+	promise
+		.new(function()
+			profile.Data.Cards = {}
+		end)
+		:andThen(nil)
+		:catch(function()
+			notifyWarning(player)
+		end)
+
+	return true
+end
+
+function stores:addCard(player: playerMarshaller.player, name: string, amount: number)
+	local profile = stores.get(player)
+
+	promise
+		.new(function()
+			if table.find(profile.Data.Cards, name) then
+				profile.Data.Cards[name] += amount or 1
+			else
+				profile.Data.Cards[name] = amount or 1
+			end
+		end)
+		:andThen(nil)
+		:catch(function()
+			notifyWarning(player)
+		end)
+
+	return true
+end
+
+-- native functions
+
+function stores.getPrisms(player: playerMarshaller.player)
+	local profile = stores.get(player)
+
+	if not profile then
+		return 0
+	end
+
+	return profile.Data.Prisms
 end
 
 return stores

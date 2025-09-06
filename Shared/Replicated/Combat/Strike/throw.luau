@@ -31,13 +31,19 @@ return function(parameters: throw)
 	humanoid.PlatformStand = true
 
 	local _trove = trove.new()
-	local connection = nil
-	connection = RunService.Heartbeat:Connect(function(deltaTime: number)
+
+	_trove:Connect(RunService.Heartbeat, function(deltaTime: number)
 		local elaspedTime = os.clock() - startTime
+
+		-- end if character is dead
+		if humanoid.Health <= 0 then
+			_trove:Destroy()
+			return
+		end
 
 		-- check if max duration exceeded
 		if elaspedTime > MAX_THROW_DURATION then
-			_trove:Clean()
+			_trove:Destroy()
 			return
 		end
 
@@ -48,6 +54,7 @@ return function(parameters: throw)
 		local castResult = workspace:Raycast(rootPart.Position, movement, castParams)
 		if castParams then
 			_trove:Clean()
+			_trove:Destroy()
 			Packet.ReplicateAnimation.sendToAll({ identification = "" }) -- TODO) add throw anim
 			impact({
 				position = castResult.Position,
@@ -55,17 +62,9 @@ return function(parameters: throw)
 				magnitude = 2,
 				duration = 0.5,
 			})
+			humanoid.PlatformStand = false
 			return
 		end
 		rootPart.CFrame += movement
-	end)
-	_trove:Add(connection)
-	local connectionobserver = observer.new(connection)
-	connectionobserver.Changed:Connect(function()
-		if connection and connection.Connected then
-			_trove:Clean()
-			task.defer(_trove.Destroy, _trove)
-			task.defer(connectionobserver.Destroy, connectionobserver)
-		end
 	end)
 end

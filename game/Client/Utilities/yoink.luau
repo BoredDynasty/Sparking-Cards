@@ -31,12 +31,21 @@ end
 -- Gets a value from the server using the provided key
 function yoink.getValue<T>(key: string): response<T>
 	local remote = yoink.setup()
-
-	local success, result: any = pcall(function()
-		return remote:InvokeServer(key)
+	-- Use a promise to handle the remote call
+	local resultPromise = promise.new(function(resolve, reject)
+		local success, result = pcall(function()
+			return remote:InvokeServer(key)
+		end)
+		if success then
+			resolve(result)
+		else
+			reject("Failed to communicate with server: " .. tostring(result))
+		end
 	end)
 
-	if not success then
+	local result = resultPromise:expect()
+
+	if not result then
 		return {
 			success = false,
 			value = nil,

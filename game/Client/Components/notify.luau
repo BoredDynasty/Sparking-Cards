@@ -9,6 +9,7 @@ local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local promise = require(ReplicatedStorage.Packages.promise)
 
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
@@ -65,18 +66,20 @@ local function showNotification(title: string, content: string, iconName: string
 end
 
 state:Watch(function(newState)
-	if newState == "close" then
-		-- slide out
-		characterIteration:fade(notification.Frame.Title)
-		characterIteration:fade(notification.Frame.Content)
-		TweenPlus(notification.Frame, { Position = UDim2.fromScale(-1, 0.953) }, { Time = 0.5 }):Start()
-		task.delay(1, function()
-			notification.Frame.Visible = false
-		end)
-	else
-		notification.Frame.Visible = true
-		TweenPlus(notification.Frame, { Position = UDim2.fromScale(0, 0.953) }, { Time = 0.5 }):Start()
-	end
+	promise.new(function()
+		if newState == "close" then
+			-- slide out
+			characterIteration:fade(notification.Frame.Title)
+			characterIteration:fade(notification.Frame.Content)
+			TweenPlus(notification.Frame, { Position = UDim2.fromScale(-1, 0.953) }, { Time = 0.5 }):Start()
+			task.delay(1, function()
+				notification.Frame.Visible = false
+			end)
+		else
+			notification.Frame.Visible = true
+			TweenPlus(notification.Frame, { Position = UDim2.fromScale(0, 0.953) }, { Time = 0.5 }):Start()
+		end
+	end)
 end)
 
 return {

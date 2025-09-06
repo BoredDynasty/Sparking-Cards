@@ -28,6 +28,7 @@ function Trail.new(cameraController)
 end
 
 function Trail:Update(deltaTime: number, coordinate: CFrame): CFrame
+	debug.profilebegin("trail_update")
 	if not self._rootPart then
 		return coordinate
 	end
@@ -37,6 +38,8 @@ function Trail:Update(deltaTime: number, coordinate: CFrame): CFrame
 	local newOffset = self._config.Offset :: Vector3 * velocity.Magnitude :: number / (speed * 2)
 	local cameraOffset = self._humanoid.CameraOffset:Lerp(newOffset, self._config.TrailAlpha :: number)
 	self._humanoid.CameraOffset = cameraOffset
+
+	debug.profileend()
 
 	return coordinate
 end

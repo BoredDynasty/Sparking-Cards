@@ -7,9 +7,10 @@ local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local DisplayOrder = require(script.Parent.Parent.Interface.displayorder)
-local Pop = require(script.Parent.Parent.Interface.pop)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local pop = require("../Interface/pop")
 local promise = require(ReplicatedStorage.Packages.promise)
+local trove = require(ReplicatedStorage.Packages.trove).new()
 
 -- throbber.luau
 -- for indicating preloads
@@ -23,25 +24,26 @@ return function(element: GuiObject, signal: SignalPlus.Signal<>)
 	loader.Visible = true
 	loader.Parent = element
 	loader.Position = DisplayOrder.canvasPositions.middle
-	Pop(loader)
+	pop(loader)
 
 	local circle = 360
 
-	local connection = RunService.Heartbeat:Connect(function(deltaTime: number)
-		loader.Rotation += circle * deltaTime
+	trove:Connect(RunService.Heartbeat, function(deltaTime)
+		circle -= deltaTime * 360
+		if circle <= 0 then
+			circle = 360
+		end
+		loader.Rotation = circle
 	end)
-	promise
-		.new(function(resolve, reject)
-			signal:Connect(function()
-				resolve()
-			end)
+
+	trove:Add(loader)
+	trove:Add(signal)
+
+	trove:AddPromise(promise.new(function()
+		signal:Once(function()
+			pop(loader)
+
+			trove:Clean()
 		end)
-		:andThen(function()
-			connection:Disconnect()
-			loader:Destroy()
-			signal:Destroy()
-		end)
-		:catch(function(err)
-			warn("Error in throbber promise: ", err)
-		end)
+	end))
 end

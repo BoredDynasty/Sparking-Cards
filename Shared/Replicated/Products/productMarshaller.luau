@@ -1,8 +1,8 @@
 --!nonstrict
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 
 -- productMarshaller.luau
@@ -35,14 +35,21 @@ return {
 			cost = 20.00,
 		},
 	} :: productTable,
-	product_callbacks = {} :: { (receipt: (any | string)?, player: Player) -> boolean },
+	product_callbacks = {} :: { (receipt: (any | string)?, player: playerMarshaller.player) -> boolean },
 	processReceipt = function(receiptInfo: { PlayerId: number, ProductId: number }, product_callbacks)
 		local userId = receiptInfo.PlayerId :: number
 		local productId = receiptInfo.ProductId :: number
 
-		local player = Players:GetPlayerByUserId(userId) :: Player
+		local player = playerMarshaller.getByUserId(userId) :: playerMarshaller.player
+
 		if player then
 			local handler = product_callbacks[productId]
+
+			if not handler then
+				warn("No handler for productId: " .. productId)
+				return Enum.ProductPurchaseDecision.NotProcessedYet
+			end
+
 			promise
 				.try(handler, receiptInfo, player)
 				:andThen(function()

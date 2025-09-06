@@ -32,12 +32,8 @@ end
 -- this function exists so u dont have to do
 -- local character = (player.Character :: any) :: character.Character?
 local function getCharacter(player: Player): Character
-	local char = player.Character
-	--[[
-	if not char then
-		char = player.CharacterAdded:Wait()
-	end
-	--]]
+	local char = player.Character or player.CharacterAdded:Wait()
+
 	return char :: any
 end
 
@@ -90,6 +86,39 @@ function character.added(
 		end
 
 		coroutine.close(thread)
+	end
+end
+
+function character.all()
+	local players = Players:GetPlayers()
+
+	local list = table.create(#players)
+
+	for _, player in ipairs(players) do
+		local character = character.get(player)
+
+		if character then
+			table.insert(list, character)
+		end
+	end
+
+	return list
+end
+
+function character.getRoot(player: Player): BasePart?
+	local char = character.get(player)
+	if not char then
+		return nil
+	end
+	return char.HumanoidRootPart
+end
+
+function character.isRoot(inst: Instance): (boolean?, BasePart?)
+	if not inst.Parent then
+		return false, nil
+	end
+	if Players:FindFirstChild(inst.Parent.Name) then
+		return true, inst :: BasePart
 	end
 end
 
