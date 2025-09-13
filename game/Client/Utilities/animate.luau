@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local trove = require(ReplicatedStorage.Packages.trove)
 local player = playerMarshaller.get()
 
 type AnimationObject = {
@@ -32,17 +33,19 @@ local animations: { [string]: AnimationObject } = {}
 local currentCharacter = nil
 local currentAnimator = nil
 
+local _trove = trove.new()
+
 local function initialize()
 	local character = characterMarshaller.get(player)
 
 	currentCharacter = character
 
 	local humanoid = character.Humanoid
-	local animator = humanoid.Animator
+	local animator = humanoid:FindFirstChildOfClass("Animator")
 
-	assert(animator, "Animator not found in character")
+	--assert(animator, "Animator not found in character")
 
-	currentAnimator = animator
+	currentAnimator = animator or humanoid.Animator or currentCharacter.Humanoid.Animator
 	animations = {}
 end
 
@@ -53,6 +56,8 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 
 	local animation = Instance.new("Animation")
 	animation.AnimationId = data.Id
+
+	_trove:Add(animation)
 
 	local animObject: AnimationObject = {
 		Animation = animation,
@@ -67,7 +72,7 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 end
 
 local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
-	assert(currentAnimator, "Animator not initialized. Call initialize() first.")
+	--assert(currentAnimator, "Animator not initialized. Call initialize() first.")
 
 	local animObject: AnimationObject = animations[name]
 	if not animObject then
@@ -79,6 +84,7 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 		animObject.Track = currentAnimator:LoadAnimation(animObject.Animation)
 		animObject.IsLoaded = true
 	end
+
 	fadeTime = fadeTime or 0.25
 
 	if animObject.Track then
@@ -91,10 +97,17 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 	return nil
 end
 
-local function stopAnimation(name: string)
+local function stopAnimation(name: string, fadeTime: number?)
 	local animObject: AnimationObject = animations[name]
+
+	fadeTime = fadeTime or 0.25
+
 	if animObject and animObject.Track then
-		animObject.Track:Stop()
+		animObject.Track:Stop(fadeTime)
+
+		task.delay(fadeTime, function()
+			_trove:Remove(animObject.Animation)
+		end)
 	end
 end
 
@@ -103,6 +116,10 @@ local function stopAllAnimations(fadeTime: number?)
 	for _, animObject: AnimationObject in animations do
 		if animObject.Track then
 			animObject.Track:Stop(fadeTime)
+
+			task.delay(fadeTime, function()
+				_trove:Remove(animObject.Animation)
+			end)
 		end
 	end
 end
@@ -116,11 +133,12 @@ local function getTrack(name: string): AnimationTrack?
 end
 
 local function cleanup()
-	stopAllAnimations()
+	stopAllAnimations(0.25)
 	table.clear(animations)
 	animations = {}
 	currentAnimator = nil
 	currentCharacter = nil
+	_trove:Clean()
 end
 
 return {

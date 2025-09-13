@@ -58,12 +58,14 @@ state:Watch(function(newState, oldState)
 		dust.Parent = character
 		dust.CFrame = rootPart.CFrame * CFrame.new(0, -3, 0)
 
+		_trove:Add(dust)
+
 		local particle = dust:FindFirstChildOfClass("ParticleEmitter") :: ParticleEmitter
 
 		local lastPosition = observer.new(rootPart.CFrame * CFrame.new(0, -3, 0))
 		local distance = observer.new(0)
 
-		local PARTICLES_PER_STUD = 1
+		local PARTICLES_PER_STUD = 3
 
 		particle.Enabled = false
 
@@ -78,11 +80,15 @@ state:Watch(function(newState, oldState)
 
 				lastPosition:Set(position)
 
-				local n = math.floor(distance:Get() * PARTICLES_PER_STUD * deltaTime)
+				local n = math.floor(distance:Get() * PARTICLES_PER_STUD)
 
 				dust.CFrame = position
 
 				particle:Emit(n)
+
+				task.delay(distance:Get() // PARTICLES_PER_STUD, function()
+					_trove:Remove(dust)
+				end)
 			end)
 		end
 	else

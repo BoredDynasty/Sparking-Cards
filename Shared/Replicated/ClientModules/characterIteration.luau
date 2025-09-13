@@ -10,20 +10,16 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local characterIteration = {}
 
 local function iterate(container: Frame, thread: (number, TextLabel | ImageLabel) -> ...any?)
-	for characterNumber, character in TextPlus.GetCharacters(container) do
-		-- For Roblox fonts, 'character' will be a TextLabel.
-		-- For custom fonts, 'character' will be an ImageLabel.
-		promise
-			.new(function(resolve, reject)
-				local success, err = pcall(thread, characterNumber, character)
-				if success then
-					resolve()
-				else
-					reject(err)
+	for i, child in ipairs(container:GetChildren()) do
+		if child:IsA("Frame") or child:IsA("Folder") then
+			for j, subchild in ipairs(child:GetChildren()) do
+				if subchild:IsA("TextLabel") or subchild:IsA("ImageLabel") then
+					thread(j, subchild)
 				end
-			end)
-			:andThen(print)
-			:catch(warn)
+			end
+		elseif child:IsA("TextLabel") or child:IsA("ImageLabel") then
+			thread(i, child)
+		end
 	end
 end
 
@@ -110,21 +106,26 @@ function characterIteration:fadeIn(container: Frame)
 	iterate(container, fadeIn)
 end
 
-function characterIteration.getLine(folder: Folder, line: number)
+function characterIteration.getLine(folder: Folder | Frame, line: number)
 	local value = nil
 
 	value = promise
 		.new(function()
-			return folder[line]
+			return folder[`{line}`]
 		end)
 		:expect()
 
 	return value
 end
 
---[[
-	Does a "bolden" effect on each character.
-]]
+function characterIteration.getAllLines(folder: Folder | Frame)
+	local lines = {}
+	for _, child in ipairs(folder:GetChildren()) do
+		table.insert(lines, child)
+	end
+	return lines, #lines
+end
+
 function characterIteration:bolden(container: Frame)
 	local function bolden(_: number, character: TextLabel | ImageLabel)
 		if typeof(character) == "TextLabel" then

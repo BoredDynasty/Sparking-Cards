@@ -29,7 +29,7 @@ export type direction = "up" | "down" | "left" | "right" | "none"
 -- Default settings
 local DEFAULT_SWIPE_THRESHOLD = 10 -- Minimum distance in pixels to trigger a swipe
 
-function SwipeDetector.new(guiObject: GuiObject): SwipeDetector
+function SwipeDetector.new(guiObject: GuiObject): self
 	local self = setmetatable({} :: self, SwipeDetector)
 
 	self._gui = guiObject

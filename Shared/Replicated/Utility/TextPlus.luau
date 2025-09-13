@@ -1,4 +1,5 @@
 --!optimize 2
+--!native
 
 --[[
 
@@ -20,7 +21,7 @@ TTTTTTTTTTTTTTTTTTTTTT
                            eeeeeeeeee        xxxxxx                 ttttttttt                       
                                                                       ttttttt                       
 
-v1.21.0
+v1.25.0
 
 An efficient, robust, open-source text-rendering library for
 Roblox, featuring custom fonts and advanced text control.
@@ -62,7 +63,6 @@ SOFTWARE.
 
 -- Services.
 local CollectionService = game:GetService("CollectionService")
-local GuiService = game:GetService("GuiService")
 local Players = game:GetService("Players")
 local TextService = game:GetService("TextService")
 
@@ -88,7 +88,7 @@ local camera = workspace.CurrentCamera
 local missingCharacter = "rbxassetid://75989824347198"
 
 -- Lists for validity checks.
-local customizationOptions = {
+local optionsList = {
 	Font = true,
 
 	Size = true,
@@ -150,7 +150,7 @@ local yAlignments = {
 	Justified = true,
 }
 
--- Customization defaults.
+-- Option defaults.
 local defaults = {
 	Font = Font.new("rbxasset://fonts/families/SourceSansPro.json"),
 
@@ -192,7 +192,7 @@ if userDefaults then
 	userDefaults = require(userDefaults)
 	if type(userDefaults) == "table" then
 		for key in userDefaults do
-			if customizationOptions[key] then
+			if optionsList[key] then
 				defaults[key] = userDefaults[key]
 			end
 		end
@@ -253,7 +253,7 @@ end
 
 -- Frame data tables.
 local frameText = {}
-local frameCustomizations = {}
+local frameOptions = {}
 local frameTextBounds = {}
 local frameSizeConnections = {}
 local frameUpdateSignals = if Signal then {} else nil
@@ -408,7 +408,7 @@ if fonts then
 	end
 end
 
--- Types.
+-- Global types.
 export type CustomFont = {
 	Image: number,
 	Size: number,
@@ -416,7 +416,7 @@ export type CustomFont = {
 		[string]: {},
 	},
 }
-export type Customization = {
+export type Options = {
 	Font: Font | CustomFont?,
 
 	Size: number?,
@@ -455,75 +455,93 @@ export type Customization = {
 	Dynamic: boolean?,
 }
 
+-- Local types.
+type Connection = {
+	Connected: boolean,
+	Disconnect: typeof(function(connection: Connection) end),
+}
+type Signal<Parameters...> = {
+	Connect: typeof(function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end),
+	Once: typeof(function(signal: Signal<Parameters...>, callback: (Parameters...) -> ()): Connection end),
+	Wait: typeof(function(signal: Signal<Parameters...>): Parameters... end),
+
+	Fire: typeof(function(signal: Signal<Parameters...>, ...: Parameters...) end),
+
+	DisconnectAll: typeof(function(signal: Signal<Parameters...>) end),
+	Destroy: typeof(function(signal: Signal<Parameters...>) end),
+}
+
 -- Module.
 local module = {}
 
 --[[
-Gets the raw text string for a frame.
+Returns the last rendered text string for a frame.
 ]]
 --
-module.GetText = function(frame: GuiObject): Customization
-	-- Argument errors.
-	if typeof(frame) ~= "Instance" or not frame:IsA("GuiObject") then
-		error("No frame provided.", 2)
+module.GetText = function(frame: GuiObject): Options
+	-- Get, verify and return text.
+	local text = frameText[frame]
+	if not text then
+		error("Invalid frame.", 2)
 	end
-
-	-- Get and return text.
-	return frameText[frame]
+	return text
 end
 --[[
-Gets the customization for a frame.
+Returns the options for a frame.
 ]]
 --
-module.GetCustomization = function(frame: GuiObject): Customization
-	-- Argument errors.
-	if typeof(frame) ~= "Instance" or not frame:IsA("GuiObject") then
-		error("No frame provided.", 2)
+module.GetOptions = function(frame: GuiObject): Options
+	-- Get, verify and return options.
+	local options = frameOptions[frame]
+	if not options then
+		error("Invalid frame.", 2)
 	end
-
-	-- Get and return customization.
-	return frameCustomizations[frame]
+	return frameOptions[frame]
 end
 --[[
-Gets the text bounds of a frame.
-Returns <code>Vector2.zero</code> if not found.
+Returns the text bounds of a frame.
 ]]
 --
 module.GetTextBounds = function(frame: GuiObject): Vector2
-	-- Argument errors.
-	if typeof(frame) ~= "Instance" or not frame:IsA("GuiObject") then
-		error("No frame provided.", 2)
+	-- Get, verify and return text bounds.
+	local textBounds = frameTextBounds[frame]
+	if not textBounds then
+		error("Invalid frame.", 2)
 	end
-
-	-- Get and return text bounds.
-	return frameTextBounds[frame] or Vector2.zero
+	return textBounds
 end
 
-local function noOperation() end
 --[[
-Returns an iterator function for looping through all characters in the specified frame.
+Returns the update signal for a frame.
+]]
+--
+module.GetUpdateSignal = function(frame: GuiObject): Signal
+	-- Get, verify and return signal.
+	local signal = frameUpdateSignals[frame]
+	if not signal then
+		error("Invalid frame.", 2)
+	end
+	return signal
+end
+
+--[[
+Returns a function for iterating through all characters in a frame.
 
 <em>Ignores sorting folders.
 Works with any sorting.</em>
 ]]
 --
 module.GetCharacters = function(frame: GuiObject): { TextLabel | ImageLabel }
-	-- Argument errors.
-	if typeof(frame) ~= "Instance" or not frame:IsA("GuiObject") then
-		error("No frame provided.", 2)
-	end
-
-	-- Get and verify customization.
-	local customization = frameCustomizations[frame]
-	if not customization then
-		return noOperation
+	-- Get and verify options.
+	local options = frameOptions[frame]
+	if not options then
+		error("Invalid frame.", 2)
 	end
 
 	-- Create and return iterator.
 	return coroutine.wrap(function()
 		-- Identify sorting.
-		local lineSorting = customization.LineSorting
-		local wordSorting = customization.WordSorting
+		local lineSorting, wordSorting = options.LineSorting, options.WordSorting
 
 		if lineSorting and wordSorting then -- Full sorting.
 			-- Global character counter.
@@ -568,7 +586,7 @@ module.GetCharacters = function(frame: GuiObject): { TextLabel | ImageLabel }
 			end
 		else -- No sorting.
 			-- Identify character instance class for verification.
-			local characterClass = if typeof(customization.Font) == "Font" then "TextLabel" else "ImageLabel"
+			local characterClass = if typeof(options.Font) == "Font" then "TextLabel" else "ImageLabel"
 
 			-- Loop through characters.
 			for index, character in frame:GetChildren() do
@@ -584,38 +602,51 @@ module.GetCharacters = function(frame: GuiObject): { TextLabel | ImageLabel }
 	end)
 end
 
---[[
-Returns the update signal for the specified frame.
-]]
---
-module.GetUpdateSignal = function(frame: GuiObject, signal: string)
-	-- Argument errors.
-	if typeof(frame) ~= "Instance" or not frame:IsA("GuiObject") then
-		error("No frame provided.", 2)
-	end
-
-	-- Get and return signal.
-	return frameUpdateSignals[frame]
-end
-
 local function clear(frame)
-	-- Get customization.
-	local customization = frameCustomizations[frame]
+	-- Get options.
+	local options = frameOptions[frame]
 
 	-- Identify character instance class and storage table.
-	local characterTable = nil
-	local characterClass = nil
-	if typeof(customization.Font) == "Font" then
-		characterTable = textLabels
-		characterClass = "TextLabel"
-	else
+	local characterTable, characterClass = nil
+	if type(options.Font) == "table" then
 		characterTable = imageLabels
 		characterClass = "ImageLabel"
+	else
+		characterTable = textLabels
+		characterClass = "TextLabel"
+	end
+
+	-- Setup character stashing.
+	local function stashCharacter(character)
+		-- Remove and store character instance.
+		character.Parent = nil
+		table.insert(characterTable, character)
+
+		-- Remove and store character's stroke if existent.
+		local stroke = character:FindFirstChildOfClass("UIStroke")
+		if stroke then
+			stroke.Parent = nil
+			table.insert(uiStrokes, stroke)
+		end
+
+		-- Remove and store the main character if this is a shadow.
+		local main = character:FindFirstChildOfClass(characterClass)
+		if main then
+			-- Remove and store the main character instance.
+			main.Parent = nil
+			table.insert(characterTable, main)
+
+			-- Remove and store the main character's stroke if existent.
+			local mainStroke = main:FindFirstChildOfClass("UIStroke")
+			if mainStroke then
+				mainStroke.Parent = nil
+				table.insert(uiStrokes, mainStroke)
+			end
+		end
 	end
 
 	-- Identify sorting.
-	local lineSorting = customization.LineSorting
-	local wordSorting = customization.WordSorting
+	local lineSorting, wordSorting = options.LineSorting, options.WordSorting
 
 	if lineSorting and wordSorting then -- Full sorting.
 		-- Loop through lines.
@@ -637,31 +668,7 @@ local function clear(frame)
 
 				-- Loop through characters.
 				for _, character in word:GetChildren() do
-					-- Remove and store character instance.
-					character.Parent = nil
-					table.insert(characterTable, character)
-
-					-- Remove and store character's stroke if existent.
-					local uiStroke = character:FindFirstChildOfClass("UIStroke")
-					if uiStroke then
-						uiStroke.Parent = nil
-						table.insert(uiStrokes, uiStroke)
-					end
-
-					-- Remove and store the main character if this is a shadow.
-					local main = character:FindFirstChildOfClass(characterClass)
-					if main then
-						-- Remove and store the main character instance.
-						main.Parent = nil
-						table.insert(characterTable, main)
-
-						-- Remove and store the main character's stroke if existent.
-						local uiStroke = main:FindFirstChildOfClass("UIStroke")
-						if uiStroke then
-							uiStroke.Parent = nil
-							table.insert(uiStrokes, uiStroke)
-						end
-					end
+					stashCharacter(character)
 				end
 			end
 		end
@@ -679,31 +686,7 @@ local function clear(frame)
 
 			-- Loop through characters.
 			for _, character in folder:GetChildren() do
-				-- Remove and store character instance.
-				character.Parent = nil
-				table.insert(characterTable, character)
-
-				-- Remove and store character's stroke if existent.
-				local uiStroke = character:FindFirstChildOfClass("UIStroke")
-				if uiStroke then
-					uiStroke.Parent = nil
-					table.insert(uiStrokes, uiStroke)
-				end
-
-				-- Remove and store the main character if this is a shadow.
-				local main = character:FindFirstChildOfClass(characterClass)
-				if main then
-					-- Remove and store the main character instance.
-					main.Parent = nil
-					table.insert(characterTable, main)
-
-					-- Remove and store the main character's stroke if existent.
-					local uiStroke = main:FindFirstChildOfClass("UIStroke")
-					if uiStroke then
-						uiStroke.Parent = nil
-						table.insert(uiStrokes, uiStroke)
-					end
-				end
+				stashCharacter(character)
 			end
 		end
 	else -- No sorting.
@@ -714,62 +697,56 @@ local function clear(frame)
 				continue
 			end
 
-			-- Remove and store character instance.
-			character.Parent = nil
-			table.insert(characterTable, character)
-
-			-- Remove and store character's stroke if existent.
-			local uiStroke = character:FindFirstChildOfClass("UIStroke")
-			if uiStroke then
-				uiStroke.Parent = nil
-				table.insert(uiStrokes, uiStroke)
-			end
-
-			-- Remove and store the main character if this is a shadow.
-			local main = character:FindFirstChildOfClass(characterClass)
-			if main then
-				-- Remove and store the main character instance.
-				main.Parent = nil
-				table.insert(characterTable, main)
-
-				-- Remove and store the main character's stroke if existent.
-				local uiStroke = main:FindFirstChildOfClass("UIStroke")
-				if uiStroke then
-					uiStroke.Parent = nil
-					table.insert(uiStrokes, uiStroke)
-				end
-			end
+			stashCharacter(character)
 		end
 	end
 end
-local function render(frame, text, customization)
+local function render(frame, text, options)
 	-- Cache frame size.
 	local frameSize = frame.AbsoluteSize
 
 	local frameWidth = frameSize.X
 	local frameHeight = frameSize.Y
 
-	-- Customization values.
-	local font = customization.Font
+	-- Options values.
+	local font = options.Font
 
-	local size = customization.Size
-	local scaleSize = customization.ScaleSize
+	local size = options.Size
+
+	local color = options.Color
+	local transparency = options.Transparency
+
+	local pixelated = options.Pixelated
+
+	local offset = options.Offset
+	local offsetX, offsetY
+	local rotation = options.Rotation
+
+	local strokeSize = options.StrokeSize
+
+	local shadowOffset = options.ShadowOffset
+	local shadowOffsetX, shadowOffsetY
+
+	local lineHeight = options.LineHeight
+	local characterSpacing = options.CharacterSpacing
+
+	local truncationEnabled = options.Truncate
+
+	local xAlignment = options.XAlignment
+	local yAlignment = options.YAlignment
+
+	local wordSorting = options.WordSorting
+	local lineSorting = options.LineSorting
+
+	local scaleSize = options.ScaleSize
 	if scaleSize then
 		-- Scale size.
-		if scaleSize:sub(1, 4) == "Root" then -- Relative to root.
+		if scaleSize:sub(1, 1) == "R" then -- Relative to root.
 			-- Find root size.
-			local rootSize = nil
-			if frame:FindFirstAncestorOfClass("ScreenGui") then
-				rootSize = camera.ViewportSize
-			else
-				local root = frame:FindFirstAncestorOfClass("SurfaceGui")
-				if root then
-					rootSize = root.AbsoluteSize
-				else
-					root = frame:FindFirstAncestorOfClass("BillboardGui")
-					rootSize = if root then root.AbsoluteSize else Vector2.zero
-				end
-			end
+			local root = frame:FindFirstAncestorOfClass("GuiBase")
+			local rootSize = if root
+				then if root:IsA("ScreenGui") then camera.ViewportSize else root.AbsoluteSize
+				else Vector2.zero
 
 			-- Scale size.
 			if scaleSize == "RootX" then
@@ -794,13 +771,13 @@ local function render(frame, text, customization)
 			size = 1
 		else
 			-- Custom limits.
-			local minimumSize = customization.MinimumSize
-			if minimumSize and customization.Size < minimumSize then
-				customization.Size = minimumSize
+			local minimumSize = options.MinimumSize
+			if minimumSize and options.Size < minimumSize then
+				options.Size = minimumSize
 			end
-			local maximumSize = customization.MaximumSize
-			if maximumSize and customization.Size > maximumSize then
-				customization.Size = maximumSize
+			local maximumSize = options.MaximumSize
+			if maximumSize and options.Size > maximumSize then
+				options.Size = maximumSize
 			end
 
 			-- Roblox font limit.
@@ -808,39 +785,39 @@ local function render(frame, text, customization)
 				size = 100
 			end
 		end
+
+		-- Ensure integer size.
+		size = math.round(size)
+
+		-- Scale the related options.
+		offsetX, offsetY = math.round(offset.X * 0.01 * size), math.round(offset.Y * 0.01 * size)
+		if strokeSize then
+			strokeSize = math.round(strokeSize * 0.01 * size)
+		end
+		if shadowOffset then
+			shadowOffsetX, shadowOffsetY =
+				math.round(shadowOffset.X * 0.01 * size), math.round(shadowOffset.Y * 0.01 * size)
+		end
+	else
+		-- Ensure integer size.
+		size = math.round(size)
+
+		-- Save offsets in optimized format.
+		offsetX, offsetY = offset.X, offset.Y
+		if shadowOffset then
+			shadowOffsetX, shadowOffsetY = shadowOffset.X, shadowOffset.Y
+		end
 	end
-	size = math.floor(size) -- Same behaviour of TextLabels.
 
-	local color = customization.Color
-	local transparency = customization.Transparency
-
-	local pixelated = customization.Pixelated
-
-	local offset = customization.Offset
-	offset = UDim2.fromOffset(offset.X * 0.01 * size, offset.Y * 0.01 * size) -- Convert Vector2 to UDim2, get the offset relative to size (percentage).
-	local rotation = customization.Rotation
-
-	local shadowOffset = customization.ShadowOffset
-
-	local lineHeight = customization.LineHeight * size -- Get the line height relative to size.
-	local characterSpacing = customization.CharacterSpacing
-
-	local truncateEnabled = customization.Truncate
-
-	local xAlignment = customization.XAlignment
-	local yAlignment = customization.YAlignment
-
-	local wordSorting = customization.WordSorting
-	local lineSorting = customization.LineSorting
+	lineHeight *= size
 
 	-- Setup character functions.
-	local getCharacterWidth = nil
-	local createCharacter = nil
+	local getCharacterWidth, createCharacter
 	do
 		if type(font) == "table" then
 			-- Custom font.
 			local image = "rbxassetid://" .. tostring(font.Image)
-			local invertedFontSize = 1 / font.Size -- To save on expensive division.
+			local scaleFactor = size / font.Size
 			local characters = font.Characters
 			local resampleMode = if pixelated
 				then Enum.ResamplerMode.Pixelated
@@ -863,15 +840,14 @@ local function render(frame, text, customization)
 					then data[6] * size * characterSpacing
 					else -- Missing character.
 						size
-							* characterSpacing -- The 'missing' character is square, so height ('size') and width is the same.
+							* characterSpacing -- The 'missing' character is square, so height and width is the same.
 			end
 			if shadowOffset then
 				-- Shadow.
-				shadowOffset = UDim2.fromOffset(shadowOffset.X * 0.01 * size, shadowOffset.Y * 0.01 * size) -- Convert Vector2 to UDim2.
-				local shadowColor = customization.ShadowColor
-				local shadowTransparency = customization.ShadowTransparency
+				local shadowColor = options.ShadowColor
+				local shadowTransparency = options.ShadowTransparency
 
-				createCharacter = function(character, position)
+				createCharacter = function(character, x, y)
 					-- Calculate information.
 					local data = characters[character]
 					if data then
@@ -880,11 +856,15 @@ local function render(frame, text, customization)
 						local height = data[2]
 						local imageSize = Vector2.new(width, height)
 						local imageOffset = data[3]
-						-- Calculate size.
+
+						-- Calculate position and size.
+						local realX = x + data[4] * size
+						local realY = y + data[5] * size
 						local characterSize = UDim2.fromOffset(
-							width * invertedFontSize * size,
-							height * invertedFontSize * size
+							math.round(realX + width * scaleFactor) - math.round(realX),
+							math.round(realY + height * scaleFactor) - math.round(realY)
 						)
+
 						-- Character shadow.
 						local shadow = getImageLabel()
 						do
@@ -899,10 +879,10 @@ local function render(frame, text, customization)
 							shadow.ImageRectOffset = imageOffset
 							-- Transformation.
 							shadow.Size = characterSize
-							shadow.Position = position
-								+ UDim2.fromOffset(data[4] * size, data[5] * size)
-								+ offset
-								+ shadowOffset
+							shadow.Position = UDim2.fromOffset(
+								math.round(realX) + offsetX + shadowOffsetX,
+								math.round(realY) + offsetY + shadowOffsetY
+							)
 							shadow.Rotation = rotation
 						end
 						-- Main character.
@@ -918,12 +898,13 @@ local function render(frame, text, customization)
 							main.ImageRectSize = imageSize
 							main.ImageRectOffset = imageOffset
 							-- Transformation.
-							main.Size = size
-							main.Position = -shadowOffset -- Counteract the shadow offset.
+							main.Size = characterSize
+							main.Position = UDim2.fromOffset(-shadowOffsetX, -shadowOffsetY) -- Counteract the shadow offset.
 							-- Name and parent.
 							main.Name = "Main"
 							main.Parent = shadow
 						end
+
 						-- Return character instance.
 						return shadow
 					else -- Missing character.
@@ -936,15 +917,16 @@ local function render(frame, text, customization)
 						imageLabel.ResampleMode = resampleMode
 						-- Transformation.
 						imageLabel.Size = UDim2.fromOffset(size, size)
-						imageLabel.Position = position + offset
+						imageLabel.Position = UDim2.fromOffset(x + offsetX, y + offsetY)
 						imageLabel.Rotation = rotation
+
 						-- Return character instance.
 						return imageLabel
 					end
 				end
 			else
 				-- No shadow.
-				createCharacter = function(character, position)
+				createCharacter = function(character, x, y)
 					local data = characters[character]
 					if data then
 						-- Create and stylize.
@@ -960,14 +942,16 @@ local function render(frame, text, customization)
 						imageLabel.ImageRectSize = Vector2.new(width, height)
 						imageLabel.ImageRectOffset = data[3]
 						-- Transformation.
+						local realX = x + data[4] * size
+						local realY = y + data[5] * size
 						imageLabel.Size = UDim2.fromOffset(
-							width * invertedFontSize * size,
-							height * invertedFontSize * size
+							math.round(realX + width * scaleFactor) - math.round(realX),
+							math.round(realY + height * scaleFactor) - math.round(realY)
 						)
-						imageLabel.Position = position
-							+ UDim2.fromOffset(data[4] * size, data[5] * size)
-							+ offset
+						imageLabel.Position =
+							UDim2.fromOffset(math.round(realX) + offsetX, math.round(realY) + offsetY)
 						imageLabel.Rotation = rotation
+
 						-- Return character instance.
 						return imageLabel
 					else -- Missing character.
@@ -979,8 +963,9 @@ local function render(frame, text, customization)
 						imageLabel.ImageTransparency = transparency
 						-- Transformation.
 						imageLabel.Size = UDim2.fromOffset(size, size)
-						imageLabel.Position = position + offset
+						imageLabel.Position = UDim2.fromOffset(x + offsetX, y + offsetY)
 						imageLabel.Rotation = rotation
+
 						-- Return character instance.
 						return imageLabel
 					end
@@ -988,16 +973,13 @@ local function render(frame, text, customization)
 			end
 		else
 			-- Roblox font.
-			local strokeSize = customization.StrokeSize
-			local strokeColor = nil
-			local strokeTransparency = nil
+			local strokeColor, strokeTransparency
 			if strokeSize then
-				strokeSize = strokeSize * 0.01 * size
 				if strokeSize < 1 then
 					strokeSize = 1
-				end
-				strokeColor = customization.StrokeColor
-				strokeTransparency = customization.StrokeTransparency
+				end -- Limit again, in case it was scaled with size.
+				strokeColor = options.StrokeColor
+				strokeTransparency = options.StrokeTransparency
 			end
 
 			local invertedCharacterSpacing = 1 / characterSpacing -- To avoid expensive division.
@@ -1015,14 +997,14 @@ local function render(frame, text, customization)
 			end
 			if shadowOffset then
 				-- Shadow.
-				shadowOffset = UDim2.fromOffset(shadowOffset.X * 0.01 * size, shadowOffset.Y * 0.01 * size) -- Convert Vector2 to UDim2.
-				local shadowColor = customization.ShadowColor
-				local shadowTransparency = customization.ShadowTransparency
+				local shadowColor = options.ShadowColor
+				local shadowTransparency = options.ShadowTransparency
 
-				createCharacter = function(character, position, width)
+				createCharacter = function(character, x, y, width)
 					-- Calculate size.
-					local characterSize = UDim2.fromOffset(width * invertedCharacterSpacing, size)
-					--Character shadow.
+					local characterSize = UDim2.fromOffset(math.round(width * invertedCharacterSpacing), size)
+
+					-- Character shadow.
 					local shadow = getTextLabel()
 					do
 						-- Stylize.
@@ -1037,7 +1019,8 @@ local function render(frame, text, customization)
 						-- Transformation.
 						shadow.Size = characterSize
 						shadow.Rotation = rotation
-						shadow.Position = position + offset + shadowOffset
+						shadow.Position =
+							UDim2.fromOffset(x + offsetX + shadowOffsetX, y + offsetY + shadowOffsetY)
 					end
 					-- Main character.
 					local main = getTextLabel()
@@ -1053,12 +1036,12 @@ local function render(frame, text, customization)
 						main.TextYAlignment = Enum.TextYAlignment.Top
 						-- Transform.
 						main.Size = characterSize
-						main.Position = -shadowOffset -- Counteract the shadow offset.
+						main.Position = UDim2.fromOffset(-shadowOffsetX, -shadowOffsetY) -- Counteract the shadow offset.
 						-- Name and parent.
 						main.Name = "Main"
 						main.Parent = shadow
 					end
-					-- Apply stroke if customization is given.
+					-- Apply stroke if options are given.
 					if strokeSize then
 						do
 							local uiStroke = getUIStroke()
@@ -1075,12 +1058,13 @@ local function render(frame, text, customization)
 							uiStroke.Parent = shadow
 						end
 					end
+
 					-- Return character instance.
 					return shadow
 				end
 			else
 				-- No shadow.
-				createCharacter = function(character, position, width)
+				createCharacter = function(character, x, y, width)
 					-- Create and stylize.
 					local textLabel = getTextLabel()
 					textLabel.BackgroundTransparency = 1
@@ -1092,10 +1076,10 @@ local function render(frame, text, customization)
 					textLabel.TextXAlignment = Enum.TextXAlignment.Left
 					textLabel.TextYAlignment = Enum.TextYAlignment.Top
 					-- Transformation.
-					textLabel.Size = UDim2.fromOffset(width * invertedCharacterSpacing, size)
+					textLabel.Size = UDim2.fromOffset(math.round(width * invertedCharacterSpacing), size)
 					textLabel.Rotation = rotation
-					textLabel.Position = position + offset
-					-- Apply stroke if customization is given.
+					textLabel.Position = UDim2.fromOffset(x + offsetX, y + offsetY)
+					-- Apply stroke if options are given.
 					if strokeSize then
 						local uiStroke = getUIStroke()
 						uiStroke.Thickness = strokeSize
@@ -1123,9 +1107,8 @@ local function render(frame, text, customization)
 	local lineWords = {}
 	local lineWidth = 0
 
-	local truncated = nil
-	local truncate = nil
-	if truncateEnabled then
+	local truncated, truncate
+	if truncationEnabled then
 		truncated = false
 		truncate = function()
 			-- Access last line.
@@ -1214,9 +1197,10 @@ local function render(frame, text, customization)
 		end
 	end
 
+	local lineIndex = 1
 	for line in text:gmatch("[^\n]+") do
 		-- Truncate line if necessary.
-		if truncateEnabled and #lines > 0 and #lines * lineHeight + size > frameHeight then
+		if truncationEnabled and #lines > 0 and #lines * lineHeight + size > frameHeight then
 			truncate()
 			truncated = true
 			break
@@ -1230,41 +1214,46 @@ local function render(frame, text, customization)
 					textWidth = lineWidth
 				end
 				-- Add current line.
-				table.insert(lines, { lineWords, lineWidth })
+				lines[lineIndex] = { lineWords, lineWidth }
+				lineIndex += 1
 			end
 			-- Add empty line.
-			table.insert(lines, { {}, 0 })
+			lines[lineIndex] = { {}, 0 }
 			-- Reset line data.
 			lineWidth = 0
 			lineWords = {}
 		else
 			-- Process words.
+			local wordIndex = 1
 			for word in (line .. " "):gmatch("([^ ]*) ") do
 				if word == "" then
-					table.insert(lineWords, false)
+					lineWords[wordIndex] = false
 					lineWidth += spaceWidth
 				else
 					local wordWidth = spaceWidth
 					local wordCharacters = {}
 
+					local characterIndex = 1
 					for character in word:gmatch(utf8.charpattern) do
 						local characterWidth = getCharacterWidth(character)
 						wordWidth += characterWidth
-						table.insert(wordCharacters, { character, characterWidth })
+						wordCharacters[characterIndex] = { character, characterWidth }
+						characterIndex += 1
 					end
 
-					if lineWidth + wordWidth > frameWidth and #lineWords > 1 then
+					if lineWidth + wordWidth > frameWidth and #lineWords > 0 then
 						-- Update text width.
 						if lineWidth < frameWidth and lineWidth > textWidth then
 							textWidth = lineWidth
 						end
 
 						-- Truncate if necessary.
-						if truncateEnabled and (#lines + 1) * lineHeight + size > frameHeight then
+						if truncationEnabled and (#lines + 1) * lineHeight + size > frameHeight then
 							-- Add word to line.
-							table.insert(lineWords, wordCharacters)
+							lineWords[wordIndex + 1] = wordCharacters
 							-- Add current line.
-							table.insert(lines, { lineWords, lineWidth })
+							lines[lineIndex] = { lineWords, lineWidth }
+							lineIndex += 1
 
 							-- Truncate and exit.
 							truncate()
@@ -1272,7 +1261,8 @@ local function render(frame, text, customization)
 							break
 						else
 							-- Add current line.
-							table.insert(lines, { lineWords, lineWidth })
+							lines[lineIndex] = { lineWords, lineWidth }
+							lineIndex += 1
 
 							-- Initalize next line with the word that exceeded the boundary.
 							lineWords = { wordCharacters }
@@ -1280,10 +1270,12 @@ local function render(frame, text, customization)
 						end
 					else
 						-- Add word to line.
-						table.insert(lineWords, wordCharacters)
+						lineWords[wordIndex] = wordCharacters
 						lineWidth += wordWidth
 					end
 				end
+
+				wordIndex += 1
 			end
 
 			-- Update text width.
@@ -1297,14 +1289,17 @@ local function render(frame, text, customization)
 			end
 
 			-- Add current line.
-			table.insert(lines, { lineWords, lineWidth })
+			lines[lineIndex] = { lineWords, lineWidth }
 			-- Reset line data.
 			lineWords = {}
 			lineWidth = 0
 		end
+
+		-- Increment index.
+		lineIndex += 1
 	end
 
-	if truncateEnabled then
+	if truncationEnabled then
 		for _, line in lines do
 			local lineWidth = line[2]
 
@@ -1360,9 +1355,7 @@ local function render(frame, text, customization)
 	end
 
 	-- Calculate final information and render.
-	local textHeight = nil
-	local lineGap = nil
-	local y = nil
+	local textHeight, lineGap, y
 	if yAlignment == "Top" then
 		textHeight = (#lines - 1) * lineHeight + size
 		lineGap = 0
@@ -1397,8 +1390,7 @@ local function render(frame, text, customization)
 		local words = lineData[1]
 
 		-- Horizontal alignment.
-		local wordGap = nil
-		local x = nil
+		local wordGap, x
 		if xAlignment == "Left" then
 			wordGap = 0
 			x = 0
@@ -1429,7 +1421,7 @@ local function render(frame, text, customization)
 		-- Create words.
 		for wordIndex, word in words do
 			if word then -- There may be empty words, caused by consecutive spaces. These we skip.
-				local wordContainer = nil
+				local wordContainer
 				if wordSorting then
 					wordContainer = getFolder()
 					-- Numerical naming.
@@ -1449,7 +1441,7 @@ local function render(frame, text, customization)
 				for characterIndex, characterData in word do
 					local width = characterData[2]
 
-					local instance = createCharacter(characterData[1], UDim2.fromOffset(x, y), width)
+					local instance = createCharacter(characterData[1], x, y, width)
 					-- Numerical naming.
 					if not lineSorting and not wordSorting then
 						globalCharacterCount += 1
@@ -1482,209 +1474,209 @@ local function render(frame, text, customization)
 	end
 end
 
-local function correctCustomization(customization)
-	if not scaleSizeTypes[customization.ScaleSize] then
-		customization.ScaleSize = defaults.ScaleSize
+local function correctOptions(options)
+	if not scaleSizeTypes[options.ScaleSize] then
+		options.ScaleSize = defaults.ScaleSize
 	end
-	if not scaleSizeTypes[customization.ScaleSize] then
+	if not scaleSizeTypes[options.ScaleSize] then
 		-- Scale-size disabled.
-		customization.ScaleSize = nil
-		customization.MinimumSize = nil
-		customization.MaximumSize = nil
+		options.ScaleSize = nil
+		options.MinimumSize = nil
+		options.MaximumSize = nil
 
-		if type(customization.Size) ~= "number" then
-			customization.Size = defaults.Size
-		elseif customization.Size < 1 then
-			customization.Size = 1
+		if type(options.Size) ~= "number" then
+			options.Size = defaults.Size
+		elseif options.Size < 1 then
+			options.Size = 1
 		end
 	else
 		-- Scale-size enabled.
-		if type(customization.MinimumSize) ~= "number" then
-			customization.MinimumSize = defaults.MinimumSize
+		if type(options.MinimumSize) ~= "number" then
+			options.MinimumSize = defaults.MinimumSize
 		end
-		if type(customization.MinimumSize) ~= "number" then
-			customization.MinimumSize = nil
-		elseif customization.MinimumSize < 1 then
-			customization.MinimumSize = 1
-		end
-
-		if type(customization.MaximumSize) ~= "number" then
-			customization.MaximumSize = defaults.MaximumSize
-		end
-		if type(customization.MaximumSize) ~= "number" then
-			customization.MaximumSize = nil
-		elseif customization.MaximumSize < 1 then
-			customization.MaximumSize = 1
+		if type(options.MinimumSize) ~= "number" then
+			options.MinimumSize = nil
+		elseif options.MinimumSize < 1 then
+			options.MinimumSize = 1
 		end
 
-		if type(customization.Size) ~= "number" then
-			customization.Size = defaults.Size
+		if type(options.MaximumSize) ~= "number" then
+			options.MaximumSize = defaults.MaximumSize
+		end
+		if type(options.MaximumSize) ~= "number" then
+			options.MaximumSize = nil
+		elseif options.MaximumSize < 1 then
+			options.MaximumSize = 1
+		end
+
+		if type(options.Size) ~= "number" then
+			options.Size = defaults.Size
 		end
 	end
 
-	local font = customization.Font
+	local font = options.Font
 	if font == nil then
-		customization.Font = defaults.Font
+		options.Font = defaults.Font
 		textBoundsParams.Font = defaults.Font
 
 		-- Roblox font size limit.
-		if customization.Size > 100 then
-			customization.Size = 100
+		if options.Size > 100 then
+			options.Size = 100
 		end
 	elseif typeof(font) == "Font" then -- Roblox font.
 		-- Verify font.
-		textBoundsParams.Font = customization.Font
+		textBoundsParams.Font = options.Font
 		textBoundsParams.Text = " "
 		local _, result = pcall(TextService.GetTextBoundsAsync, TextService, textBoundsParams)
 		if type(result) == "string" then
-			warn("Invalid font. Using default.")
-			customization.Font = defaults.Font
+			warn("Invalid font. Fallback to default.")
+			options.Font = defaults.Font
 			textBoundsParams.Font = defaults.Font
 		end
 
 		-- Roblox font size limit.
-		if customization.Size > 100 then
-			customization.Size = 100
+		if options.Size > 100 then
+			options.Size = 100
 		end
 	else
 		if not rawFonts[font] then
 			-- Warn about invalid font.
-			warn("Invalid font. Using default.")
+			warn("Invalid font. Fallback to default.")
 
 			-- Apply default font.
-			customization.Font = defaults.Font
+			options.Font = defaults.Font
 			textBoundsParams.Font = defaults.Font
 
 			-- Roblox font size limit.
-			if customization.Size > 100 then
-				customization.Size = 100
+			if options.Size > 100 then
+				options.Size = 100
 			end
 		end
 	end
 
-	local lineHeight = customization.LineHeight
+	local lineHeight = options.LineHeight
 	if type(lineHeight) ~= "number" then
-		customization.LineHeight = defaults.LineHeight
+		options.LineHeight = defaults.LineHeight
 	elseif lineHeight < 0 then
-		customization.LineHeight = 0
+		options.LineHeight = 0
 	end
-	local characterSpacing = customization.CharacterSpacing
+	local characterSpacing = options.CharacterSpacing
 	if type(characterSpacing) ~= "number" then
-		customization.CharacterSpacing = defaults.CharacterSpacing
+		options.CharacterSpacing = defaults.CharacterSpacing
 	elseif characterSpacing < 0 then
-		customization.CharacterSpacing = 0
+		options.CharacterSpacing = 0
 	end
 
-	if typeof(customization.Color) ~= "Color3" then
-		customization.Color = defaults.Color
+	if typeof(options.Color) ~= "Color3" then
+		options.Color = defaults.Color
 	end
-	if type(customization.Transparency) ~= "number" then
-		customization.Transparency = defaults.Transparency
-	end
-
-	local pixelated = customization.Pixelated
-	if type(pixelated) ~= "boolean" then
-		customization.Pixelated = defaults.Pixelated
-	elseif not pixelated then
-		customization.Pixelated = nil
+	if type(options.Transparency) ~= "number" then
+		options.Transparency = defaults.Transparency
 	end
 
-	if typeof(customization.Offset) ~= "Vector2" then
-		customization.Offset = defaults.Offset
-	end
-	if type(customization.Rotation) ~= "number" then
-		customization.Rotation = defaults.Rotation
+	local pixelated = options.Pixelated
+	if pixelated == false then
+		options.Pixelated = nil
+	elseif pixelated ~= true then
+		options.Pixelated = defaults.Pixelated
 	end
 
-	local strokeSize = customization.StrokeSize
-	local strokeColor = customization.StrokeColor
-	local strokeTransparency = customization.StrokeTransparency
+	if typeof(options.Offset) ~= "Vector2" then
+		options.Offset = defaults.Offset
+	end
+	if type(options.Rotation) ~= "number" then
+		options.Rotation = defaults.Rotation
+	end
+
+	local strokeSize = options.StrokeSize
+	local strokeColor = options.StrokeColor
+	local strokeTransparency = options.StrokeTransparency
 	if type(strokeSize) ~= "number" then
 		if typeof(strokeColor) == "Color3" then
-			customization.StrokeSize = defaults.StrokeSize
+			options.StrokeSize = defaults.StrokeSize
 			if type(strokeTransparency) ~= "number" then
-				customization.StrokeTransparency = customization.Transparency
+				options.StrokeTransparency = options.Transparency
 			end
 		elseif type(strokeTransparency) == "number" then
-			customization.StrokeSize = defaults.StrokeSize
+			options.StrokeSize = defaults.StrokeSize
 			if type(strokeColor) ~= "number" then
-				customization.StrokeColor = defaults.StrokeColor
+				options.StrokeColor = defaults.StrokeColor
 			end
 		else
-			customization.StrokeSize = nil
-			customization.StrokeColor = nil
-			customization.StrokeTransparency = nil
+			options.StrokeSize = nil
+			options.StrokeColor = nil
+			options.StrokeTransparency = nil
 		end
 	else
 		if strokeSize < 1 then
-			customization.StrokeSize = 1
+			options.StrokeSize = 1
 		end
 		if typeof(strokeColor) ~= "Color3" then
-			customization.StrokeColor = defaults.StrokeColor
+			options.StrokeColor = defaults.StrokeColor
 		end
 		if type(strokeTransparency) ~= "number" then
-			customization.StrokeTransparency = customization.Transparency
+			options.StrokeTransparency = options.Transparency
 		end
 	end
 
-	local shadowOffset = customization.ShadowOffset
-	local shadowColor = customization.ShadowColor
-	local shadowTransparency = customization.ShadowTransparency
+	local shadowOffset = options.ShadowOffset
+	local shadowColor = options.ShadowColor
+	local shadowTransparency = options.ShadowTransparency
 	if typeof(shadowOffset) ~= "Vector2" then
 		if typeof(shadowColor) == "Color3" then
-			customization.ShadowOffset = defaults.ShadowOffset
+			options.ShadowOffset = defaults.ShadowOffset
 			if type(shadowTransparency) ~= "number" then
-				customization.ShadowTransparency = customization.Transparency
+				options.ShadowTransparency = options.Transparency
 			end
 		elseif type(shadowTransparency) == "number" then
-			customization.ShadowOffset = defaults.ShadowOffset
+			options.ShadowOffset = defaults.ShadowOffset
 			if type(shadowColor) ~= "number" then
-				customization.ShadowColor = defaults.ShadowColor
+				options.ShadowColor = defaults.ShadowColor
 			end
 		else
-			customization.ShadowOffset = nil
-			customization.ShadowColor = nil
-			customization.ShadowTransparency = nil
+			options.ShadowOffset = nil
+			options.ShadowColor = nil
+			options.ShadowTransparency = nil
 		end
 	else
 		if typeof(shadowColor) ~= "Color3" then
-			customization.ShadowColor = defaults.ShadowColor
+			options.ShadowColor = defaults.ShadowColor
 		end
 		if type(shadowTransparency) ~= "number" then
-			customization.ShadowTransparency = customization.Transparency
+			options.ShadowTransparency = options.Transparency
 		end
 	end
 
-	local truncate = customization.Truncate
-	if type(truncate) ~= "boolean" then
-		customization.Truncate = defaults.Truncate
-	elseif not truncate then
-		customization.Truncate = nil
+	local truncate = options.Truncate
+	if truncate == false then
+		options.Truncate = nil
+	elseif truncate ~= true then
+		options.Truncate = defaults.Truncate
 	end
 
-	if not xAlignments[customization.XAlignment] then
-		customization.XAlignment = defaults.XAlignment
+	if not xAlignments[options.XAlignment] then
+		options.XAlignment = defaults.XAlignment
 	end
-	if not yAlignments[customization.YAlignment] then
-		customization.YAlignment = defaults.YAlignment
-	end
-
-	local wordSorting = customization.WordSorting
-	if type(wordSorting) ~= "boolean" then
-		customization.WordSorting = defaults.WordSorting
-	elseif not wordSorting then
-		customization.WordSorting = nil
+	if not yAlignments[options.YAlignment] then
+		options.YAlignment = defaults.YAlignment
 	end
 
-	local lineSorting = customization.LineSorting
-	if type(lineSorting) ~= "boolean" then
-		customization.LineSorting = defaults.LineSorting
-	elseif not lineSorting then
-		customization.LineSorting = nil
+	local wordSorting = options.WordSorting
+	if wordSorting == false then
+		options.WordSorting = nil
+	elseif wordSorting ~= true then
+		options.WordSorting = defaults.WordSorting
+	end
+
+	local lineSorting = options.LineSorting
+	if lineSorting == false then
+		options.LineSorting = nil
+	elseif lineSorting ~= true then
+		options.LineSorting = defaults.LineSorting
 	end
 end
 
-local function enableDynamic(frame, text, customization)
+local function enableDynamic(frame, text)
 	frameSizeConnections[frame] = frame:GetPropertyChangedSignal("AbsoluteSize"):Connect(function()
 		-- Clear current text.
 		clear(frame)
@@ -1697,14 +1689,14 @@ local function enableDynamic(frame, text, customization)
 				frameUpdateSignals[frame]:Fire()
 			end
 		else
-			render(frame, text, frameCustomizations[frame])
+			render(frame, text, frameOptions[frame])
 		end
 	end)
 end
-local function create(frame, text, customization)
+local function create(frame, text, options)
 	-- Cache information.
 	frameText[frame] = text
-	frameCustomizations[frame] = customization
+	frameOptions[frame] = options
 
 	-- Render new text.
 	if text == "" then
@@ -1713,63 +1705,66 @@ local function create(frame, text, customization)
 			frameUpdateSignals[frame]:Fire()
 		end
 	else
-		render(frame, text, customization)
+		render(frame, text, options)
 	end
 end
 
 --[[
-Creates text inside of a specified frame.
-If text is already present, it will overwrite text and merge customizations.
+Creates text in the specified frame.
+If text is already present, it will overwrite text and merge options.
 
 <strong>frame</strong>: The container and bounding box.
 ]]
 --
-module.Create = function(frame: GuiObject, text: string, customization: Customization?)
+module.Create = function(frame: GuiObject, text: string, options: Options?)
+	-- Find current options.
+	local currentOptions = frameOptions[frame]
+
 	-- Argument errors.
-	if type(text) ~= "string" then
-		error("No text provided.", 2)
+	if not currentOptions and (typeof(frame) ~= "Instance" or not frame:IsA("GuiObject")) then
+		error("Invalid frame.", 2)
 	end
-	if typeof(frame) ~= "Instance" or not frame:IsA("GuiObject") then
-		error("No frame provided.", 2)
+	if type(text) ~= "string" then
+		error("Invalid text.", 2)
 	end
 
-	-- Handle customization.
-	if frameCustomizations[frame] then -- Text has been created before in this frame.
+	-- Handle options.
+	if currentOptions then -- Text has been created before in this frame.
 		-- Clear current text.
 		clear(frame)
 
-		-- Handle customization.
-		if type(customization) == "table" then
-			-- Merge customizations.
-			local newCustomization = customization
-			customization = frameCustomizations[frame]
-			for key, value in newCustomization do
-				if customizationOptions[key] then
+		-- Handle options.
+		if type(options) == "table" then
+			-- Merge options.
+			local newOptions = options
+			options = currentOptions
+			for key, value in newOptions do
+				if optionsList[key] then
 					if not value then
-						customization[key] = nil
+						options[key] = nil
 					else
-						customization[key] = value
+						options[key] = value
 					end
 				else
-					warn("No customization option called '" .. key .. "'.")
+					warn("Invalid option '" .. key .. "'.")
 				end
 			end
-			-- Correct new (merged) customization.
-			correctCustomization(customization)
+			-- Correct new (merged) options.
+			correctOptions(options)
 		else
-			customization = frameCustomizations[frame]
+			options = currentOptions
 		end
 
 		-- Handle dynamic, calculate size, and render.
-		if type(customization.Dynamic) ~= "boolean" then
-			customization.Dynamic = defaults.Dynamic
+		if type(options.Dynamic) ~= "boolean" then
+			options.Dynamic = defaults.Dynamic
 		end
-		if customization.Dynamic == true then
-			create(frame, text, customization)
-			enableDynamic(frame, text, customization)
+		if options.Dynamic == true then
+			create(frame, text, options)
+			enableDynamic(frame, text, options)
 		else
 			-- Dynamic disabling.
-			if not customization.Dynamic then
+			if not options.Dynamic then
 				local connection = frameSizeConnections[frame]
 				if connection then
 					connection:Disconnect()
@@ -1777,10 +1772,10 @@ module.Create = function(frame: GuiObject, text: string, customization: Customiz
 			end
 
 			-- Get rid of the non-true value.
-			customization.Dynamic = nil
+			options.Dynamic = nil
 
 			-- Create.
-			create(frame, text, customization)
+			create(frame, text, options)
 		end
 	else -- First text creation for this frame.
 		-- Create and save update signal.
@@ -1788,28 +1783,28 @@ module.Create = function(frame: GuiObject, text: string, customization: Customiz
 			frameUpdateSignals[frame] = Signal()
 		end
 
-		-- Ensure the customization is a table.
-		if type(customization) == "table" then
-			-- Remove invalid customization options.
-			for key in customization do
-				if not customizationOptions[key] then
-					customization[key] = nil
-					warn("No customization option called '" .. key .. "'.")
+		-- Ensure the options are in a table.
+		if type(options) == "table" then
+			-- Remove invalid options.
+			for key in options do
+				if not optionsList[key] then
+					options[key] = nil
+					warn("Invalid option '" .. key .. "'.")
 				end
 			end
-			-- Correct customization.
-			correctCustomization(customization)
+			-- Correct options.
+			correctOptions(options)
 
 			-- Handle dynamic, calculate size, and render.
-			if type(customization.Dynamic) ~= "boolean" then
-				customization.Dynamic = defaults.Dynamic
+			if type(options.Dynamic) ~= "boolean" then
+				options.Dynamic = defaults.Dynamic
 			end
-			if customization.Dynamic == true then
-				create(frame, text, customization)
-				enableDynamic(frame, text, customization)
+			if options.Dynamic == true then
+				create(frame, text, options)
+				enableDynamic(frame, text, options)
 			else
 				-- Dynamic disabling.
-				if not customization.Dynamic then
+				if not options.Dynamic then
 					local connection = frameSizeConnections[frame]
 					if connection then
 						connection:Disconnect()
@@ -1817,14 +1812,14 @@ module.Create = function(frame: GuiObject, text: string, customization: Customiz
 				end
 
 				-- Get rid of the non-true value.
-				customization.Dynamic = nil
+				options.Dynamic = nil
 
 				-- Create.
-				create(frame, text, customization)
+				create(frame, text, options)
 			end
 		else
-			-- Create with default customization.
-			create(frame, text, defaults)
+			-- Exit because we have no options to work with.
+			error("Invalid options.", 2)
 		end
 	end
 end

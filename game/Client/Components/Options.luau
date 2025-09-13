@@ -80,13 +80,15 @@ local function createOptionInterface(option: Option): optionTemplate
 		Dynamic = true,
 	})
 
-	-- Style the title text (first line)
-	local line1 = characterIteration.getLine(textDisplay, 1)
-	characterIteration:bolden(line1)
+	coroutine.wrap(function()
+		-- Style the title text (first line)
+		local line1 = characterIteration.getLine(textDisplay, 1)
+		characterIteration:bolden(line1)
 
-	-- Style the description text (second line)
-	local line2 = characterIteration.getLine(textDisplay, 2)
-	characterIteration:regularize(line2)
+		-- Style the description text (second line)
+		local line2 = characterIteration.getLine(textDisplay, 2)
+		characterIteration:regularize(line2)
+	end)
 
 	return interface
 end

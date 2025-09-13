@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local TweenPlus = require(script.Parent.TweenPlus)
-local audioConfig = require(ReplicatedStorage.Structures.audioConfig)
 
 local Audio = {}
 Audio.SoundEffects = {}
@@ -18,6 +17,19 @@ local assetPrefix = "rbxassetid://"
 local soundFolder = Instance.new("Folder")
 soundFolder.Name = "GameSounds"
 soundFolder.Parent = SoundService
+
+function Audio._getSoundById(id: number | string): Sound?
+	local sound = nil
+
+	for _, sounds in ReplicatedStorage.Audio:GetChildren() do
+		if sounds:IsA("Sound") and (sounds.SoundId == assetPrefix .. tostring(id) or sounds.Name == id) then
+			sound = sounds:Clone()
+			break
+		end
+	end
+
+	return sound
+end
 
 --[=[
     Plays background music with optional fade
@@ -87,7 +99,7 @@ function Audio:SFX(
 	}?
 )
 	if type(soundId) == "string" then
-		local id = audioConfig.getIdByName(soundId)
+		local id = Audio._getSoundById(soundId)
 		if id then
 			soundId = id
 		else

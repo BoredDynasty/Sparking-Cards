@@ -16,7 +16,7 @@ local yoink = {}
 
 -- Creates a new remote function in ReplicatedStorage if it doesn't exist
 function yoink.setup(): RemoteFunction
-	local existingRemote = ReplicatedStorage:FindFirstChild("YoinkWrapper")
+	local existingRemote = ReplicatedStorage:FindFirstChild("YoinkWrapper") :: RemoteFunction?
 	if existingRemote then
 		return existingRemote
 	end
@@ -32,7 +32,7 @@ end
 function yoink.getValue<T>(key: string): response<T>
 	local remote = yoink.setup()
 	-- Use a promise to handle the remote call
-	local resultPromise = promise.new(function(resolve, reject)
+	local resultPromise = promise.retry(function(resolve, reject)
 		local success, result = pcall(function()
 			return remote:InvokeServer(key)
 		end)
@@ -41,7 +41,7 @@ function yoink.getValue<T>(key: string): response<T>
 		else
 			reject("Failed to communicate with server: " .. tostring(result))
 		end
-	end)
+	end, 5)
 
 	local result = resultPromise:expect()
 
@@ -106,10 +106,11 @@ end
    yoinkFunction.OnServerInvoke = handleYoinkRequest
    ```
    ]]
-function yoink.getAsync<T>(key: string)
-	return promise.new(function(resolve, reject)
+function yoink.getAsync<T>(key: T)
+	local executor = promise.new(function(resolve: (response<T>) -> ...any?)
 		resolve(yoink.getValue(key))
 	end)
+	return executor
 end
 
 return yoink

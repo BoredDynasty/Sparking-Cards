@@ -367,7 +367,7 @@ end
 local function handleYoinkRequest(player: playerMarshaller.player, key: string)
 	local value = nil
 	print("handling yoink request: ", key)
-	if "profile_data" == key then
+	if string.match(key, "profile_data") then
 		local profile = stores.get(player)
 		value = {
 			Data = profile.Data,

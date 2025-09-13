@@ -22,9 +22,9 @@ export type Timer = {
 	GetTime: (self: Timer) -> number,
 	FormatTime: (self: Timer) -> string,
 	FormatCustom: (self: Timer, format: string) -> string,
+	interval: <T...>(self: Timer, duration: number, f: (T...) -> (), ...any) -> SignalPlus.Signal<>,
 
-	onIncrement: SignalPlus.Signal<number>,
-	incrementThread: thread?,
+	cancel_interval: SignalPlus.Signal<>,
 
 	Destroy: (self: Timer) -> (),
 }
@@ -35,7 +35,7 @@ function Timer.new(): Timer
 		running = false,
 		elapsedTime = 0,
 		incrementThread = nil :: thread?,
-		onIncrement = SignalPlus(),
+		cancel_interval = nil,
 	}, Timer)
 end
 
@@ -43,14 +43,30 @@ function Timer:Start()
 	if not self.running then
 		self.startTime = os.clock() - self.elapsedTime
 		self.running = true
-		self.incrementThread = task.spawn(function()
-			retryer.delay(1, math.huge, function()
-				self.onIncrement:Fire(self.elapsedTime // 1) -- floor division
-				return false
-			end)
-		end)
 	end
 	return self
+end
+
+function Timer.interval<T...>(self: Timer, duration: number, f: (T...) -> (), ...: T...)
+	local function inner(duration: number, f: (T...) -> (), ...: T...)
+		local nextTick = os.clock() + duration
+		while true do
+			task.wait(nextTick - os.clock())
+			task.spawn(f, ...)
+			nextTick += duration
+		end
+	end
+
+	local thread = task.spawn(inner, duration, f, ...)
+
+	local cancelSignal = SignalPlus()
+	cancelSignal:Connect(function()
+		task.cancel(thread)
+	end)
+
+	self.cancel_interval = cancelSignal
+
+	return cancelSignal
 end
 
 function Timer:Stop()

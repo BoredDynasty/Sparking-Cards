@@ -17,7 +17,7 @@ export type Observer<T> = {
 	Set: (self: Observer<T>, value: T) -> (),
 	Watch: (self: Observer<T>, callback: (newValue: T, oldValue: T) -> ()) -> SignalPlus.Connection,
 	Insert: (self: Observer<T>, key: any?, value: any) -> (),
-	Remove: (self: Observer<T>, key: any) -> (),
+	Remove: (self: Observer<T>, key: number | any) -> (),
 	Find: (self: Observer<T>, predicate: (value: any, key: any) -> boolean) -> (any?, any?),
 	Calculate: (self: Observer<T>, fn: (current: T) -> T) -> (),
 	Destroy: (self: Observer<T>) -> (),
@@ -106,7 +106,7 @@ end
 
 	When using, the internal value should be a table.
 ]]
-function Observer:Remove(key: any)
+function Observer:Remove(key: number | any)
 	assert(type(self._value) == "table", "Cannot use :Remove, Observer value isn't a table.")
 	local oldValue = self._value
 
@@ -154,10 +154,11 @@ end
 	-- observer:Get() is now 20
 	```
 ]]
-function Observer:Calculate(fn: (current: any) -> any)
+function Observer:Calculate<T>(fn: (current: T) -> T)
 	local newValue = fn(self:Get())
 	self:Set(newValue)
 end
+
 function Observer:Destroy()
 	self.Changed:Destroy()
 	setmetatable(self, nil)

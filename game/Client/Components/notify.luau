@@ -3,6 +3,7 @@
 -- notify.luau
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
@@ -10,6 +11,8 @@ local characterIteration = require(ReplicatedStorage.ClientModules.characterIter
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
+local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
@@ -25,6 +28,8 @@ export type notification = ScreenGui & {
 local state = observer.new("close")
 
 local notification = playerGui:WaitForChild("Notify") :: notification
+
+shadow(notification.Frame, Color3.new(), 0, 14)
 
 -- Set up default styling for the notification
 local function createText(ancestor: Instance, text: string, size: number)
@@ -53,10 +58,15 @@ local function showNotification(title: string, content: string, iconName: string
 
 	notification.Frame.Icon.Image = iconName
 
-	createText(notification.Frame.Title, title, 16)
-	createText(notification.Frame.Content, content, 14)
+	promise.new(function()
+		createText(notification.Frame.Title, title, 16)
+		createText(notification.Frame.Content, content, 14)
+	end)
 
 	notification.Frame.Visible = true
+	notification.Frame.Title.Visible = true
+	notification.Frame.Content.Visible = true
+
 	characterIteration:fadeIn(notification.Frame.Title)
 	characterIteration:fadeIn(notification.Frame.Content)
 
@@ -71,13 +81,17 @@ state:Watch(function(newState)
 			-- slide out
 			characterIteration:fade(notification.Frame.Title)
 			characterIteration:fade(notification.Frame.Content)
-			TweenPlus(notification.Frame, { Position = UDim2.fromScale(-1, 0.953) }, { Time = 0.5 }):Start()
+			spr.target(notification.Frame, 0.8, 8, {
+				Position = UDim2.fromScale(-1, 0.953),
+			})
 			task.delay(1, function()
 				notification.Frame.Visible = false
 			end)
 		else
 			notification.Frame.Visible = true
-			TweenPlus(notification.Frame, { Position = UDim2.fromScale(0, 0.953) }, { Time = 0.5 }):Start()
+			spr.target(notification.Frame, 0.8, 8, {
+				Position = UDim2.fromScale(-1, 0.953),
+			})
 		end
 	end)
 end)

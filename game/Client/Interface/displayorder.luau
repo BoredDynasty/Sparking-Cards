@@ -7,6 +7,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local observer = require(ReplicatedStorage.Utility.observer)
+local spr = require(ReplicatedStorage.Modules.spr)
 local sway = require(script.Parent.sway)
 
 local displayorder = {}
@@ -41,11 +42,14 @@ end
 
 function displayorder:_getData(value: CanvasGroup | string)
 	local data = nil
-	assert(data, "Missing data from compiled table. Did you forget to add canvas?")
 
 	if type(value) == "string" then
-		data = displayorder.compiled[value]
+		data = displayorder.compiled[value:lower()]
+	else
+		data = displayorder.compiled[value.Name:lower()]
 	end
+
+	--assert(data, "Missing data from compiled table. Did you forget to add canvas?")
 
 	return data :: data
 end

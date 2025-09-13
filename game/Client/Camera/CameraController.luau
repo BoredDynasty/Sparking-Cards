@@ -34,8 +34,13 @@ function CameraController.new()
 	return self
 end
 
-function CameraController:Add<T>(effectName: string, effectModule: T): T
+function CameraController:Add<T>(effectName: string, effectModule: T & cameraEffect): T
 	local effect = effectModule.new(self)
+
+	if self._effects[effectName] then
+		warn("Camera effect with name " .. effectName .. " already exists. Overwriting.")
+		self._effects[effectName]:Destroy()
+	end
 
 	self._effects[effectName] = effect
 	self._trove:Add(effect)

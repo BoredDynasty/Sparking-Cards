@@ -14,19 +14,25 @@ local StarterPlayer = game:GetService("StarterPlayer")
 -- // Requires -- //
 
 require("../Gameplay/CardAwarder")()
+local CameraController = require("../Camera/CameraController")
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local DynamicFOV = require(StarterPlayer.StarterPlayerScripts.Camera.DynamicFOV)
+local Sway = require(StarterPlayer.StarterPlayerScripts.Camera.Sway)
+local Trail = require(StarterPlayer.StarterPlayerScripts.Camera.Trail)
 local footsteps = require("../Gameplay/footsteps")
-local music = require(StarterPlayer.StarterPlayerScripts.Gameplay.music)
-local notify = require(StarterPlayer.StarterPlayerScripts.Components.notify)
+local music = require("../Gameplay/music")
+local notify = require("../Components/notify")
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
-local Joint = require(StarterPlayer.StarterPlayerScripts.Movement.Joint)
+local Joint = require("../Movement/Joint")
 local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
 local animate = require("../Utilities/animate")
-local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
-local yoink = require(StarterPlayer.StarterPlayerScripts.Utilities.yoink)
+local ragdoll = require("../Modules/ragdoll")
+local swipe = require("../Interface/swipe")
+-- local typography = require(ReplicatedStorage.Packages.typography)
+local yoink = require("../Utilities/yoink")
 print(1)
 
 -- Movement System
@@ -59,6 +65,7 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 print(1)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 local packer = require(ReplicatedStorage.Modules.packer)
+local spr = require(ReplicatedStorage.Modules.spr)
 print(1)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 print(2)
@@ -71,6 +78,7 @@ print(4)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local sway = require(script.Parent.Parent.Interface.sway)
 print(5)
+local observer = require(ReplicatedStorage.Utility.observer)
 local timer = require(ReplicatedStorage.Modules.timer)
 print(6)
 local keyboard = input.Keyboard.new()
@@ -83,13 +91,15 @@ print("Client Requirements")
 local player = playerMarshaller.get()
 local profile = nil
 
-yoink.getAsync("profile_data"):andThen(function(response)
-	if response.success then
-		print("Player stats:", response.value)
-		profile = response.value
-	else
-		warn("Error:", response.error)
-	end
+task.spawn(function()
+	yoink.getAsync("profile_data"):andThen(function(response)
+		if response.success then
+			print("Player stats:", response.value)
+			profile = response.value
+		else
+			warn("Error:", response.error)
+		end
+	end)
 end)
 
 local character = characterUtility.get(player)
@@ -189,10 +199,10 @@ local function initializeMarket()
 	shadow(shopNavigation, Color3.new(), 0, 14)
 	shadow(spendings, Color3.new(), 0, 14)
 
-	local function populateShop(t: {}?)
+	local function populateShop(t: Items.dataType?)
 		local newRelease = shopFrame:FindFirstChild("NewRelease") :: TextLabel
 		task.wait(unloadShop())
-		t = Items
+		t = t or Items
 		for _, item in pairs(t) do
 			-- print("got item: " .. item.Name)
 			local itemTemplate = shopFolder:FindFirstChild("ItemTemplate") :: Frame & {
@@ -388,12 +398,16 @@ local function initializeMarket()
 	local function callback()
 		displayorder:toggle(shopCanvas)
 	end
+
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
+
 	populateNavigation()
+
 	navigationBtnSignals.Home:Connect(function()
 		print("Home button clicked")
 		populateShop()
 	end)
+
 	navigationBtnSignals.Inventory:Connect(function()
 		print("Inventory button clicked")
 		populateInventory()
@@ -495,6 +509,54 @@ local function initializeOptions()
 			},
 			icons = {},
 		},
+		[5] = {
+			name = "Camera Sway",
+			description = "Toggle camera sway on or off.",
+			toggleFunctions = {
+				on = function()
+					promise.new(function()
+						CameraController:Add("Sway", Sway)
+					end)
+				end,
+				off = function()
+					promise.new(function()
+						CameraController:Get("Sway"):Destroy()
+					end)
+				end,
+			},
+		},
+		[6] = {
+			name = "Camera Trail",
+			description = "Toggle camera trail on or off.",
+			toggleFunctions = {
+				on = function()
+					promise.new(function()
+						CameraController:Add("Trail", Trail)
+					end)
+				end,
+				off = function()
+					promise.new(function()
+						CameraController:Get("Trail"):Destroy()
+					end)
+				end,
+			},
+		},
+		[7] = {
+			name = "Dynamic FOV",
+			description = "Toggle dynamic FOV on or off.",
+			toggleFunctions = {
+				on = function()
+					promise.new(function()
+						CameraController:Add("DynamicFOV", DynamicFOV)
+					end)
+				end,
+				off = function()
+					promise.new(function()
+						CameraController:Get("DynamicFOV"):Destroy()
+					end)
+				end,
+			},
+		},
 	}
 
 	for _, option in pairs(optionsList) do
@@ -507,7 +569,7 @@ local function initializeOptions()
 	end
 
 	hud:create("Options", function()
-		local state = displayorder:toggle(optionsCanvas)
+		displayorder:toggle(optionsCanvas)
 	end, lucide.GetAsset("cog"))
 end
 local function initializeMatchmaking()
@@ -516,103 +578,103 @@ local function initializeMatchmaking()
 	local matchmakingCanvas = matchmakingGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local matchmakingFrame = matchmakingCanvas:WaitForChild("Frame") :: Frame
 
-	local timeLabel = matchmakingFrame:WaitForChild("Time") :: TextLabel
+	local statusText = matchmakingFrame:WaitForChild("Time") :: TextLabel
+	local pulseImage = matchmakingFrame:WaitForChild("Pulse") :: ImageLabel
 
-	local state = statemachine.new({
-		searching = {
-			name = "searching",
-			onEnter = function()
-				print("Entering searching state")
-			end,
-			onExit = function()
-				print("Exiting searching state")
-			end,
-			transitions = {
-				notSearching = "notSearching",
-			},
-		},
-		notSearching = {
-			name = "notSearching",
-			onEnter = function()
-				print("Entering notSearching state")
-			end,
-			onExit = function()
-				print("Exiting notSearching state")
-			end,
-			transitions = {
-				searching = "searching",
-			},
-		},
-	}, "notSearching")
-
-	--displayorder:add(matchmakingCanvas)
+	displayorder:add(matchmakingCanvas)
 
 	shadow(matchmakingFrame, Color3.new(), 0, 14)
 
-	local function remove(clock: timer.Timer, _swipe: swipe.SwipeDetector)
-		Packet.CancelMatch.send({ player })
-		state:transition("notSearching")
-		promise
-			.new(function(resolve, reject)
-				TweenPlus(matchmakingFrame, {
-					Position = UDim2.fromScale(0.5, -0.2),
-				}, {
-					Time = 0.9,
-					EasingDirection = "Out",
-					EasingStyle = "Back",
-				}):Start()
-				clock:Stop()
-				clock:Destroy()
-				_swipe:Destroy()
-				resolve("cleaned up matchmaking")
-			end)
-			:andThen(print)
-			:catch(warn)
+	local state = observer.new(false)
+	local clock = timer.new()
 
-		hud:show()
+	local function showMatchmakingFrame()
+		spr.target(matchmakingFrame, 0.8, 8, {
+			Position = UDim2.fromScale(0.5, 0.1),
+		})
+
+		state:Set(true)
+
+		clock:Start()
+
+		clock.interval(clock, 1, function()
+			local totalSeconds = clock:GetTime()
+
+			local minutes = math.floor(totalSeconds / 60)
+
+			local seconds = totalSeconds % 60
+			statusText.Text = string.format(
+				'Searching...<br/><font transparency="0.5"><font size="14">%02d:%02d</font></font>',
+				minutes,
+				seconds
+			)
+
+			-- Pulse effect
+			spr.target(pulseImage, 0.5, 8, {
+				Size = UDim2.fromScale(1.1, 1.1),
+				ImageTransparency = 0.2,
+			})
+			task.delay(0.5, function()
+				spr.target(pulseImage, 0.5, 8, {
+					Size = UDim2.fromScale(1, 1),
+					ImageTransparency = 0.5,
+				})
+			end)
+		end)
 	end
 
-	local callback = function()
-		if state:getCurrentState() == "notSearching" then
-			state:transition("searching")
-			-- tween into position
-			TweenPlus(matchmakingFrame, {
-				Position = UDim2.fromScale(0.5, 0.1),
-			}, {
-				Time = 0.9,
-				EasingDirection = "Out",
-				EasingStyle = "Back",
-			}):Start()
-			-- start a timer
-			local clock = timer.new()
-			clock:Start()
-			promise
-				.new(function(resolve, reject)
-					if not clock then
-						reject("Clock does not exist.")
-					end
-					clock.onIncrement:Connect(function(currentTime: number)
-						local formatted = clock:FormatTime()
-						timeLabel.Text = formatted
-					end)
-					resolve("yay")
-				end)
-				:andThen(print)
-				:catch(warn)
-			-- enable swipe functionality
-			local _swipe: swipe.SwipeDetector = swipe.new(matchmakingFrame)
-			_swipe.OnSwipe:Connect(function(direction: swipe.direction)
-				if direction == "up" then
-					Packet.CancelMatch.send({ player })
-					remove(clock, _swipe)
-				end
-			end)
+	local function hideMatchmakingFrame()
+		spr.target(matchmakingFrame, 0.8, 8, {
+			Position = UDim2.fromScale(0.5, -0.5),
+		})
 
-			hud:hide()
+		state:Set(false)
+
+		clock:Stop()
+		clock:Reset()
+	end
+
+	state:Watch(function(newValue)
+		if newValue == true then
+			matchmakingCanvas.Visible = true
+
+			print("Starting matchmaking")
+		else
+			task.delay(0.5, function()
+				matchmakingCanvas.Visible = false
+				print("Stopped matchmaking")
+			end)
 		end
-	end
+	end)
 
-	hud:create("Matchmaking", callback, lucide.GetAsset("gamepad-2"))
+	local swipeDetector = swipe.new(matchmakingFrame)
+	swipeDetector.OnSwipe:Connect(function(direction: string, delta: Vector3)
+		if state:Get() == false then
+			return
+		end
+
+		if direction == "up" then
+			state:Set(false)
+			audio:SFX("leave")
+
+			promise
+				.new(function(resolve)
+					hideMatchmakingFrame()
+					resolve(true)
+				end)
+				:andThen(function()
+					-- Packet.LeaveQueue.send()
+					notify.info("Matchmaking", "You have left the queue.")
+
+					-- ts dont work yet lmaaooo
+				end)
+				:catch(warn)
+		else
+			return
+		end
+	end)
+
+	hud:create("Matchmaking", showMatchmakingFrame, lucide.GetAsset("play-circle"))
 end
 local function initializeBadges()
 	print("init badges")
@@ -644,7 +706,7 @@ local function initializeMusic()
 			track,
 		}, track.coordinates.position, track.coordinates.size)
 
-		print("added biome track: " .. i .. tracks[i])
+		print("added biome track: " .. i .. ` {tracks[i]}`)
 	end
 
 	music.startTracking()
@@ -704,6 +766,7 @@ mouse.LeftDown:Connect(function()
 	local attack_type = "M1"
 	if attack_type then
 		orion:execute(player, attack_type)
+		--ragdoll.SetRagdoll(character, true, true, Vector3.new(5, 6, -1))
 	end
 end)
 
