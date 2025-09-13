@@ -1,10 +1,13 @@
 --!strict
+--[[
+	Manages the display order and visibility of major UI elements,
+	such as the main menu, settings, and inventory. It uses a
+	spring-based animation system to create smooth and fluid
+	transitions between UI states.
 
--- displayorder.luau
-
+	@module displayorder
+]]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local TweenService = game:GetService("TweenService")
 
 local observer = require(ReplicatedStorage.Utility.observer)
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -27,33 +30,38 @@ displayorder.canvasPositions = {
 	lower = UDim2.fromScale(0.5, 0.7),
 	offscreen = UDim2.fromScale(0.5, 2),
 }
-displayorder.canvasSizes = {
-	offscreen = 0,
-	visible = 1,
-}
 
-function displayorder:_createScale(ancestor: Instance)
-	local scale = Instance.new("UIScale")
-	scale.Name = "visibility_scale"
-	scale.Parent = ancestor
-	scale.Scale = 1
-	return scale
-end
+--[[
+	Retrieves the data for a given canvas. This is the fix for the bug
+	where the script was unable to get the compiled data. The issue was
+	that the key used to store the data was the name of the layer collector,
+	but the key used to retrieve the data was the name of the canvas.
 
+	@param value {CanvasGroup | string} The canvas or the name of the canvas to get the data for.
+	@return {data} The data for the canvas.
+]]
 function displayorder:_getData(value: CanvasGroup | string)
 	local data = nil
 
 	if type(value) == "string" then
 		data = displayorder.compiled[value:lower()]
 	else
-		data = displayorder.compiled[value.Name:lower()]
+		-- This is the fix for the bug. The key is the name of the layer_collector,
+		-- not the canvas itself.
+		local key = value.Parent.Name:lower()
+		data = displayorder.compiled[key]
 	end
 
-	--assert(data, "Missing data from compiled table. Did you forget to add canvas?")
+	assert(data, "Missing data for canvas: " .. (type(value) == "string" and value or value.Name))
 
-	return data :: data
+	return data
 end
 
+--[[
+	Adds a canvas to the display order manager.
+
+	@param canvas {CanvasGroup} The canvas to add.
+]]
 function displayorder:add(canvas: CanvasGroup)
 	local layer_collector = canvas.Parent :: ScreenGui
 	local name = layer_collector.Name:lower()
@@ -73,71 +81,74 @@ function displayorder:add(canvas: CanvasGroup)
 	end)
 end
 
-function displayorder:changeVisibility(v: boolean, canvas: CanvasGroup | string)
-	local layer_collector = nil
+--[[
+	Changes the visibility of a canvas with a springy animation.
 
+	@param visible {boolean} Whether the canvas should be visible or not.
+	@param canvas {CanvasGroup | string} The canvas or the name of the canvas to change the visibility of.
+]]
+function displayorder:changeVisibility(visible: boolean, canvas: CanvasGroup | string)
 	local data = displayorder:_getData(canvas)
+	if not data then
+		return
+	end
 
-	layer_collector = data.layer_collector
-	layer_collector.Enabled = true
+	data.layer_collector.Enabled = true
+	data.state:Set(visible)
 
-	task.spawn(function()
-		local tweenInfo = nil
-		local targetPosition = nil
-		local targetScale = nil
+	local targetPosition
+	local targetTransparency
 
-		data.state:Set(true)
+	if visible then
+		targetPosition = displayorder.canvasPositions.middle
+		targetTransparency = 0
+		data.canvas.Visible = true -- Make it visible before animating
+	else
+		targetPosition = displayorder.canvasPositions.lower
+		targetTransparency = 1
+	end
 
-		if v then
-			data.canvas.Visible = true
+	spr.target(data.canvas, 0.5, 3, {
+		Position = targetPosition,
+		GroupTransparency = targetTransparency,
+	})
 
-			tweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.InOut)
-			targetPosition = displayorder.canvasPositions.middle
-			targetScale = 1
-
-			data.state:Set(true)
-		else
-			tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-			targetPosition = displayorder.canvasPositions.lower
-			targetScale = 0
-
-			data.state:Set(false)
+	spr.completed(data.canvas, function()
+		if not visible then
+			data.canvas.Visible = false -- Hide it after animating
 		end
-
-		local positionTween = TweenService:Create(data.canvas, tweenInfo, { Position = targetPosition })
-		positionTween:Play()
-
-		local scale = displayorder:_createScale(data.canvas)
-		scale.Scale = v and 0 or 1
-		local scaleTween = TweenService:Create(scale, tweenInfo, { Scale = targetScale })
-		scaleTween:Play()
-
-		task.delay(tweenInfo.Time + 0.01, function()
-			scale:Destroy()
-			if not v then
-				data.canvas.Visible = false
-			end
-		end)
 	end)
 end
 
+--[[
+	Toggles the visibility of a canvas.
+
+	@param canvas {CanvasGroup | string} The canvas or the name of the canvas to toggle.
+	@return {boolean} The new visibility state.
+]]
 function displayorder:toggle(canvas: CanvasGroup | string)
 	local data = displayorder:_getData(canvas)
+	if not data then
+		return false
+	end
 
-	displayorder:changeVisibility(not data.state:Get(), canvas)
+	local newState = not data.state:Get()
+	displayorder:changeVisibility(newState, canvas)
 
-	return not data.state:Get()
+	return newState
 end
 
-function displayorder:setDisplayOrder(i: string)
-	for _, t in displayorder.compiled do
-		if t ~= displayorder.compiled[i:lower()] then
-			print("setDisplayOrder: ", t)
-			displayorder:changeVisibility(false, t.canvas)
+--[[
+	Sets the display order to a specific canvas, hiding all others.
+
+	@param canvasName {string} The name of the canvas to set as the display order.
+]]
+function displayorder:setDisplayOrder(canvasName: string)
+	for name, data in displayorder.compiled do
+		if name ~= canvasName:lower() then
+			displayorder:changeVisibility(false, data.canvas)
 		end
 	end
 end
-
--- TODO) Add a sort order function
 
 return displayorder
