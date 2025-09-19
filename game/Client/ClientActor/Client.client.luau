@@ -22,6 +22,7 @@ local Trail = require(StarterPlayer.StarterPlayerScripts.Camera.Trail)
 local footsteps = require("../Gameplay/footsteps")
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
+local screen = require(StarterPlayer.StarterPlayerScripts.Gameplay.hint.screen)
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
@@ -32,7 +33,6 @@ local animate = require("../Utilities/animate")
 local ragdoll = require("../Modules/ragdoll")
 local swipe = require("../Interface/swipe")
 -- local typography = require(ReplicatedStorage.Packages.typography)
-local yoink = require("../Utilities/yoink")
 print(1)
 
 -- Movement System
@@ -66,6 +66,7 @@ print(1)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 local packer = require(ReplicatedStorage.Modules.packer)
 local spr = require(ReplicatedStorage.Modules.spr)
+local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
 print(1)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 print(2)
@@ -78,6 +79,7 @@ print(4)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 local sway = require(script.Parent.Parent.Interface.sway)
 print(5)
+local badges = require(ReplicatedStorage.Structures.badges)
 local observer = require(ReplicatedStorage.Utility.observer)
 local timer = require(ReplicatedStorage.Modules.timer)
 print(6)
@@ -89,18 +91,14 @@ print("Client Requirements")
 -- // Variables -- //
 
 local player = playerMarshaller.get()
-local profile = nil
+local profile: {
+	Data: profilestructure.profile,
+} = (
+	ReplicatedStorage.Events.GetProfile :: RemoteFunction
+):InvokeServer()
 
-task.spawn(function()
-	yoink.getAsync("profile_data"):andThen(function(response)
-		if response.success then
-			print("Player stats:", response.value)
-			profile = response.value
-		else
-			warn("Error:", response.error)
-		end
-	end)
-end)
+-- // Events -- //
+local getProfileRF = ReplicatedStorage.Events.GetProfile :: RemoteFunction
 
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
@@ -166,14 +164,7 @@ local function initializeMarket()
 	local function displaySpendings()
 		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
 
-		yoink.getAsync("profile_data"):andThen(function(response)
-			if response.success then
-				print("Player stats:", response.value)
-				profile = response.value
-			else
-				warn("Error:", response.error)
-			end
-		end)
+		profile = getProfileRF:InvokeServer()
 
 		local prisms = tostring(profile.Data.Prisms)
 
@@ -193,7 +184,7 @@ local function initializeMarket()
 		})
 	end
 
-	--task.spawn(displaySpendings)
+	task.spawn(displaySpendings)
 
 	shadow(shopFrame, Color3.new(), 0, 14)
 	shadow(shopNavigation, Color3.new(), 0, 14)
@@ -597,7 +588,7 @@ local function initializeMatchmaking()
 
 		clock:Start()
 
-		clock.interval(clock, 1, function()
+		clock.interval(clock, 0.33, function()
 			local totalSeconds = clock:GetTime()
 
 			local minutes = math.floor(totalSeconds / 60)
@@ -678,6 +669,126 @@ local function initializeMatchmaking()
 end
 local function initializeBadges()
 	print("init badges")
+
+	local badgesGui = PlayerGui:FindFirstChild("Badges") :: ScreenGui
+	local badgesCanvas = badgesGui:FindFirstChild("CanvasGroup") :: CanvasGroup
+	local badgeFrame = badgesCanvas:FindFirstChild("Frame") :: Frame
+
+	local itemHolder = badgeFrame:WaitForChild("Holder") :: Frame
+	local badgeFolder = templates:FindFirstChild("Shop") :: Folder -- lmao
+	local totalBadges = badgeFrame:FindFirstChild("Spendings") :: Frame
+
+	shadow(badgeFrame, Color3.new(), 0, 14)
+	shadow(totalBadges, Color3.new(), 0, 14)
+
+	displayorder:add(badgesCanvas)
+
+	profile = getProfileRF:InvokeServer()
+
+	local function unloadBadges()
+		for _, item in itemHolder:GetChildren() do
+			if item and item:IsA("Frame") then
+				item:Destroy()
+				task.wait()
+			end
+		end
+
+		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
+	end
+
+	local function loadBadges()
+		for i, badge_data in pairs(profile.Data.achievements :: { badges.badge }) do
+			-- print("got item: " .. item.Name)
+			local itemTemplate = badgeFolder:FindFirstChild("ItemTemplate") :: Frame & {
+				Title: Frame,
+				Price: Frame,
+				Buy: TextButton & {
+					TextHolder: Frame,
+				},
+				Test: TextButton,
+				Tags: Frame,
+			}
+			itemTemplate = itemTemplate:Clone()
+			itemTemplate:SetAttribute("name", badge_data.name)
+			itemTemplate.Parent = itemHolder
+
+			shadow(itemTemplate, Color3.new(), 0, 14)
+
+			local title = itemTemplate.Title
+			local price = itemTemplate.Price
+
+			local purchaseButton = itemTemplate.Buy
+			local experimentButton = itemTemplate.Test
+
+			TextPlus.Create(title, badge_data.name, {
+				Font = Font.new(
+					"rbxasset://fonts/families/Montserrat.json", -- Family.
+					Enum.FontWeight.SemiBold, -- Weight.
+					Enum.FontStyle.Normal -- Style.
+				),
+				Size = 16,
+				Color = Color3.fromHex("#f5f5f5"),
+				XAlignment = "Left",
+				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
+				Dynamic = true,
+			})
+
+			local description =
+				`{badge_data.description}\n\n Data Achieved: {DateTime.fromUnixTimestampMillis(
+					badge_data.date_acquired
+				)
+					:FormatUniversalTime("LL", "en-us")}`
+
+			-- LL means MM/DD/YYYY
+
+			TextPlus.Create(price, description, {
+				Font = Font.new(
+					"rbxasset://fonts/families/Montserrat.json", -- Family.
+					Enum.FontWeight.Regular, -- Weight.
+					Enum.FontStyle.Normal -- Style.
+				),
+				Size = 12.5,
+				Color = Color3.fromHex("#f5f5f5"),
+				XAlignment = "Left",
+				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
+				Dynamic = true,
+			})
+
+			characterIteration:jump(title)
+			characterIteration:jump(price)
+
+			itemTemplate.Visible = true
+			purchaseButton.Visible = false
+			experimentButton.Visible = false
+		end
+	end
+
+	TextPlus.Create(totalBadges, `Total Achievements: {#profile.Data.achievements}`, {
+		Font = Font.new(
+			"rbxasset://fonts/families/Montserrat.json", -- Family.
+			Enum.FontWeight.SemiBold, -- Weight.
+			Enum.FontStyle.Normal -- Style.
+		),
+		Size = 16,
+		Color = Color3.fromHex("#f5f5f5"),
+		XAlignment = "Left",
+		YAlignment = "Center",
+		LineSorting = true,
+		WordSorting = true,
+		Dynamic = true,
+	})
+
+	local function callback()
+		displayorder:toggle(badgesCanvas)
+		unloadBadges()
+		loadBadges()
+	end
+
+	hud:create("Badges", callback, "trophy")
 end
 local function initializeNotifiers()
 	print("init notifiers")
@@ -716,6 +827,7 @@ initializeOptions()
 initializeMatchmaking()
 initializeBadges()
 initializeNotifiers()
+initializeMusic()
 hud:render()
 
 print("client almost done")
@@ -770,7 +882,8 @@ mouse.LeftDown:Connect(function()
 	end
 end)
 
-orion.registerPlayer(player)
+profile = getProfileRF:InvokeServer()
+orion.registerPlayer(player, profile)
 
 Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	animate.loadAnimation(data.identification, {
@@ -779,6 +892,12 @@ Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	})
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
 end)
+
+tag.for_eachi("Tooltip", function(part: BasePart)
+	screen:bind(part, "test tooltip")
+end)
+
+gamecamera:Bind("Tooltip_upd", screen.update)
 
 local interfaceEndTime = os.clock()
 local totalExecutionTime = math.round((interfaceEndTime - interfaceStartTime) * 10000) / 10000

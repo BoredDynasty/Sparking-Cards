@@ -2,6 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local trove = require(ReplicatedStorage.Packages.trove)
 local url = require(ReplicatedStorage.Modules.Serialization.url)
 
@@ -11,6 +12,19 @@ local url = require(ReplicatedStorage.Modules.Serialization.url)
 
 local aurora = {}
 aurora.__index = aurora
+
+type self = {
+	_trove: typeof(trove.new()),
+	id: string,
+	color: Color3,
+	defaultEmission: number,
+	defaultRate: number,
+	position: Vector3,
+	object: Part,
+	emitter: ParticleEmitter,
+}
+
+export type aurora = setmetatable<self, typeof(aurora)>
 
 function aurora.new(color: Color3?)
 	local self = setmetatable({
@@ -22,7 +36,7 @@ function aurora.new(color: Color3?)
 		position = Vector3.new(),
 	}, aurora)
 
-	self.object = self._trove:Construct(Instance, "Part", Workspace) :: BasePart
+	self.object = self._trove:Construct(Instance, "Part", Workspace) :: Part
 	self.object.Name = "aurora_" .. url.generateShortUniqueId()
 	self.object.Size = Vector3.one
 	self.object.Anchored = true
@@ -54,13 +68,33 @@ function aurora.new(color: Color3?)
 	return self
 end
 
-function aurora:setColor(color: Color3 | ColorSequence)
-	self.color = color
+function aurora:setColor(color: Color3 | ColorSequence): aurora
+	local color_part = self._trove:Construct(Instance, "Part", ReplicatedStorage) :: Part
+	color_part:SetAttribute("color", self.color)
+
+	local interpolation = TweenPlus(color_part, {
+		["@color"] = color,
+	}, {
+		Time = 1,
+	})
+
+	self._trove:Add(interpolation)
+
+	interpolation.Updated:Connect(function()
+		self.color = color_part:GetAttribute("color")
+	end)
+
+	interpolation.Completed:Once(function()
+		self._trove:Remove(color_part)
+		interpolation:Destroy()
+	end)
+
+	interpolation:Start()
 
 	return self
 end
 
-function aurora:adjust(emission_factor: number?, rate_factor: number?)
+function aurora:adjust(emission_factor: number?, rate_factor: number?): aurora
 	emission_factor = emission_factor or 1
 	rate_factor = rate_factor or 1
 
@@ -68,7 +102,7 @@ function aurora:adjust(emission_factor: number?, rate_factor: number?)
 	self.emitter.Rate = self.defaultRate * rate_factor
 end
 
-function aurora:setPosition(position: Vector3)
+function aurora:setPosition(position: Vector3): aurora
 	self.position = position
 	self.object.Position = self.position
 
@@ -79,3 +113,5 @@ function aurora:destroy()
 	self._trove:Destroy()
 	setmetatable(self, nil)
 end
+
+return aurora

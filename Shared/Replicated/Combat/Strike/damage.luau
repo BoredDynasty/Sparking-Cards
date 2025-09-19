@@ -15,7 +15,11 @@ export type Damage = {
 	target: playerMarshaller.player, -- player who received the damage
 }
 
-local damage = setmetatable({}, {})
+local damage = setmetatable({}, {
+	__call = function(self, parameters: Damage)
+		return self.__call(parameters)
+	end,
+})
 damage.__index = damage
 
 export type incomingSignal = SignalPlus.Signal<Damage>

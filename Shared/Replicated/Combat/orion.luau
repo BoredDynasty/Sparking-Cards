@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CardLibrary = require(script.Parent.CardLibrary)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 
 --[[
@@ -39,32 +40,36 @@ export type attack_module = {
 		["Support"]: ((playerMarshaller.player, ...any?) -> ...any?)?,
 	},
 }
-
 --[[
 	Should be ran on the client side.
 ]]
-function orion.registerPlayer(player: playerMarshaller.player & Player)
+function orion.registerPlayer(
+	player: playerMarshaller.player & Player,
+	profile: { Data: profilestructure.profile }
+)
 	local identification = player.UserId
 
-	-- Add error handling for the GetProfile remote
-	local getProfileRemote = events:FindFirstChild("GetProfile")
-	if not getProfileRemote then
-		warn("GetProfile remote function not found")
-		return
-	end
-
-	local success, profile = pcall(function()
-		return getProfileRemote:InvokeServer(player)
-	end)
-
-	if not success then
-		warn("Failed to get profile for player:", player.Name, "Error:", profile)
-		return
-	end
-
 	if not profile then
-		warn("No profile returned for player:", player.Name)
-		return
+		-- Add error handling for the GetProfile remote
+		local getProfileRemote = events:FindFirstChild("GetProfile") :: RemoteFunction
+		if not getProfileRemote then
+			warn("GetProfile remote function not found")
+			return
+		end
+
+		local success, profile_ = pcall(function()
+			return getProfileRemote:InvokeServer(player)
+		end)
+
+		if not success then
+			warn("Failed to get profile for player:", player.Name, "Error:", profile_)
+			return
+		end
+
+		if not profile_ then
+			warn("No profile returned for player:", player.Name)
+			return
+		end
 	end
 
 	local equippedCard = profile.EquippedCard or "Frost"

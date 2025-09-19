@@ -10,6 +10,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove)
 local url = require(ReplicatedStorage.Modules.Serialization.url)
@@ -23,13 +24,22 @@ export type cameraEffect = {
 	Destroy: (self: cameraEffect) -> (),
 }
 
-function CameraController.new()
+type self = {
+	_trove: typeof(trove.new()),
+	_effects: { cameraEffect },
+	_camera: Camera,
+	_other: { [string]: (any) -> ...any? },
+	_update: SignalPlus.Signal<number>,
+}
+
+function CameraController.new(): setmetatable<self, typeof(CameraController)>
 	local self = setmetatable({}, CameraController)
 
 	self._trove = trove.new()
 	self._effects = {}
 	self._camera = workspace.CurrentCamera
 	self._other = {} --@type { [string]: (any) -> ...any? }
+	self._update = SignalPlus() :: SignalPlus.Signal<number>
 
 	return self
 end
@@ -69,6 +79,8 @@ function CameraController:Start()
 			end
 
 			self._camera.CFrame = cframe
+
+			--self.update:Fire(deltaTime)
 			debug.profileend()
 		end
 	)

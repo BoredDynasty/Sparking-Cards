@@ -1,12 +1,16 @@
---!strict
+--!nonstrict
 
 -- shadow.luau
 
--- specifically for Drop shadows
+-- specifically for drop shadows
 
-return function(parent: Instance, color: Color3, transparency: number, spread: number)
+return function(parent: Instance, color: Color3?, transparency: number?, spread: number?)
+	color = color or Color3.new() :: Color3
+	transparency = transparency or 0 :: number
+	spread = spread or 14 :: number
+
 	local function gaussian(n: number, sigma: number)
-		local weights = {}
+		local weights: { number } = {}
 
 		local sum = 0
 		for i = -n, n do
@@ -54,6 +58,7 @@ return function(parent: Instance, color: Color3, transparency: number, spread: n
 			corner = corner:Clone()
 			corner.Parent = layer
 		end
+
 		layer.Parent = layers
 	end
 	return layers

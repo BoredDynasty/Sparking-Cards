@@ -18,6 +18,7 @@ local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
 local ParryHandler = require(ReplicatedStorage.Combat.framework.features.parry)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
+local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
@@ -66,8 +67,6 @@ Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
 GameAnalytics:initialize(gameAnalyticsConfig)
 GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
 -- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
-
-local profiles = stores.server
 
 --[[
 	This is only for if I want to write
@@ -165,7 +164,6 @@ local function cancelMatch(player: playerMarshaller.player)
 end
 
 local function onPlayerAdded(player: playerMarshaller.player)
-	stores.load(player)
 	-- for the client to mess around with
 	local editConfig = Instance.new("BindableEvent")
 	editConfig.Parent = player
@@ -219,8 +217,10 @@ local function onPlayerAdded(player: playerMarshaller.player)
 			:andThen(print)
 			:catch(warn)
 	end)
+
 	addHighlight(player.Character or player.CharacterAdded:Wait())
 	batch(player:GetDescendants())
+	task.delay(1, stores.load, player)
 
 	Packet.SendNotification.sendTo({ message = "Player fully loaded", title = "Server" }, player)
 end
@@ -231,10 +231,6 @@ for _, player in ipairs(playerMarshaller.all()) do
 		task.spawn(onPlayerAdded, player)
 	end
 end
-
-ProfileStore.OnError:Connect(function(error_message, store_name, profile_key)
-	print(`DataStore error (Store:{store_name};Key:{profile_key}): {error_message}`)
-end)
 
 local function onPlayerRemoving(player: playerMarshaller.player)
 	GameAnalytics:PlayerRemoved(player)
@@ -247,7 +243,7 @@ local function onPlayerRemoving(player: playerMarshaller.player)
 
 		profile:EndSession()
 
-		profiles[player] = nil
+		stores.server[player] = nil
 
 		print("ended session for " .. player.DisplayName)
 	else
@@ -361,21 +357,20 @@ local function setNetworkOwner(player: playerMarshaller.player?, object: BasePar
 	if not object then
 		return
 	end
-	object:SetNetworkOwner(player or nil)
+
+	promise.new(function()
+		object:SetNetworkOwner(player or nil)
+	end)
 end
 
-local function handleYoinkRequest(player: playerMarshaller.player, key: string)
-	local value = nil
-	print("handling yoink request: ", key)
-	if string.match(key, "profile_data") then
-		local profile = stores.get(player)
-		value = {
-			Data = profile.Data,
-		}
-		print("profile data yoink request.")
-	end
-	print("returning yoink data")
-	return value
+local function getProfile(player: playerMarshaller.player)
+	local profile = stores.get(player)
+
+	print("getting profile: server")
+
+	return {
+		Data = profile.Data,
+	}
 end
 
 -- Set the callback; this can only be done once by one server-side script
@@ -421,12 +416,11 @@ Packet.SellCard.listen(function(data, player: playerMarshaller.player)
 end)
 Packet.SetNetworkOwner.listen(function(data)
 	setNetworkOwner(data.player, data.object)
-end)
+end);
 
-local yoinkWrapper = ReplicatedStorage:WaitForChild("YoinkWrapper") :: RemoteFunction
-yoinkWrapper.OnServerInvoke = function(player: playerMarshaller.player, key: string)
-	return handleYoinkRequest(player, key)
-end
+(remoteEvents.GetProfile :: RemoteFunction).OnServerInvoke = getProfile
+
+local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
 
 -- TODO) add player saving options
 

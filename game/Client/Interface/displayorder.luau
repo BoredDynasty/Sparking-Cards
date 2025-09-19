@@ -1,17 +1,15 @@
---!strict
+--!nonstrict
 
 -- displayorder.luau
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenService = game:GetService("TweenService")
-
 local observer = require(ReplicatedStorage.Utility.observer)
+local promise = require(ReplicatedStorage.Packages.promise)
 local spr = require(ReplicatedStorage.Modules.spr)
 local sway = require(script.Parent.sway)
 
 local displayorder = {}
-displayorder.__index = displayorder
 
 export type data = {
 	canvas: CanvasGroup,
@@ -37,6 +35,7 @@ function displayorder:_createScale(ancestor: Instance)
 	scale.Name = "visibility_scale"
 	scale.Parent = ancestor
 	scale.Scale = 1
+
 	return scale
 end
 
@@ -46,7 +45,9 @@ function displayorder:_getData(value: CanvasGroup | string)
 	if type(value) == "string" then
 		data = displayorder.compiled[value:lower()]
 	else
-		data = displayorder.compiled[value.Name:lower()]
+		local layer_collector = value.Parent :: ScreenGui
+
+		data = displayorder.compiled[layer_collector.Name:lower()]
 	end
 
 	--assert(data, "Missing data from compiled table. Did you forget to add canvas?")
@@ -61,22 +62,28 @@ function displayorder:add(canvas: CanvasGroup)
 	displayorder.compiled[name] = {
 		canvas = canvas,
 		layer_collector = layer_collector,
-		state = observer.new(canvas.Visible),
+		state = observer.new(canvas.Visible :: boolean),
 	}
 
 	displayorder.compiled[name].state:Watch(function(newValue)
-		if newValue then
-			sway:on(displayorder.compiled[name].canvas)
-		else
-			sway:off(displayorder.compiled[name].canvas)
-		end
+		promise.new(function()
+			if newValue then
+				sway:on(displayorder.compiled[name].canvas)
+			else
+				sway:off(displayorder.compiled[name].canvas)
+			end
+		end)
 	end)
 end
 
 function displayorder:changeVisibility(v: boolean, canvas: CanvasGroup | string)
 	local layer_collector = nil
 
-	local data = displayorder:_getData(canvas)
+	local data = promise
+		.new(function()
+			return displayorder:_getData(canvas)
+		end)
+		:expect() :: data
 
 	layer_collector = data.layer_collector
 	layer_collector.Enabled = true
@@ -104,27 +111,39 @@ function displayorder:changeVisibility(v: boolean, canvas: CanvasGroup | string)
 			data.state:Set(false)
 		end
 
-		local positionTween = TweenService:Create(data.canvas, tweenInfo, { Position = targetPosition })
-		positionTween:Play()
-
 		local scale = displayorder:_createScale(data.canvas)
 		scale.Scale = v and 0 or 1
-		local scaleTween = TweenService:Create(scale, tweenInfo, { Scale = targetScale })
-		scaleTween:Play()
 
-		task.delay(tweenInfo.Time + 0.01, function()
-			scale:Destroy()
-			if not v then
-				data.canvas.Visible = false
-			end
-		end)
+		spr.target(data.canvas, 0.55, tweenInfo.Time, {
+			Position = targetPosition,
+		})
+
+		spr.target(scale, tweenInfo.Time, 0.55, {
+			Scale = targetScale,
+		})
+
+		promise
+			.delay(tweenInfo.Time)
+			:andThen(function()
+				scale:Destroy()
+				if not v then
+					data.canvas.Visible = false
+				end
+			end)
+			:catch(warn)
 	end)
 end
 
 function displayorder:toggle(canvas: CanvasGroup | string)
-	local data = displayorder:_getData(canvas)
+	local data = promise
+		.new(function()
+			return displayorder:_getData(canvas)
+		end)
+		:expect() :: data
 
-	displayorder:changeVisibility(not data.state:Get(), canvas)
+	promise.new(function()
+		displayorder:changeVisibility(not data.state:Get(), canvas)
+	end)
 
 	return not data.state:Get()
 end

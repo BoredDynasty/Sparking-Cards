@@ -47,7 +47,7 @@ function Frost.moveset.Skill(player: playerMarshaller.player, direction: Vector3
 
 	local snowball = fetchAsset("Snowball") :: BasePart
 
-	print(fetchAsset("Snowball"))
+	print(snowball)
 
 	direction = direction or rootPart.CFrame.LookVector
 

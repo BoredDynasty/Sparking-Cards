@@ -29,6 +29,24 @@ local function toVec(vec: Vector3 | Vector2): vector
 	return v
 end
 
+local function toOffset(udim: UDim | UDim2)
+	local v = 0
+
+	if typeof(udim) == "UDim2" then
+		local camera = workspace.CurrentCamera
+		local viewSize = camera.ViewportSize
+
+		local newYOffset = udim.Y.Scale * viewSize.Y
+		local newXOffset = udim.X.Scale * viewSize.X
+
+		v = UDim2.fromOffset(newXOffset, newYOffset)
+	elseif typeof(udim) == "UDim" then
+		v = udim.Offset
+	end
+
+	return v
+end
+
 return {
 	toVector3 = toVector3,
 	toVector2 = toVector2,

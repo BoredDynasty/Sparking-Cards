@@ -24,17 +24,26 @@ function stores.load(player: playerMarshaller.player)
 	-- Start profile session with timeout
 	local profile: typeof(player_related:StartSessionAsync("", {}))?
 
-	profile =
-		--promise
-		--.retry(function()
-		-- return
-		player_related:StartSessionAsync(`player:{player.UserId}`, {
-			Cancel = function()
-				return player:IsDescendantOf(Players) == false
-			end,
-		})
-	--end, 9999)
-	--:expect() :: typeof(player_related:StartSessionAsync("", {}))?
+	profile = promise
+		.new(function(resolve, reject)
+			local value = player_related:StartSessionAsync(`player:{player.UserId}`, {
+				Cancel = function()
+					return player.Parent ~= Players
+				end,
+			})
+
+			if value then
+				resolve(value)
+			else
+				reject("couldn't Start Profile Session (no profile):", value)
+			end
+
+			return value
+		end)
+		:andThen(print)
+		:catch(warn)
+		:expect() :: typeof(player_related:StartSessionAsync("", {}))
+
 	print(typeof(profile))
 
 	if profile then
@@ -51,7 +60,7 @@ function stores.load(player: playerMarshaller.player)
 		if player:FindFirstAncestorOfClass("Players") then
 			profiles[player] = profile
 
-			profile.Data.LastLogin = DateTime.now().UnixTimestamp
+			profile.Data.LastLogin = DateTime.now().UnixTimestampMillis
 
 			profile:Reconcile()
 			profile:Save()
@@ -60,8 +69,8 @@ function stores.load(player: playerMarshaller.player)
 
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
-		--elseif profile == nil then
-		--player:Kick("The Roblox Servers are on fire. Try rejoining.")
+	elseif not profile then
+		player:Kick("The Roblox Servers are on fire, try rejoining.")
 	end
 
 	return profile
@@ -71,7 +80,7 @@ function stores.get(player: playerMarshaller.player)
 	local value = nil
 
 	value = promise
-		.new(function()
+		.new(function(resolve, reject)
 			local profile = profiles[player]
 
 			if not profile and profile == nil then
@@ -81,12 +90,17 @@ function stores.get(player: playerMarshaller.player)
 					type = "error",
 				}, player)
 
+				reject("no profile???")
+
 				return nil
 			end
 
+			resolve(profile)
+
 			return profile
 		end)
-		:awaitValue()
+		:expect()
+		:catch(warn)
 
 	return value :: typeof(player_related:StartSessionAsync("", {}))
 end
@@ -94,8 +108,10 @@ end
 function stores.wrapSave(player: playerMarshaller.player)
 	local profile = stores.get(player)
 
-	profile:Reconcile()
-	profile:Save()
+	promise.new(function()
+		profile:Reconcile()
+		profile:Save()
+	end)
 
 	Packet.SendNotification.sendTo({
 		message = "Your data has just been saved.",
@@ -211,5 +227,9 @@ function stores.getPrisms(player: playerMarshaller.player)
 
 	return profile.Data.Prisms
 end
+
+profilestore.OnError:Connect(function(error_message, store_name, profile_key)
+	warn(`profilestore error: msg:{error_message}, store_name:{store_name}: profile_key:{profile_key}`)
+end)
 
 return stores

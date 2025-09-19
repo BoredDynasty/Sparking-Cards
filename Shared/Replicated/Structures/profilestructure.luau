@@ -52,7 +52,7 @@ return {
 	["Prisms"] = 5,
 	["Level"] = "Bronze I",
 	["Experience"] = 0,
-	["LastLogin"] = os.time(),
+	["LastLogin"] = DateTime.now().UnixTimestampMillis,
 	["EquippedCard"] = "Frost",
 	["victories"] = 0,
 	-- Other
@@ -74,21 +74,12 @@ return {
 		},
 	},
 	achievements = {
-		{
-			name = "First Victory",
-			description = "Win your first match",
-			points = 10,
-		},
-		{
-			name = "Card Collector",
-			description = "Collect all card types",
-			points = 20,
-		},
+		--
 	},
 	["combatBindings"] = {
-		["attack"] = "MouseLeftButton", -- melee
-		["special_One"] = "E", -- primary
-		["special_Two"] = "Q", -- ultimate
-		["special_Three"] = "R", -- support
+		["attack"] = Enum.KeyCode.MouseLeftButton.Name, -- melee
+		["special_One"] = Enum.KeyCode.E.Name, -- primary
+		["special_Two"] = Enum.KeyCode.Q.Name, -- ultimate
+		["special_Three"] = Enum.KeyCode.R.Name, -- support
 	},
 }
