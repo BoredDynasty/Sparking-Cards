@@ -16,6 +16,11 @@ export type productTable = {
 	},
 }
 
+export type reciept = {
+	PlayerId: number,
+	ProductId: number,
+}
+
 return {
 	products = {
 		["Extra Cards"] = {
@@ -35,7 +40,7 @@ return {
 			cost = 20.00,
 		},
 	} :: productTable,
-	product_callbacks = {} :: { (receipt: (any | string)?, player: playerMarshaller.player) -> boolean },
+	product_callbacks = {} :: { (reciept?, player: playerMarshaller.player) -> boolean },
 	processReceipt = function(receiptInfo: { PlayerId: number, ProductId: number }, product_callbacks)
 		local userId = receiptInfo.PlayerId :: number
 		local productId = receiptInfo.ProductId :: number

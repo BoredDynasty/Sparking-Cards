@@ -34,7 +34,7 @@ return {
 			Default = "255,89,0,255,0,0,255,255,0",
 		},
 	},
-	Run = function(_, target: Player, duration: number, colorsStr: string)
+	ClientRun = function(_, target: Player, duration: number, colorsStr: string)
 		local character = target.Character
 		if not character or not character.PrimaryPart then
 			return "Target character not found"

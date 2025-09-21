@@ -9,7 +9,6 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local StopWatchReporter = game:GetService("StopWatchReporter")
 
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
@@ -220,7 +219,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 
 	addHighlight(player.Character or player.CharacterAdded:Wait())
 	batch(player:GetDescendants())
-	task.delay(1, stores.load, player)
+	stores.load(player)
 
 	Packet.SendNotification.sendTo({ message = "Player fully loaded", title = "Server" }, player)
 end
@@ -321,12 +320,20 @@ end
 
 local function sellCards(player: Player, cardName: string)
 	local profile = stores.get(player)
+	if not profile then
+		Packet.SendNotification.sendTo({
+			message = "Couldn't get data",
+			title = "Your data did not load.",
+			type = "error",
+		}, player)
+		return
+	end
 
 	if not profile.Data.Cards[cardName] or profile.Data.Cards[cardName] <= 0 then
 		Packet.SendNotification.sendTo({
 			message = "Couldn't get data",
 			title = "You don't have any " .. cardName .. " Cards to sell.",
-			type = "error",
+			type = "warning",
 		}, player)
 
 		warn("No cards to sell for player: " .. player.Name)
@@ -363,10 +370,19 @@ local function setNetworkOwner(player: playerMarshaller.player?, object: BasePar
 	end)
 end
 
-local function getProfile(player: playerMarshaller.player)
+local function getProfile(player: playerMarshaller.player): { Data: profilestructure.profile? }
 	local profile = stores.get(player)
 
 	print("getting profile: server")
+
+	if not profile then
+		Packet.SendNotification.sendTo({
+			message = "Couldn't get data",
+			title = "Your data did not load.",
+			type = "error",
+		}, player)
+		return nil
+	end
 
 	return {
 		Data = profile.Data,
@@ -417,7 +433,6 @@ end)
 Packet.SetNetworkOwner.listen(function(data)
 	setNetworkOwner(data.player, data.object)
 end);
-
 (remoteEvents.GetProfile :: RemoteFunction).OnServerInvoke = getProfile
 
 local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)

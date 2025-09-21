@@ -114,6 +114,7 @@ function displayorder:changeVisibility(v: boolean, canvas: CanvasGroup | string)
 		local scale = displayorder:_createScale(data.canvas)
 		scale.Scale = v and 0 or 1
 
+		data.canvas.Visible = true
 		spr.target(data.canvas, 0.55, tweenInfo.Time, {
 			Position = targetPosition,
 		})
@@ -141,9 +142,9 @@ function displayorder:toggle(canvas: CanvasGroup | string)
 		end)
 		:expect() :: data
 
-	promise.new(function()
-		displayorder:changeVisibility(not data.state:Get(), canvas)
-	end)
+	--promise.new(function()
+	displayorder:changeVisibility(not data.state:Get(), canvas)
+	--end)
 
 	return not data.state:Get()
 end

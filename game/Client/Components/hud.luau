@@ -10,6 +10,7 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- hud.luau
 
@@ -22,7 +23,7 @@ export type button = {
 	name: string,
 	callback: () -> (),
 	icon: icon?,
-	reactor: observer.Observer<string>,
+	reactor: observer.Observer<boolean>,
 }
 
 export type icon = {
@@ -38,13 +39,13 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		name = name,
 		callback = callback,
 		icon = icon,
-		reactor = observer.new("open"),
+		reactor = observer.new(false),
 	}
 	table.insert(hud.buttons, button)
 end
 
-local function getOppositeReactorValue(reactor: observer.Observer<string>): string
-	return reactor:Get() == "open" and "close" or "open"
+local function getOppositeReactorValue(reactor: observer.Observer<boolean>): boolean
+	return not reactor:Get()
 end
 
 function hud:render()
@@ -106,10 +107,12 @@ function hud:render()
 
 		TextButton.MouseButton1Click:Connect(function()
 			local value = getOppositeReactorValue(button.reactor)
+
 			button.reactor:Set(value)
+
 			audio:SFX("click")
 		end)
-		button.reactor:Watch(function(newValue: string)
+		button.reactor:Watch(function(newValue: boolean)
 			local oppositeValue = getOppositeReactorValue(button.reactor)
 			print("Button state changed:", oppositeValue, "->", newValue)
 
@@ -120,18 +123,14 @@ function hud:render()
 			end
 
 			-- tilt the icon
-			if newValue == "open" then
-				TweenPlus(
-					Icon,
-					{ Rotation = 15 },
-					{ Time = 0.25, EasingDirection = "Out", EasingStyle = "Back" }
-				):Start()
+			if newValue then
+				spr.target(Icon, 0.8, 8, {
+					Rotation = 15,
+				})
 			else
-				TweenPlus(
-					Icon,
-					{ Rotation = 0 },
-					{ Time = 0.25, EasingDirection = "Out", EasingStyle = "Back" }
-				):Start()
+				spr.target(Icon, 0.8, 8, {
+					Rotation = 0,
+				})
 			end
 		end)
 		shadow(TextButton, Color3.new(), 0.5, 14)

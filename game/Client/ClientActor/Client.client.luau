@@ -23,6 +23,7 @@ local footsteps = require("../Gameplay/footsteps")
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
 local screen = require(StarterPlayer.StarterPlayerScripts.Gameplay.hint.screen)
+local sparkle = require(StarterPlayer.StarterPlayerScripts.Interface.sparkle)
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
@@ -64,7 +65,7 @@ local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 print(1)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
-local packer = require(ReplicatedStorage.Modules.packer)
+local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local spr = require(ReplicatedStorage.Modules.spr)
 local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
 print(1)
@@ -93,9 +94,15 @@ print("Client Requirements")
 local player = playerMarshaller.get()
 local profile: {
 	Data: profilestructure.profile,
-} = (
-	ReplicatedStorage.Events.GetProfile :: RemoteFunction
-):InvokeServer()
+} = promise
+	.new(function(resolve)
+		local value = (ReplicatedStorage.Events.GetProfile :: RemoteFunction):InvokeServer()
+
+		resolve(value)
+
+		return value
+	end)
+	:expect()
 
 -- // Events -- //
 local getProfileRF = ReplicatedStorage.Events.GetProfile :: RemoteFunction
@@ -104,6 +111,19 @@ local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
 local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
 local remoteEvents = ReplicatedStorage.Events
+
+-- // Functions -- //
+local function expectProfile()
+	return promise
+		.new(function(resolve)
+			local value = (ReplicatedStorage.Events.GetProfile :: RemoteFunction):InvokeServer()
+
+			resolve(value)
+
+			return value
+		end)
+		:expect()
+end
 
 ---------------------------------- Client --------------------------------
 
@@ -164,24 +184,31 @@ local function initializeMarket()
 	local function displaySpendings()
 		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
 
-		profile = getProfileRF:InvokeServer()
+		profile = expectProfile()
 
-		local prisms = tostring(profile.Data.Prisms)
+		promise.new(function()
+			local text = ""
+			if profile then
+				text = tostring(profile.Data.Prisms)
+			else
+				text = "..."
+			end
 
-		TextPlus.Create(moneyFrame, prisms, {
-			Font = Font.new(
-				"rbxasset://fonts/families/Montserrat.json", -- Family.
-				Enum.FontWeight.SemiBold, -- Weight.
-				Enum.FontStyle.Normal -- Style.
-			),
-			Size = 16,
-			Color = Color3.fromHex("#ffffff"),
-			XAlignment = "Left",
-			YAlignment = "Center",
-			LineSorting = true,
-			WordSorting = true,
-			Dynamic = true,
-		})
+			TextPlus.Create(moneyFrame, text, {
+				Font = Font.new(
+					"rbxasset://fonts/families/Montserrat.json", -- Family.
+					Enum.FontWeight.SemiBold, -- Weight.
+					Enum.FontStyle.Normal -- Style.
+				),
+				Size = 16,
+				Color = Color3.fromHex("#ffffff"),
+				XAlignment = "Left",
+				YAlignment = "Center",
+				LineSorting = true,
+				WordSorting = true,
+				Dynamic = true,
+			})
+		end)
 	end
 
 	task.spawn(displaySpendings)
@@ -251,11 +278,36 @@ local function initializeMarket()
 
 			itemTemplate.Visible = true
 
+			sparkle:on(itemTemplate, {
+				rotation = true,
+			})
+
+			itemTemplate.Destroying:Once(function()
+				sparkle:off(itemTemplate)
+			end)
+
 			if item.ExperimentsEnabled == true then
 				experimentButton.Visible = true
 				experimentButton:FindFirstChildOfClass("ImageLabel").Visible = true
 				experimentButton.MouseButton1Click:Connect(function()
 					print("Testing card: " .. item.Name)
+					-- ts dont work yet lmao
+					-- but lets add a function
+					if not player then
+						return
+					end
+
+					local placeId = 90845913624517 -- Match
+
+					safeteleport(placeId, { player }, {
+						reserve_server = true,
+						data = {
+							identification1 = player.UserId,
+							testing_card = {
+								item,
+							},
+						},
+					})
 				end)
 			else
 				experimentButton.Visible = false
@@ -290,11 +342,15 @@ local function initializeMarket()
 					return
 				end
 				print("Purchasing card: " .. item.Name)
+
 				Packet.BuyCard.send({ cardName = item.Name })
-				--ripple(Color3.new())
+
 				pop(purchaseButton)
+
 				audio:SFX("success")
+
 				purchaseDebounce = true
+
 				task.delay(0.5, function()
 					purchaseDebounce = false
 				end)
@@ -307,8 +363,12 @@ local function initializeMarket()
 	local function populateInventory()
 		local unloaded = unloadShop()
 		task.wait(unloaded)
-		--profile = yoink.client:grab("profile_data")
-		assert(profile, "Profile does not exist on the client!")
+
+		profile = expectProfile()
+		if not profile then
+			return
+		end
+
 		for itemName: string, i in pairs(profile.Data.Cards) do
 			-- print("got item: " .. itemName)
 			local itemTemplate = shopFolder:FindFirstChild("ItemTemplate") :: Frame & {
@@ -548,6 +608,26 @@ local function initializeOptions()
 				end,
 			},
 		},
+		[8] = {
+			name = "Music",
+			description = "Toggle music on or off",
+			toggleFunctions = {
+				on = function()
+					promise.new(function()
+						music:stopCurrentTrack()
+
+						RunService.Heartbeat:Wait()
+
+						music:startTracking()
+					end)
+				end,
+				off = function()
+					promise.new(function()
+						music:stopCurrentTrack()
+					end)
+				end,
+			},
+		},
 	}
 
 	for _, option in pairs(optionsList) do
@@ -587,8 +667,8 @@ local function initializeMatchmaking()
 		state:Set(true)
 
 		clock:Start()
-
-		clock.interval(clock, 0.33, function()
+		-- every 0.33_ seconds
+		clock.interval(clock, 1 / 3, function()
 			local totalSeconds = clock:GetTime()
 
 			local minutes = math.floor(totalSeconds / 60)
@@ -630,10 +710,16 @@ local function initializeMatchmaking()
 			matchmakingCanvas.Visible = true
 
 			print("Starting matchmaking")
+
+			Packet.CreateMatch.send({}, player)
 		else
 			task.delay(0.5, function()
 				matchmakingCanvas.Visible = false
+				notify.info("Matchmaking", "You have left the queue.")
+
 				print("Stopped matchmaking")
+
+				Packet.CancelMatch.send({ matchInstance = player }, player)
 			end)
 		end
 	end)
@@ -653,12 +739,6 @@ local function initializeMatchmaking()
 					hideMatchmakingFrame()
 					resolve(true)
 				end)
-				:andThen(function()
-					-- Packet.LeaveQueue.send()
-					notify.info("Matchmaking", "You have left the queue.")
-
-					-- ts dont work yet lmaaooo
-				end)
 				:catch(warn)
 		else
 			return
@@ -676,14 +756,14 @@ local function initializeBadges()
 
 	local itemHolder = badgeFrame:WaitForChild("Holder") :: Frame
 	local badgeFolder = templates:FindFirstChild("Shop") :: Folder -- lmao
-	local totalBadges = badgeFrame:FindFirstChild("Spendings") :: Frame
+	local totalBadges = badgeFrame:FindFirstChild("Total") :: Frame
 
 	shadow(badgeFrame, Color3.new(), 0, 14)
 	shadow(totalBadges, Color3.new(), 0, 14)
 
 	displayorder:add(badgesCanvas)
 
-	profile = getProfileRF:InvokeServer()
+	profile = expectProfile()
 
 	local function unloadBadges()
 		for _, item in itemHolder:GetChildren() do
@@ -697,6 +777,10 @@ local function initializeBadges()
 	end
 
 	local function loadBadges()
+		if not profile then
+			return
+		end
+
 		for i, badge_data in pairs(profile.Data.achievements :: { badges.badge }) do
 			-- print("got item: " .. item.Name)
 			local itemTemplate = badgeFolder:FindFirstChild("ItemTemplate") :: Frame & {
@@ -767,20 +851,22 @@ local function initializeBadges()
 		end
 	end
 
-	TextPlus.Create(totalBadges, `Total Achievements: {#profile.Data.achievements}`, {
-		Font = Font.new(
-			"rbxasset://fonts/families/Montserrat.json", -- Family.
-			Enum.FontWeight.SemiBold, -- Weight.
-			Enum.FontStyle.Normal -- Style.
-		),
-		Size = 16,
-		Color = Color3.fromHex("#f5f5f5"),
-		XAlignment = "Left",
-		YAlignment = "Center",
-		LineSorting = true,
-		WordSorting = true,
-		Dynamic = true,
-	})
+	if profile and profile ~= nil then
+		TextPlus.Create(totalBadges, `Total Achievements: {#profile.Data.achievements}`, {
+			Font = Font.new(
+				"rbxasset://fonts/families/Montserrat.json", -- Family.
+				Enum.FontWeight.SemiBold, -- Weight.
+				Enum.FontStyle.Normal -- Style.
+			),
+			Size = 16,
+			Color = Color3.fromHex("#f5f5f5"),
+			XAlignment = "Left",
+			YAlignment = "Center",
+			LineSorting = true,
+			WordSorting = true,
+			Dynamic = true,
+		})
+	end
 
 	local function callback()
 		displayorder:toggle(badgesCanvas)
@@ -882,7 +968,7 @@ mouse.LeftDown:Connect(function()
 	end
 end)
 
-profile = getProfileRF:InvokeServer()
+profile = expectProfile()
 orion.registerPlayer(player, profile)
 
 Packet.ReplicateAnimation.listen(function(data: { identification: string })

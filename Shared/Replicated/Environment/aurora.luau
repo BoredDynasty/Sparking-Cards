@@ -60,6 +60,7 @@ function aurora.new(color: Color3?)
 	self.emitter.Speed = NumberRange.new(100) -- for now
 	self.emitter.Lifetime = NumberRange.new(2, 4)
 	self.emitter.Transparency = NumberSequence.new({
+		NumberSequenceKeypoint.new(0, 0),
 		NumberSequenceKeypoint.new(0.2, 1),
 		NumberSequenceKeypoint.new(0.5, 1.7),
 		NumberSequenceKeypoint.new(1, 1),

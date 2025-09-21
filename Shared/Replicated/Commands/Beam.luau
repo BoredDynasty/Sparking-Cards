@@ -28,10 +28,10 @@ return {
 			Default = 10,
 		},
 		{
-			Type = "number",
-			Name = "width",
-			Description = "The width of the beam",
-			Default = 0.25,
+			Type = "player",
+			Name = "target",
+			Description = "The target player to bomb",
+			Default = Players.LocalPlayer,
 		},
 		{
 			Type = "string",
@@ -40,13 +40,17 @@ return {
 			Default = "255,200,100",
 		},
 	},
-	Run = function(_, source: Player, damage: number, width: number, colorStr: string)
+	ClientRun = function(_, source: Player, damage: number, target: Player, colorStr: string)
 		local character = source.Character
 		if not character or not character.PrimaryPart then
 			return "Source character not found"
 		end
+		local otherCharacter = target.Character
+		if not otherCharacter or not otherCharacter.PrimaryPart then
+			return "Target character not found"
+		end
 
-		local colorValues = colorStr:split(",")
+		local colorValues = string.split(colorStr, ",")
 		local r = tonumber(colorValues[1])
 		local g = tonumber(colorValues[2])
 		local b = tonumber(colorValues[3])
@@ -56,9 +60,10 @@ return {
 			origin = character.PrimaryPart.Position,
 			direction = character.PrimaryPart.CFrame.LookVector,
 			damage = damage,
-			width = width,
+			target = otherCharacter.PrimaryPart.Position,
 			color = color,
 			source = character,
+			pierce = true,
 		})
 
 		return "Beam fired!"

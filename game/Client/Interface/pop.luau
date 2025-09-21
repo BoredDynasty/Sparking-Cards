@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 return function(object: GuiObject | { GuiObject }, ratio: number?)
 	-- Default ratio if not specified
@@ -20,6 +21,7 @@ return function(object: GuiObject | { GuiObject }, ratio: number?)
 		uiScale.Parent = gui
 
 		-- Create pop effect sequence
+
 		TInfo = TweenInfo.new(Emphasis.standard * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
 		local squeeze = TweenService:Create(uiScale, TInfo, { Scale = ratio })
 		TInfo = TweenInfo.new(Emphasis.standard * 0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)

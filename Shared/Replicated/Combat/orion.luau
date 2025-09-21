@@ -5,6 +5,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CardLibrary = require(script.Parent.CardLibrary)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local promise = require(ReplicatedStorage.Packages.promise)
 local statemachine = require(ReplicatedStorage.Utility.statemachine)
 
 --[[
@@ -52,27 +53,23 @@ function orion.registerPlayer(
 	if not profile then
 		-- Add error handling for the GetProfile remote
 		local getProfileRemote = events:FindFirstChild("GetProfile") :: RemoteFunction
-		if not getProfileRemote then
-			warn("GetProfile remote function not found")
-			return
+		local function expectProfile()
+			return promise
+				.new(function(resolve)
+					local value = getProfileRemote:InvokeServer()
+
+					resolve(value)
+
+					return value
+				end)
+				:expect()
 		end
 
-		local success, profile_ = pcall(function()
-			return getProfileRemote:InvokeServer(player)
-		end)
-
-		if not success then
-			warn("Failed to get profile for player:", player.Name, "Error:", profile_)
-			return
-		end
-
-		if not profile_ then
-			warn("No profile returned for player:", player.Name)
-			return
-		end
+		profile = expectProfile()
 	end
 
-	local equippedCard = profile.EquippedCard or "Frost"
+	local equippedCard = if profile then profile.Data.EquippedCard else "Frost"
+	-- if the profile exists, use the current existing card, else use the "Frost" placeholder
 
 	-- change
 	local states = {

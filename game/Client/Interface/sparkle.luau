@@ -128,6 +128,19 @@ function sparkle._update()
 	end
 end
 
+--[[
+	Type def.
+	```luau
+	texture = "rbxassetid://7112305588",
+	lifetime = 2.5,
+	rate = 0.5,
+	minimumSize = UDim2.new(),
+	maximumSize = UDim2.fromScale(25, 25),
+	easing = "Quad",
+	rotation = false,
+	maxPerGui = 6,
+	```
+]]
 function sparkle:on(ancestor: GuiObject, config: config?)
 	if sparkle.activeEmitters[ancestor] then
 		return

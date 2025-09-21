@@ -40,7 +40,7 @@ return {
 			Default = 1,
 		},
 	},
-	Run = function(_, target: Player, name: string, magnitude: number, duration: number)
+	ClientRun = function(_, target: Player, name: string, magnitude: number, duration: number)
 		local character = target.Character
 		if not character or not character.PrimaryPart then
 			return "Target character not found"

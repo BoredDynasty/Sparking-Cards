@@ -33,6 +33,18 @@ export type profile = {
 			points: number,
 		}
 	},
+	products: {
+		[number]: {
+			id: number,
+			recieptInfo: {
+				PlayerId: number,
+				ProductId: number,
+			},
+			times_bought: {
+				[string]: number, ---@type date format: unixtimestamp
+			},
+		},
+	},
 	combatBindings: {
 		["attack"]: string, -- melee
 		["special_One"]: string, -- primary
@@ -43,25 +55,24 @@ export type profile = {
 
 return {
 	-- Template
-	["Cards"] = {
+	Cards = {
 		Fire = 10,
 		Frost = 1,
 		Plasma = 1,
 		Hydro = 0,
 	},
-	["Prisms"] = 5,
-	["Level"] = "Bronze I",
-	["Experience"] = 0,
-	["LastLogin"] = DateTime.now().UnixTimestampMillis,
-	["EquippedCard"] = "Frost",
-	["victories"] = 0,
+	Prisms = 5,
+	Level = "Bronze I",
+	Experience = 0,
+	LastLogin = 0,
+	EquippedCard = "Frost",
+	victories = 0,
 	-- Other
-	["options"] = {
-		["clockTime"] = 12,
-		["showDamageNumbers"] = true,
-		["autoEquipBestCard"] = false,
-		["shadows"] = true,
-		["showOtherPlayers"] = true,
+	options = {
+		showDamageNumbers = true,
+		autoEquipBestCard = false,
+		shadows = true,
+		showOtherPlayers = true,
 	},
 	equippedEmotes = {
 		17782874968,
@@ -76,10 +87,11 @@ return {
 	achievements = {
 		--
 	},
-	["combatBindings"] = {
-		["attack"] = Enum.KeyCode.MouseLeftButton.Name, -- melee
-		["special_One"] = Enum.KeyCode.E.Name, -- primary
-		["special_Two"] = Enum.KeyCode.Q.Name, -- ultimate
-		["special_Three"] = Enum.KeyCode.R.Name, -- support
+	products = {},
+	combatBindings = {
+		attack = Enum.KeyCode.MouseLeftButton.Name, -- melee
+		special_One = Enum.KeyCode.E.Name, -- primary
+		special_Two = Enum.KeyCode.Q.Name, -- ultimate
+		special_Three = Enum.KeyCode.R.Name, -- support
 	},
 }
