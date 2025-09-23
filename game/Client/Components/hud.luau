@@ -24,6 +24,7 @@ export type button = {
 	callback: () -> (),
 	icon: icon?,
 	reactor: observer.Observer<boolean>,
+	debounce: boolean,
 }
 
 export type icon = {
@@ -40,6 +41,7 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		callback = callback,
 		icon = icon,
 		reactor = observer.new(false),
+		debounce = false,
 	}
 	table.insert(hud.buttons, button)
 end
@@ -106,6 +108,16 @@ function hud:render()
 		UIAspectRatioConstraint.Parent = Icon
 
 		TextButton.MouseButton1Click:Connect(function()
+			if button.debounce then
+				return
+			end
+
+			button.debounce = true
+
+			task.delay(0.8, function()
+				button.debounce = false
+			end)
+
 			local value = getOppositeReactorValue(button.reactor)
 
 			button.reactor:Set(value)

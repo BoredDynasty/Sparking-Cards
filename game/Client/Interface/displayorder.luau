@@ -69,6 +69,16 @@ function display_order:toggle(canvas: CanvasGroup)
 		end)
 		:expect() :: interface_data
 
+	if data.debounce:Get() then
+		return
+	end
+
+	data.debounce:Set(true)
+
+	task.delay(0.5, function()
+		data.debounce:Set(false)
+	end)
+
 	local state = data.state
 
 	state:Set(not state:Get())
