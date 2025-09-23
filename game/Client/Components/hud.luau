@@ -58,7 +58,7 @@ function hud:render()
 		end
 	end
 
-	for _, button: any in pairs(hud.buttons) do
+	for _, button: button in pairs(hud.buttons) do
 		print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:

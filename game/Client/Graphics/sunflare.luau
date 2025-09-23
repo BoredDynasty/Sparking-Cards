@@ -146,6 +146,7 @@ local function characterAdded(character: characterMarshaller.Character)
 	camera:GetPropertyChangedSignal("ViewportSize"):Connect(viewportChanged)
 
 	local function repositionFlare()
+		debug.profilebegin("repositionFlare")
 		local position, is_in_front = sunflare._getSunPosition()
 
 		local rootPosition = rootPart.Position
@@ -202,6 +203,8 @@ local function characterAdded(character: characterMarshaller.Character)
 		local brightness = sunflare._brightness(cosine_angle) :: number
 
 		brightScreen.Transparency = 1 - modular + brightness * modular
+
+		debug.profileend()
 	end
 
 	gamecamera:UnBind("sun_flare_reposition")

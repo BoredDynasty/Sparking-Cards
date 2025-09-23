@@ -57,6 +57,7 @@ local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
+local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 print(1)
 require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
@@ -143,7 +144,7 @@ local function initializeMarket()
 	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
 
-	displayorder:add(shopCanvas)
+	displayorder.new(shopCanvas)
 
 	local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
 	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
@@ -299,7 +300,7 @@ local function initializeMarket()
 
 					local placeId = 90845913624517 -- Match
 
-					safeteleport(placeId, { player }, {
+					safeteleport(placeId, player, {
 						reserve_server = true,
 						data = {
 							identification1 = player.UserId,
@@ -470,7 +471,7 @@ local function initializeOptions()
 	local optionsCanvas = optionsGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local optionsFrame = optionsCanvas:WaitForChild("Frame") :: Frame
 
-	displayorder:add(optionsCanvas)
+	displayorder.new(optionsCanvas)
 
 	local holder = optionsFrame:WaitForChild("Holder") :: Frame
 	--local templatesFolder = templates:FindFirstChild("Options") :: Folder
@@ -652,7 +653,7 @@ local function initializeMatchmaking()
 	local statusText = matchmakingFrame:WaitForChild("Time") :: TextLabel
 	local pulseImage = matchmakingFrame:WaitForChild("Pulse") :: ImageLabel
 
-	displayorder:add(matchmakingCanvas)
+	--displayorder:add(matchmakingCanvas)
 
 	shadow(matchmakingFrame, Color3.new(), 0, 14)
 
@@ -681,12 +682,12 @@ local function initializeMatchmaking()
 			)
 
 			-- Pulse effect
-			spr.target(pulseImage, 0.5, 8, {
+			spr.target(pulseImage, 1, 8, {
 				Size = UDim2.fromScale(1.1, 1.1),
 				ImageTransparency = 0.2,
 			})
-			task.delay(0.5, function()
-				spr.target(pulseImage, 0.5, 8, {
+			task.delay(1, function()
+				spr.target(pulseImage, 1, 8, {
 					Size = UDim2.fromScale(1, 1),
 					ImageTransparency = 0.5,
 				})
@@ -761,7 +762,7 @@ local function initializeBadges()
 	shadow(badgeFrame, Color3.new(), 0, 14)
 	shadow(totalBadges, Color3.new(), 0, 14)
 
-	displayorder:add(badgesCanvas)
+	displayorder.new(badgesCanvas)
 
 	profile = expectProfile()
 
@@ -874,7 +875,7 @@ local function initializeBadges()
 		loadBadges()
 	end
 
-	hud:create("Badges", callback, "trophy")
+	hud:create("Badges", callback, lucide.GetAsset("trophy", 48))
 end
 local function initializeNotifiers()
 	print("init notifiers")
@@ -908,13 +909,46 @@ local function initializeMusic()
 
 	music.startTracking()
 end
+local function initalizeKeybinds()
+	print("init keybinds")
+
+	local keybinds = {
+		M1 = {
+			name = "M1",
+			key = Enum.KeyCode.MouseLeftButton,
+		},
+	}
+
+	local active_list: { [string]: keybindlink.metatable } = promise
+		.new(function(resolve)
+			local tbl = table.create(#keybinds)
+
+			resolve(tbl)
+
+			return tbl
+		end)
+		:expect()
+
+	for i: string, v: { name: string, key: Enum.KeyCode } in pairs(keybinds :: typeof(keybinds)) do
+		local link = keybindlink.new(v.key, keyboard)
+
+		shadow(link._interface, Color3.new(), 0, 14)
+
+		link:setText(link, v.name)
+		link:autoSetImage(link)
+
+		active_list[v.name] = link
+	end
+end
 initializeMarket()
 initializeOptions()
 initializeMatchmaking()
 initializeBadges()
 initializeNotifiers()
 initializeMusic()
+initalizeKeybinds()
 hud:render()
+displayorder:Watch()
 
 print("client almost done")
 
@@ -979,7 +1013,7 @@ Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
 end)
 
-tag.for_eachi("Tooltip", function(part: BasePart)
+tag:for_eachi("Tooltip", function(part: BasePart)
 	screen:bind(part, "test tooltip")
 end)
 

@@ -1,163 +1,122 @@
 --!nonstrict
 
--- displayorder.luau
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local observer = require(ReplicatedStorage.Utility.observer)
 local promise = require(ReplicatedStorage.Packages.promise)
 local spr = require(ReplicatedStorage.Modules.spr)
-local sway = require(script.Parent.sway)
+local trove = require(ReplicatedStorage.Packages.trove)
+local url = require(ReplicatedStorage.Modules.Serialization.url)
 
-local displayorder = {}
+-- displayorder.luau
 
-export type data = {
-	canvas: CanvasGroup,
-	layer_collector: LayerCollector,
+local display_order = {
+	tracked_interfaces = {},
+	_trove = trove.new(),
+}
+
+export type interface_data = {
+	identifier: string,
 	state: observer.Observer<boolean>,
+	canvas: CanvasGroup,
+	debounce: observer.Observer<boolean>,
 }
 
-displayorder.compiled = {}
-displayorder.canvasPositions = {
-	middle = UDim2.fromScale(0.5, 0.5),
-	offscreen_high = UDim2.fromScale(0.5, -2),
-	higher = UDim2.fromScale(0.5, 0.053),
-	lower = UDim2.fromScale(0.5, 0.7),
-	offscreen = UDim2.fromScale(0.5, 2),
-}
-displayorder.canvasSizes = {
-	offscreen = 0,
-	visible = 1,
-}
+function display_order._createScale(ancestor: Instance?)
+	local scale = display_order._trove:Construct(
+		Instance,
+		"UIScale",
+		if ancestor then ancestor else workspace
+	) :: UIScale
 
-function displayorder:_createScale(ancestor: Instance)
-	local scale = Instance.new("UIScale")
-	scale.Name = "visibility_scale"
-	scale.Parent = ancestor
 	scale.Scale = 1
+	scale.Name = "ui_scale"
 
 	return scale
 end
 
-function displayorder:_getData(value: CanvasGroup | string)
-	local data = nil
+function display_order._getScale(ancestor: Instance)
+	local scale = ancestor:FindFirstChild("ui_scale", true) :: UIScale?
 
-	if type(value) == "string" then
-		data = displayorder.compiled[value:lower()]
-	else
-		local layer_collector = value.Parent :: ScreenGui
-
-		data = displayorder.compiled[layer_collector.Name:lower()]
+	if scale then
+		return scale
 	end
 
-	--assert(data, "Missing data from compiled table. Did you forget to add canvas?")
-
-	return data :: data
+	return nil
 end
 
-function displayorder:add(canvas: CanvasGroup)
-	local layer_collector = canvas.Parent :: ScreenGui
-	local name = layer_collector.Name:lower()
+function display_order.new(canvas: CanvasGroup)
+	local identifier = canvas:GetFullName()
 
-	displayorder.compiled[name] = {
+	display_order.tracked_interfaces[identifier] = {
+		identifier = identifier,
+		state = observer.new(false),
 		canvas = canvas,
-		layer_collector = layer_collector,
-		state = observer.new(canvas.Visible :: boolean),
+		debounce = observer.new(false),
 	}
 
-	displayorder.compiled[name].state:Watch(function(newValue)
-		promise.new(function()
-			if newValue then
-				sway:on(displayorder.compiled[name].canvas)
-			else
-				sway:off(displayorder.compiled[name].canvas)
-			end
-		end)
-	end)
+	return display_order.tracked_interfaces[identifier]
 end
 
-function displayorder:changeVisibility(v: boolean, canvas: CanvasGroup | string)
-	local layer_collector = nil
+function display_order:toggle(canvas: CanvasGroup)
+	local identifier = canvas:GetFullName()
 
 	local data = promise
-		.new(function()
-			return displayorder:_getData(canvas)
+		.new(function(resolve)
+			resolve(display_order.tracked_interfaces[identifier])
+
+			return display_order.tracked_interfaces[identifier]
 		end)
-		:expect() :: data
+		:expect() :: interface_data
 
-	layer_collector = data.layer_collector
-	layer_collector.Enabled = true
+	local state = data.state
 
-	task.spawn(function()
-		local tweenInfo = nil
-		local targetPosition = nil
-		local targetScale = nil
+	state:Set(not state:Get())
 
-		data.state:Set(true)
-
-		if v then
-			data.canvas.Visible = true
-
-			tweenInfo = TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.InOut)
-			targetPosition = displayorder.canvasPositions.middle
-			targetScale = 1
-
-			data.state:Set(true)
-		else
-			tweenInfo = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
-			targetPosition = displayorder.canvasPositions.lower
-			targetScale = 0
-
-			data.state:Set(false)
+	-- hide every other one
+	for i, interface_data in pairs(display_order.tracked_interfaces) do
+		if data == interface_data then
+			return
 		end
 
-		local scale = displayorder:_createScale(data.canvas)
-		scale.Scale = v and 0 or 1
-
-		data.canvas.Visible = true
-		spr.target(data.canvas, 0.55, tweenInfo.Time, {
-			Position = targetPosition,
-		})
-
-		spr.target(scale, tweenInfo.Time, 0.55, {
-			Scale = targetScale,
-		})
-
-		promise
-			.delay(tweenInfo.Time)
-			:andThen(function()
-				scale:Destroy()
-				if not v then
-					data.canvas.Visible = false
-				end
-			end)
-			:catch(warn)
-	end)
-end
-
-function displayorder:toggle(canvas: CanvasGroup | string)
-	local data = promise
-		.new(function()
-			return displayorder:_getData(canvas)
-		end)
-		:expect() :: data
-
-	--promise.new(function()
-	displayorder:changeVisibility(not data.state:Get(), canvas)
-	--end)
-
-	return not data.state:Get()
-end
-
-function displayorder:setDisplayOrder(i: string)
-	for _, t in displayorder.compiled do
-		if t ~= displayorder.compiled[i:lower()] then
-			print("setDisplayOrder: ", t)
-			displayorder:changeVisibility(false, t.canvas)
-		end
+		interface_data.state:Set(false)
 	end
 end
 
--- TODO) Add a sort order function
+function display_order:Watch()
+	for i, interface_data in pairs(display_order.tracked_interfaces) do
+		interface_data.state:Watch(function(newValue: boolean, oldValue: boolean)
+			local canvas = interface_data.canvas
 
-return displayorder
+			if newValue then
+				local scale = display_order._createScale(canvas)
+				scale.Scale = 0
+
+				canvas.Visible = true
+
+				spr.target(scale, 0.3, 0.8, {
+					Scale = 1,
+				})
+			else
+				local scale = display_order._getScale(canvas)
+				if not scale then
+					return
+				end
+
+				spr.target(scale, 0.2, 0.6, {
+					Scale = 0,
+				})
+
+				spr.completed(scale, function()
+					promise.new(function()
+						display_order._trove:Remove(scale)
+					end)
+
+					canvas.Visible = false
+				end)
+			end
+		end)
+	end
+end
+
+return display_order
