@@ -47,8 +47,24 @@ local function toOffset(udim: UDim | UDim2)
 	return v
 end
 
+local function toCoordinate(vec: vector | Vector2 | Vector3)
+	local value = CFrame.new()
+
+	if type(vec) == "vector" then
+		value = CFrame.new(vec.x, vec.x, vec.z)
+	elseif typeof(vec) == "Vector2" then
+		value = CFrame.new(vec.X, vec.Y, 0)
+	elseif typeof(vec) == "Vector3" then
+		value = CFrame.new(vec.X, vec.Y, vec.Z)
+	end
+
+	return value
+end
+
 return {
 	toVector3 = toVector3,
 	toVector2 = toVector2,
 	toVec = toVec,
+	toOffset = toOffset,
+	toCoorinate = toCoordinate,
 }

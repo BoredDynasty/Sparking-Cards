@@ -11,7 +11,7 @@ local Observer = {}
 Observer.__index = Observer
 
 export type Observer<T> = {
-	Value: T,
+	_value: T,
 	Changed: SignalPlus.Signal<(newValue: T, oldValue: T) -> ()>,
 	Get: (self: Observer<T>) -> T,
 	Set: (self: Observer<T>, value: T) -> (),
@@ -41,6 +41,15 @@ function Observer.new<T>(initialValue: T): Observer<T>
 end
 
 --[[
+	```luau
+	local none = observer.None
+
+	-- An observer with no value.
+]]
+
+Observer.None = Observer.new(nil)
+
+--[[
     ```luau
 
     -- Access the current value
@@ -53,6 +62,18 @@ function Observer:Get<T>(): T
 end
 
 --[[
+	```luau
+	local observer = observer.None
+
+	local expected = observer:Expect()
+	-- expects a value from the observer.
+	-- if no value, it throws an error.
+]]
+function Observer:Expect<T>(str: string): T
+	return if self._value ~= nil then self.value else error(str or "Expected a value from observer.")
+end
+
+--[[
     ```luau
 	 
     -- Set a new value
@@ -60,7 +81,7 @@ end
     print("New value set to: ", counter:Get())
     ```
 ]]
-function Observer:Set(newValue: any)
+function Observer:Set<T>(newValue: T)
 	if self._value == newValue then
 		return
 	end
@@ -128,7 +149,7 @@ end
 
 	local object = Instance.new("Part")
 
-	local object = _observer:Find(function(dictionary)
+	local obj = _observer:Find(function(dictionary)
 		return dictionary.object == object
 	end)
 	```

@@ -16,6 +16,7 @@ local GameCamera = {}
 local controller = CameraController.new()
 
 GameCamera.updated = controller._update
+GameCamera.camera = workspace.CurrentCamera
 
 -- Add effects
 controller:Add("Sway", require("../Camera/Sway"))

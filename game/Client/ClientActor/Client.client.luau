@@ -7,9 +7,11 @@ task.wait()
 
 -- // Services -- //
 local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
+local UserInputService = game:GetService("UserInputService")
 
 -- // Requires -- //
 
@@ -22,6 +24,7 @@ local Trail = require(StarterPlayer.StarterPlayerScripts.Camera.Trail)
 local footsteps = require("../Gameplay/footsteps")
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
+local parallax = require(StarterPlayer.StarterPlayerScripts.Interface.parallax)
 local screen = require(StarterPlayer.StarterPlayerScripts.Gameplay.hint.screen)
 local sparkle = require(StarterPlayer.StarterPlayerScripts.Interface.sparkle)
 print(1)
@@ -52,6 +55,7 @@ local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 print(1)
+local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.Dialog)
@@ -66,6 +70,7 @@ local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 print(1)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
+local rain = require(ReplicatedStorage.Environment.rain)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local spr = require(ReplicatedStorage.Modules.spr)
 local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
@@ -123,7 +128,9 @@ local function expectProfile()
 
 			return value
 		end)
-		:expect()
+		:expect() :: {
+		Data: profilestructure.profile,
+	}
 end
 
 ---------------------------------- Client --------------------------------
@@ -153,7 +160,7 @@ local function initializeMarket()
 
 	print("got market gui")
 
-	local navigationBtnSignals = nil
+	local navigationBtnSignals = nil :: Navi.signals
 
 	local function populateNavigation()
 		Navi.new(shopNavigation, {
@@ -169,6 +176,7 @@ local function initializeMarket()
 			icon = "rbxassetid://10734951847",
 		})
 		navigationBtnSignals = Navi:render()
+		shopNavigation.Visible = true
 	end
 
 	local function unloadShop()
@@ -449,6 +457,7 @@ local function initializeMarket()
 	end
 	local function callback()
 		displayorder:toggle(shopCanvas)
+		populateShop()
 	end
 
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
@@ -940,6 +949,161 @@ local function initalizeKeybinds()
 		active_list[v.name] = link
 	end
 end
+local function initializeLoadouts()
+	print("init loadouts")
+	local loadoutsGui = PlayerGui:FindFirstChild("Loadout") :: ScreenGui
+	local loadoutCanvas = loadoutsGui:FindFirstChild("CanvasGroup") :: CanvasGroup
+	local loadoutFrame = loadoutCanvas:FindFirstChild("Background") :: Frame
+
+	local navigation = loadoutFrame:FindFirstChild("Navigation") :: Frame
+
+	local detailsHolder = loadoutFrame:FindFirstChild("Details") :: Frame
+	local shopShortcut = detailsHolder.ShopShortcut :: Frame & {
+		Button: TextButton,
+		ImageLabel: ImageLabel,
+	}
+	local holder = detailsHolder.Holder :: Frame
+	local card_image = detailsHolder.CardImage :: ImageLabel
+	local moveset_display = detailsHolder.MovesetName :: TextLabel
+
+	local playerPicture = loadoutFrame.ProfilePicture :: Frame
+	local playerPictureInner = playerPicture.Inner :: Frame
+	local profilePicture = playerPictureInner.Image :: ImageLabel
+
+	local loadoutFolder = templates.Loadout :: Folder
+
+	local _parallax = parallax.new(Vector2.one * 15)
+	local layers = {
+		{
+			depthFactor = 0.1,
+			image = 85771976849760,
+		},
+		{
+			depthFactor = 0.1,
+			image = 86638818057918,
+		},
+		{
+			depthFactor = 0.2,
+			image = 78239140076204,
+		},
+		{
+			depthFactor = 0.1,
+			image = 101920658030720,
+		},
+		{
+			depthFactor = 0.3,
+			image = 95824378535326,
+		},
+		{
+			depthFactor = 0.5,
+			image = 96472199892347,
+		},
+		{
+			depthFactor = 0.6,
+			image = 107187586621751,
+		},
+		{
+			depthFactor = 0.7,
+			image = 102459277311926,
+		},
+		{
+			depthFactor = 0.9,
+			image = 107961319305129,
+		},
+	}
+
+	for i, data in ipairs(layers) do
+		_parallax:AddLayer(_parallax, nil, data.depthFactor, "rbxassetid://" .. data.image)
+	end
+
+	_parallax:Setup(_parallax, loadoutCanvas)
+	_parallax:Enable(_parallax)
+
+	local function updatePfp()
+		local userId = player.UserId
+		local thumbnailType, thumbnailSize = Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420
+
+		local image = Players:GetUserThumbnailAsync(userId, thumbnailType, thumbnailSize)
+		profilePicture.Image = image
+
+		pop(playerPicture, 1.2)
+	end
+
+	-- alright so this entire system uses TextLabel
+	-- in favor of TextPlus
+	-- because i do NOT want to use textplus.
+	-- for obvious reasons :blush:
+
+	profile = expectProfile() -- we def need this.
+
+	local equippedCard = promise
+		.new(function(resolve)
+			local value = nil
+
+			if profile ~= nil then
+				value = profile.Data.EquippedCard
+			else
+				value = nil
+			end
+
+			resolve(value)
+
+			return value
+		end)
+		:expect() :: string?
+
+	type card_display = Frame & {
+		TextLabel: TextLabel,
+		ImageLabel: ImageLabel?,
+	}
+
+	local lib = nil :: CardLibrary.Card?
+	local function updateDetails()
+		if not equippedCard then
+			return
+		end
+
+		promise
+			.new(function()
+				for i, _ in CardLibrary do
+					if string.find(i, equippedCard) then
+						lib = CardLibrary[i]
+					end
+				end
+			end)
+			:catch(warn)
+
+		if not lib then
+			return
+		end
+
+		moveset_display.TextColor3 = lib.TextColor or Color3.fromRGB(255, 255, 255)
+
+		-- TODO) add a typewriter effect for everything
+
+		moveset_display.Text =
+			`"{lib.MovesetName or "none"}"<br/><font transparency="0.5"><font size="14"><font color="#ffffff">{lib.DisplayName}</font></font></font>`
+		card_image.Image = "rbxassetid://86354301652315"
+
+		-- we cant do anything about the image
+		-- we'll have a placeholder.
+		-- TODO) make icons for each card
+
+		local passiveDisplay = loadoutFolder:FindFirstChild("Passive") :: card_display
+		passiveDisplay = passiveDisplay:Clone()
+		passiveDisplay.TextLabel = lib.PassiveModuleName or "None"
+
+		local attackDisplay = loadoutFolder:FindFirstChild("Attack") :: card_display
+		attackDisplay = attackDisplay:Clone()
+		attackDisplay.Parent = holder
+
+		-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype
+	end
+
+	updatePfp()
+
+	UserInputService.WindowFocusReleased:Connect(updatePfp)
+end
 initializeMarket()
 initializeOptions()
 initializeMatchmaking()
@@ -947,6 +1111,7 @@ initializeBadges()
 initializeNotifiers()
 initializeMusic()
 initalizeKeybinds()
+initializeLoadouts()
 hud:render()
 displayorder:Watch()
 
@@ -967,6 +1132,12 @@ print("game camera")
 
 animate.initialize()
 print("animate initialized")
+
+local rain_controller = rain.new()
+rain_controller:Start(rain_controller)
+
+print("rain controller")
+
 -- control
 
 local function getAttackTypeFromKey(key: Enum.KeyCode)
@@ -1019,12 +1190,6 @@ end)
 
 gamecamera:Bind("Tooltip_upd", screen.update)
 
-local interfaceEndTime = os.clock()
-local totalExecutionTime = math.round((interfaceEndTime - interfaceStartTime) * 10000) / 10000
--- This results in four decimal places.
-
-print("UI has finished with an execution time of: ", totalExecutionTime)
-
 local defaultFootstep = _rootPart:FindFirstChild("Running")
 if defaultFootstep then
 	defaultFootstep:Destroy()
@@ -1039,6 +1204,13 @@ Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
 	--audio:Cleanup()
 	movementController:Destroy()
+	rain_controller:Destroy(rain_controller)
 	footsteps._trove:Clean()
 	music.cleanup()
 end)
+
+local interfaceEndTime = os.clock()
+local totalExecutionTime = math.round((interfaceEndTime - interfaceStartTime) * 10000) / 10000
+-- This results in four decimal places.
+
+print("Client has finished with an execution time of: ", totalExecutionTime)

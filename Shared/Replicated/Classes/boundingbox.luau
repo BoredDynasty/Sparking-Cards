@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local observer = require(ReplicatedStorage.Utility.observer)
 local space = require(ReplicatedStorage.Modules.Serialization.space)
 local trove = require(ReplicatedStorage.Packages.trove)
 local url = require(ReplicatedStorage.Modules.Serialization.url)
@@ -19,6 +20,7 @@ export type BoundingBox = {
 local BoundingBox = {
 	boxes = {},
 	_trove = trove.new(),
+	updating = observer.new(false),
 }
 --[[
    Creates a new bounding box with the given parameters
@@ -37,7 +39,7 @@ function BoundingBox.new(position: vector, size: vector, rotation: vector?): Bou
 	local data = {
 		Position = position,
 		Size = size,
-		Rotation = rotation or vector.create(0, 0, 0),
+		Rotation = rotation or vector.zero,
 		OnEnter = SignalPlus() :: SignalPlus.Signal<vector>,
 		LastPoints = {},
 		Id = url.generateShortUniqueId(),
@@ -54,7 +56,7 @@ function BoundingBox.isPointInside(box: BoundingBox, point: vector): boolean
 	local relativePoint = point - box.Position
 
 	-- If there's rotation, transform the point
-	if box.Rotation ~= vector.create(0, 0, 0) then
+	if box.Rotation ~= vector.zero then
 		local cx = math.cos(box.Rotation.x)
 		local sx = math.sin(box.Rotation.x)
 		local cy = math.cos(box.Rotation.y)
@@ -119,16 +121,23 @@ function BoundingBox.GetPartsInBox(box: BoundingBox, parent: Instance?): { BaseP
 	return parts
 end
 
-function BoundingBox.update(point: vector)
+function BoundingBox.update(point: vector): { [string]: boolean }?
 	local list = {}
 
-	BoundingBox._trove:Connect(RunService.Heartbeat, function()
-		for id, box in pairs(BoundingBox.boxes) do
-			if BoundingBox.checkPoint(box, point) then
-				list[box.Id] = true
+	if BoundingBox.updating:Get() == false then
+		BoundingBox._trove:Connect(RunService.Heartbeat, function()
+			for id, box in pairs(BoundingBox.boxes) do
+				if BoundingBox.checkPoint(box, point) then
+					list[box.Id] = true
+				else
+					list[box.Id] = false
+				end
 			end
-		end
-	end)
+		end)
+	else
+		print("already updating bounding boxes")
+		return nil
+	end
 
 	return list
 end

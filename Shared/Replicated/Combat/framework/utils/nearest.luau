@@ -1,5 +1,5 @@
 --!strict
-local Players = game:GetService("Players")
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)

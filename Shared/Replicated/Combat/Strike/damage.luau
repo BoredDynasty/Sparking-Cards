@@ -28,6 +28,11 @@ damage.currentlyInflicting = {}
 damage.incoming = SignalPlus() :: incomingSignal
 damage.cancel = SignalPlus()
 
+--[[
+	@param amount: number, -- The amount of damage dealt
+	@param source: playerMarshaller.player?, -- Optional player who dealt the damage
+	@param target: playerMarshaller.player, -- player who received the damage
+]]
 function damage.__call(parameters: Damage)
 	-- Process damage logic here
 	local damageAmount = parameters.amount

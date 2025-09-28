@@ -13,7 +13,6 @@ local RunService = game:GetService("RunService")
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
-local MatchHandler = require(ReplicatedStorage.Modules.MatchHandler)
 local Packet = require(ReplicatedStorage.Packet)
 local ParryHandler = require(ReplicatedStorage.Combat.framework.features.parry)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
@@ -22,6 +21,7 @@ local batch = require(ReplicatedStorage.Utility.batch)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -30,6 +30,8 @@ local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local star = require(ReplicatedStorage.Environment.star)
+local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
 local stores = require(ReplicatedStorage.Datastore.stores)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
@@ -145,8 +147,6 @@ local function enterMatch(player: playerMarshaller.player)
 		return
 	end
 
-	MatchHandler.AddPlayerToQueue(player)
-
 	Packet.SendNotification.sendTo({ message = "Joined matchmaking queue", title = "Matchmaking" }, player)
 end
 
@@ -156,8 +156,6 @@ local function cancelMatch(player: playerMarshaller.player)
 	if not player then
 		return
 	end
-
-	MatchHandler.RemovePlayerFromQueue(player)
 
 	Packet.SendNotification.sendTo({ message = "Left matchmaking queue", title = "Matchmaking" }, player)
 end
@@ -436,9 +434,11 @@ end);
 (remoteEvents.GetProfile :: RemoteFunction).OnServerInvoke = getProfile
 
 local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
-
+promise.new(function()
+	local star_array = messagepack.decode(starsStructure)
+	star.load_array(star_array, ReplicatedStorage)
+end)
 -- TODO) add player saving options
-
 playerMarshaller.added(function(player: playerMarshaller.player)
 	onPlayerAdded(player)
 end)

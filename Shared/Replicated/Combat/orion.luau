@@ -20,13 +20,12 @@ local orion = {
 	framework = script.Parent.framework,
 	passives = script.Parent.Passives,
 	strike = script.Parent.Strike,
-	visuals = script.Parent.Visuals,
 	libray = CardLibrary,
 }
 
 local attack_modules = {
-	Frost = require(script.Parent.framework.attacks.Frost),
-	Hydro = require(script.Parent.framework.attacks.Hydro),
+	Frost = require(orion.framework.attacks.Frost),
+	Hydro = require(orion.framework.attacks.Hydro),
 }
 
 local events = ReplicatedStorage.Events

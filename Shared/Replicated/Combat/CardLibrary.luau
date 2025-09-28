@@ -8,6 +8,8 @@ export type Card = {
 	WeaponType: string, -- General category for the weapon type (e.g., "Gauntlet", "Sword")
 	BaseDamageMultiplier: number, -- Base damage multiplier for this card's attacks
 	MaxCombo: number, -- Max M1 combo count for this weapon/card
+	MovesetName: string?,
+	TextColor: Color3?,
 	Moveset: {
 		M1: string, -- AttackName for the first M1 attack (e.g., "FrostGauntlet_M1_1")
 		Skill: string, -- AttackName for the E skill (e.g., "FrostGauntlet_IceShard_Skill")
@@ -44,12 +46,14 @@ local CardLibrary: { [string]: Card } = {
 	FireSword = {
 		DisplayName = "Fiery Longsword",
 		WeaponType = "Sword",
+		MovesetName = "Conflagration of the Blazing Heart",
+		TextColor = Color3.fromRGB(255, 88, 88),
 		BaseDamageMultiplier = 1.1,
 		MaxCombo = 4,
 		Moveset = {
 			M1 = "FireSword_M1_1",
 			Skill = "FireSword_BurningBlade_Skill",
-			Ultimate = "FireSword_InfernoSlash_Ultimate",
+			Ultimate = "FireSword_InfernalSlash_Ultimate",
 			Support = "FireSword_HeatAura_Support",
 		},
 		PassiveModuleName = nil, -- Example: No passive, or passive name TBD

@@ -94,7 +94,7 @@ function display_order:Watch()
 
 				canvas.Visible = true
 
-				spr.target(scale, 0.3, 0.8, {
+				spr.target(scale, 0.8, 0.8, {
 					Scale = 1,
 				})
 			else
@@ -103,7 +103,7 @@ function display_order:Watch()
 					return
 				end
 
-				spr.target(scale, 0.2, 0.6, {
+				spr.target(scale, 0.9, 0.6, {
 					Scale = 0,
 				})
 

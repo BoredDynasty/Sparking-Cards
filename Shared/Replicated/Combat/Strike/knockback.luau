@@ -2,6 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local random = require(ReplicatedStorage.Utility.random)
 local trove = require(ReplicatedStorage.Packages.trove)
@@ -20,6 +21,8 @@ return function(player: playerMarshaller.player, direction: Vector3)
 	local minimimRotation = 1
 	local maxRotation = 10
 
+	local signal = SignalPlus()
+
 	-- disable movement
 	humanoid.PlatformStand = true
 
@@ -36,10 +39,17 @@ return function(player: playerMarshaller.player, direction: Vector3)
 
 	_trove:Add(force)
 	_trove:Add(rotation)
+	_trove:Add(signal)
 
 	task.delay(forceTime, function()
 		humanoid.PlatformStand = false
+
+		signal:Fire()
+
 		_trove:Remove(force)
 		_trove:Remove(rotation)
+		_trove:Remove(signal)
 	end)
+
+	return signal
 end
