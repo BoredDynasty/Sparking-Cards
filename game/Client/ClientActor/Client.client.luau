@@ -61,6 +61,7 @@ local characterIteration = require(ReplicatedStorage.ClientModules.characterIter
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
+local CardFactory = require(script.Parent.Parent.Interface.CardFactory)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
@@ -1003,13 +1004,22 @@ local function initializeLoadouts()
 	_parallax:Enable(_parallax)
 
 	local function updatePfp()
-		local userId = player.UserId
-		local thumbnailType, thumbnailSize = Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420
+		return promise.new(function(resolve, reject)
+			task.spawn(function()
+				local userId = player.UserId
+				local thumbnailType, thumbnailSize = Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420
 
-		local image = Players:GetUserThumbnailAsync(userId, thumbnailType, thumbnailSize)
-		profilePicture.Image = image
+				local success, image = pcall(Players.GetUserThumbnailAsync, Players, userId, thumbnailType, thumbnailSize)
 
-		pop(playerPicture, 1.2)
+				if success then
+					profilePicture.Image = image
+					pop(playerPicture, 1.2)
+					resolve()
+				else
+					reject("Failed to get user thumbnail: " .. tostring(image))
+				end
+			end)
+		end)
 	end
 
 	-- alright so this entire system uses TextLabel
@@ -1040,182 +1050,112 @@ local function initializeLoadouts()
 		ImageLabel: ImageLabel?,
 	}
 
-	local lib = nil :: CardLibrary.Card?
 	local function updateDetails()
 		if not equippedCard then
-			return
+			return promise.reject("No card equipped")
 		end
 
-		promise
-			.new(function()
-				for i, _ in CardLibrary do
-					if string.find(i, equippedCard) then
-						lib = CardLibrary[i]
-					end
-				end
-			end)
-			:catch(warn)
-
-		if not lib then
-			return
-		end
-
-		local function createCard(icon: boolean?, ancestor: Instance?): card_display
-			-- dont worry abt the variable names
-			local base = nil
-			if icon then
-				local WeaponType = Instance.new("Frame")
-				local ImageLabel = Instance.new("ImageLabel")
-				local AspectRatio = Instance.new("UIAspectRatioConstraint")
-				local UICorner = Instance.new("UICorner")
-				local TextLabel = Instance.new("TextLabel")
-				local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
-				local AspectRatio_3 = Instance.new("UIAspectRatioConstraint")
-
-				--Properties:
-
-				WeaponType.Name = ""
-				WeaponType.Parent = ancestor or ReplicatedStorage
-				WeaponType.AnchorPoint = Vector2.new(0.5, 0.5)
-				WeaponType.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
-				WeaponType.BorderColor3 = Color3.fromRGB(0, 0, 0)
-				WeaponType.BorderSizePixel = 0
-				WeaponType.Position = UDim2.new(0.757278681, 0, 0.0858655497, 0)
-				WeaponType.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
-
-				ImageLabel.Parent = WeaponType
-				ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-				ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-				ImageLabel.BackgroundTransparency = 1.000
-				ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-				ImageLabel.BorderSizePixel = 0
-				ImageLabel.Position = UDim2.new(0.293805778, 0, 0.484785527, 0)
-				ImageLabel.Size = UDim2.new(0.103226088, 0, 0.269325286, 0)
-				ImageLabel.Image = "rbxassetid://10734975486"
-
-				AspectRatio.Name = "AspectRatio"
-				AspectRatio.Parent = ImageLabel
-
-				UICorner.CornerRadius = UDim.new(0.139130428, 0)
-				UICorner.Parent = WeaponType
-
-				TextLabel.Parent = WeaponType
-				TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-				TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-				TextLabel.BackgroundTransparency = 1.000
-				TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-				TextLabel.BorderSizePixel = 0
-				TextLabel.Position = UDim2.new(0.547556996, 0, 0.4953219, 0)
-				TextLabel.Size = UDim2.new(0.40460676, 0, 0.355981946, 0)
-				TextLabel.Font = Enum.Font.Gotham
-				TextLabel.Text = "Sword"
-				TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-				TextLabel.TextSize = 12.000
-				TextLabel.TextWrapped = true
-
-				AspectRatio_2.Name = "AspectRatio"
-				AspectRatio_2.Parent = TextLabel
-				AspectRatio_2.AspectRatio = 2.965
-
-				AspectRatio_3.Name = "AspectRatio"
-				AspectRatio_3.Parent = WeaponType
-				AspectRatio_3.AspectRatio = 2.609
-
-				base = WeaponType
+		return promise.new(function(resolve, reject)
+			local foundLib = CardLibrary[equippedCard]
+			if foundLib then
+				resolve(foundLib)
 			else
-				local FlavorText = Instance.new("Frame")
-				local UICorner = Instance.new("UICorner")
-				local TextLabel = Instance.new("TextLabel")
-				local AspectRatio = Instance.new("UIAspectRatioConstraint")
-				local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
-
-				--Properties:
-
-				FlavorText.Name = ""
-				FlavorText.Parent = ancestor or ReplicatedStorage
-				FlavorText.AnchorPoint = Vector2.new(0.5, 0.5)
-				FlavorText.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
-				FlavorText.BorderColor3 = Color3.fromRGB(0, 0, 0)
-				FlavorText.BorderSizePixel = 0
-				FlavorText.Position = UDim2.new(0.238476574, 0, 0.0858655497, 0)
-				FlavorText.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
-
-				UICorner.CornerRadius = UDim.new(0.139130428, 0)
-				UICorner.Parent = FlavorText
-
-				TextLabel.Parent = FlavorText
-				TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-				TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-				TextLabel.BackgroundTransparency = 1.000
-				TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-				TextLabel.BorderSizePixel = 0
-				TextLabel.Position = UDim2.new(0.50702697, 0, 0.497070491, 0)
-				TextLabel.Size = UDim2.new(0.98594588, 0, 1.00585902, 0)
-				TextLabel.Font = Enum.Font.Unknown
-				TextLabel.Text = ""
-				TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-				TextLabel.TextSize = 12.000
-				TextLabel.TextWrapped = true
-
-				AspectRatio.Name = "AspectRatio"
-				AspectRatio.Parent = TextLabel
-				AspectRatio.AspectRatio = 2.557
-
-				AspectRatio_2.Name = "AspectRatio"
-				AspectRatio_2.Parent = FlavorText
-				AspectRatio_2.AspectRatio = 2.609
-
-				base = FlavorText
+				reject(`Card "{equippedCard}" not found in CardLibrary.`)
+			end
+		end):andThen(function(lib)
+			-- Clear existing cards
+			for _, child in ipairs(holder:GetChildren()) do
+				if child:IsA("Frame") then
+					child:Destroy()
+				end
 			end
 
-			return base
-		end
+			-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype(icon)
+			local markdown_controller = {
+				attack_controller = markdown.new(lib.MovesetName),
+				flavor_controller = markdown.new(lib.FlavorText),
+				m1_controller = markdown.new(lib.Moveset.M1),
+				passive_controller = markdown.new(lib.PassiveModuleName),
+				skill_controller = markdown.new(lib.Moveset.Skill),
+				support_controller = markdown.new(lib.Moveset.Support),
+				ultimate_controller = markdown.new(lib.Moveset.Ultimate),
+				weapon_controller = markdown.new(lib.WeaponType),
+			}
 
-		local typewriteController = markdown.typewriter.new()
+			local cardCreationPromise = promise.new(function(resolve)
+				local cardsToCreate = {
+					{ Title = "Attack", Text = lib.MovesetName },
+					{ Title = "Flavor Text", Text = lib.FlavorText, HighlightedTags = lib.HighlightedFlavorTextTags },
+					{ Title = "Passive", Text = lib.PassiveModuleName },
+					{ Title = "Skill", Text = lib.Moveset.Skill },
+					{ Title = "Support", Text = lib.Moveset.Support },
+					{ Title = "Ultimate", Text = lib.Moveset.Ultimate },
+					{ Title = "Weapon", Text = lib.WeaponType, Icon = "rbxassetid://10734975486" }, -- Placeholder Icon
+				}
 
-		-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype(icon)
-		local markdown_controller = {
-			attack_controller = markdown.new(lib.MovesetName),
-			flavor_controller = markdown.new(lib.FlavorText),
-			m1_controller = markdown.new(lib.Moveset.M1),
-			passive_controller = markdown.new(lib.PassiveModuleName),
-			skill_controller = markdown.new(lib.Moveset.Skill),
-			support_controller = markdown.new(lib.Moveset.Support),
-			ultimate_controller = markdown.new(lib.Moveset.Ultimate),
-			weapon_controller = markdown.new(lib.WeaponType),
-		}
+				local textLabels = {}
 
-		-- start
-		local flavorDisplay = createCard(false, holder)
-		flavorDisplay.TextLabel.FontFace =
-			Font.fromName("Montserrat", Enum.FontWeight.Regular, Enum.FontStyle.Italic)
+				for _, cardData in ipairs(cardsToCreate) do
+					if cardData.Text then
+						-- Handle highlighted text
+						if cardData.HighlightedTags and type(cardData.Text) == "string" then
+							for _, tag in ipairs(cardData.HighlightedTags) do
+								cardData.Text = string.gsub(cardData.Text, tag, `<b>{tag}</b>`)
+							end
+						end
 
-		flavorDisplay.TextLabel.TextWrapped = true
-		flavorDisplay.TextLabel.RichText = true
+						local _, textLabel = CardFactory.create(cardData, holder, PlayerGui)
+						table.insert(textLabels, { label = textLabel, text = cardData.Text })
+					end
+				end
+				resolve(textLabels)
+			end)
 
-		typewriteController:Play(
-			flavorDisplay.TextLabel,
-			markdown_controller.flavor_controller:Get(markdown_controller.flavor_controller, {
-				cps = 45,
-				instantFinishKey = Enum.KeyCode.Space,
-				cursor = "|",
-				cursorTween = true,
-				perCharSound = audio:_getSoundById(9055474333),
-				respectNewlines = false, -- converts \n to <br/>
-				punctuationPauses = {
-					[","] = 0.06,
-					["."] = 0.25,
-					["?"] = 0.18,
-					["!"] = 0.18,
-				},
-			})
-		)
+			return cardCreationPromise:andThen(function(textLabels)
+				-- This promise will be the start of our animation chain.
+				local animationChain = promise.resolve()
+
+				for _, data in ipairs(textLabels) do
+					-- Chain the next typewriter animation onto the end of the chain.
+					animationChain = animationChain:andThen(function()
+						-- This function will not execute until the previous promise in the chain resolves.
+						-- It returns a new promise that resolves when the typewriter effect is complete.
+						return promise.new(function(resolve)
+							task.spawn(function()
+								-- Each animation gets its own controller to avoid state conflicts.
+								local typewriteController = markdown.typewriter.new()
+								typewriteController:Play(data.label, data.text, {
+									cps = 45,
+									instantFinishKey = Enum.KeyCode.Space,
+									cursor = "|",
+									cursorTween = true,
+									perCharSound = audio:_getSoundById(9055474333),
+									respectNewlines = false,
+									punctuationPauses = {
+										[","] = 0.06,
+										["."] = 0.25,
+										["?"] = 0.18,
+										["!"] = 0.18,
+									},
+								})
+								-- Resolve the promise once the animation is done.
+								resolve()
+							end)
+						end)
+					end)
+				end
+
+				return animationChain
+			end)
+		end)
 	end
 
-	updatePfp()
-	promise.new(updateDetails):catch(warn)
+	updatePfp():catch(warn)
+	updateDetails():catch(warn)
 
-	UserInputService.WindowFocusReleased:Connect(updatePfp)
+	UserInputService.WindowFocusReleased:Connect(function()
+		updatePfp():catch(warn)
+	end)
 end
 initializeMarket()
 initializeOptions()
