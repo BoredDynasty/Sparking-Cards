@@ -26,14 +26,14 @@ return {
 		Availability = true,
 		Details = CardLibrary.FireSword,
 	},
-	Frost = {
-		Name = "Frost",
-		Description = "Frost damage",
+	Cryo = {
+		Name = "Cryo",
+		Description = "Cryo damage",
 		Price = 13.99,
 		ExperimentsEnabled = true,
 		NewRelease = true,
 		Availability = true,
-		Details = CardLibrary.FrostGauntlet,
+		Details = CardLibrary.CryoGauntlet,
 	},
 	Hydro = {
 		Name = "Hydro",

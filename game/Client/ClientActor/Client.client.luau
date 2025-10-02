@@ -18,15 +18,16 @@ local UserInputService = game:GetService("UserInputService")
 require("../Gameplay/CardAwarder")()
 local CameraController = require("../Camera/CameraController")
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
-local DynamicFOV = require(StarterPlayer.StarterPlayerScripts.Camera.DynamicFOV)
-local Sway = require(StarterPlayer.StarterPlayerScripts.Camera.Sway)
-local Trail = require(StarterPlayer.StarterPlayerScripts.Camera.Trail)
+local DynamicFOV = require("../Camera/DynamicFOV")
+local Sway = require("../Camera/Sway")
+local Trail = require("../Camera/Trail")
 local footsteps = require("../Gameplay/footsteps")
+local freefalling = require(StarterPlayer.StarterPlayerScripts.Gameplay.freefalling)
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
-local parallax = require(StarterPlayer.StarterPlayerScripts.Interface.parallax)
-local screen = require(StarterPlayer.StarterPlayerScripts.Gameplay.hint.screen)
-local sparkle = require(StarterPlayer.StarterPlayerScripts.Interface.sparkle)
+local parallax = require("../Interface/parallax")
+local screen = require("../Gameplay/hint/screen")
+local sparkle = require("../Interface/sparkle")
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
@@ -36,7 +37,7 @@ local Options = require("../Components/Options")
 local animate = require("../Utilities/animate")
 local ragdoll = require("../Modules/ragdoll")
 local swipe = require("../Interface/swipe")
--- local typography = require(ReplicatedStorage.Packages.typography)
+local typography = require(ReplicatedStorage.Packages.typography)
 print(1)
 
 -- Movement System
@@ -62,6 +63,7 @@ local dialog = require(script.Parent.Parent.Components.Dialog)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
+local markdown = require(ReplicatedStorage.ClientModules.markdown)
 print(1)
 require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
@@ -88,6 +90,7 @@ local sway = require(script.Parent.Parent.Interface.sway)
 print(5)
 local badges = require(ReplicatedStorage.Structures.badges)
 local observer = require(ReplicatedStorage.Utility.observer)
+local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
 local timer = require(ReplicatedStorage.Modules.timer)
 print(6)
 local keyboard = input.Keyboard.new()
@@ -101,7 +104,7 @@ local player = playerMarshaller.get()
 local profile: {
 	Data: profilestructure.profile,
 } = promise
-	.new(function(resolve)
+	.new(function(resolve: (any) -> ...unknown)
 		local value = (ReplicatedStorage.Events.GetProfile :: RemoteFunction):InvokeServer()
 
 		resolve(value)
@@ -121,7 +124,7 @@ local remoteEvents = ReplicatedStorage.Events
 -- // Functions -- //
 local function expectProfile()
 	return promise
-		.new(function(resolve)
+		.new(function(resolve: (any) -> ...unknown)
 			local value = (ReplicatedStorage.Events.GetProfile :: RemoteFunction):InvokeServer()
 
 			resolve(value)
@@ -159,25 +162,6 @@ local function initializeMarket()
 	local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 
 	print("got market gui")
-
-	local navigationBtnSignals = nil :: Navi.signals
-
-	local function populateNavigation()
-		Navi.new(shopNavigation, {
-			name = "Home",
-			icon = "rbxassetid://10723407389",
-		})
-		Navi.new(shopNavigation, {
-			name = "Inventory",
-			icon = "rbxassetid://10709769841",
-		})
-		Navi.new(shopNavigation, {
-			name = "Passives",
-			icon = "rbxassetid://10734951847",
-		})
-		navigationBtnSignals = Navi:render()
-		shopNavigation.Visible = true
-	end
 
 	local function unloadShop()
 		for _, item in itemHolder:GetChildren() do
@@ -287,6 +271,7 @@ local function initializeMarket()
 
 			itemTemplate.Visible = true
 
+			--[[
 			sparkle:on(itemTemplate, {
 				rotation = true,
 			})
@@ -294,6 +279,7 @@ local function initializeMarket()
 			itemTemplate.Destroying:Once(function()
 				sparkle:off(itemTemplate)
 			end)
+			--]]
 
 			if item.ExperimentsEnabled == true then
 				experimentButton.Visible = true
@@ -462,17 +448,47 @@ local function initializeMarket()
 
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
 
+	local function populateNavigation()
+		-- home, inventory, passive
+		local navi_btns = {
+			{
+				name = "Home",
+				icon = "rbxassetid://73790023098856",
+				callback = function()
+					unloadShop()
+					populateShop()
+				end,
+				disabledCallback = function()
+					unloadShop()
+				end,
+			},
+			{
+				name = "Inventory",
+				icon = "rbxassetid://10709769841",
+				callback = function()
+					unloadShop()
+					populateInventory()
+				end,
+				disabledCallback = function()
+					unloadShop()
+				end,
+			},
+		}
+		for i, data in ipairs(navi_btns) do
+			Navi:add(
+				shopNavigation,
+				data.name,
+				data.icon,
+				data.callback,
+				data.disabledCallback,
+				if data.name == "Home" then true else false
+			)
+		end
+		Navi:render(shopNavigation)
+		shopNavigation.Visible = true
+	end
+
 	populateNavigation()
-
-	navigationBtnSignals.Home:Connect(function()
-		print("Home button clicked")
-		populateShop()
-	end)
-
-	navigationBtnSignals.Inventory:Connect(function()
-		print("Inventory button clicked")
-		populateInventory()
-	end)
 end
 local function initializeOptions()
 	print("init options")
@@ -715,7 +731,7 @@ local function initializeMatchmaking()
 		clock:Reset()
 	end
 
-	state:Watch(function(newValue)
+	state:Watch(function(newValue: boolean)
 		if newValue == true then
 			matchmakingCanvas.Visible = true
 
@@ -745,7 +761,7 @@ local function initializeMatchmaking()
 			audio:SFX("leave")
 
 			promise
-				.new(function(resolve)
+				.new(function(resolve: (boolean) -> ...unknown)
 					hideMatchmakingFrame()
 					resolve(true)
 				end)
@@ -929,7 +945,7 @@ local function initalizeKeybinds()
 	}
 
 	local active_list: { [string]: keybindlink.metatable } = promise
-		.new(function(resolve)
+		.new(function(resolve: ({ unknown }) -> ...unknown)
 			local tbl = table.create(#keybinds)
 
 			resolve(tbl)
@@ -959,7 +975,7 @@ local function initializeLoadouts()
 
 	local detailsHolder = loadoutFrame:FindFirstChild("Details") :: Frame
 	local shopShortcut = detailsHolder.ShopShortcut :: Frame & {
-		Button: TextButton,
+		Button: TextButton, -- press to open shop
 		ImageLabel: ImageLabel,
 	}
 	local holder = detailsHolder.Holder :: Frame
@@ -972,45 +988,12 @@ local function initializeLoadouts()
 
 	local loadoutFolder = templates.Loadout :: Folder
 
-	local _parallax = parallax.new(Vector2.one * 15)
-	local layers = {
-		{
-			depthFactor = 0.1,
-			image = 85771976849760,
-		},
-		{
-			depthFactor = 0.1,
-			image = 86638818057918,
-		},
-		{
-			depthFactor = 0.2,
-			image = 78239140076204,
-		},
-		{
-			depthFactor = 0.1,
-			image = 101920658030720,
-		},
-		{
-			depthFactor = 0.3,
-			image = 95824378535326,
-		},
-		{
-			depthFactor = 0.5,
-			image = 96472199892347,
-		},
-		{
-			depthFactor = 0.6,
-			image = 107187586621751,
-		},
-		{
-			depthFactor = 0.7,
-			image = 102459277311926,
-		},
-		{
-			depthFactor = 0.9,
-			image = 107961319305129,
-		},
-	}
+	shadow(navigation, Color3.new(), 0, 14)
+	shadow(detailsHolder, Color3.new(), 0, 14)
+	shadow(profilePicture, Color3.new(), 0, 14)
+
+	local _parallax = parallax.new(Vector2.one * 10)
+	local layers = parallaxLayers.Desert -- placeholder
 
 	for i, data in ipairs(layers) do
 		_parallax:AddLayer(_parallax, nil, data.depthFactor, "rbxassetid://" .. data.image)
@@ -1037,7 +1020,7 @@ local function initializeLoadouts()
 	profile = expectProfile() -- we def need this.
 
 	local equippedCard = promise
-		.new(function(resolve)
+		.new(function(resolve: (string?) -> ...unknown)
 			local value = nil
 
 			if profile ~= nil then
@@ -1077,30 +1060,160 @@ local function initializeLoadouts()
 			return
 		end
 
-		moveset_display.TextColor3 = lib.TextColor or Color3.fromRGB(255, 255, 255)
+		local function createCard(icon: boolean?, ancestor: Instance?): card_display
+			-- dont worry abt the variable names
+			local base = nil
+			if icon then
+				local WeaponType = Instance.new("Frame")
+				local ImageLabel = Instance.new("ImageLabel")
+				local AspectRatio = Instance.new("UIAspectRatioConstraint")
+				local UICorner = Instance.new("UICorner")
+				local TextLabel = Instance.new("TextLabel")
+				local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
+				local AspectRatio_3 = Instance.new("UIAspectRatioConstraint")
 
-		-- TODO) add a typewriter effect for everything
+				--Properties:
 
-		moveset_display.Text =
-			`"{lib.MovesetName or "none"}"<br/><font transparency="0.5"><font size="14"><font color="#ffffff">{lib.DisplayName}</font></font></font>`
-		card_image.Image = "rbxassetid://86354301652315"
+				WeaponType.Name = ""
+				WeaponType.Parent = ancestor or ReplicatedStorage
+				WeaponType.AnchorPoint = Vector2.new(0.5, 0.5)
+				WeaponType.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
+				WeaponType.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				WeaponType.BorderSizePixel = 0
+				WeaponType.Position = UDim2.new(0.757278681, 0, 0.0858655497, 0)
+				WeaponType.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
 
-		-- we cant do anything about the image
-		-- we'll have a placeholder.
-		-- TODO) make icons for each card
+				ImageLabel.Parent = WeaponType
+				ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+				ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				ImageLabel.BackgroundTransparency = 1.000
+				ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				ImageLabel.BorderSizePixel = 0
+				ImageLabel.Position = UDim2.new(0.293805778, 0, 0.484785527, 0)
+				ImageLabel.Size = UDim2.new(0.103226088, 0, 0.269325286, 0)
+				ImageLabel.Image = "rbxassetid://10734975486"
 
-		local passiveDisplay = loadoutFolder:FindFirstChild("Passive") :: card_display
-		passiveDisplay = passiveDisplay:Clone()
-		passiveDisplay.TextLabel = lib.PassiveModuleName or "None"
+				AspectRatio.Name = "AspectRatio"
+				AspectRatio.Parent = ImageLabel
 
-		local attackDisplay = loadoutFolder:FindFirstChild("Attack") :: card_display
-		attackDisplay = attackDisplay:Clone()
-		attackDisplay.Parent = holder
+				UICorner.CornerRadius = UDim.new(0.139130428, 0)
+				UICorner.Parent = WeaponType
 
-		-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype
+				TextLabel.Parent = WeaponType
+				TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+				TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				TextLabel.BackgroundTransparency = 1.000
+				TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				TextLabel.BorderSizePixel = 0
+				TextLabel.Position = UDim2.new(0.547556996, 0, 0.4953219, 0)
+				TextLabel.Size = UDim2.new(0.40460676, 0, 0.355981946, 0)
+				TextLabel.Font = Enum.Font.Gotham
+				TextLabel.Text = "Sword"
+				TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				TextLabel.TextSize = 12.000
+				TextLabel.TextWrapped = true
+
+				AspectRatio_2.Name = "AspectRatio"
+				AspectRatio_2.Parent = TextLabel
+				AspectRatio_2.AspectRatio = 2.965
+
+				AspectRatio_3.Name = "AspectRatio"
+				AspectRatio_3.Parent = WeaponType
+				AspectRatio_3.AspectRatio = 2.609
+
+				base = WeaponType
+			else
+				local FlavorText = Instance.new("Frame")
+				local UICorner = Instance.new("UICorner")
+				local TextLabel = Instance.new("TextLabel")
+				local AspectRatio = Instance.new("UIAspectRatioConstraint")
+				local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
+
+				--Properties:
+
+				FlavorText.Name = ""
+				FlavorText.Parent = ancestor or ReplicatedStorage
+				FlavorText.AnchorPoint = Vector2.new(0.5, 0.5)
+				FlavorText.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
+				FlavorText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				FlavorText.BorderSizePixel = 0
+				FlavorText.Position = UDim2.new(0.238476574, 0, 0.0858655497, 0)
+				FlavorText.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
+
+				UICorner.CornerRadius = UDim.new(0.139130428, 0)
+				UICorner.Parent = FlavorText
+
+				TextLabel.Parent = FlavorText
+				TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+				TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+				TextLabel.BackgroundTransparency = 1.000
+				TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+				TextLabel.BorderSizePixel = 0
+				TextLabel.Position = UDim2.new(0.50702697, 0, 0.497070491, 0)
+				TextLabel.Size = UDim2.new(0.98594588, 0, 1.00585902, 0)
+				TextLabel.Font = Enum.Font.Unknown
+				TextLabel.Text = ""
+				TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+				TextLabel.TextSize = 12.000
+				TextLabel.TextWrapped = true
+
+				AspectRatio.Name = "AspectRatio"
+				AspectRatio.Parent = TextLabel
+				AspectRatio.AspectRatio = 2.557
+
+				AspectRatio_2.Name = "AspectRatio"
+				AspectRatio_2.Parent = FlavorText
+				AspectRatio_2.AspectRatio = 2.609
+
+				base = FlavorText
+			end
+
+			return base
+		end
+
+		local typewriteController = markdown.typewriter.new()
+
+		-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype(icon)
+		local markdown_controller = {
+			attack_controller = markdown.new(lib.MovesetName),
+			flavor_controller = markdown.new(lib.FlavorText),
+			m1_controller = markdown.new(lib.Moveset.M1),
+			passive_controller = markdown.new(lib.PassiveModuleName),
+			skill_controller = markdown.new(lib.Moveset.Skill),
+			support_controller = markdown.new(lib.Moveset.Support),
+			ultimate_controller = markdown.new(lib.Moveset.Ultimate),
+			weapon_controller = markdown.new(lib.WeaponType),
+		}
+
+		-- start
+		local flavorDisplay = createCard(false, holder)
+		flavorDisplay.TextLabel.FontFace =
+			Font.fromName("Montserrat", Enum.FontWeight.Regular, Enum.FontStyle.Italic)
+
+		flavorDisplay.TextLabel.TextWrapped = true
+		flavorDisplay.TextLabel.RichText = true
+
+		typewriteController:Play(
+			flavorDisplay.TextLabel,
+			markdown_controller.flavor_controller:Get(markdown_controller.flavor_controller, {
+				cps = 45,
+				instantFinishKey = Enum.KeyCode.Space,
+				cursor = "|",
+				cursorTween = true,
+				perCharSound = audio:_getSoundById(9055474333),
+				respectNewlines = false, -- converts \n to <br/>
+				punctuationPauses = {
+					[","] = 0.06,
+					["."] = 0.25,
+					["?"] = 0.18,
+					["!"] = 0.18,
+				},
+			})
+		)
 	end
 
 	updatePfp()
+	promise.new(updateDetails):catch(warn)
 
 	UserInputService.WindowFocusReleased:Connect(updatePfp)
 end
@@ -1133,8 +1246,8 @@ print("game camera")
 animate.initialize()
 print("animate initialized")
 
-local rain_controller = rain.new()
-rain_controller:Start(rain_controller)
+-- local rain_controller = rain.new()
+-- rain_controller:Start(rain_controller)
 
 print("rain controller")
 
@@ -1204,9 +1317,9 @@ Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
 	--audio:Cleanup()
 	movementController:Destroy()
-	rain_controller:Destroy(rain_controller)
 	footsteps._trove:Clean()
 	music.cleanup()
+	freefalling._trove:Destroy()
 end)
 
 local interfaceEndTime = os.clock()

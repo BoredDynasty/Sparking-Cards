@@ -33,8 +33,12 @@ local function getMaterial()
 	local floorMaterial = humanoid.FloorMaterial
 	floorMaterial = floorMaterial or Enum.Material.Air
 	local str = floorMaterial.Name
+
 	return str
 end
+
+local lastPosition = observer.new(rootPart.CFrame * CFrame.new(0, -3, 0))
+local distance = observer.new(0)
 
 state:Watch(function(newState, oldState)
 	local connection = nil
@@ -61,9 +65,6 @@ state:Watch(function(newState, oldState)
 		_trove:Add(dust)
 
 		local particle = dust:FindFirstChildOfClass("ParticleEmitter") :: ParticleEmitter
-
-		local lastPosition = observer.new(rootPart.CFrame * CFrame.new(0, -3, 0))
-		local distance = observer.new(0)
 
 		local PARTICLES_PER_STUD = 3
 

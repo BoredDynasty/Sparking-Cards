@@ -57,7 +57,7 @@ return {
 	-- Template
 	Cards = {
 		Fire = 10,
-		Frost = 1,
+		Cryo = 1,
 		Plasma = 1,
 		Hydro = 0,
 	},
@@ -65,7 +65,7 @@ return {
 	Level = "Bronze I",
 	Experience = 0,
 	LastLogin = 0,
-	EquippedCard = "Frost",
+	EquippedCard = "Cryo",
 	victories = 0,
 	-- Other
 	options = {

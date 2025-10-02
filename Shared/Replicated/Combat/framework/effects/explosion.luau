@@ -80,7 +80,7 @@ local function kaboom(parameters: ExplodeEffect)
 	outerTween:Start()
 
 	-- Cleanup
-	local cleanupPromise = promise.new(function()
+	promise.new(function()
 		task.delay(parameters.duration, explodeEffect.Destroy)
 	end)
 end

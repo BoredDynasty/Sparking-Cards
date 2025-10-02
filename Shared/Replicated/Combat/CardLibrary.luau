@@ -9,15 +9,17 @@ export type Card = {
 	BaseDamageMultiplier: number, -- Base damage multiplier for this card's attacks
 	MaxCombo: number, -- Max M1 combo count for this weapon/card
 	MovesetName: string?,
+	FlavorText: string?,
 	TextColor: Color3?,
+	HighlightedFlavorTextTags: { string }?,
 	Moveset: {
-		M1: string, -- AttackName for the first M1 attack (e.g., "FrostGauntlet_M1_1")
-		Skill: string, -- AttackName for the E skill (e.g., "FrostGauntlet_IceShard_Skill")
-		Ultimate: string, -- AttackName for the Q ultimate (e.g., "FrostGauntlet_BlizzardRush_Ultimate")
+		M1: string, -- AttackName for the first M1 attack (e.g., "CryoGauntlet_M1_1")
+		Skill: string, -- AttackName for the E skill (e.g., "CryoGauntlet_IceShard_Skill")
+		Ultimate: string, -- AttackName for the Q ultimate (e.g., "CryoGauntlet_BlizzardRush_Ultimate")
 		Support: string?, -- Optional AttackName for the R support move
 		-- Potentially add M1_2, M1_3 etc. if combo pieces have unique AttackNames not covered by Orion's NextComboAttack
 	},
-	PassiveModuleName: string?, -- Optional name of the passive module associated with this card (e.g., "FrostArmor")
+	PassiveModuleName: string?, -- Optional name of the passive module associated with this card (e.g., "CryoArmor")
 	-- Other card-specific properties could include:
 	-- DefaultDamageValues: { M1 = 10, Skill = 25, Ultimate = 50, Support = 0 }?
 	-- DefaultCooldowns: { M1 = 0.5, Skill = 8, Ultimate = 20, Support = 15 }?
@@ -26,37 +28,67 @@ export type Card = {
 	-- StatusEffectOnHit: { Name: string, Chance: number, Duration: number, Potency: number }?,
 }
 
--- It's crucial that the AttackNames listed in Moveset (e.g., "FrostGauntlet_M1_1")
--- from the combat modules (e.g., Frost.moveset.M1) with Orion.RegisterAttack.
+-- It's crucial that the AttackNames listed in Moveset (e.g., "CryoGauntlet_M1_1")
+-- from the combat modules (e.g., Cryo.moveset.M1) with Orion.RegisterAttack.
 
 local CardLibrary: { [string]: Card } = {
-	FrostGauntlet = {
-		DisplayName = "Frost Gauntlet",
+	CryoGauntlet = {
+		DisplayName = "Cryo Gauntlet",
 		WeaponType = "Gauntlet",
+		MovesetName = "Glacial Emperor's Decree",
+		FlavorText = [[
+		The will of the tundra made manifest; where the Emperor treads, life itself slows to a halt.
+		]],
+		TextColor = Color3.fromRGB(100, 193, 255),
 		BaseDamageMultiplier = 1.0,
-		MaxCombo = 3,
+		MaxCombo = 7,
 		Moveset = {
-			M1 = "FrostGauntlet_M1_1",
-			Skill = "FrostGauntlet_IceShard_Skill",
-			Ultimate = "FrostGauntlet_BlizzardRush_Ultimate",
-			Support = "FrostGauntlet_CryoBarrier_Support",
+			M1 = "CryoGauntlet_M1_1",
+			Skill = "CryoGauntlet_IceShard_Skill",
+			Ultimate = "CryoGauntlet_Blizzard_Ultimate",
+			Support = "CryoGauntlet_Aegis_Support",
 		},
-		PassiveModuleName = "FrostArmor", -- Links to game/Server/Passives/FrostArmor.lua
+		PassiveModuleName = "PermaFrost",
 	},
-	FireSword = {
+	PyroSword = {
 		DisplayName = "Fiery Longsword",
 		WeaponType = "Sword",
 		MovesetName = "Conflagration of the Blazing Heart",
+		FlavorText = [[
+		A single spark, given the will to burn the world.
+		]],
+		HighlightedFlavorTextTags = {
+			"spark",
+			"burn",
+		},
 		TextColor = Color3.fromRGB(255, 88, 88),
 		BaseDamageMultiplier = 1.1,
 		MaxCombo = 4,
 		Moveset = {
-			M1 = "FireSword_M1_1",
-			Skill = "FireSword_BurningBlade_Skill",
-			Ultimate = "FireSword_InfernalSlash_Ultimate",
-			Support = "FireSword_HeatAura_Support",
+			M1 = "PyroSword_M1_1",
+			Skill = "PyroSword_BurningBlade_Skill",
+			Ultimate = "PyroSword_InfernalSlash_Ultimate",
+			Support = "PyroSword_HeatAura_Support",
 		},
-		PassiveModuleName = nil, -- Example: No passive, or passive name TBD
+		PassiveModuleName = "DrawIn",
+	},
+	HydroCatalyst = {
+		DisplayName = "Hydro Catalyst",
+		WeaponType = "Catalyst",
+		MovesetName = "Tidal Sovereign's Judgment",
+		FlavorText = [[
+		In the crushing darkness of the abyss, even light bends. Accept the judgment of the tides.
+		]],
+		TextColor = Color3.fromRGB(119, 151, 255),
+		BaseDamageMultiplier = 1.15,
+		MaxCombo = 3,
+		Moveset = {
+			M1 = "HydroCatalyst_WashingTide_1",
+			Skill = "HydroCatalyst_Vortex_Skill",
+			Ultimate = "HydroCatalyst_BlueTyphoon_Ultimate",
+			Support = "CryoGauntlet_TidalSurge_Support",
+		},
+		PassiveModuleName = "WaveRider",
 	},
 	ShadowPolearm = {
 		DisplayName = "ShadowReaper Polearm",

@@ -1,9 +1,11 @@
 --!nonstrict
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local TweenPlus = require(script.Parent.TweenPlus)
+local promise = require(ReplicatedStorage.Packages.promise)
 
 local Audio = {}
 Audio.SoundEffects = {}
@@ -26,6 +28,18 @@ function Audio._getSoundById(id: number | string): Sound?
 			sound = sounds:Clone()
 			break
 		end
+	end
+
+	if not sound and type(id) == "number" then
+		sound = Instance.new("Sound")
+
+		sound.Name = promise.retry(function(resolve: (any) -> ...unknown)
+			resolve(MarketplaceService:GetProductInfo(9055474333).Name)
+
+			return MarketplaceService:GetProductInfo(9055474333).Name
+		end, 15)
+		sound.Parent = ReplicatedStorage.Audio
+		sound.SoundId = id
 	end
 
 	return sound

@@ -75,7 +75,7 @@ local function preload()
 	local pre_allocated = 3000
 	local assets = table.create(pre_allocated) :: { Instance } -- pre-allocate approximate size
 	-- for a more accurate maxAssets count, make it asynchronous
-	gatherAssets(player, assets)
+	-- gatherAssets(player, assets)
 	gatherAssets(ReplicatedStorage, assets)
 
 	local maxAssets = #assets
@@ -92,9 +92,11 @@ local function preload()
 	local batches = {}
 	for i = 1, maxAssets, BATCH_SIZE do
 		local batch = table.create(BATCH_SIZE)
+
 		for j = i, math.min(i + BATCH_SIZE - 1, maxAssets) do
 			batch[#batch + 1] = assets[j]
 		end
+
 		batches[#batches + 1] = batch
 	end
 
@@ -140,6 +142,7 @@ local function preload()
 	end
 	table.clear(assets)
 	table.clear(batches)
+	table.clear(visited)
 	assets, batches = nil, nil
 
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)

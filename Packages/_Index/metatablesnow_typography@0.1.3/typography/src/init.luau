@@ -139,7 +139,4 @@ function Typography.Comment(text: string): string
 	return "<!--" .. text .. "-->"
 end
 
-script.Parent.Text =
-	Underline(Bold(Color(FontFace("Hello, World", Typography.Fonts.Inter), Color3.fromRGB(111, 255, 44))))
-
 return Typography

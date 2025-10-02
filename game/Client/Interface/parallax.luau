@@ -79,7 +79,6 @@ function Parallax.new(maxOffset: Vector2?)
 		MaxOffset = maxOffset or Vector2.new(20, 20),
 		MousePosition = Vector2.new(),
 		state = observer.new(false),
-		_connections = {},
 		_trove = trove.new(),
 	}, Parallax)
 

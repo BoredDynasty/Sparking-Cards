@@ -1,130 +1,216 @@
---!nonstrict
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+local observer = require(ReplicatedStorage.Utility.observer)
 local promise = require(ReplicatedStorage.Packages.promise)
-local statemachine = require(ReplicatedStorage.Utility.statemachine)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- Navi.luau
 
 -- all navigation rails must follow the same design principle.
 
 local navi = {
-	compiled = {},
+	tracked = {} :: { data },
 }
 
-local templates = (ReplicatedStorage.Interfaces :: Folder).Navi :: Folder
+export type data = {
+	rail: Frame,
+	railDescriptor: string,
+	buttons: {
+		[string]: {
+			state: observer.Observer<boolean>,
+			button_data: button_data,
+			callback: (unknown) -> unknown?,
+			disabledCallback: (unknown) -> unknown?,
+		},
+	},
+}
 
-export type button = {
+export type button_data = {
 	name: string,
-	icon: string,
+	icon: typeof(lucide.GetAsset("", 0)) | string,
 }
 
-export type buttonRendering = TextButton & {
-	Icon: ImageLabel,
-}
-
-export type signals = {
-	[TextButton]: SignalPlus.Signal<boolean, string>, -- toggled, signalname
-}
-
-function navi._createState(name: string): statemachine.State
-	return {
-		activated = {
-			onEnter = function()
-				print(name .. " has been activated")
-			end,
-			onExit = function()
-				print(name .. " has been de-activated")
-			end,
-			transitions = {
-				deactivated = "deactivated",
-			},
-		},
-		deactivated = {
-			onEnter = function()
-				-- print(name .. " has been de-activated")
-			end,
-			onExit = function()
-				-- print(name .. " has been activated")
-			end,
-			transitions = {
-				activated = "activated",
-			},
-		},
-	}
-end
-
-function navi.new(rail: Frame, defaultBtn: button?)
+function navi.new(
+	rail: Frame,
+	callback: (unknown) -> unknown?,
+	disabledCallback: (unknown) -> unknown?,
+	defaultBtn: button_data?,
+	overrideState: boolean?
+)
 	defaultBtn = defaultBtn or {
 		name = "Home",
 		icon = "rbxassetid://10723407389",
 	}
-	local name = defaultBtn.name
+
 	local railDescriptor = rail:GetFullName()
-	local states = navi._createState(name)
+
+	local state = observer.new(overrideState or false)
+
 	local tbl = {
 		rail = rail,
-		name = name,
 		railDescriptor = railDescriptor,
 		buttons = {
-			[name] = {
-				state = states,
+			[defaultBtn.name] = {
+				state = state,
+				button_data = defaultBtn,
+				callback = callback,
+				disabledCallback = disabledCallback,
 			},
 		},
 	}
-	table.insert(navi.compiled, tbl)
+	table.insert(navi.tracked, tbl)
 end
 
-function navi:render(): signals
-	local signals = {}
-	for _, button in ipairs(navi.compiled) do
-		print("Rendering button:", button.name)
-		-- Here you would add the actual rendering logic for each button
-		local buttonTemplate: buttonRendering = templates.ButtonTemplate:Clone() :: buttonRendering
-		buttonTemplate.Name = button.name
-		--buttonTemplate.Icon.Image = Content.none  -- filter out the prefix
-		buttonTemplate.Parent = button.rail
+function navi._render(ancestor: Instance?)
+	local ButtonTemplate = Instance.new("TextButton")
+	local UICorner = Instance.new("UICorner")
+	local Icon = Instance.new("ImageLabel")
+	local AspectRatio = Instance.new("UIAspectRatioConstraint")
+	local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
 
-		signals[button.name] = SignalPlus()
+	--Properties:
 
-		buttonTemplate.MouseButton1Click:Connect(function()
-			print("Button clicked:", button.name)
-			audio:SFX("click")
-			button.state:transition("activated")
-			for _, otherButton in ipairs(navi.compiled) do
-				if otherButton ~= button then
-					otherButton.state:transition("deactivated")
-				end
+	ButtonTemplate.Name = "ButtonTemplate"
+	ButtonTemplate.Parent = ancestor or ReplicatedStorage
+	ButtonTemplate.AnchorPoint = Vector2.new(0.5, 0.5)
+	ButtonTemplate.BackgroundColor3 = Color3.fromRGB(93, 64, 55)
+	ButtonTemplate.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	ButtonTemplate.BorderSizePixel = 0
+	ButtonTemplate.Position = UDim2.new(0, 25, 0, 25)
+	ButtonTemplate.Size = UDim2.new(0.877192974, 0, 0.108225107, 0)
+	ButtonTemplate.Font = Enum.Font.SourceSans
+	ButtonTemplate.Text = ""
+	ButtonTemplate.TextColor3 = Color3.fromRGB(0, 0, 0)
+	ButtonTemplate.TextSize = 14.000
+
+	UICorner.CornerRadius = UDim.new(1, 0)
+	UICorner.Parent = ButtonTemplate
+
+	Icon.Name = "Icon"
+	Icon.Parent = ButtonTemplate
+	Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+	Icon.BackgroundTransparency = 1.000
+	Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	Icon.Size = UDim2.new(0.400000006, 0, 0.400000006, 0)
+	Icon.Image = "rbxassetid://10723407389"
+
+	AspectRatio.Name = "AspectRatio"
+	AspectRatio.Parent = Icon
+	AspectRatio.DominantAxis = Enum.DominantAxis.Height
+
+	AspectRatio_2.Name = "AspectRatio"
+	AspectRatio_2.Parent = ButtonTemplate
+	AspectRatio_2.AspectRatio = 1.000
+
+	return ButtonTemplate
+end
+
+function navi:add(
+	rail: Frame,
+	name: string,
+	icon: typeof(lucide.GetAsset("", 0)) | string,
+	callback: (unknown) -> unknown?,
+	disabledCallback: (unknown) -> unknown?,
+	overrideState: boolean?
+)
+	local tbl = nil :: data?
+
+	for i, data in ipairs(navi.tracked) do
+		if data.railDescriptor == rail:GetFullName() then
+			tbl = data
+		else
+			continue
+		end
+	end
+
+	if not tbl then
+		return
+	end
+
+	tbl.buttons[name] = {
+		state = observer.new(overrideState or false),
+		button_data = {
+			name = name,
+			icon = icon,
+		},
+		callback = callback,
+		disabledCallback = disabledCallback,
+	}
+end
+
+function navi:remove(rail: Frame, name: string)
+	for i, data in ipairs(navi.tracked) do
+		if data.railDescriptor == rail:GetFullName() then
+			if data.buttons[name] then
+				data.buttons[name].state:Destroy()
+				data.buttons[name] = nil
+			else
+				return
 			end
-			promise.retryWithDelay(function()
-				button.signal:Fire(true, button.name)
-			end, 3, 3)
-		end)
-		buttonTemplate.MouseEnter:Connect(function()
-			audio:SFX("hover")
-			TweenPlus(buttonTemplate.Icon, {
-				Rotation = 5,
-			}, {
-				Time = 0.4,
-				Easing = Enum.EasingStyle.Back,
-				Direction = Enum.EasingDirection.Out,
-			}):Start()
-		end)
-		buttonTemplate.MouseLeave:Connect(function()
-			TweenPlus(buttonTemplate.Icon, {
-				Rotation = 0,
-			}, {
-				Time = 0.4,
-				Easing = Enum.EasingStyle.Back,
-				Direction = Enum.EasingDirection.Out,
-			}):Start()
+		else
+			continue
+		end
+	end
+end
+
+function navi:render(rail: Frame)
+	local tbl = nil :: data?
+
+	for i, data in ipairs(navi.tracked) do
+		if data.railDescriptor == rail:GetFullName() then
+			tbl = data
+		end
+	end
+
+	if not tbl then
+		return
+	end
+
+	for i, data in tbl.buttons do
+		local btn = navi._render(tbl.rail)
+
+		promise
+			.new(function()
+				btn.Icon.Image = if typeof(data.button_data.icon) == "string"
+					then data.button_data.icon
+					else "rbxassetid://" .. data.button_data.icon.Id
+			end)
+			:catch(warn)
+		if tbl.buttons[i].state:Get() == true then
+			-- if overrid
+			spr.target(btn, 0.8, 0.3, {
+				Size = UDim2.fromScale(btn.Size.X.Scale * 1.2, btn.Size.Y.Scale * 1.2),
+			})
+			-- when already overrid, the callback should've already been in effect.
+		end
+
+		data.state:Watch(function(newValue: boolean, oldValue: boolean)
+			if newValue then
+				spr.target(btn, 0.8, 0.3, {
+					Size = UDim2.fromScale(btn.Size.X.Scale * 1.2, btn.Size.Y.Scale * 1.2),
+				})
+				promise
+					.new(function()
+						data.callback()
+					end)
+					:catch(warn)
+			elseif not newValue and oldValue then
+				spr.target(btn, 0.8, 0.3, {
+					Size = UDim2.fromScale(btn.Size.X.Scale / 1.2, btn.Size.Y.Scale / 1.2),
+				})
+				promise
+					.new(function()
+						data.disabledCallback()
+					end)
+					:catch(warn)
+			end
 		end)
 	end
-	return signals
 end
 
 return navi

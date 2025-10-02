@@ -23,10 +23,7 @@ local orion = {
 	libray = CardLibrary,
 }
 
-local attack_modules = {
-	Frost = require(orion.framework.attacks.Frost),
-	Hydro = require(orion.framework.attacks.Hydro),
-}
+local attack_modules = {}
 
 local events = ReplicatedStorage.Events
 
@@ -67,8 +64,8 @@ function orion.registerPlayer(
 		profile = expectProfile()
 	end
 
-	local equippedCard = if profile then profile.Data.EquippedCard else "Frost"
-	-- if the profile exists, use the current existing card, else use the "Frost" placeholder
+	local equippedCard = if profile then profile.Data.EquippedCard else "Cryo"
+	-- if the profile exists, use the current existing card, else use the "Cryo" placeholder
 
 	-- change
 	local states = {

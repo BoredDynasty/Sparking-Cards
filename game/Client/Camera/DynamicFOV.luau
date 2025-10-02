@@ -8,7 +8,6 @@
 ]=]
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
 local CameraConfig = require(ReplicatedStorage.Structures.CameraConfig)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
