@@ -11,9 +11,9 @@ local UserInputService = game:GetService("UserInputService")
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local Sprint = {}
 Sprint.__index = Sprint
@@ -33,7 +33,7 @@ function Sprint.new(movementController)
 	self._originalWalkSpeed = MovementConfig.Character.BaseSpeed
 	self._sprintWalkSpeed = self._originalWalkSpeed + self._config.SpeedIncrease
 
-	self._originalFOV = gamecamera:GetBaseFOV()
+	self._originalFOV = 70
 	self._sprintFOV = self._originalFOV + self._config.FieldOfViewIncrease
 
 	animate.loadAnimation("run", MovementConfig.Animations.Run)
@@ -73,7 +73,7 @@ function Sprint:Start()
 	self._character:SetAttribute("AntiRegenerate", true)
 	animate.play("run", 0.25)
 
-	gamecamera:TweenFOV(self._sprintFOV, 0.5)
+	-- tween fovspr.target(self._sprintFOV, 0.5, gamecamera.getFOV, gamecamera.setFOV)
 
 	dialogue.client:speak({
 		speaker = "You",

@@ -49,7 +49,7 @@ function keybind_link:_createTemplate(ancestor: Instance?)
 	--Properties:
 
 	Template.Name = "Template"
-	Template.Parent = ancestor or workspace
+	Template.Parent = if ancestor ~= nil then ancestor else ReplicatedStorage
 	Template.AnchorPoint = Vector2.new(0.5, 0.5)
 	Template.BackgroundColor3 = Color3.fromRGB(26, 17, 15)
 	Template.BorderColor3 = Color3.fromRGB(0, 0, 0)
@@ -236,14 +236,20 @@ function keybind_link:setText(self: metatable, text: string)
 		WordSorting = true,
 		Dynamic = true,
 	})
+
 	characterIteration:jump(label)
 end
 
 function keybind_link:autoSetImage(self: metatable)
 	local key_down_conn = (self._keyboard_object.KeyDown :: RBXScriptSignal<Enum.KeyCode>):Connect(
-		function(key)
-			local key_image = self._interface:WaitForChild("ButtonImage") :: ImageLabel
-			local key_label = self._interface:WaitForChild("ButtonName") :: TextLabel
+		function(key: Enum.KeyCode)
+			local key_image = self._interface:WaitForChild("ButtonImage", 5) :: ImageLabel
+			local key_label = self._interface:WaitForChild("ButtonName", 5) :: TextLabel
+
+			if not key_image or not key_label then
+				warn("couldnt get: key_image or key_label: ", key_image, key_label)
+				return
+			end
 
 			local icon_data = get_raw_icon_data()
 

@@ -1,184 +1,219 @@
 --!strict
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local audio = require(ReplicatedStorage.Modules.audio)
-local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
+local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local promise = require(ReplicatedStorage.Packages.promise)
+local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 
--- Options.luau
+-- options.luau
 
-local Options = {}
-Options.created = {}
-
-export type Option = {
-	name: string,
-	description: string,
-	toggleFunctions: {
-		on: (self: optionTemplate) -> boolean,
-		off: (self: optionTemplate) -> boolean,
-	}?,
-	icons: {
-		on: string?,
-		off: string?,
-	}?,
-	reactor: observer.Observer<string>,
-	interface: optionTemplate?,
+local options = {
+	tracked = {},
+	limit = ratelimit(1, 3),
 }
 
-export type Icons = {
-	on: string?,
-	off: string?,
-}?
+export type data = {
+	name: string,
+	description: string,
+	state: observer.Observer<boolean>,
+	functions: {
+		on: (newValue: any) -> (),
+		off: (newValue: any) -> (),
+		toggle: () -> (),
+	},
+	icons: {
+		on: string,
+		off: string,
+	}?,
+	override: "on" | "off" | nil,
+}
 
-export type optionTemplate = Frame & {
+export type settingUI = Frame & {
 	Frame: Frame & {
-		TextDisplay: Frame,
+		TextDisplay: TextLabel,
 	},
 	Toggle: TextButton & {
 		Icon: ImageLabel,
 	},
+	OptionTemplate: Frame,
 }
 
-local DEFAULT_ICONS = {
-	on = "rbxassetid://10747384394",
-	off = "rbxassetid://7733715400",
-}
+function options.new(data: data)
+	if not data.icons then
+		data.icons = {
+			on = "rbxassetid://10709790644",
+			off = "rbxassetid://10747384394",
+		}
+	end
 
-local templates = (ReplicatedStorage.Interfaces :: Folder).Options :: Folder
-local player = playerMarshaller.get()
-local optionsGui = player.PlayerGui:WaitForChild("Options") :: ScreenGui
-local optionsCanvas = optionsGui:WaitForChild("CanvasGroup") :: CanvasGroup
-local optionsFrame = optionsCanvas:WaitForChild("Frame") :: Frame
-local holder = optionsFrame:WaitForChild("Holder") :: ScrollingFrame
-local optionTemplate = templates:WaitForChild("OptionTemplate") :: optionTemplate
+	table.insert(options.tracked, data)
 
-local function createOptionInterface(option: Option): optionTemplate
-	local interface: optionTemplate = optionTemplate:Clone()
-	interface.Name = option.name
-	interface.Parent = holder
-
-	local textDisplay = interface.Frame.TextDisplay
-
-	-- Create text display with TextPlus
-	TextPlus.Create(textDisplay, `{option.name}{"\n\n\n"}{option.description or " "}`, {
-		Font = Font.new(
-			"rbxasset://fonts/families/Montserrat.json",
-			Enum.FontWeight.Regular,
-			Enum.FontStyle.Normal
-		),
-		Size = 16,
-		Color = Color3.fromHex("#ffffff"),
-		XAlignment = "Left",
-		YAlignment = "Center",
-		LineSorting = true,
-		WordSorting = true,
-		Dynamic = true,
-	})
-
-	coroutine.wrap(function()
-		-- Style the title text (first line)
-		local line1 = characterIteration.getLine(textDisplay, 1)
-		characterIteration:bolden(line1)
-
-		-- Style the description text (second line)
-		local line2 = characterIteration.getLine(textDisplay, 2)
-		characterIteration:regularize(line2)
-	end)
-
-	return interface
+	return data
 end
 
-function Options:create(name: string, description: string, toggleFunctions, icons: Icons?)
-	local option: Option = {
-		name = name,
-		description = description,
-		toggleFunctions = toggleFunctions,
-		icons = icons or DEFAULT_ICONS,
-		reactor = observer.new("off"),
-	}
-
-	option.interface = createOptionInterface(option)
-	Options.created[name] = option
-
-	return option
-end
-
-function Options:render()
-	for _, option in pairs(Options.created :: { Option }) do
-		if not option.interface then
-			continue
+function options:get(name: string): data?
+	for _, option in ipairs(options.tracked :: { data }) do
+		if option.name == name then
+			return option
 		end
+	end
 
-		local toggle = option.interface.Toggle
+	return nil
+end
 
-		toggle.Activated:Connect(function()
-			local newState = option.reactor:Get() == "on" and "off" or "on"
-			option.reactor:Set(newState)
-			audio:SFX("click")
-		end)
+function options:all(): { data }
+	return options.tracked
+end
 
-		toggle.MouseEnter:Connect(function()
-			audio:SFX("hover")
-		end)
-
-		toggle.MouseLeave:Connect(function()
-			audio:SFX("hover")
-		end)
-
-		option.reactor:Watch(function(newState: string)
-			local icon = if newState == "on"
-				then option.icons.on or DEFAULT_ICONS.on
-				else option.icons.off or DEFAULT_ICONS.off
-
-			toggle.Icon.Image = icon
-
-			if option.toggleFunctions then
-				if newState == "on" then
-					option.toggleFunctions.on(option.interface)
-				else
-					option.toggleFunctions.off(option.interface)
-				end
-			end
-		end)
+function options:reset()
+	for _, option in ipairs(options.tracked :: { data }) do
+		option.state:Set(false)
 	end
 end
 
-function Options:toggle(optionName: string)
-	local option = Options.created[optionName] :: Option
-	local value = nil
+function options:enable(name: string)
+	local option = options:get(name)
 	if option then
-		local newState = option.reactor:Get() == "on" and "off" or "on"
-		option.reactor:Set(newState)
-
-		value = option.reactor:Get()
-	end
-	return value
-end
-
-function Options:clear()
-	for _, option in pairs(Options.created :: { Option }) do
-		if option.interface then
-			option.interface:Destroy()
-		end
-	end
-	table.clear(Options.created :: { Option })
-end
-
-function Options:hide()
-	if optionsGui then
-		optionsGui.Enabled = false
+		option.state:Set(true)
 	end
 end
 
-function Options:show()
-	if optionsGui then
-		optionsGui.Enabled = true
+function options:disable(name: string)
+	local option = options:get(name)
+	if option then
+		option.state:Set(false)
 	end
 end
 
-return Options
+function options:toggle(name: string)
+	local option = options:get(name)
+	if option then
+		option.state:Set(not option.state:Get())
+	end
+end
+
+function options:create_setting(ancestor: Instance?): settingUI
+	-- Instances:
+
+	local OptionTemplate = Instance.new("Frame")
+	local Frame = Instance.new("Frame")
+	local UICorner = Instance.new("UICorner")
+	local TextDisplay = Instance.new("TextLabel")
+	local Toggle = Instance.new("TextButton")
+	local UICorner_2 = Instance.new("UICorner")
+	local Icon = Instance.new("ImageLabel")
+	local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+	local UICorner_3 = Instance.new("UICorner")
+
+	--Properties:
+
+	OptionTemplate.Name = "OptionTemplate"
+	OptionTemplate.Parent = ancestor or ReplicatedStorage
+	OptionTemplate.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	OptionTemplate.BackgroundTransparency = 1.000
+	OptionTemplate.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	OptionTemplate.BorderSizePixel = 0
+	OptionTemplate.Position = UDim2.new(-4.00597671e-08, 0, 0, 0)
+	OptionTemplate.Size = UDim2.new(0, 518, 0, 100)
+
+	Frame.Parent = OptionTemplate
+	Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Frame.BackgroundTransparency = 1.000
+	Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Frame.BorderSizePixel = 0
+	Frame.Position = UDim2.new(0.0354033373, 0, 0.150000006, 0)
+	Frame.Size = UDim2.new(0.647876382, 0, 0.699999988, 0)
+
+	UICorner.CornerRadius = UDim.new(0.319999993, 0)
+	UICorner.Parent = Frame
+
+	TextDisplay.Name = "TextDisplay"
+	TextDisplay.Parent = Frame
+	TextDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
+	TextDisplay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	TextDisplay.BackgroundTransparency = 1.000
+	TextDisplay.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	TextDisplay.BorderSizePixel = 0
+	TextDisplay.Position = UDim2.new(0.5, 0, 0.5, 0)
+	TextDisplay.Size = UDim2.new(1, 0, 1, 0)
+	TextDisplay.Font = Enum.Font.Gotham
+	TextDisplay.Text = "option"
+	TextDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
+	TextDisplay.TextSize = 14.000
+
+	Toggle.Name = "Toggle"
+	Toggle.Parent = OptionTemplate
+	Toggle.BackgroundColor3 = Color3.fromRGB(143, 76, 56)
+	Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Toggle.BorderSizePixel = 0
+	Toggle.Position = UDim2.new(0.720077217, 0, 0.150000006, 0)
+	Toggle.Size = UDim2.new(0, 130, 0, 70)
+	Toggle.Font = Enum.Font.SourceSans
+	Toggle.Text = ""
+	Toggle.TextColor3 = Color3.fromRGB(0, 0, 0)
+	Toggle.TextSize = 14.000
+
+	UICorner_2.CornerRadius = UDim.new(0.319999993, 0)
+	UICorner_2.Parent = Toggle
+
+	Icon.Name = "Icon"
+	Icon.Parent = Toggle
+	Icon.BackgroundTransparency = 1.000
+	Icon.Position = UDim2.new(0.423076928, 0, 0.357142866, 0)
+	Icon.Size = UDim2.new(0, 20, 0, 20)
+	Icon.Image = "rbxassetid://10747384394"
+
+	UIAspectRatioConstraint.Parent = Icon
+
+	UICorner_3.CornerRadius = UDim.new(0.319999993, 0)
+	UICorner_3.Parent = OptionTemplate
+
+	return OptionTemplate
+end
+
+function options:render(ancestor: Instance)
+	for i, option in ipairs(options.tracked :: { data }) do
+		local template = options:create_setting()
+
+		local label = template.Frame.TextDisplay
+		local typewriter = markdown.typewriter.new()
+
+		typewriter:Play(label, option.name .. "\n\n" .. option.description)
+
+		local uri = option.icons and option.icons[option.override or "off"] or ""
+		local iconContent = Content.fromUri(uri) or Content.none
+		template.Toggle.Icon.ImageContent = iconContent
+
+		template.Toggle.MouseButton1Click:Connect(function()
+			if not options.limit(template:GetFullName()) then
+				print("cooldown: ", template:GetFullName())
+				return
+			end
+
+			option.functions[if option.state:Get() == false then "off" else "on"]()
+
+			pop(template.Toggle, 1.1)
+
+			option.state:Set(not option.state:Get())
+		end)
+
+		option.state:Watch(function(newValue: boolean)
+			local newUri = option.icons and option.icons[if newValue then "on" else "off"] or ""
+			local newIconContent = Content.fromUri(newUri) or Content.none
+			template.Toggle.Icon.ImageContent = newIconContent
+		end)
+
+		template.Parent = ancestor
+	end
+end
+
+function options:destroy()
+	for i, option in ipairs(options.tracked :: { data }) do
+		option.state:Destroy()
+	end
+	table.clear(options.tracked)
+end
+
+return options

@@ -20,8 +20,8 @@ local character = player.Character
 local rootPart = character.HumanoidRootPart
 local humanoid = character.Humanoid
 
-local swayVector = Vector2.zero
-local bobbleVector = Vector2.zero
+local swayVector = Vector2.one
+local bobbleVector = Vector2.one
 
 local swaySpeed = 2.5
 
@@ -35,6 +35,10 @@ export type objectList = {
 --local list: objectList = {}
 
 local function renderStepped(deltaTime: number, canvas: CanvasGroup | Frame, initialPosition: UDim2)
+	if not initialPosition then
+		return
+	end
+
 	local delta = UserInputService:GetMouseDelta()
 
 	local currentTime = tick()
@@ -53,7 +57,9 @@ local function renderStepped(deltaTime: number, canvas: CanvasGroup | Frame, ini
 		canvas.Position = initialPosition
 			+ UDim2.fromOffset(bobbleVector.X + swayVector.X, bobbleVector.Y + swayVector.Y)
 	else
-		canvas.Position = initialPosition + UDim2.fromOffset(swayVector.X, swayVector.Y)
+		if swayVector and swayVector.X and swayVector.Y then
+			canvas.Position = initialPosition + UDim2.fromOffset(swayVector.X, swayVector.Y)
+		end
 	end
 end
 

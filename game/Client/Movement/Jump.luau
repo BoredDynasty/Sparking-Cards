@@ -110,7 +110,7 @@ function Jump:_connectLanding()
 		if newState == Enum.HumanoidStateType.Landed then
 			-- Landing mechanic
 			gamecamera:Shake(1.2, 0.2)
-			audio:SFX("LandingSound", 150324322)
+			audio:SFX(150324322)
 		end
 	end)
 end

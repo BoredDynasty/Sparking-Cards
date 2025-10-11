@@ -2,15 +2,16 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local SoundService = game:GetService("SoundService")
+local _SoundService = game:GetService("SoundService")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local _SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local _characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local _space = require(ReplicatedStorage.Modules.Serialization.space)
 local audio = require(ReplicatedStorage.Modules.audio)
 local boundingbox = require(ReplicatedStorage.Classes.boundingbox)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local observer = require(ReplicatedStorage.Utility.observer)
 local random = require(ReplicatedStorage.Utility.random)
-local space = require(ReplicatedStorage.Modules.Serialization.space)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- music.luau
@@ -38,10 +39,11 @@ local trove = require(ReplicatedStorage.Packages.trove)
 ]]
 local music = {
 	biomes = {},
-	playing = observer.new({}),
+	playing = observer.new({}) :: observer.Observer<{ trackData }>,
 	_trove = trove.new(),
-	_currentBiome = "",
+	_currentBiome = "" :: string?,
 	_currentTrack = nil,
+	updated = SignalPlus(),
 }
 
 export type trackData = {
@@ -90,14 +92,30 @@ function music.startTracking()
 		hrp = character:WaitForChild("HumanoidRootPart")
 	end)
 
-	-- Track position and check biomes
-	music._trove:Connect(RunService.Heartbeat, function()
-		local position = space.toVec(hrp.Position)
+	-- Track position and check biomes less frequently
+	local lastCheck: number = 0.0
+	local checkInterval = 0.25 -- seconds
+	local lastPosition: Vector3? = nil
+	music._trove:Connect(RunService.Heartbeat, function(dt: number)
+		debug.profilebegin("music-track")
+
+		lastCheck += dt :: number
+		if lastCheck < checkInterval then
+			return
+		end
+		lastCheck = 0
+
+		local position = hrp.Position
+		if lastPosition and (position - lastPosition).Magnitude < 1 then
+			return
+		end
+		lastPosition = position
 
 		-- Check if player is in any biome
 		local inAnyBiome = false
+		local positionVec = _space.toVec(position)
 		for name, biome in pairs(music.biomes) do
-			if boundingbox.isPointInside(biome.boundingBox, position) then
+			if boundingbox.isPointInside(biome.boundingBox, positionVec) then
 				inAnyBiome = true
 				-- Only start music if we're not already playing something
 				if music._currentBiome == "" then
@@ -108,11 +126,13 @@ function music.startTracking()
 			end
 		end
 
-		-- Stop music if player left all biomes
-		if not inAnyBiome and music._currentBiome ~= "" then
+		-- Stop music if player left the current biome
+		if not inAnyBiome and music._currentBiome ~= nil and music._currentBiome ~= "" then
 			music:stopCurrentTrack()
-			music._currentBiome = nil
+			music._currentBiome = ""
 		end
+
+		debug.profileend()
 	end)
 end
 
@@ -123,7 +143,7 @@ function music:playRandomTrack(biomeName: string)
 	end
 
 	-- Select random track
-	local track = tracks[random.integer(1, #tracks)]
+	local track = tracks[random.integer(1, #tracks)] :: trackData
 
 	-- Stop any currently playing track
 	if music._currentTrack then

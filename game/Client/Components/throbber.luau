@@ -6,6 +6,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local DisplayOrder = require(script.Parent.Parent.Interface.displayorder)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local pop = require("../Interface/pop")
 local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove).new()
@@ -21,27 +22,21 @@ return function(element: GuiObject, signal: SignalPlus.Signal<>)
 
 	loader.Visible = true
 	loader.Parent = element
-	loader.Position = DisplayOrder.canvasPositions.middle
+	loader.Position = UDim2.fromScale(0.5, 0.5)
 	pop(loader)
 
 	local circle = 360
 
-	trove:Connect(RunService.Heartbeat, function(deltaTime)
-		circle -= deltaTime * 360
-		if circle <= 0 then
-			circle = 360
-		end
-		loader.Rotation = circle
-	end)
+	local tween = TweenPlus(loader, { Rotation = circle }, { RepeatCount = math.huge, Time = 1 })
+	tween:Start()
 
 	trove:Add(loader)
 	trove:Add(signal)
+	trove:Add(tween)
 
-	trove:AddPromise(promise.new(function()
-		signal:Once(function()
-			pop(loader)
+	signal:Once(function()
+		pop(loader)
 
-			trove:Clean()
-		end)
-	end))
+		trove:Clean()
+	end)
 end

@@ -106,7 +106,7 @@ function sparkle._update()
 	local current_time = time()
 
 	for ancestor, config in sparkle.activeEmitters do
-		if not ancestor:IsDescendantOf(game) then
+		if ancestor then
 			sparkle.activeEmitters[ancestor] = nil
 			sparkle.sparkleCount[ancestor] = nil
 			sparkle.lastSpawnTimes[ancestor] = nil

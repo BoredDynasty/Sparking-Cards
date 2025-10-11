@@ -209,6 +209,7 @@ export type Controller = {
 	) -> nil,
 	Skip: (self: Controller) -> nil,
 	IsPlaying: (self: Controller) -> boolean,
+	Destroy: () -> (),
 }
 
 --[[
@@ -397,6 +398,17 @@ function Typewriter:Play(label: TextLabel | TextBox | TextButton, fullText: stri
 
 	if conn then
 		conn:Disconnect()
+	end
+end
+
+function Typewriter:Destroy()
+	if self._playing == true then
+		repeat
+			task.wait(1)
+		until not self._playing
+
+		-- defer to allow last processing
+		task.defer(setmetatable, self, nil)
 	end
 end
 

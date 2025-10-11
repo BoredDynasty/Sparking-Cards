@@ -2,6 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local observer = require(ReplicatedStorage.Utility.observer)
 local promise = require(ReplicatedStorage.Packages.promise)
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -104,16 +105,18 @@ function display_order:Watch()
 
 				canvas.Visible = true
 
-				spr.target(scale, 0.8, 0.8, {
+				spr.target(scale, 0.8, 1.5, {
 					Scale = 1,
 				})
+
+				custom_lighting.blur()
 			else
 				local scale = display_order._getScale(canvas)
 				if not scale then
 					return
 				end
 
-				spr.target(scale, 0.9, 0.6, {
+				spr.target(scale, 0.9, 1, {
 					Scale = 0,
 				})
 
@@ -124,6 +127,8 @@ function display_order:Watch()
 
 					canvas.Visible = false
 				end)
+
+				custom_lighting.unblur()
 			end
 		end)
 	end

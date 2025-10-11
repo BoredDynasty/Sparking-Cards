@@ -59,7 +59,7 @@ function CameraController:Add<T>(effectName: string, effectModule: T & cameraEff
 end
 
 function CameraController:Start()
-	local conn = RunService.RenderStepped:Connect(function(deltaTime)
+	local conn = RunService.RenderStepped:Connect(function(deltaTime: number)
 		debug.profilebegin("camera_update")
 		local cframe = self._camera.CFrame
 

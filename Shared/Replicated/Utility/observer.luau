@@ -42,6 +42,25 @@ end
 
 --[[
 	```luau
+
+	local scope = observer.scope(1, 2, "baller", "roblox", Axes.new(Enum.NormalId.Top))
+
+	-- creates multiple observers from a tuple
+
+]]
+function Observer.scope<T...>(...: T...): ...Observer<any>
+	local tuple = { ... }
+	local r = {}
+
+	for i, v in tuple do
+		r[i] = Observer.new(v)
+	end
+
+	return unpack(r)
+end
+
+--[[
+	```luau
 	local none = observer.None
 
 	-- An observer with no value.
@@ -178,6 +197,112 @@ end
 function Observer:Calculate<T>(fn: (current: T) -> T)
 	local newValue = fn(self:Get())
 	self:Set(newValue)
+end
+
+function Observer:__concat<T>(...: Observer<T>)
+	local scope = { ... }
+
+	local str = 0
+
+	for i, v in scope do
+		str ..= v:Get()
+	end
+
+	return str
+end
+
+function Observer:__add(...: Observer<number>)
+	local scope = { ... }
+
+	local sum = 0
+
+	for i, v in scope do
+		sum += v:Get()
+	end
+
+	return sum
+end
+
+function Observer:__sub(...: Observer<number>)
+	local scope = { ... }
+
+	local difference = 0
+
+	for i, v in scope do
+		difference -= v:Get()
+	end
+
+	return difference
+end
+
+function Observer:__mul(...: Observer<number>)
+	local scope = { ... }
+
+	local product = 0
+
+	for i, v in scope do
+		product *= v:Get()
+	end
+
+	return product
+end
+
+function Observer:__div(...: Observer<number>)
+	local scope = { ... }
+
+	local quotient = 0
+
+	for i, v in scope do
+		quotient /= v:Get()
+	end
+
+	return quotient
+end
+
+function Observer:__idiv(...: Observer<number>)
+	local scope = { ... }
+
+	local quotient = 0
+
+	for i, v in scope do
+		quotient //= v:Get()
+	end
+
+	return quotient
+end
+
+function Observer:__mod(...: Observer<number>)
+	local scope = { ... }
+
+	local remainder = 0
+
+	for i, v in scope do
+		remainder %= v:Get()
+	end
+
+	return remainder
+end
+
+function Observer:__pow(...: Observer<number>)
+	local scope = { ... }
+
+	local power = 0
+
+	for i, v in scope do
+		power ^= v:Get()
+	end
+
+	return power
+end
+
+function Observer:__tostring()
+	return tostring(self._value)
+end
+
+function Observer:__call(...: any)
+	if type(self._value) == "function" then
+		self._value(...)
+	end
 end
 
 function Observer:Destroy()

@@ -1,45 +1,18 @@
---!nonstrict
+--!strict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local statemachine = require(ReplicatedStorage.Utility.statemachine)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- Letterbox.luau
 
 local letterbox = {}
 
-local states = {
-	active = {
-		name = "active",
-		onEnter = function()
-			--
-		end,
-		onExit = function()
-			--
-		end,
-		transitions = {
-			inactive = "inactive",
-		},
-	},
-	inactive = {
-		name = "inactive",
-		onEnter = function()
-			--
-		end,
-		onExit = function()
-			--
-		end,
-		transitions = {
-			active = "active",
-		},
-	},
-}
-
-local _statemachine = statemachine.new(states, "inactive")
-
-letterbox.statemachine = _statemachine
+local state = observer.new(false)
+letterbox.state = state
 
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
@@ -55,35 +28,19 @@ export type Letterbox = ScreenGui & {
 	},
 }
 
-function letterbox:on()
-	if letterbox.statemachine:getCurrentState() == "active" then
-		return
+function letterbox:on(): { andThen: (text: string, area: ("Top" | "Bottom")?) -> () }?
+	if letterbox.state:Get() == true then
+		return nil
 	end
-	letterbox.statemachine:transition("active")
-	local tweens = table.create(2) :: { TweenPlus.Tween? }
-	table.insert(
-		tweens,
-		TweenPlus(gui.Top, {
-			Position = UDim2.fromScale(0.5, 0),
-		}, {
-			Time = 0.6,
-			EasingStyle = "Back",
-			EasingDirection = "Out",
-		})
-	)
-	table.insert(
-		tweens,
-		TweenPlus(gui.Bottom, {
-			Position = UDim2.fromScale(0.5, 1),
-		}, {
-			Time = 0.6,
-			EasingStyle = "Back",
-			EasingDirection = "Out",
-		})
-	)
-	for _, tween in ipairs(tweens) :: { TweenPlus.Tween } do
-		tween:Start()
-	end
+
+	letterbox.state:Set(true)
+
+	spr.target(gui.Top, 0.8, 1.5, {
+		Position = UDim2.fromScale(0.5, 0),
+	})
+	spr.target(gui.Bottom, 0.8, 1.5, {
+		Position = UDim2.fromScale(0.5, 1),
+	})
 	-- chainable
 	return {
 		andThen = function(text: string, area: ("Top" | "Bottom")?)
@@ -108,34 +65,17 @@ function letterbox:on()
 end
 
 function letterbox:off()
-	if letterbox.statemachine:getCurrentState() == "inactive" then
+	if letterbox.state:Get() == false then
 		return
 	end
-	letterbox.statemachine:transition("inactive")
-	local tweens = table.create(2) :: { TweenPlus.Tween? }
-	table.insert(
-		tweens,
-		TweenPlus(gui.Top, {
-			Position = UDim2.fromScale(0.5, -1),
-		}, {
-			Time = 0.6,
-			EasingStyle = "Back",
-			EasingDirection = "In",
-		})
-	)
-	table.insert(
-		tweens,
-		TweenPlus(gui.Bottom, {
-			Position = UDim2.fromScale(0.5, 2),
-		}, {
-			Time = 0.6,
-			EasingStyle = "Back",
-			EasingDirection = "In",
-		})
-	)
-	for _, tween in ipairs(tweens) :: { TweenPlus.Tween } do
-		tween:Start()
-	end
+	letterbox.state:Set(false)
+
+	spr.target(gui.Top, 0.8, 1.5, {
+		Position = UDim2.fromScale(0.5, -1),
+	})
+	spr.target(gui.Bottom, 0.8, 1.5, {
+		Position = UDim2.fromScale(0.5, 1.5),
+	})
 end
 
 return letterbox

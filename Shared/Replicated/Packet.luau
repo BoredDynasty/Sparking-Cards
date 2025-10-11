@@ -20,9 +20,10 @@ return bytenet.defineNamespace("MainNet", function()
 		areaCenter = bytenet.vec3, -- Center of the area to stream
 	})
 	local sendNotificationStruct = bytenet.struct({
-		message = bytenet.string, -- Notification message content
-		title = bytenet.optional(bytenet.string), -- Optional title for the notification
-		type = bytenet.optional(bytenet.string),
+		title = bytenet.string,
+		message = bytenet.string,
+		type = bytenet.string, -- "info", "success", "error", "warning", "draft"
+		duration = bytenet.optional(bytenet.int8), -- Duration in seconds
 	})
 	local buyCardStruct = bytenet.struct({
 		cardName = bytenet.string, -- Name/ID of the card to purchase

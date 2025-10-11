@@ -1,14 +1,14 @@
---!strict
+--!nonstrict
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local promise = require(ReplicatedStorage.Packages.promise)
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 
@@ -124,39 +124,70 @@ function hud:render()
 
 			audio:SFX("click")
 		end)
+
+		TextButton.MouseEnter:Connect(function()
+			-- mouse hover effect
+			spr.stop(TextButton, "Size")
+			spr.target(TextButton, 0.8, 8, {
+				BackgroundColor3 = Color3.fromRGB(170, 85, 65),
+				Size = UDim2.fromScale(TextButton.Size.X.Scale * 1.1, TextButton.Size.Y.Scale * 1.1),
+			})
+			audio:SFX("hover")
+		end)
+
+		TextButton.MouseLeave:Connect(function()
+			spr.stop(TextButton, "Size")
+			spr.target(TextButton, 0.8, 8, {
+				BackgroundColor3 = Color3.fromRGB(143, 76, 56),
+				Size = UDim2.fromScale(TextButton.Size.X.Scale / 1.1, TextButton.Size.Y.Scale / 1.1),
+			})
+			audio:SFX("hover", {
+				pitch = 0.8,
+			})
+		end)
 		button.reactor:Watch(function(newValue: boolean)
 			local oppositeValue = getOppositeReactorValue(button.reactor)
 			print("Button state changed:", oppositeValue, "->", newValue)
 
 			if button.callback then
-				button.callback()
+				promise.new(button.callback):catch(warn)
 			else
 				warn("No callback defined for button:", button.name)
 			end
 
 			-- tilt the icon
+			-- button size
 			if newValue then
 				spr.target(Icon, 0.8, 8, {
 					Rotation = 15,
 				})
+
+				--ripple()
 			else
 				spr.target(Icon, 0.8, 8, {
 					Rotation = 0,
 				})
 			end
 		end)
+
 		shadow(TextButton, Color3.new(), 0.5, 14)
 	end
 end
 
 function hud:toggle(buttonName: string)
 	local button: button? = nil
+
+	if not hud.buttons then
+		return
+	end
+
 	for _, b in pairs(hud.buttons) :: { button } do
 		if b.name == buttonName then
 			button = b
 			break
 		end
 	end
+
 	if button then
 		button.reactor:Set(getOppositeReactorValue(button.reactor))
 	end
@@ -164,7 +195,9 @@ end
 
 function hud:clear()
 	table.clear(hud.buttons)
+
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
+
 	for _, button in ipairs(hudContainer:GetChildren()) do
 		if button:IsA("TextButton") then
 			button:Destroy() -- Clear existing buttons

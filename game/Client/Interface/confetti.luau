@@ -10,8 +10,8 @@ local random = require(ReplicatedStorage.Utility.random)
 local random_seed = random.create()
 
 return function(colors: { Color3 }, container: Folder)
-	for _ = 1, 4, 1 do
-		for _ = 1, 20, 1 do
+	for i = 1, 4, 1 do
+		for j = 1, 20, 1 do
 			local newConfettiVisual = Instance.new("Frame")
 			newConfettiVisual.Size = UDim2.fromScale(0.09, 0.035)
 			local nextNumber = random_seed:integer(-0.3, 1.3)

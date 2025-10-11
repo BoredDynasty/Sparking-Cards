@@ -15,19 +15,18 @@ local UserInputService = game:GetService("UserInputService")
 
 -- // Requires -- //
 
-require("../Gameplay/CardAwarder")()
 local CameraController = require("../Camera/CameraController")
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
 local DynamicFOV = require("../Camera/DynamicFOV")
+local Letterbox = require(StarterPlayer.StarterPlayerScripts.Components.Letterbox)
 local Sway = require("../Camera/Sway")
 local Trail = require("../Camera/Trail")
-local footsteps = require("../Gameplay/footsteps")
-local freefalling = require(StarterPlayer.StarterPlayerScripts.Gameplay.freefalling)
+local market = require(StarterPlayer.StarterPlayerScripts.Components.market)
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
 local parallax = require("../Interface/parallax")
-local screen = require("../Gameplay/hint/screen")
-local sparkle = require("../Interface/sparkle")
+local sway = require("../Interface/sway")
+local throbber = require("../Components/throbber")
 print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
@@ -37,7 +36,6 @@ local Options = require("../Components/Options")
 local animate = require("../Utilities/animate")
 local ragdoll = require("../Modules/ragdoll")
 local swipe = require("../Interface/swipe")
-local typography = require(ReplicatedStorage.Packages.typography)
 print(1)
 
 -- Movement System
@@ -59,9 +57,8 @@ print(1)
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
-local dialog = require(script.Parent.Parent.Components.Dialog)
+local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
-local CardFactory = require(script.Parent.Parent.Interface.CardFactory)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
@@ -69,11 +66,12 @@ print(1)
 require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
 local input = require(ReplicatedStorage.Packages.input)
-local limits = require(script.Parent.Parent.Utilities.limits)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 print(1)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
-local rain = require(ReplicatedStorage.Environment.rain)
+local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local spr = require(ReplicatedStorage.Modules.spr)
 local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
@@ -86,8 +84,6 @@ print(3)
 local promise = require(ReplicatedStorage.Packages.promise)
 local shadow = require(script.Parent.Parent.Interface.shadow)
 print(4)
-local statemachine = require(ReplicatedStorage.Utility.statemachine)
-local sway = require(script.Parent.Parent.Interface.sway)
 print(5)
 local badges = require(ReplicatedStorage.Structures.badges)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -164,287 +160,9 @@ local function initializeMarket()
 
 	print("got market gui")
 
-	local function unloadShop()
-		for _, item in itemHolder:GetChildren() do
-			if item and item:IsA("Frame") then
-				item:Destroy()
-				task.wait()
-			end
-		end
-
-		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
-	end
-
-	local function displaySpendings()
-		local moneyFrame = spendings:FindFirstChild("Money") :: Frame
-
-		profile = expectProfile()
-
-		promise.new(function()
-			local text = ""
-			if profile then
-				text = tostring(profile.Data.Prisms)
-			else
-				text = "..."
-			end
-
-			TextPlus.Create(moneyFrame, text, {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.SemiBold, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 16,
-				Color = Color3.fromHex("#ffffff"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-		end)
-	end
-
-	task.spawn(displaySpendings)
-
-	shadow(shopFrame, Color3.new(), 0, 14)
-	shadow(shopNavigation, Color3.new(), 0, 14)
-	shadow(spendings, Color3.new(), 0, 14)
-
-	local function populateShop(t: Items.dataType?)
-		local newRelease = shopFrame:FindFirstChild("NewRelease") :: TextLabel
-		task.wait(unloadShop())
-		t = t or Items
-		for _, item in pairs(t) do
-			-- print("got item: " .. item.Name)
-			local itemTemplate = shopFolder:FindFirstChild("ItemTemplate") :: Frame & {
-				Title: Frame,
-				Price: Frame,
-				Buy: TextButton & {
-					TextHolder: Frame,
-				},
-				Test: TextButton,
-				Tags: Frame,
-			}
-			itemTemplate = itemTemplate:Clone()
-			itemTemplate:SetAttribute("name", item.Name)
-			itemTemplate.Parent = itemHolder
-
-			shadow(itemTemplate, Color3.new(), 0, 14)
-
-			local title = itemTemplate.Title
-			local price = itemTemplate.Price
-
-			local purchaseButton = itemTemplate.Buy
-			local experimentButton = itemTemplate.Test
-
-			TextPlus.Create(title, item.Name, {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.SemiBold, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 16,
-				Color = Color3.fromHex("#f5f5f5"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-			TextPlus.Create(price, "$" .. tostring(item.Price), {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.Regular, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 12.5,
-				Color = Color3.fromHex("#f5f5f5"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-
-			characterIteration:jump(title)
-			characterIteration:jump(price)
-
-			itemTemplate.Visible = true
-
-			--[[
-			sparkle:on(itemTemplate, {
-				rotation = true,
-			})
-
-			itemTemplate.Destroying:Once(function()
-				sparkle:off(itemTemplate)
-			end)
-			--]]
-
-			if item.ExperimentsEnabled == true then
-				experimentButton.Visible = true
-				experimentButton:FindFirstChildOfClass("ImageLabel").Visible = true
-				experimentButton.MouseButton1Click:Connect(function()
-					print("Testing card: " .. item.Name)
-					-- ts dont work yet lmao
-					-- but lets add a function
-					if not player then
-						return
-					end
-
-					local placeId = 90845913624517 -- Match
-
-					safeteleport(placeId, player, {
-						reserve_server = true,
-						data = {
-							identification1 = player.UserId,
-							testing_card = {
-								item,
-							},
-						},
-					})
-				end)
-			else
-				experimentButton.Visible = false
-			end
-
-			itemTemplate.Tags.Visible = false
-
-			print("setting up buttons")
-			local purchaseDebounce = false -- exception too
-			TextPlus.Create(purchaseButton:FindFirstChild("TextHolder") :: Frame, "Purchase", {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.Bold, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 12.5,
-				Color = Color3.fromHex("#f5f5f5"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-			purchaseButton.MouseEnter:Connect(function()
-				audio:SFX("hover")
-			end)
-			purchaseButton.MouseLeave:Connect(function()
-				audio:SFX("leave")
-			end)
-			purchaseButton.MouseButton1Click:Connect(function()
-				if purchaseDebounce == true then
-					return
-				end
-				print("Purchasing card: " .. item.Name)
-
-				Packet.BuyCard.send({ cardName = item.Name })
-
-				pop(purchaseButton)
-
-				audio:SFX("success")
-
-				purchaseDebounce = true
-
-				task.delay(0.5, function()
-					purchaseDebounce = false
-				end)
-			end)
-			print("done")
-			--task.wait()
-		end
-		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
-	end
-	local function populateInventory()
-		local unloaded = unloadShop()
-		task.wait(unloaded)
-
-		profile = expectProfile()
-		if not profile then
-			return
-		end
-
-		for itemName: string, i in pairs(profile.Data.Cards) do
-			-- print("got item: " .. itemName)
-			local itemTemplate = shopFolder:FindFirstChild("ItemTemplate") :: Frame & {
-				Title: Frame,
-				Price: Frame,
-				Buy: TextButton & {
-					TextHolder: Frame,
-				},
-				Test: TextButton,
-				Tags: Frame,
-			}
-			itemTemplate = itemTemplate:Clone()
-			itemTemplate.Parent = itemHolder
-
-			local title = itemTemplate.Title
-			local quantity = itemTemplate.Price
-
-			local sellButton = itemTemplate.Buy -- lol
-			local experimentButton = itemTemplate.Test
-
-			TextPlus.Create(title, itemName, {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.SemiBold, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 20,
-				Color = Color3.fromHex("#ffffff"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-			--title.Text = itemName
-			TextPlus.Create(quantity, "( <b>" .. tostring(i) .. "</b> )", {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.Regular, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 12.5,
-				Color = Color3.fromHex("#39302e"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-
-			characterIteration:jump(title)
-			characterIteration:jump(quantity)
-
-			itemTemplate.Visible = true
-
-			experimentButton.Visible = false
-			sellButton.Visible = true
-			sellButton.Text = "Sell"
-			sellButton.MouseButton1Click:Connect(function()
-				local dialog_title = "Slow down there!"
-				local description = [[
-				Are you sure you want to sell this Card? 
-				]] .. itemName
-				-- local folder_minus_icon = "rbxassetid://10723386127"
-				local result = dialog(dialog_title, description)
-				result:Once(function(a0: boolean)
-					if a0 == true then
-						Packet.SellCard.send({ cardName = itemName, playerInstance = player })
-						notify.success("Sold Card", `Successfully sold card`)
-					else
-						return
-					end
-				end)
-			end)
-			task.wait()
-		end
-	end
 	local function callback()
-		displayorder:toggle(shopCanvas)
-		populateShop()
+		market:display_spendings(expectProfile())
+		market:load_items()
 	end
 
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
@@ -456,22 +174,22 @@ local function initializeMarket()
 				name = "Home",
 				icon = "rbxassetid://73790023098856",
 				callback = function()
-					unloadShop()
-					populateShop()
+					market:unload()
+					market:load_items()
 				end,
 				disabledCallback = function()
-					unloadShop()
+					market:unload()
 				end,
 			},
 			{
 				name = "Inventory",
 				icon = "rbxassetid://10709769841",
 				callback = function()
-					unloadShop()
-					populateInventory()
+					market:unload()
+					market:load_inventory(expectProfile())
 				end,
 				disabledCallback = function()
-					unloadShop()
+					market:unload()
 				end,
 			},
 		}
@@ -518,7 +236,7 @@ local function initializeOptions()
 					Lighting.GlobalShadows = false
 				end,
 			},
-			icons = {},
+			override = "on",
 		},
 		[2] = {
 			name = "Time",
@@ -539,6 +257,7 @@ local function initializeOptions()
 					):Start()
 				end,
 			},
+			override = "off",
 			icons = {
 				on = "rbxassetid://10734974297",
 				off = "rbxassetid://10734897102",
@@ -568,7 +287,7 @@ local function initializeOptions()
 					end
 				end,
 			},
-			icons = {},
+			override = "on",
 		},
 		[4] = {
 			name = "Clouds",
@@ -585,57 +304,9 @@ local function initializeOptions()
 					clouds.Enabled = false
 				end,
 			},
-			icons = {},
+			override = "on",
 		},
 		[5] = {
-			name = "Camera Sway",
-			description = "Toggle camera sway on or off.",
-			toggleFunctions = {
-				on = function()
-					promise.new(function()
-						CameraController:Add("Sway", Sway)
-					end)
-				end,
-				off = function()
-					promise.new(function()
-						CameraController:Get("Sway"):Destroy()
-					end)
-				end,
-			},
-		},
-		[6] = {
-			name = "Camera Trail",
-			description = "Toggle camera trail on or off.",
-			toggleFunctions = {
-				on = function()
-					promise.new(function()
-						CameraController:Add("Trail", Trail)
-					end)
-				end,
-				off = function()
-					promise.new(function()
-						CameraController:Get("Trail"):Destroy()
-					end)
-				end,
-			},
-		},
-		[7] = {
-			name = "Dynamic FOV",
-			description = "Toggle dynamic FOV on or off.",
-			toggleFunctions = {
-				on = function()
-					promise.new(function()
-						CameraController:Add("DynamicFOV", DynamicFOV)
-					end)
-				end,
-				off = function()
-					promise.new(function()
-						CameraController:Get("DynamicFOV"):Destroy()
-					end)
-				end,
-			},
-		},
-		[8] = {
 			name = "Music",
 			description = "Toggle music on or off",
 			toggleFunctions = {
@@ -654,16 +325,20 @@ local function initializeOptions()
 					end)
 				end,
 			},
+			override = "on",
 		},
 	}
 
 	for _, option in pairs(optionsList) do
-		local onToggle, optionTemplate =
-			Options.create(option.name, option.description, option.toggleFunctions, option.icons)
+		Options.new({
+			name = option.name,
+			description = option.description,
+			functions = option.toggleFunctions,
+			icons = option.icons or nil,
+			state = observer.new(if option.override == "on" then true else false),
+		})
 
-		onToggle.reactor:Watch(function(newValue)
-			notify.success("Options", `{option.name} is {newValue} now.`)
-		end)
+		Options:render(optionsFrame.Holder :: ScrollingFrame)
 	end
 
 	hud:create("Options", function()
@@ -687,11 +362,20 @@ local function initializeMatchmaking()
 	local clock = timer.new()
 
 	local function showMatchmakingFrame()
-		spr.target(matchmakingFrame, 0.8, 8, {
-			Position = UDim2.fromScale(0.5, 0.1),
-		})
+		task.delay(5, function()
+			spr.target(matchmakingFrame, 0.8, 8, {
+				Position = UDim2.fromScale(0.5, 0.1),
+			})
+		end)
 
 		state:Set(true)
+
+		Letterbox:on():andThen("Searching for a match...", "Top")
+		custom_lighting.blur()
+		task.delay(4, function()
+			Letterbox:off()
+			custom_lighting.unblur()
+		end)
 
 		clock:Start()
 		-- every 0.33_ seconds
@@ -728,8 +412,10 @@ local function initializeMatchmaking()
 
 		state:Set(false)
 
-		clock:Stop()
 		clock:Reset()
+		clock:Stop()
+
+		hud:toggle("Matchmaking")
 	end
 
 	state:Watch(function(newValue: boolean)
@@ -742,7 +428,7 @@ local function initializeMatchmaking()
 		else
 			task.delay(0.5, function()
 				matchmakingCanvas.Visible = false
-				notify.info("Matchmaking", "You have left the queue.")
+				notify.info("Matchmaking", "You have left the queue.", 5, "info")
 
 				print("Stopped matchmaking")
 
@@ -752,7 +438,7 @@ local function initializeMatchmaking()
 	end)
 
 	local swipeDetector = swipe.new(matchmakingFrame)
-	swipeDetector.OnSwipe:Connect(function(direction: string, delta: Vector3)
+	swipeDetector.OnSwipe:Connect(function(direction: swipe.direction, delta: Vector3)
 		if state:Get() == false then
 			return
 		end
@@ -906,12 +592,18 @@ end
 local function initializeNotifiers()
 	print("init notifiers")
 
-	Packet.SendNotification.listen(function(data: { message: string, title: string? }, player: Player?)
-		notify.info(data.title, data.message)
+	Packet.SendNotification.listen(function(data)
+		notify[data.type or "info"](
+			data.title or "Notification",
+			data.message or "",
+			data.duration or 5,
+			data.type
+		)
 	end)
 end
 local function initializeMusic()
 	print("init music")
+
 	local tracks = {
 		{
 			biome = "Baseplate",
@@ -934,6 +626,37 @@ local function initializeMusic()
 	end
 
 	music.startTracking()
+
+	local musicGui = PlayerGui:WaitForChild("Music") :: ScreenGui & {
+		CanvasGroup: CanvasGroup & {
+			Disc: ImageLabel,
+			Note: ImageLabel,
+			SongName: TextLabel,
+			Artist: TextLabel,
+		},
+	}
+	local musicCanvas = musicGui.CanvasGroup
+	local disc = musicCanvas.Disc
+	local note_image = musicCanvas.Note
+
+	local songNameDisplay = musicCanvas.SongName
+	local artistDisplay = musicCanvas.Artist
+
+	music.playing:Watch(function()
+		local currentlyPlaying = music.playing:Get()
+		if not currentlyPlaying then
+			return
+		end
+
+		songNameDisplay.Text = currentlyPlaying.name
+		artistDisplay.Text = currentlyPlaying.artist
+	end)
+
+	sway:on(note_image)
+	sway:on(disc)
+
+	-- rotate effect on disc
+	TweenPlus(disc, { Rotation = 360 }, { Time = 7, RepeatCount = -1, EasingStyle = "Linear" }):Start()
 end
 local function initalizeKeybinds()
 	print("init keybinds")
@@ -942,6 +665,22 @@ local function initalizeKeybinds()
 		M1 = {
 			name = "M1",
 			key = Enum.KeyCode.MouseLeftButton,
+		},
+		E = {
+			name = "E",
+			key = Enum.KeyCode.E,
+		},
+		R = {
+			name = "R",
+			key = Enum.KeyCode.R,
+		},
+		Q = {
+			name = "Q",
+			key = Enum.KeyCode.Q,
+		},
+		F = {
+			name = "F",
+			key = Enum.KeyCode.F,
 		},
 	}
 
@@ -997,26 +736,29 @@ local function initializeLoadouts()
 	local layers = parallaxLayers.Desert -- placeholder
 
 	for i, data in ipairs(layers) do
-		_parallax:AddLayer(_parallax, nil, data.depthFactor, "rbxassetid://" .. data.image)
+		_parallax:AddLayer(nil, data.depthFactor, "rbxassetid://" .. data.image)
 	end
 
-	_parallax:Setup(_parallax, loadoutCanvas)
-	_parallax:Enable(_parallax)
+	_parallax:Setup(loadoutCanvas)
+	--_parallax:Enable()
 
 	local function updatePfp()
-		return promise.new(function(resolve, reject)
+		return promise.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
 			task.spawn(function()
 				local userId = player.UserId
-				local thumbnailType, thumbnailSize = Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size420x420
 
-				local success, image = pcall(Players.GetUserThumbnailAsync, Players, userId, thumbnailType, thumbnailSize)
+				local image = rbx_thumb.avatar_headshot(userId, "420x420")
 
-				if success then
-					profilePicture.Image = image
+				if image then
+					profilePicture.ImageContent = image
+
 					pop(playerPicture, 1.2)
+
 					resolve()
 				else
 					reject("Failed to get user thumbnail: " .. tostring(image))
+
+					notify.error("User thumbnail", "Failed to fetch user thumbnail.", 5, "error")
 				end
 			end)
 		end)
@@ -1050,111 +792,251 @@ local function initializeLoadouts()
 		ImageLabel: ImageLabel?,
 	}
 
+	local function creatCard(ancestor: Instance?, icon: string?): card_display
+		-- dont worry abt the variable names
+		local base = nil
+		if icon then
+			local WeaponType = Instance.new("Frame")
+			local ImageLabel = Instance.new("ImageLabel")
+			local AspectRatio = Instance.new("UIAspectRatioConstraint")
+			local UICorner = Instance.new("UICorner")
+			local TextLabel = Instance.new("TextLabel")
+			local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
+			local AspectRatio_3 = Instance.new("UIAspectRatioConstraint")
+
+			--Properties:
+
+			WeaponType.Name = ""
+			WeaponType.Parent = ancestor or ReplicatedStorage
+			WeaponType.AnchorPoint = Vector2.new(0.5, 0.5)
+			WeaponType.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
+			WeaponType.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			WeaponType.BorderSizePixel = 0
+			WeaponType.Position = UDim2.new(0.757278681, 0, 0.0858655497, 0)
+			WeaponType.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
+
+			ImageLabel.Parent = WeaponType
+			ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+			ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			ImageLabel.BackgroundTransparency = 1.000
+			ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			ImageLabel.BorderSizePixel = 0
+			ImageLabel.Position = UDim2.new(0.293805778, 0, 0.484785527, 0)
+			ImageLabel.Size = UDim2.new(0.103226088, 0, 0.269325286, 0)
+			ImageLabel.Image = "rbxassetid://10734975486"
+
+			AspectRatio.Name = "AspectRatio"
+			AspectRatio.Parent = ImageLabel
+
+			UICorner.CornerRadius = UDim.new(0.139130428, 0)
+			UICorner.Parent = WeaponType
+
+			TextLabel.Parent = WeaponType
+			TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+			TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			TextLabel.BackgroundTransparency = 1.000
+			TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			TextLabel.BorderSizePixel = 0
+			TextLabel.Position = UDim2.new(0.547556996, 0, 0.4953219, 0)
+			TextLabel.Size = UDim2.new(0.40460676, 0, 0.355981946, 0)
+			TextLabel.Font = Enum.Font.Gotham
+			TextLabel.Text = "Sword"
+			TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			TextLabel.TextSize = 12.000
+			TextLabel.TextWrapped = true
+
+			AspectRatio_2.Name = "AspectRatio"
+			AspectRatio_2.Parent = TextLabel
+			AspectRatio_2.AspectRatio = 2.965
+
+			AspectRatio_3.Name = "AspectRatio"
+			AspectRatio_3.Parent = WeaponType
+			AspectRatio_3.AspectRatio = 2.609
+
+			base = WeaponType
+		else
+			local FlavorText = Instance.new("Frame")
+			local UICorner = Instance.new("UICorner")
+			local TextLabel = Instance.new("TextLabel")
+			local AspectRatio = Instance.new("UIAspectRatioConstraint")
+			local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
+
+			--Properties:
+
+			FlavorText.Name = ""
+			FlavorText.Parent = ancestor or ReplicatedStorage
+			FlavorText.AnchorPoint = Vector2.new(0.5, 0.5)
+			FlavorText.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
+			FlavorText.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			FlavorText.BorderSizePixel = 0
+			FlavorText.Position = UDim2.new(0.238476574, 0, 0.0858655497, 0)
+			FlavorText.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
+
+			UICorner.CornerRadius = UDim.new(0.139130428, 0)
+			UICorner.Parent = FlavorText
+
+			TextLabel.Parent = FlavorText
+			TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
+			TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			TextLabel.BackgroundTransparency = 1.000
+			TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+			TextLabel.BorderSizePixel = 0
+			TextLabel.Position = UDim2.new(0.50702697, 0, 0.497070491, 0)
+			TextLabel.Size = UDim2.new(0.98594588, 0, 1.00585902, 0)
+			TextLabel.Font = Enum.Font.Unknown
+			TextLabel.Text = ""
+			TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+			TextLabel.TextSize = 12.000
+			TextLabel.TextWrapped = true
+
+			AspectRatio.Name = "AspectRatio"
+			AspectRatio.Parent = TextLabel
+			AspectRatio.AspectRatio = 2.557
+
+			AspectRatio_2.Name = "AspectRatio"
+			AspectRatio_2.Parent = FlavorText
+			AspectRatio_2.AspectRatio = 2.609
+
+			base = FlavorText
+		end
+
+		return base
+	end
+
 	local function updateDetails()
 		if not equippedCard then
 			return promise.reject("No card equipped")
 		end
 
-		return promise.new(function(resolve, reject)
-			local foundLib = CardLibrary[equippedCard]
-			if foundLib then
-				resolve(foundLib)
-			else
-				reject(`Card "{equippedCard}" not found in CardLibrary.`)
-			end
-		end):andThen(function(lib)
-			-- Clear existing cards
-			for _, child in ipairs(holder:GetChildren()) do
-				if child:IsA("Frame") then
-					child:Destroy()
+		return promise
+			.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
+				local foundLib = CardLibrary[equippedCard]
+				if foundLib then
+					resolve(foundLib)
+				else
+					reject(`Card "{equippedCard}" not found in CardLibrary.`)
+
+					notify.error("Data", "Couldn't get your Equipped_Card.", 5, "error")
 				end
-			end
+			end)
+			:andThen(function(lib)
+				-- Clear existing cards
+				for _, child in ipairs(holder:GetChildren()) do
+					if child:IsA("Frame") then
+						child:Destroy()
+					end
+				end
 
-			-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype(icon)
-			local markdown_controller = {
-				attack_controller = markdown.new(lib.MovesetName),
-				flavor_controller = markdown.new(lib.FlavorText),
-				m1_controller = markdown.new(lib.Moveset.M1),
-				passive_controller = markdown.new(lib.PassiveModuleName),
-				skill_controller = markdown.new(lib.Moveset.Skill),
-				support_controller = markdown.new(lib.Moveset.Support),
-				ultimate_controller = markdown.new(lib.Moveset.Ultimate),
-				weapon_controller = markdown.new(lib.WeaponType),
-			}
-
-			local cardCreationPromise = promise.new(function(resolve)
-				local cardsToCreate = {
-					{ Title = "Attack", Text = lib.MovesetName },
-					{ Title = "Flavor Text", Text = lib.FlavorText, HighlightedTags = lib.HighlightedFlavorTextTags },
-					{ Title = "Passive", Text = lib.PassiveModuleName },
-					{ Title = "Skill", Text = lib.Moveset.Skill },
-					{ Title = "Support", Text = lib.Moveset.Support },
-					{ Title = "Ultimate", Text = lib.Moveset.Ultimate },
-					{ Title = "Weapon", Text = lib.WeaponType, Icon = "rbxassetid://10734975486" }, -- Placeholder Icon
+				-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype(icon)
+				local markdown_controller = {
+					attack_controller = markdown.new(lib.MovesetName),
+					flavor_controller = markdown.new(lib.FlavorText),
+					m1_controller = markdown.new(lib.Moveset.M1),
+					passive_controller = markdown.new(lib.PassiveModuleName),
+					skill_controller = markdown.new(lib.Moveset.Skill),
+					support_controller = markdown.new(lib.Moveset.Support),
+					ultimate_controller = markdown.new(lib.Moveset.Ultimate),
+					weapon_controller = markdown.new(lib.WeaponType),
 				}
 
-				local textLabels = {}
+				local cardCreationPromise = promise.new(
+					function(resolve: ({ { label: TextLabel, text: string } }) -> ...unknown)
+						local cardsToCreate = {
+							{ Title = "Attack", Text = lib.MovesetName },
+							{
+								Title = "Flavor Text",
+								Text = lib.FlavorText,
+								HighlightedTags = lib.HighlightedFlavorTextTags,
+							},
+							{ Title = "Passive", Text = lib.PassiveModuleName },
+							{ Title = "Skill", Text = lib.Moveset.Skill },
+							{ Title = "Support", Text = lib.Moveset.Support },
+							{ Title = "Ultimate", Text = lib.Moveset.Ultimate },
+							{ Title = "Weapon", Text = lib.WeaponType, Icon = "rbxassetid://10734975486" }, -- Placeholder Icon
+						}
 
-				for _, cardData in ipairs(cardsToCreate) do
-					if cardData.Text then
-						-- Handle highlighted text
-						if cardData.HighlightedTags and type(cardData.Text) == "string" then
-							for _, tag in ipairs(cardData.HighlightedTags) do
-								cardData.Text = string.gsub(cardData.Text, tag, `<b>{tag}</b>`)
+						local textLabels = {}
+
+						for _, cardData in ipairs(cardsToCreate) do
+							if cardData.Text then
+								-- Handle highlighted text
+								if cardData.HighlightedTags and type(cardData.Text) == "string" then
+									for _, tag in ipairs(cardData.HighlightedTags) do
+										cardData.Text = string.gsub(cardData.Text, tag, `<b>{tag}</b>`)
+									end
+								end
+								local card = creatCard(detailsHolder)
+								local textLabel = card.TextLabel
+
+								-- create the card
+								table.insert(textLabels, { label = textLabel, text = cardData.Text })
 							end
 						end
 
-						local _, textLabel = CardFactory.create(cardData, holder, PlayerGui)
-						table.insert(textLabels, { label = textLabel, text = cardData.Text })
+						resolve(textLabels)
 					end
-				end
-				resolve(textLabels)
-			end)
+				)
 
-			return cardCreationPromise:andThen(function(textLabels)
-				-- This promise will be the start of our animation chain.
-				local animationChain = promise.resolve()
+				return cardCreationPromise:andThen(function(textLabels: {})
+					-- This promise will be the start of our animation chain.
+					local animationChain = promise.resolve()
 
-				for _, data in ipairs(textLabels) do
-					-- Chain the next typewriter animation onto the end of the chain.
-					animationChain = animationChain:andThen(function()
-						-- This function will not execute until the previous promise in the chain resolves.
-						-- It returns a new promise that resolves when the typewriter effect is complete.
-						return promise.new(function(resolve)
-							task.spawn(function()
-								-- Each animation gets its own controller to avoid state conflicts.
-								local typewriteController = markdown.typewriter.new()
-								typewriteController:Play(data.label, data.text, {
-									cps = 45,
-									instantFinishKey = Enum.KeyCode.Space,
-									cursor = "|",
-									cursorTween = true,
-									perCharSound = audio:_getSoundById(9055474333),
-									respectNewlines = false,
-									punctuationPauses = {
-										[","] = 0.06,
-										["."] = 0.25,
-										["?"] = 0.18,
-										["!"] = 0.18,
-									},
-								})
-								-- Resolve the promise once the animation is done.
-								resolve()
+					for _, data in ipairs(textLabels) do
+						-- Chain the next typewriter animation onto the end of the chain.
+						animationChain = animationChain:andThen(function()
+							-- This function will not execute until the previous promise in the chain resolves.
+							-- It returns a new promise that resolves when the typewriter effect is complete.
+							return promise.new(function(resolve: () -> ...unknown)
+								task.spawn(function()
+									-- Each animation gets its own controller to avoid state conflicts.
+									local typewriteController = markdown.typewriter.new()
+									typewriteController:Play(data.label, data.text, {
+										cps = 45,
+										instantFinishKey = Enum.KeyCode.Space,
+										cursor = "|",
+										cursorTween = true,
+										perCharSound = audio:_getSoundById(9055474333),
+										respectNewlines = false,
+										punctuationPauses = {
+											[","] = 0.06,
+											["."] = 0.25,
+											["?"] = 0.18,
+											["!"] = 0.18,
+										},
+									})
+									-- Resolve the promise once the animation is done.
+									resolve()
+
+									task.defer(typewriteController.Destroy, typewriteController)
+								end)
 							end)
 						end)
-					end)
-				end
+					end
 
-				return animationChain
+					return animationChain
+				end)
 			end)
-		end)
 	end
 
 	updatePfp():catch(warn)
 	updateDetails():catch(warn)
 
 	UserInputService.WindowFocusReleased:Connect(function()
-		updatePfp():catch(warn)
+		local signal = SignalPlus()
+
+		profilePicture.ImageContent = Content.none
+
+		throbber(profilePicture, signal)
+
+		updatePfp()
+			:andThen(function()
+				signal:Fire()
+			end)
+			:catch(warn)
+	end)
+
+	shopShortcut.Button.MouseButton1Click:Connect(function()
+		hud:toggle("Market")
 	end)
 end
 initializeMarket()
@@ -1237,12 +1119,6 @@ Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
 end)
 
-tag:for_eachi("Tooltip", function(part: BasePart)
-	screen:bind(part, "test tooltip")
-end)
-
-gamecamera:Bind("Tooltip_upd", screen.update)
-
 local defaultFootstep = _rootPart:FindFirstChild("Running")
 if defaultFootstep then
 	defaultFootstep:Destroy()
@@ -1257,9 +1133,9 @@ Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
 	--audio:Cleanup()
 	movementController:Destroy()
-	footsteps._trove:Clean()
 	music.cleanup()
-	freefalling._trove:Destroy()
+	Options:destroy()
+	hud:clear()
 end)
 
 local interfaceEndTime = os.clock()

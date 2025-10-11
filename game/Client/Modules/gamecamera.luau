@@ -23,7 +23,6 @@ controller:Add("Sway", require("../Camera/Sway"))
 -- controller:Add("Follow", require("../Camera/Follow"))
 controller:Add("Trail", require("../Camera/Trail"))
 controller:Add("Shake", require("../Camera/Shake"))
-local fovManager = controller:Add("DynamicFOV", require("../Camera/DynamicFOV"))
 
 -- Start the camera controller
 controller:Start()
@@ -41,14 +40,6 @@ function GameCamera:Recoil(strength: number)
 	if recoiler then
 		recoiler:Recoil(strength)
 	end
-end
-
-function GameCamera:TweenFOV(targetFOV: number, duration: number, override: boolean?)
-	fovManager:TweenFOV(targetFOV, duration, override)
-end
-
-function GameCamera:GetBaseFOV(): number
-	return fovManager:GetBaseFOV()
 end
 
 function GameCamera:Bind(name: string, f: (any) -> ...any?, ...)

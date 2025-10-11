@@ -4,6 +4,7 @@
 
 print(script.Name)
 
+local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -13,6 +14,7 @@ local RunService = game:GetService("RunService")
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
+local MatchMaker = require(ReplicatedStorage.Modules.MatchMaker)
 local Packet = require(ReplicatedStorage.Packet)
 local ParryHandler = require(ReplicatedStorage.Combat.framework.features.parry)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
@@ -68,6 +70,14 @@ Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
 GameAnalytics:initialize(gameAnalyticsConfig)
 GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
 -- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
+
+local matchSettings = MatchMaker:NewOptions()
+matchSettings.MatchPlaceId = 13609839542
+matchSettings.NumberOfTeams = 2
+matchSettings.MaxPlayersPerTeam = 1
+matchSettings.MatchExpirationTime = 600
+
+local queue = MatchMaker:GetQueue("global", matchSettings)
 
 --[[
 	This is only for if I want to write
@@ -147,7 +157,14 @@ local function enterMatch(player: playerMarshaller.player)
 		return
 	end
 
-	Packet.SendNotification.sendTo({ message = "Joined matchmaking queue", title = "Matchmaking" }, player)
+	print(queue)
+
+	queue:QueuePlayers({ player })
+
+	Packet.SendNotification.sendTo(
+		{ message = "Joined matchmaking queue", title = "Matchmaking", type = "info", duration = 5 },
+		player
+	)
 end
 
 local function cancelMatch(player: playerMarshaller.player)
@@ -157,7 +174,10 @@ local function cancelMatch(player: playerMarshaller.player)
 		return
 	end
 
-	Packet.SendNotification.sendTo({ message = "Left matchmaking queue", title = "Matchmaking" }, player)
+	Packet.SendNotification.sendTo(
+		{ message = "Left matchmaking queue", title = "Matchmaking", type = "info", duration = 5 },
+		player
+	)
 end
 
 local function onPlayerAdded(player: playerMarshaller.player)
@@ -175,7 +195,12 @@ local function onPlayerAdded(player: playerMarshaller.player)
 
 	local function addHighlight(character: characterMarshaller.Character)
 		promise
-			.new(function(resolve)
+			.new(function(resolve: (string, Highlight?) -> ...unknown)
+				if character:FindFirstChildOfClass("Highlight") then
+					resolve("already has highlight", nil)
+
+					return
+				end
 				local highlight = Instance.new("Highlight")
 				highlight.Adornee = character
 				highlight.Parent = character
@@ -202,7 +227,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 	-- Optimize character cleanup
 	characterMarshaller.removing(player, function(character)
 		promise
-			.new(function(resolve, reject)
+			.new(function(resolve: (string) -> ...unknown, reject: (string) -> ...unknown)
 				local success, err = pcall(character.Destroy, character)
 
 				if success then
@@ -378,7 +403,9 @@ local function getProfile(player: playerMarshaller.player): { Data: profilestruc
 			message = "Couldn't get data",
 			title = "Your data did not load.",
 			type = "error",
+			duration = 5,
 		}, player)
+
 		return nil
 	end
 
@@ -388,7 +415,7 @@ local function getProfile(player: playerMarshaller.player): { Data: profilestruc
 end
 
 -- Set the callback; this can only be done once by one server-side script
-MarketplaceService.ProcessReceipt = function(receiptInfo)
+MarketplaceService.ProcessReceipt = function(receiptInfo: { PlayerId: number, ProductId: number })
 	return productMarshaller.processReceipt(receiptInfo, productMarshaller.product_callbacks)
 end
 
@@ -409,35 +436,34 @@ end
 --("SetPlayerExperience", setPlayerExperience)
 --("GetStats", getStats)
 
-Packet.StreamArea.listen(function(data, player: playerMarshaller.player)
+Packet.StreamArea.listen(function(data: { areaCenter: Vector3 }, player: playerMarshaller.player)
 	streamArea(player, data.areaCenter)
 end)
 Packet.CreateMatch.listen(function(_, player: playerMarshaller.player)
 	enterMatch(player)
 end)
-Packet.BuyCard.listen(function(data, player: playerMarshaller.player)
+Packet.BuyCard.listen(function(data: { cardName: string }, player: playerMarshaller.player)
 	purchaseCard(player, data.cardName)
 end)
-Packet.PayPrisms.listen(function(data)
+Packet.PayPrisms.listen(function(data: { amount: number, recipientUsername: string })
 	payPrisms(data.amount, data.recipientUsername)
 end)
 Packet.CancelMatch.listen(function(_, player: playerMarshaller.player)
 	cancelMatch(player)
 end)
-Packet.SellCard.listen(function(data, player: playerMarshaller.player)
-	local cardName = data.cardName
-	sellCards(player, cardName)
-end)
-Packet.SetNetworkOwner.listen(function(data)
+Packet.SellCard.listen(
+	function(data: { cardName: string, playerInstance: Instance }, player: playerMarshaller.player)
+		local cardName = data.cardName
+		sellCards(player, cardName)
+	end
+)
+Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instance? })
 	setNetworkOwner(data.player, data.object)
 end);
 (remoteEvents.GetProfile :: RemoteFunction).OnServerInvoke = getProfile
 
 local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
-promise.new(function()
-	local star_array = messagepack.decode(starsStructure)
-	star.load_array(star_array, ReplicatedStorage)
-end)
+
 -- TODO) add player saving options
 playerMarshaller.added(function(player: playerMarshaller.player)
 	onPlayerAdded(player)

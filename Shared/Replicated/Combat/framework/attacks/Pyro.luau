@@ -1,3 +1,0 @@
---!strict
-
--- Fire.luau

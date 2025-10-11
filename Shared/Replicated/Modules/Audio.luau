@@ -115,7 +115,7 @@ function Audio:SFX(
 	if type(soundId) == "string" then
 		local id = Audio._getSoundById(soundId)
 		if id then
-			soundId = id
+			soundId = string.gsub(id.SoundId, "rbxassetid://", "")
 		else
 			warn("Sound effect not found: " .. soundId)
 			return

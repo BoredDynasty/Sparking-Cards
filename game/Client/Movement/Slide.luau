@@ -145,6 +145,7 @@ function Slide:Update(deltaTime: number)
 
 	local direction = -self._character.PrimaryPart.CFrame.UpVector :: Vector3 * 10
 	local ray = workspace:Raycast(self._character.PrimaryPart.Position, direction, self._raycastParams)
+	-- TODO) make this more performant
 
 	if not ray then
 		self:Stop()
