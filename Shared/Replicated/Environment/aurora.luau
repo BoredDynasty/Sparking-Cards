@@ -101,6 +101,8 @@ function aurora:adjust(emission_factor: number?, rate_factor: number?): aurora
 
 	self.emitter.LightEmission = self.defaultEmission * emission_factor
 	self.emitter.Rate = self.defaultRate * rate_factor
+
+	return self
 end
 
 function aurora:setPosition(position: Vector3): aurora

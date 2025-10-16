@@ -2,6 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Letterbox = require(script.Parent.Letterbox)
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -18,6 +19,8 @@ local display = {
 
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
+
+local character = characterMarshaller.get(player)
 
 local displayGui = playerGui:WaitForChild("Display") :: ScreenGui & {
 	CanvasGroup: CanvasGroup & {
@@ -47,6 +50,7 @@ function display.showText(str: string, duration: number?)
 
 	Letterbox:on()
 	custom_lighting.blur()
+	characterMarshaller.halt(character)
 
 	local typewriter = markdown.typewriter.new()
 	typewriter:Play(textLabel, str)
@@ -56,6 +60,9 @@ function display.showText(str: string, duration: number?)
 
 		typewriter:Skip(typewriter)
 		custom_lighting.unblur()
+		Letterbox:off()
+		characterMarshaller.continue(character)
+
 		task.defer(typewriter.Destroy)
 	end
 
@@ -98,9 +105,6 @@ function display.hideText()
 	spr.target(frame, 0.8, 8, {
 		Position = UDim2.fromScale(0.5, 0.5),
 	})
-
-	Letterbox:off()
-	custom_lighting.unblur()
 
 	textLabel.Text = ""
 

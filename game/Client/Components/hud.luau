@@ -24,7 +24,8 @@ export type button = {
 	callback: () -> (),
 	icon: icon?,
 	reactor: observer.Observer<boolean>,
-	debounce: boolean,
+	limit: ratelimit.Ratelimit<string>,
+	hover_limit: ratelimit.Ratelimit<string>,
 }
 
 export type icon = {
@@ -41,7 +42,8 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		callback = callback,
 		icon = icon,
 		reactor = observer.new(false),
-		debounce = false,
+		limit = ratelimit.new(1, 0.5),
+		hover_limit = ratelimit.new(1, 0.9),
 	}
 	table.insert(hud.buttons, button)
 end
@@ -77,16 +79,30 @@ function hud:render()
 		TextButton.Parent = hudBackground
 		TextButton.Name = button.name
 		TextButton.AnchorPoint = Vector2.new(0.5, 0.5)
-		TextButton.BackgroundColor3 = Color3.fromRGB(143, 76, 56)
+		TextButton.BackgroundColor3 = Color3.fromHex("#1a110f")
 		TextButton.BorderSizePixel = 0
 		TextButton.Size = UDim2.fromScale(0.35, 0.7)
 		TextButton.Font = Enum.Font.Gotham
-		TextButton.TextColor3 = Color3.fromRGB(0, 0, 0)
+		TextButton.TextColor3 = Color3.fromHex("ffb5a0")
 		TextButton.TextSize = 14.000
+		--[[
 		if not button.icon then
 			TextButton.Text = button.name
 		else
 			TextButton.Text = "" -- No text if an icon is provided
+		end
+		--]]
+
+		if button.name then
+			-- set icon adjacent to text:
+
+			TextButton.Text = button.name
+			-- get text bounds
+			local text_bounds = TextButton.TextBounds
+			local offset = 15
+
+			Icon.Position = UDim2.new(0.5, text_bounds.X - offset, 0.5)
+			Icon.SizeConstraint = Enum.SizeConstraint.RelativeYY
 		end
 
 		UICorner.CornerRadius = UDim.new(1, 0)
@@ -94,29 +110,44 @@ function hud:render()
 
 		Icon.Name = "Icon"
 		Icon.Parent = TextButton
-		Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+		Icon.AnchorPoint = Vector2.new(if button.name then 1 else 0.5, 0.5)
 		Icon.BackgroundTransparency = 1
 		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 		Icon.Size = UDim2.fromScale(0.40, 0.40)
+		if not button.name then
+			-- make the TextButton width smaller.
+			TextButton.Size = UDim2.fromScale(0.2, 0.7)
+		end
 
-		local defaultIcon = lucide.GetAsset(icon, 256 * 2) -- blank file icon
-		assert(defaultIcon, "Failed to fetch asset!")
-		Icon.ImageRectOffset = defaultIcon.ImageRectOffset
-		Icon.ImageRectSize = defaultIcon.ImageRectSize
-		Icon.Image = defaultIcon.Url
+		local defaultIcon = promise
+			.new(function(resolve: (icon) -> ...unknown, reject: (string) -> ...unknown)
+				local ok, output = pcall(function()
+					return lucide.GetAsset(icon, 256 * 2)
+				end)
 
-		UIAspectRatioConstraint.Parent = Icon
+				if ok then
+					resolve(output)
+				else
+					reject("Couldn't get lucide icon asset")
+				end
+			end)
+			:catch(warn)
+			:expect() :: icon
+
+		if defaultIcon then
+			Icon.ImageRectOffset = defaultIcon.ImageRectOffset
+			Icon.ImageRectSize = defaultIcon.ImageRectSize
+			Icon.Image = defaultIcon.Url
+
+			UIAspectRatioConstraint.Parent = Icon
+		else
+			warn("Failed to fetch asset!")
+		end
 
 		TextButton.MouseButton1Click:Connect(function()
-			if button.debounce then
+			if not button.limit(button.name) then
 				return
 			end
-
-			button.debounce = true
-
-			task.delay(0.8, function()
-				button.debounce = false
-			end)
 
 			local value = getOppositeReactorValue(button.reactor)
 
@@ -126,10 +157,13 @@ function hud:render()
 		end)
 
 		TextButton.MouseEnter:Connect(function()
+			if not button.hover_limit(button.name) then
+				return
+			end
 			-- mouse hover effect
 			spr.stop(TextButton, "Size")
 			spr.target(TextButton, 0.8, 8, {
-				BackgroundColor3 = Color3.fromRGB(170, 85, 65),
+				BackgroundColor3 = Color3.fromHex("#342522"),
 				Size = UDim2.fromScale(TextButton.Size.X.Scale * 1.1, TextButton.Size.Y.Scale * 1.1),
 			})
 			audio:SFX("hover")
@@ -138,7 +172,7 @@ function hud:render()
 		TextButton.MouseLeave:Connect(function()
 			spr.stop(TextButton, "Size")
 			spr.target(TextButton, 0.8, 8, {
-				BackgroundColor3 = Color3.fromRGB(143, 76, 56),
+				BackgroundColor3 = Color3.fromHex("#1a110f"),
 				Size = UDim2.fromScale(TextButton.Size.X.Scale / 1.1, TextButton.Size.Y.Scale / 1.1),
 			})
 			audio:SFX("hover", {
@@ -194,7 +228,21 @@ function hud:toggle(buttonName: string)
 end
 
 function hud:clear()
-	table.clear(hud.buttons)
+	for i, btn in pairs(hud.buttons) do
+		btn.reactor:Destroy()
+
+		if btn.limit.count_map[btn.name] then
+			btn.limit.count_map[btn.name] = nil
+		end
+
+		if btn.hover_limit.count_map[btn.name] then
+			btn.hover_limit.count_map[btn.name] = nil
+		end
+
+		hud.buttons[i] = nil
+	end
+
+	table.clear(hud.buttons) -- just to make sure we don't keep any references
 
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 

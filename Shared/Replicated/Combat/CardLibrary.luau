@@ -31,7 +31,7 @@ export type Card = {
 -- It's crucial that the AttackNames listed in Moveset (e.g., "CryoGauntlet_M1_1")
 -- from the combat modules (e.g., Cryo.moveset.M1) with Orion.RegisterAttack.
 
-local CardLibrary: { [string]: Card } = {
+local CardLibrary = {
 	CryoGauntlet = {
 		DisplayName = "Cryo Gauntlet",
 		WeaponType = "Gauntlet",
@@ -50,8 +50,8 @@ local CardLibrary: { [string]: Card } = {
 		},
 		PassiveModuleName = "PermaFrost",
 	},
-	PyroSword = {
-		DisplayName = "Fiery Longsword",
+	PyroKatana = {
+		DisplayName = "Fiery Katana",
 		WeaponType = "Sword",
 		MovesetName = "Conflagration of the Blazing Heart",
 		FlavorText = [[
@@ -63,13 +63,18 @@ local CardLibrary: { [string]: Card } = {
 		},
 		TextColor = Color3.fromRGB(255, 88, 88),
 		BaseDamageMultiplier = 1.1,
-		MaxCombo = 4,
+		MaxCombo = 3,
+
 		Moveset = {
-			M1 = "PyroSword_M1_1",
-			Skill = "PyroSword_BurningBlade_Skill",
-			Ultimate = "PyroSword_InfernalSlash_Ultimate",
-			Support = "PyroSword_HeatAura_Support",
+			M1 = "PyroKatana_M1_1",
+			Skill = "PyroKatana_BurningBlade_Skill",
+			Ultimate = "PyroKatana_InfernalSlash_Ultimate",
+			Support = "PyroKatana_HeatAura_Support",
 		},
+		AttackSpeed = 0.4,
+		RecoveryTime = 0.5,
+		StunTime = 0.175,
+		HitboxSize = vector.one * 5,
 		PassiveModuleName = "DrawIn",
 	},
 	HydroCatalyst = {

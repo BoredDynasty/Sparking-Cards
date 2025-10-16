@@ -21,7 +21,18 @@ export type Observer<T> = {
 	Find: (self: Observer<T>, predicate: (value: any, key: any) -> boolean) -> (any?, any?),
 	Calculate: (self: Observer<T>, fn: (current: T) -> T) -> (),
 	Destroy: (self: Observer<T>) -> (),
+	__concat: (self: Observer<T>, ...Observer<T>) -> string,
+	__add: (self: Observer<T>, ...Observer<T>) -> number,
+	__sub: (self: Observer<T>, ...Observer<T>) -> number,
+	__mul: (self: Observer<T>, ...Observer<T>) -> number,
+	__div: (self: Observer<T>, ...Observer<T>) -> number,
+	__idiv: (self: Observer<T>, ...Observer<T>) -> number,
+	__mod: (self: Observer<T>, ...Observer<T>) -> number,
+	__pow: (self: Observer<T>, ...Observer<T>) -> number,
+	__tostring: (self: Observer<T>) -> string,
 }
+
+export type Meta<T> = setmetatable<Observer<T>, typeof(Observer)>
 
 --[[
     ```luau
@@ -31,7 +42,7 @@ export type Observer<T> = {
     local counter = Observer.new(0)
     ```
 ]]
-function Observer.new<T>(initialValue: T): Observer<T>
+function Observer.new<T>(initialValue: T): Meta<T>
 	local self = setmetatable({
 		_value = initialValue,
 		Changed = SignalPlus(),
@@ -45,10 +56,10 @@ end
 
 	local scope = observer.scope(1, 2, "baller", "roblox", Axes.new(Enum.NormalId.Top))
 
-	-- creates multiple observers from a tuple
+	-- creates multiple observers from a tuple/variadic
 
 ]]
-function Observer.scope<T...>(...: T...): ...Observer<any>
+function Observer.scope<T...>(...: T...): ...Meta<any?>
 	local tuple = { ... }
 	local r = {}
 
@@ -66,7 +77,7 @@ end
 	-- An observer with no value.
 ]]
 
-Observer.None = Observer.new(nil)
+Observer.None = Observer.new(nil) :: Observer<any?>
 
 --[[
     ```luau
@@ -89,7 +100,7 @@ end
 	-- if no value, it throws an error.
 ]]
 function Observer:Expect<T>(str: string): T
-	return if self._value ~= nil then self.value else error(str or "Expected a value from observer.")
+	return if self:Get() ~= nil then self:Get() else error(str or "Expected a value from observer.")
 end
 
 --[[
@@ -194,8 +205,9 @@ end
 	-- observer:Get() is now 20
 	```
 ]]
-function Observer:Calculate<T>(fn: (current: T) -> T)
+function Observer:Map<T>(fn: (current: T) -> T)
 	local newValue = fn(self:Get())
+
 	self:Set(newValue)
 end
 
@@ -268,7 +280,7 @@ function Observer:__idiv(...: Observer<number>)
 		quotient //= v:Get()
 	end
 
-	return quotient
+	return math.floor(quotient)
 end
 
 function Observer:__mod(...: Observer<number>)
@@ -307,6 +319,8 @@ end
 
 function Observer:Destroy()
 	self.Changed:Destroy()
+
+	table.clear(self)
 	setmetatable(self, nil)
 end
 

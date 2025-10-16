@@ -10,7 +10,6 @@ local Lighting = game:GetService("Lighting")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 -- // Requires -- //
@@ -18,10 +17,10 @@ local UserInputService = game:GetService("UserInputService")
 local CameraController = require("../Camera/CameraController")
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
 local DynamicFOV = require("../Camera/DynamicFOV")
-local Letterbox = require(StarterPlayer.StarterPlayerScripts.Components.Letterbox)
+local Letterbox = require("../Components/Letterbox")
 local Sway = require("../Camera/Sway")
 local Trail = require("../Camera/Trail")
-local market = require(StarterPlayer.StarterPlayerScripts.Components.market)
+local market = require("../Components/market.luau")
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
 local parallax = require("../Interface/parallax")
@@ -58,7 +57,10 @@ local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
+local damage = require(ReplicatedStorage.Combat.Strike.damage)
+local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
+local dropper = require(ReplicatedStorage.ClientModules.dropper)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
@@ -89,6 +91,7 @@ local badges = require(ReplicatedStorage.Structures.badges)
 local observer = require(ReplicatedStorage.Utility.observer)
 local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
 local timer = require(ReplicatedStorage.Modules.timer)
+local trove = require(ReplicatedStorage.Packages.trove)
 print(6)
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
@@ -109,6 +112,8 @@ local profile: {
 		return value
 	end)
 	:expect()
+
+local _trove = trove.new()
 
 -- // Events -- //
 local getProfileRF = ReplicatedStorage.Events.GetProfile :: RemoteFunction
@@ -220,7 +225,7 @@ local function initializeOptions()
 	local holder = optionsFrame:WaitForChild("Holder") :: Frame
 	--local templatesFolder = templates:FindFirstChild("Options") :: Folder
 
-	shadow(optionsFrame, Color3.new(), 0, 14)
+	shadow(optionsFrame)
 
 	local optionsList = {
 		-- add new options here
@@ -362,11 +367,9 @@ local function initializeMatchmaking()
 	local clock = timer.new()
 
 	local function showMatchmakingFrame()
-		task.delay(5, function()
-			spr.target(matchmakingFrame, 0.8, 8, {
-				Position = UDim2.fromScale(0.5, 0.1),
-			})
-		end)
+		task.delay(5, spr.target, matchmakingFrame, 0.8, 8, {
+			Position = UDim2.fromScale(0.5, 0.1),
+		})
 
 		state:Set(true)
 
@@ -396,12 +399,10 @@ local function initializeMatchmaking()
 				Size = UDim2.fromScale(1.1, 1.1),
 				ImageTransparency = 0.2,
 			})
-			task.delay(1, function()
-				spr.target(pulseImage, 1, 8, {
-					Size = UDim2.fromScale(1, 1),
-					ImageTransparency = 0.5,
-				})
-			end)
+			task.delay(1, spr.target, pulseImage, 1, 9, {
+				Size = UDim2.fromScale(1, 1),
+				ImageTransparency = 0.5,
+			})
 		end)
 	end
 
@@ -728,9 +729,9 @@ local function initializeLoadouts()
 
 	local loadoutFolder = templates.Loadout :: Folder
 
-	shadow(navigation, Color3.new(), 0, 14)
-	shadow(detailsHolder, Color3.new(), 0, 14)
-	shadow(profilePicture, Color3.new(), 0, 14)
+	shadow(navigation)
+	shadow(detailsHolder)
+	shadow(profilePicture)
 
 	local _parallax = parallax.new(Vector2.one * 10)
 	local layers = parallaxLayers.Desert -- placeholder
@@ -754,7 +755,7 @@ local function initializeLoadouts()
 
 					pop(playerPicture, 1.2)
 
-					resolve()
+					resolve(image)
 				else
 					reject("Failed to get user thumbnail: " .. tostring(image))
 
@@ -1093,20 +1094,23 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 	return attackType
 end
 
-keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
+_trove:Add(keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
 		orion:execute(player, attack_type)
 	end
-end)
+end))
 
-mouse.LeftDown:Connect(function()
+_trove:Add(mouse.LeftDown:Connect(function()
 	local attack_type = "M1"
 	if attack_type then
 		orion:execute(player, attack_type)
-		--ragdoll.SetRagdoll(character, true, true, Vector3.new(5, 6, -1))
 	end
-end)
+end))
+
+_trove:Add(damage.incoming:Connect(function(a0: damage.Damage)
+	dialogue:speak("You", "yoooowch!")
+end))
 
 profile = expectProfile()
 orion.registerPlayer(player, profile)
@@ -1124,18 +1128,18 @@ if defaultFootstep then
 	defaultFootstep:Destroy()
 end
 
-local characterFolder = Instance.new("Folder")
+local characterFolder = ReplicatedStorage:FindFirstChild("Characters") or Instance.new("Folder")
 characterFolder.Name = "Characters"
 characterFolder.Parent = ReplicatedStorage
 
 Packet.CleanupCharacter.listen(function()
-	-- Handle character cleanup logic here
 	animate.cleanup()
-	--audio:Cleanup()
 	movementController:Destroy()
 	music.cleanup()
 	Options:destroy()
 	hud:clear()
+	dropper._trove:Clean()
+	dialogue._trove:Clean()
 end)
 
 local interfaceEndTime = os.clock()

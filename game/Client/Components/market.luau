@@ -9,10 +9,12 @@ local Packet = require(ReplicatedStorage.Packet)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
+local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
 local notify = require(script.Parent.notify)
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -88,7 +90,7 @@ function market:display_spendings(profile: {
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 16,
-			Color = Color3.fromHex("#ffffff"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -125,7 +127,7 @@ function market:load_items(items: Items.dataType?)
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 16,
-			Color = Color3.fromHex("#f5f5f5"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -139,7 +141,7 @@ function market:load_items(items: Items.dataType?)
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 12.5,
-			Color = Color3.fromHex("#f5f5f5"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -194,7 +196,7 @@ function market:load_items(items: Items.dataType?)
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 12.5,
-			Color = Color3.fromHex("#f5f5f5"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -222,6 +224,15 @@ function market:load_items(items: Items.dataType?)
 			pop(purchaseButton)
 
 			audio:SFX("success")
+
+			confetti({
+				Color3.fromRGB(255, 0, 255),
+				Color3.fromRGB(0, 255, 255),
+				Color3.fromRGB(255, 255, 0),
+				Color3.fromRGB(255, 0, 0),
+				Color3.fromRGB(0, 255, 0),
+				Color3.fromRGB(0, 0, 255),
+			}, shopCanvas, true)
 		end)
 	end
 
@@ -261,7 +272,7 @@ function market:load_inventory(profile: {
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 16,
-			Color = Color3.fromHex("#f5f5f5"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -275,7 +286,7 @@ function market:load_inventory(profile: {
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 12.5,
-			Color = Color3.fromHex("#f5f5f5"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -300,7 +311,7 @@ function market:load_inventory(profile: {
 				Enum.FontStyle.Normal -- Style.
 			),
 			Size = 12.5,
-			Color = Color3.fromHex("#ff6565"),
+			Color = Color3.fromHex("#ffdbd1"),
 			XAlignment = "Left",
 			YAlignment = "Center",
 			LineSorting = true,
@@ -320,6 +331,11 @@ function market:load_inventory(profile: {
 
 			Packet.SellCard.send({ cardName = i, playerInstance = player })
 			notify.success("Sold Card", `Successfully sold card`, 5, "success")
+
+			local value = Items[i].Price or 1
+			local floor = math.floor(value / 10)
+
+			prism_awarder.award(floor, true)
 		end)
 	end
 end

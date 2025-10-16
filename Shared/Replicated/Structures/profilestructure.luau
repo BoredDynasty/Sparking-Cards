@@ -1,4 +1,5 @@
 --!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 -- profilestructure.luau
 
@@ -33,6 +34,17 @@ export type profile = {
 			points: number,
 		}
 	},
+	quests: {
+		{
+			name: string,
+			description: string,
+			inquirer_img: string | Instance, -- img id or a model
+			progress: number,
+			date_acquired: number, -- unix timestamp millis
+			date_completed: number?,
+			module: ModuleScript?,
+		} -- another cyclic module dependency
+	},
 	products: {
 		[number]: {
 			id: number,
@@ -56,7 +68,7 @@ export type profile = {
 return {
 	-- Template
 	Cards = {
-		Fire = 10,
+		Pyro = 10,
 		Cryo = 1,
 		Plasma = 1,
 		Hydro = 0,
@@ -65,7 +77,7 @@ return {
 	Level = "Bronze I",
 	Experience = 0,
 	LastLogin = 0,
-	EquippedCard = "Cryo",
+	EquippedCard = "Pyro",
 	victories = 0,
 	-- Other
 	options = {
@@ -87,6 +99,7 @@ return {
 	achievements = {
 		--
 	},
+	quests = {},
 	products = {},
 	combatBindings = {
 		attack = Enum.KeyCode.MouseLeftButton.Name, -- melee

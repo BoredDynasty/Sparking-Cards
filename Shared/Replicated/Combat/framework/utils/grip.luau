@@ -1,4 +1,7 @@
 --!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local RunService = game:GetService("RunService")
 
 -- grip.luau
 export type GripInfo = {
@@ -100,12 +103,15 @@ local function update(character: Model?)
 		return
 	end
 
+	debug.profilebegin("update-grip")
+
 	for model, gripInfo in motors do
 		if not model.PrimaryPart then
 			continue
 		end
 
 		local handName = gripInfo.hand .. "Hand"
+
 		local handPart = character:FindFirstChild(handName)
 
 		if not handPart or not handPart:IsA("BasePart") then
@@ -118,10 +124,29 @@ local function update(character: Model?)
 			removeGrip(model)
 		end
 	end
+
+	debug.profileend()
 end
 
-return {
+local function auto_update()
+	RunService.RenderStepped:Connect(function()
+		debug.profilebegin("update-grips")
+
+		if not next(motors) then
+			return -- if empty
+		end
+
+		for i, grip in pairs(motors) do
+			update(grip.model)
+		end
+
+		debug.profileend()
+	end)
+end
+
+return table.freeze({
 	createGrip = createGrip,
 	removeGrip = removeGrip,
 	update = update,
-}
+	auto_update = auto_update(),
+})

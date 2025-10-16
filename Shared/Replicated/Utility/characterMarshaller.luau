@@ -122,6 +122,22 @@ function character.isRoot(inst: Instance): (boolean?, BasePart?)
 	end
 end
 
+function character.halt(char: Character)
+	local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
+	if humanoid then
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+	end
+end
+
+function character.continue(char: Character)
+	local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
+	if humanoid then
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+	end
+end
+
 function character.added_once(
 	player: Player,
 	f: (character: Character) -> (),

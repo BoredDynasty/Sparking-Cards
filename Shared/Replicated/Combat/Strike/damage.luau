@@ -16,6 +16,11 @@ export type Damage = {
 }
 
 local damage = setmetatable({}, {
+	--[[
+	@param amount: number, -- The amount of damage dealt
+	@param source: playerMarshaller.player?, -- Optional player who dealt the damage
+	@param target: playerMarshaller.player, -- player who received the damage
+]]
 	__call = function(self, parameters: Damage)
 		return self.__call(parameters)
 	end,
