@@ -7,7 +7,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- damage.luau
 
--- This module handles the damage calculations and effects for combat strikes in the Orion framework.
+-- This module handles the damage calculations and effects for combat strikes in the orion framework.
 
 export type Damage = {
 	amount: number, -- The amount of damage dealt
@@ -64,7 +64,7 @@ function damage.__call(parameters: Damage)
 		-- if the damage is cancelled, we don't apply it
 		return false
 	end)
-	task.wait(0.032)
+	task.wait(2 / 16)
 	targetHumanoid:TakeDamage(damageAmount)
 
 	return true -- Indicate success

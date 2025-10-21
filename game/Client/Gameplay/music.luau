@@ -101,12 +101,16 @@ function music.startTracking()
 
 		lastCheck += dt :: number
 		if lastCheck < checkInterval then
+			debug.profileend()
+
 			return
 		end
 		lastCheck = 0
 
 		local position = hrp.Position
 		if lastPosition and (position - lastPosition).Magnitude < 1 then
+			debug.profileend()
+
 			return
 		end
 		lastPosition = position

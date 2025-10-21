@@ -36,20 +36,8 @@ local loader = background:FindFirstChild("LoaderImage") :: ImageLabel -- the spi
 
 local connection: RBXScriptConnection? = nil
 
-local BATCH_SIZE = 50
-local MAX_PARALLEL_LOADS = 8
-
-local visited = {}
-
-local function gatherAssets(root: Instance, assets: { Instance })
-	for _, inst in root:GetChildren() do
-		if not visited[inst] then
-			visited[inst] = true
-			assets[#assets + 1] = inst
-			gatherAssets(inst, assets)
-		end
-	end
-end
+local BATCH_SIZE = 12
+local MAX_PARALLEL_LOADS = 32
 
 local function skipPreloading()
 	loadingUI:Destroy()
@@ -85,8 +73,9 @@ local function preload()
 	local pre_allocated = 3000
 	local assets = table.create(pre_allocated) :: { Instance } -- pre-allocate approximate size
 	-- for a more accurate maxAssets count, make it asynchronous
-	-- gatherAssets(player, assets)
-	gatherAssets(ReplicatedStorage, assets)
+	for i, asset in ipairs(ReplicatedStorage:GetDescendants()) do
+		table.insert(assets, asset)
+	end
 
 	local maxAssets = #assets
 	local loadedCount = 0
@@ -99,15 +88,15 @@ local function preload()
 	end)
 
 	-- split into batches
-	local batches = {}
+	local batches = {} :: { { Instance } }
 	for i = 1, maxAssets, BATCH_SIZE do
-		local batch = table.create(BATCH_SIZE)
+		local batch = table.create(BATCH_SIZE) :: { Instance }
 
 		for j = i, math.min(i + BATCH_SIZE - 1, maxAssets) do
-			batch[#batch + 1] = assets[j]
+			table.insert(batch, assets[j])
 		end
 
-		batches[#batches + 1] = batch
+		table.insert(batches, batch)
 	end
 
 	local activeThreads = 0
@@ -152,13 +141,13 @@ local function preload()
 	end
 	table.clear(assets)
 	table.clear(batches)
-	table.clear(visited)
 	assets, batches = nil, nil
 
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+
 	debug.profileend()
 end
 

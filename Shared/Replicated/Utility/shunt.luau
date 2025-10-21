@@ -11,11 +11,11 @@ local SignalPlus = require("../Dependencies/SignalPlus")
     ```
 ]]
 
-return function(...): ...any
+return function(...: any): ...any
 	local shunt = SignalPlus() :: SignalPlus.Signal<...any>
 	local slots: { [number]: SignalPlus.Signal<...any> } = { ... }
 
-	local function fire(...)
+	local function fire(...: any)
 		for i = 1, #slots do
 			slots[i]:DisconnectAll()
 		end

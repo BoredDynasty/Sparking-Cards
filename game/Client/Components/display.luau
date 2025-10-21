@@ -1,7 +1,9 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local Letterbox = require(script.Parent.Letterbox)
+local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
@@ -80,14 +82,8 @@ function display.showText(str: string, duration: number?)
 				local mousePos = input.Position:Abs()
 				local absPos = frame.AbsolutePosition
 				local absSize = frame.AbsoluteSize
-				if
-					not (
-						mousePos.X >= absPos.X
-						and mousePos.X <= absPos.X + absSize.X
-						and mousePos.Y >= absPos.Y
-						and mousePos.Y <= absPos.Y + absSize.Y
-					)
-				then
+				-- if you clicked it or not, it'll close anyway
+				if bounds.inner(absPos, absSize, mousePos) or not bounds.inner(absPos, absSize, mousePos) then
 					closeDisplay()
 					if connection then
 						connection:Disconnect()

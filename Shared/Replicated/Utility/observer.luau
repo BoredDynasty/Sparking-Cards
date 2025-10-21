@@ -13,6 +13,7 @@ Observer.__index = Observer
 export type Observer<T> = {
 	_value: T,
 	Changed: SignalPlus.Signal<(newValue: T, oldValue: T) -> ()>,
+	_connections: { SignalPlus.Connection },
 	Get: (self: Observer<T>) -> T,
 	Set: (self: Observer<T>, value: T) -> (),
 	Watch: (self: Observer<T>, callback: (newValue: T, oldValue: T) -> ()) -> SignalPlus.Connection,
@@ -42,19 +43,18 @@ export type Meta<T> = setmetatable<Observer<T>, typeof(Observer)>
     local counter = Observer.new(0)
     ```
 ]]
-function Observer.new<T>(initialValue: T): Meta<T>
-	local self = setmetatable({
+function Observer.new<T>(initialValue: T?): Meta<T>
+	return setmetatable({
 		_value = initialValue,
-		Changed = SignalPlus(),
+		Changed = SignalPlus() :: SignalPlus.Signal<T, T>,
+		_connections = table.create(1e2),
 	}, Observer)
-
-	return self
 end
 
 --[[
 	```luau
 
-	local scope = observer.scope(1, 2, "baller", "roblox", Axes.new(Enum.NormalId.Top))
+	local scope = observer.scope(1, 67, "baller", "roblox", Axes.new(Enum.NormalId.Top))
 
 	-- creates multiple observers from a tuple/variadic
 
@@ -63,7 +63,7 @@ function Observer.scope<T...>(...: T...): ...Meta<any?>
 	local tuple = { ... }
 	local r = {}
 
-	for i, v in tuple do
+	for i, v in ipairs(tuple) do
 		r[i] = Observer.new(v)
 	end
 
@@ -75,9 +75,11 @@ end
 	local none = observer.None
 
 	-- An observer with no value.
+
+	none:Expect("nil value")
 ]]
 
-Observer.None = Observer.new(nil) :: Observer<any?>
+Observer.None = setmetatable({ _value = nil, Changed = SignalPlus() }, Observer) :: Meta<any?>
 
 --[[
     ```luau
@@ -118,6 +120,7 @@ function Observer:Set<T>(newValue: T)
 
 	local oldValue = self._value
 	self._value = newValue
+
 	self.Changed:Fire(newValue, oldValue)
 end
 
@@ -130,8 +133,12 @@ end
     end)
     ```
 ]]
-function Observer:Watch(callback: (newValue: any, oldValue: any) -> ())
-	return self.Changed:Connect(callback)
+function Observer:Watch(callback: (newValue: any, oldValue: any) -> ()): SignalPlus.Connection
+	local conn = self.Changed:Connect(callback)
+
+	table.insert(self.connections, conn)
+
+	return conn
 end
 
 --[[
@@ -141,6 +148,7 @@ end
 ]]
 function Observer:Insert(key: any?, value: any)
 	assert(type(self._value) == "table", "Cannot use :Insert, Observer value isn't a table.")
+
 	if key then
 		local oldValue = self._value
 
@@ -159,6 +167,7 @@ end
 ]]
 function Observer:Remove(key: number | any)
 	assert(type(self._value) == "table", "Cannot use :Remove, Observer value isn't a table.")
+
 	local oldValue = self._value
 
 	if type(key) == "number" then

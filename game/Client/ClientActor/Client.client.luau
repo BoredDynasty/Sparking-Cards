@@ -1,4 +1,5 @@
 --!nonstrict
+--!optimize 2
 
 -- Client.client.luau
 
@@ -7,53 +8,40 @@ task.wait()
 
 -- // Services -- //
 local Lighting = game:GetService("Lighting")
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 -- // Requires -- //
 
 local CameraController = require("../Camera/CameraController")
+local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local Dash = require(script.Parent.Parent.Movement.Dash)
 local DynamicFOV = require("../Camera/DynamicFOV")
-local Letterbox = require("../Components/Letterbox")
-local Sway = require("../Camera/Sway")
-local Trail = require("../Camera/Trail")
-local market = require("../Components/market.luau")
-local music = require("../Gameplay/music")
-local notify = require("../Components/notify")
-local parallax = require("../Interface/parallax")
-local sway = require("../Interface/sway")
-local throbber = require("../Components/throbber")
-print(1)
 local ItemTags = require(ReplicatedStorage.Market.ItemTags)
 local Items = require(ReplicatedStorage.Market.Items)
 local Joint = require("../Movement/Joint")
+local Jump = require(script.Parent.Parent.Movement.Jump)
+local Letterbox = require("../Components/Letterbox")
+local MovementController = require(script.Parent.Parent.Movement.MovementController)
 local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
-local animate = require("../Utilities/animate")
-local ragdoll = require("../Modules/ragdoll")
-local swipe = require("../Interface/swipe")
-print(1)
-
--- Movement System
-
-local Dash = require(script.Parent.Parent.Movement.Dash)
-local Jump = require(script.Parent.Parent.Movement.Jump)
-local MovementController = require(script.Parent.Parent.Movement.MovementController)
+local Packet = require(ReplicatedStorage.Packet)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local Slide = require(script.Parent.Parent.Movement.Slide)
 local Sprint = require(script.Parent.Parent.Movement.Sprint)
 local Stamina = require(script.Parent.Parent.Movement.Stamina)
-local Walk = require(script.Parent.Parent.Movement.Walk)
-print(1)
-
-local Packet = require(ReplicatedStorage.Packet)
+local Sway = require("../Camera/Sway")
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
+local Trail = require("../Camera/Trail")
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local Walk = require(script.Parent.Parent.Movement.Walk)
+local animate = require("../Utilities/animate")
 local audio = require(ReplicatedStorage.Modules.audio)
-print(1)
-local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
+local badges = require(ReplicatedStorage.Structures.badges)
+local bloxstrap_rpc_sdk = require(ReplicatedStorage.Kits["bloxstrap-rpc-sdk"])
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
@@ -62,37 +50,37 @@ local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
-local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
-print(1)
-require(script.Parent.Parent.Modules.gamecamera)
 local hud = require(script.Parent.Parent.Components.hud)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
+local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local lucide = require(ReplicatedStorage.Packages.lucide)
-print(1)
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local markdown = require(ReplicatedStorage.ClientModules.markdown)
+local market = require("../Components/market.luau")
+local music = require("../Gameplay/music")
+local notify = require("../Components/notify")
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
+local objective = require("../Components/objective")
+local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
-local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
-local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
-local spr = require(ReplicatedStorage.Modules.spr)
-local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
-print(1)
+local parallax = require("../Interface/parallax")
+local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-print(2)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-print(3)
 local promise = require(ReplicatedStorage.Packages.promise)
+local ragdoll = require("../Modules/ragdoll")
+local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
+local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(script.Parent.Parent.Interface.shadow)
-print(4)
-print(5)
-local badges = require(ReplicatedStorage.Structures.badges)
-local observer = require(ReplicatedStorage.Utility.observer)
-local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
+local spr = require(ReplicatedStorage.Modules.spr)
+local sway = require("../Interface/sway")
+local swipe = require("../Interface/swipe")
+local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
+local throbber = require("../Components/throbber")
 local timer = require(ReplicatedStorage.Modules.timer)
 local trove = require(ReplicatedStorage.Packages.trove)
-print(6)
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
 
@@ -334,7 +322,7 @@ local function initializeOptions()
 		},
 	}
 
-	for _, option in pairs(optionsList) do
+	for i, option in pairs(optionsList) do
 		Options.new({
 			name = option.name,
 			description = option.description,
@@ -407,7 +395,7 @@ local function initializeMatchmaking()
 	end
 
 	local function hideMatchmakingFrame()
-		spr.target(matchmakingFrame, 0.8, 8, {
+		spr.target(matchmakingFrame, 0.8, 2, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
 
@@ -742,7 +730,6 @@ local function initializeLoadouts()
 
 	_parallax:Setup(loadoutCanvas)
 	--_parallax:Enable()
-
 	local function updatePfp()
 		return promise.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
 			task.spawn(function()
@@ -1039,6 +1026,17 @@ local function initializeLoadouts()
 	shopShortcut.Button.MouseButton1Click:Connect(function()
 		hud:toggle("Market")
 	end)
+end
+
+local function initializeObjectives()
+	print("init objectives")
+
+	local objectiveGui = PlayerGui:WaitForChild("Objective") :: objective.objectiveGui
+	displayorder.new(
+		objectiveGui.CanvasGroup,
+		objectiveGui.CanvasGroup.Frame.AbsolutePosition,
+		objectiveGui.CanvasGroup.Frame.AbsoluteSize
+	)
 end
 initializeMarket()
 initializeOptions()

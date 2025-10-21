@@ -3,12 +3,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 
@@ -179,6 +181,7 @@ function hud:render()
 				pitch = 0.8,
 			})
 		end)
+
 		button.reactor:Watch(function(newValue: boolean)
 			local oppositeValue = getOppositeReactorValue(button.reactor)
 			print("Button state changed:", oppositeValue, "->", newValue)
@@ -195,14 +198,14 @@ function hud:render()
 				spr.target(Icon, 0.8, 8, {
 					Rotation = 15,
 				})
-
-				--ripple()
 			else
 				spr.target(Icon, 0.8, 8, {
 					Rotation = 0,
 				})
 			end
 		end)
+
+		ripple:Watch(TextButton, 0.37)
 
 		shadow(TextButton, Color3.new(), 0.5, 14)
 	end

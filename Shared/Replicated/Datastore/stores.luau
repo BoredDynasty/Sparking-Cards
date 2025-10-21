@@ -285,7 +285,7 @@ function stores:addQuest(
 		return
 	end
 
-	return promise.new(function(resolve)
+	return promise.new(function(resolve: () -> ...unknown)
 		table.insert(profile.Data.quests, quest)
 
 		resolve()

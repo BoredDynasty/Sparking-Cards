@@ -1,12 +1,11 @@
---!strict
+--!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
-local audio = require(ReplicatedStorage.Modules.audio)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local promise = require(ReplicatedStorage.Packages.promise)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- Navi.luau
@@ -210,6 +209,8 @@ function navi:render(rail: Frame)
 					:catch(warn)
 			end
 		end)
+
+		ripple:Watch(btn, 0.37)
 	end
 end
 
