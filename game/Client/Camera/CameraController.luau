@@ -13,7 +13,6 @@ local RunService = game:GetService("RunService")
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove)
-local url = require(ReplicatedStorage.Modules.Serialization.url)
 
 local CameraController = {}
 CameraController.__index = CameraController
@@ -63,13 +62,14 @@ function CameraController:Start()
 		debug.profilebegin("camera_update")
 		local cframe = self._camera.CFrame
 
-		for _, effect: cameraEffect in pairs(self._effects) do
+		for i, effect in pairs(self._effects :: { [string]: cameraEffect }) do
 			if effect.Update then
+				debug.profilebegin(i .. "_update")
 				cframe = effect:Update(deltaTime, cframe)
 			end
 		end
 
-		for _, effect in pairs(self._other) do
+		for i, effect in pairs(self._other :: { [string]: { update: () -> (), params: any } }) do
 			if effect.update then
 				effect.update(deltaTime, table.unpack({ effect.params }))
 			end
@@ -92,7 +92,7 @@ function CameraController:Bind(name: string, f: (any) -> ...any?, ...)
 end
 
 function CameraController:UnBind(name: string)
-	promise.new(function()
+	return promise.new(function()
 		self._other[name] = nil
 	end)
 end

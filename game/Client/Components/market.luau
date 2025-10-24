@@ -18,6 +18,7 @@ local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local tooltip = require(script.Parent.tooltip)
@@ -234,6 +235,11 @@ function market:load_items(items: Items.dataType?)
 				Color3.fromRGB(0, 0, 255),
 			}, shopCanvas, true)
 		end)
+
+		ripple:Watch(purchaseButton)
+		if item.ExperimentsEnabled then
+			ripple:Watch(experimentButton)
+		end
 	end
 
 	print("done")
@@ -337,6 +343,8 @@ function market:load_inventory(profile: {
 
 			prism_awarder.award(floor, true)
 		end)
+
+		ripple:Watch(sell_btn)
 	end
 end
 

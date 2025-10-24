@@ -6,13 +6,17 @@
 	Handles the sprinting mechanic, including stamina drain, speed increase, and animations.
 ]=]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
+local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
 local spr = require(ReplicatedStorage.Modules.spr)
 
 local Sprint = {}
@@ -75,14 +79,10 @@ function Sprint:Start()
 
 	-- tween fovspr.target(self._sprintFOV, 0.5, gamecamera.getFOV, gamecamera.setFOV)
 
-	dialogue.client:speak({
-		speaker = "You",
-		text = "Weee!",
-	})
+	dialogue:speak("You", "Woohoo!")
 
-	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")
-	self._speedForceEffect = visualEffects:WaitForChild("SpeedForce"):Clone()
-	self._speedForceEffect.Parent = self._character.PrimaryPart
+	self.speedForceEffect = fetchAsset("Speedlines") :: speed_lines.lines
+	speed_lines:On(gamecamera.camera, self.speedForceEffect)
 end
 
 function Sprint:Stop()
@@ -95,12 +95,10 @@ function Sprint:Stop()
 	self._character:SetAttribute("AntiRegenerate", false)
 	animate.stop("run")
 
-	gamecamera:TweenFOV(self._originalFOV, 0.5)
-
-	if self._speedForceEffect then
-		self._speedForceEffect:Destroy()
-		self._speedForceEffect = nil
-	end
+	speed_lines:Off(self.speedForceEffect)
+	task.defer(function()
+		self.speedForceEffect = nil
+	end)
 end
 
 function Sprint:Update(deltaTime: number)

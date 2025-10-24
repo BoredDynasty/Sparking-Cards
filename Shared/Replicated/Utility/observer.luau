@@ -136,7 +136,7 @@ end
 function Observer:Watch(callback: (newValue: any, oldValue: any) -> ()): SignalPlus.Connection
 	local conn = self.Changed:Connect(callback)
 
-	table.insert(self.connections, conn)
+	table.insert(self._connections, conn)
 
 	return conn
 end

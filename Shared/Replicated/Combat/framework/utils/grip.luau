@@ -129,7 +129,7 @@ local function update(character: Model?)
 end
 
 local function auto_update()
-	RunService.RenderStepped:Connect(function()
+	RunService.Heartbeat:Connect(function()
 		debug.profilebegin("update-grips")
 
 		if not next(motors) then
@@ -148,5 +148,5 @@ return table.freeze({
 	createGrip = createGrip,
 	removeGrip = removeGrip,
 	update = update,
-	auto_update = auto_update(),
+	auto_update = auto_update,
 })

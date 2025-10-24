@@ -122,6 +122,14 @@ function character.isRoot(inst: Instance): (boolean?, BasePart?)
 	end
 end
 
+function character.getLimb(char: Character, limbName: string): BasePart?
+	local limb = char:FindFirstChild(limbName)
+	if limb and limb:IsA("BasePart") then
+		return limb
+	end
+	return nil
+end
+
 function character.halt(char: Character)
 	local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
 	if humanoid then

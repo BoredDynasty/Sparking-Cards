@@ -41,7 +41,9 @@ local Walk = require(script.Parent.Parent.Movement.Walk)
 local animate = require("../Utilities/animate")
 local audio = require(ReplicatedStorage.Modules.audio)
 local badges = require(ReplicatedStorage.Structures.badges)
+local beats = require(ReplicatedStorage.Modules.beats)
 local bloxstrap_rpc_sdk = require(ReplicatedStorage.Kits["bloxstrap-rpc-sdk"])
+local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
@@ -50,13 +52,15 @@ local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
+local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
+local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local hud = require(script.Parent.Parent.Components.hud)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
 local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
-local market = require("../Components/market.luau")
+local market = require("../Components/market")
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
@@ -69,6 +73,8 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(script.Parent.Parent.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
+local quest = require(ReplicatedStorage.ClientModules.quest)
+local quest_ranking = require(ReplicatedStorage.ClientModules["quest-ranking"])
 local ragdoll = require("../Modules/ragdoll")
 local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
@@ -104,7 +110,7 @@ local profile: {
 local _trove = trove.new()
 
 -- // Events -- //
-local getProfileRF = ReplicatedStorage.Events.GetProfile :: RemoteFunction
+local getProfileRF = ReplicatedStorage.Events:WaitForChild("GetProfile") :: RemoteFunction
 
 local character = characterUtility.get(player)
 local _rootPart = character.HumanoidRootPart
@@ -115,11 +121,9 @@ local remoteEvents = ReplicatedStorage.Events
 local function expectProfile()
 	return promise
 		.new(function(resolve: (any) -> ...unknown)
-			local value = (ReplicatedStorage.Events.GetProfile :: RemoteFunction):InvokeServer()
+			local value = getProfileRF:InvokeServer()
 
 			resolve(value)
-
-			return value
 		end)
 		:expect() :: {
 		Data: profilestructure.profile,
@@ -135,6 +139,8 @@ local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
 
 Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
 Cmdr:SetActivationUnlocksMouse(true)
+
+glove:Apply(character)
 
 print("client starting")
 
@@ -642,12 +648,47 @@ local function initializeMusic()
 	end)
 
 	sway:on(note_image)
-	sway:on(disc)
+	sway:on(disc);
+
+	(mouse.LeftDown :: RBXScriptSignal):Connect(function()
+		local position = mouse:GetPosition()
+
+		if bounds.inner(disc.AbsolutePosition, disc.AbsoluteSize, position) then
+			ripple(disc)
+			pop(disc)
+		end
+	end)
+
+	glare:Watch(disc, {
+		once = false,
+		corner_radius = UDim.new(1, 0),
+	})
 
 	-- rotate effect on disc
 	TweenPlus(disc, { Rotation = 360 }, { Time = 7, RepeatCount = -1, EasingStyle = "Linear" }):Start()
+
+	-- pulse effect using BPM
+	local analyzer = Instance.new("AudioAnalyzer")
+	local detector = beats.new({
+		analyzer = analyzer,
+		minimum_gap = 0.3,
+		window_size = 10,
+		threshold_multiplier = 1.2,
+	})
+	analyzer.Parent = musicGui
+	detector:Start()
+	detector.Beat:Connect(function()
+		spr.stop(disc, "Size")
+		spr.target(disc, 0.3, 8, {
+			Size = UDim2.fromScale(1.1, 1.1),
+		})
+		task.delay(0.3, spr.target, disc, 0.3, 9, {
+			Size = UDim2.fromScale(1, 1),
+		})
+		-- Add any additional effects or animations here
+	end)
 end
-local function initalizeKeybinds()
+local function initializeKeybinds()
 	print("init keybinds")
 
 	local keybinds = {
@@ -673,15 +714,7 @@ local function initalizeKeybinds()
 		},
 	}
 
-	local active_list: { [string]: keybindlink.metatable } = promise
-		.new(function(resolve: ({ unknown }) -> ...unknown)
-			local tbl = table.create(#keybinds)
-
-			resolve(tbl)
-
-			return tbl
-		end)
-		:expect()
+	local active_list: { [string]: keybindlink.metatable } = table.create(#keybinds)
 
 	for i: string, v: { name: string, key: Enum.KeyCode } in pairs(keybinds :: typeof(keybinds)) do
 		local link = keybindlink.new(v.key, keyboard)
@@ -720,6 +753,9 @@ local function initializeLoadouts()
 	shadow(navigation)
 	shadow(detailsHolder)
 	shadow(profilePicture)
+
+	ripple(loadoutCanvas)
+	ripple:Watch(profilePicture)
 
 	local _parallax = parallax.new(Vector2.one * 10)
 	local layers = parallaxLayers.Desert -- placeholder
@@ -1032,11 +1068,29 @@ local function initializeObjectives()
 	print("init objectives")
 
 	local objectiveGui = PlayerGui:WaitForChild("Objective") :: objective.objectiveGui
-	displayorder.new(
-		objectiveGui.CanvasGroup,
-		objectiveGui.CanvasGroup.Frame.AbsolutePosition,
-		objectiveGui.CanvasGroup.Frame.AbsoluteSize
-	)
+	displayorder.new(objectiveGui.CanvasGroup)
+
+	local completed_value = observer.new(0)
+	local uncompleted_value = observer.new(0)
+
+	local rank = observer.new("")
+	local profile = expectProfile()
+	profile = expectProfile()
+
+	rank:Set(profile.Data.Level or "Bronze I")
+
+	local availiable_objectives = quest_ranking:getObjectivesFromRank(rank:Get())
+	for i, objective_name in ipairs(availiable_objectives) do
+		quest.new(player, objective_name)
+	end
+
+	local quest_list = quest:Get(player):expect()
+
+	for i, data in pairs(quest_list :: { quest.quest }) do
+		objective.new(data)
+	end
+
+	quest:Track(player)
 end
 initializeMarket()
 initializeOptions()
@@ -1044,7 +1098,7 @@ initializeMatchmaking()
 initializeBadges()
 initializeNotifiers()
 initializeMusic()
-initalizeKeybinds()
+initializeKeybinds()
 initializeLoadouts()
 hud:render()
 displayorder:Watch()
@@ -1076,12 +1130,12 @@ print("rain controller")
 
 local function getAttackTypeFromKey(key: Enum.KeyCode)
 	-- profile = yoink.client:grab("profile_data")
-	local attackTypes = {
-		[Enum.KeyCode.MouseLeftButton] = "M1",
-		[Enum.KeyCode.E] = "Skill",
-		[Enum.KeyCode.Q] = "Ultimate",
-		[Enum.KeyCode.R] = "Support",
-	}
+	profile = expectProfile()
+
+	local attackTypes = table.create(4) :: { [string]: Enum.KeyCode }
+	for i, value in pairs(profile.Data.combatBindings) do
+		attackTypes[i] = Enum.KeyCode:FromValue(value)
+	end
 
 	local attackType: string = promise
 		.new(function()

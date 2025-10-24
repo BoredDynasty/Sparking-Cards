@@ -3,7 +3,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -44,8 +43,8 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		callback = callback,
 		icon = icon,
 		reactor = observer.new(false),
-		limit = ratelimit.new(1, 0.5),
-		hover_limit = ratelimit.new(1, 0.9),
+		limit = ratelimit(1, 0.5),
+		hover_limit = ratelimit(1, 0.9),
 	}
 	table.insert(hud.buttons, button)
 end
@@ -218,7 +217,7 @@ function hud:toggle(buttonName: string)
 		return
 	end
 
-	for _, b in pairs(hud.buttons) :: { button } do
+	for _, b in ipairs(hud.buttons :: { button }) do
 		if b.name == buttonName then
 			button = b
 			break

@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 --[=[
 	GameCamera
 	@module GameCamera
@@ -35,14 +35,7 @@ function GameCamera:Shake(strength: number, duration: number)
 	end
 end
 
-function GameCamera:Recoil(strength: number)
-	local recoiler = controller:Get("Recoil")
-	if recoiler then
-		recoiler:Recoil(strength)
-	end
-end
-
-function GameCamera:Bind(name: string, f: (any) -> ...any?, ...)
+function GameCamera:Bind(name: string, f: (any) -> ...any?, ...: any)
 	controller:Bind(name, f, ...)
 end
 

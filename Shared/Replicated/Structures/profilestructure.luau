@@ -58,10 +58,7 @@ export type profile = {
 		},
 	},
 	combatBindings: {
-		["attack"]: string, -- melee
-		["special_One"]: string, -- primary
-		["special_Two"]: string, -- ultimate
-		["special_Three"]: string, -- support
+		string: number,
 	},
 }
 
@@ -102,9 +99,9 @@ return {
 	quests = {},
 	products = {},
 	combatBindings = {
-		attack = Enum.KeyCode.MouseLeftButton.Name, -- melee
-		special_One = Enum.KeyCode.E.Name, -- primary
-		special_Two = Enum.KeyCode.Q.Name, -- ultimate
-		special_Three = Enum.KeyCode.R.Name, -- support
+		M1 = Enum.KeyCode.MouseLeftButton.Value, -- melee
+		Skill = Enum.KeyCode.E.Value, -- primary
+		Ultimate = Enum.KeyCode.Q.Value, -- ultimate
+		Support = Enum.KeyCode.R.Value, -- support
 	},
 }

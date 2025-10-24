@@ -1,17 +1,16 @@
 --!nonstrict
-local Fireworks = {}
 
-local Debris = game:GetService("Debris")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
+local Workspace = game:GetService("Workspace")
 
+local TweenPlus = require(script.Parent.TweenPlus)
 local audio = require(script.Parent.audio)
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local hydration = require(ReplicatedStorage.Utility.hydration)
+local random = require(ReplicatedStorage.Utility.random)
 
-local FireworkAssets =
-	ReplicatedStorage:WaitForChild("Assets"):WaitForChild("Particles"):WaitForChild("Fireworks") :: Folder
+local FireworkAssets = fetchAsset("Fireworks") :: Folder
 
---[ Utils ]--
-local RNG = Random.new()
 local Colors = {
 	Color3.fromRGB(255, 49, 49),
 	Color3.fromRGB(255, 179, 55),
@@ -26,28 +25,34 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 	if not colors then
 		colors = Colors
 	end
-	task.spawn(function()
-		local RandomColor = Colors[RNG:NextInteger(1, #colors)]
 
-		local NewPart = Instance.new("Part")
-		NewPart.CanCollide = false
-		NewPart.Anchored = true
-		NewPart.CFrame = position
-		NewPart.Size = Vector3.new()
-		NewPart.Name = "Firework"
-		NewPart.Parent = game.Workspace
+	task.spawn(function()
+		local color = Colors[random.integer(1, #colors)]
+
+		local firework = Instance.new("Part")
+		hydration(firework) {
+			CanCollide = false,
+			Anchored = true,
+			CFrame = position,
+			Size = Vector3.one,
+			Name = "Firework",
+			Parent = Workspace,
+		}
 
 		local Trail = FireworkAssets:FindFirstChild("Trail") :: ParticleEmitter
 		Trail = Trail:Clone()
-		Trail.Parent = NewPart
+		Trail.Parent = firework
 
-		local Time = RNG:NextNumber(8, 11)
-		local Height = RNG:NextNumber(4, 7)
-		TweenService:Create(
-			NewPart,
-			TweenInfo.new(Time / 10, Enum.EasingStyle.Linear),
-			{ CFrame = position + Vector3.new(0, Height, 0) }
-		):Play()
+		local time = random.integer(8, 11)
+		local height = random.integer(4, 7)
+
+		TweenPlus(firework, {
+			{ CFrame = position + vector.create(0, height, 0) },
+		}, {
+			Time = time / 10,
+			EasingStyle = "Linear",
+		}):Start()
+
 		audio:SFX("blastoff")
 		task.wait(1)
 
@@ -56,30 +61,34 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 		local ExplosionParticle = FireworkAssets:FindFirstChild("Explosion") :: ParticleEmitter
 		ExplosionParticle = ExplosionParticle:Clone()
 		ExplosionParticle.Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, RandomColor),
-			ColorSequenceKeypoint.new(1, RandomColor),
+			ColorSequenceKeypoint.new(0, color),
+			ColorSequenceKeypoint.new(1, color),
 		})
-		ExplosionParticle.Parent = NewPart
+		ExplosionParticle.Parent = firework
 		ExplosionParticle:Emit(25)
-		for _ = 1, 4 do
-			task.wait()
-			audio:SFX("boom")
-			task.wait()
+
+		for i = 1, 4 do
+			task.defer(audio.SFX, audio, "boom")
 		end
 
-		Debris:AddItem(NewPart, 4)
+		task.delay(4, firework.Destroy, firework)
 	end)
 end
 
-function Fireworks:PlayFireworks(object: BasePart, colors: { Color3 }?)
-	local NumberOfFireworks = RNG:NextInteger(4, 6)
+local function set_off(object: BasePart, colors: { Color3 }?)
+	local NumberOfFireworks = random.integer(4, 6)
 	local WhenToStop = 0
 
 	while WhenToStop < NumberOfFireworks do
-		task.wait()
-		MakeFirework(object.CFrame + Vector3.new(RNG:NextNumber(-4, 4), -2, RNG:NextNumber(-4, 4)), colors)
-		WhenToStop = WhenToStop + 1
+		MakeFirework(object.CFrame + Vector3.new(random.float(-4, 4), -2, random.float(-4, 4)), colors)
+		WhenToStop += 1
 	end
 end
 
-return Fireworks
+return setmetatable({
+	create = MakeFirework,
+}, {
+	__call = function(_, ...)
+		return set_off(...)
+	end,
+})

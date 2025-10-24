@@ -98,6 +98,10 @@ return bytenet.defineNamespace("MainNet", function()
 		player = bytenet.optional(bytenet.inst),
 		object = bytenet.inst,
 	})
+	local addQuestStruct = bytenet.struct({
+		player = bytenet.inst,
+		questData = bytenet.string, -- Serialized quest data
+	})
 	return {
 		-- General Game Packets
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
@@ -124,5 +128,6 @@ return bytenet.defineNamespace("MainNet", function()
 		CleanupCharacter = bytenet.definePacket({ value = cleanupCharacter }),
 		IndictEffect = bytenet.definePacket({ value = indictEffectStruct }),
 		SetNetworkOwner = bytenet.definePacket({ value = setNetworkOwnerStruct }),
+		AddQuest = bytenet.definePacket({ value = addQuestStruct }),
 	}
 end)

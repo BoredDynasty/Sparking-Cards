@@ -43,6 +43,14 @@ local CameraConfig = {
 		Speed = 0.1,
 		Intensity = 0.05,
 	},
+
+	Orient = {
+		HeadHorizontalFactor = 1,
+		HeadVerticalFactor = 0.6,
+		BodyHorizontalFactor = 0.5,
+		BodyVerticalFactor = 0.4,
+		UpdateSpeed = 0.5,
+	},
 }
 
 return CameraConfig

@@ -28,20 +28,14 @@ local character = characterMarshaller.get(player)
 ]]
 function prism_awarder.award(amount: number, fireworks: boolean?)
 	dropper:Drop(player, amount, "Prism_OBJ")
+
 	if fireworks then
 		local rootPart = character:FindFirstChild("HumanoidRootPart") :: BasePart?
 		if not rootPart then
 			return
 		end
 
-		Fireworks:PlayFireworks(rootPart, {
-			Color3.fromRGB(255, 0, 255),
-			Color3.fromRGB(0, 255, 255),
-			Color3.fromRGB(255, 255, 0),
-			Color3.fromRGB(255, 0, 0),
-			Color3.fromRGB(0, 255, 0),
-			Color3.fromRGB(0, 0, 255),
-		})
+		Fireworks(rootPart)
 	end
 end
 

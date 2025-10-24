@@ -9,6 +9,7 @@ local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- display.luau
@@ -85,6 +86,7 @@ function display.showText(str: string, duration: number?)
 				-- if you clicked it or not, it'll close anyway
 				if bounds.inner(absPos, absSize, mousePos) or not bounds.inner(absPos, absSize, mousePos) then
 					closeDisplay()
+					ripple(frame)
 					if connection then
 						connection:Disconnect()
 					end

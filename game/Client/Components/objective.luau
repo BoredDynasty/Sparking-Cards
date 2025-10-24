@@ -2,6 +2,7 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
@@ -275,7 +276,9 @@ function objective_module.new(data: quest.quest)
 				spr.target(card.Progress.UIStroke, 1, 0.8, {
 					Transparency = 0.7,
 				})
-				task.delay(1.2, spr.target, card.Progress.UIStroke)
+				task.delay(1.2, spr.target, 1, 0.8, {
+					Transparency = 0.9,
+				})
 			end)
 
 			resolve("progress")
@@ -297,6 +300,12 @@ function objective_module.new(data: quest.quest)
 
 			completedFrame.Value.Text = tostring(completed) or completed:Get()
 			uncompletedFrame.Value.Text = tostring(uncompleted) or uncompleted:Get()
+			hydration(completedFrame.Value) {
+				Text = completed,
+			}
+			hydration(uncompletedFrame.Value) {
+				Text = uncompleted,
+			}
 
 			resolve("completed & uncompleted status's")
 		end),
@@ -319,6 +328,8 @@ function objective_module.new(data: quest.quest)
 	end
 
 	card.Destroying:Once(onDestroying)
+
+	return completed, uncompleted
 end
 
 return objective_module

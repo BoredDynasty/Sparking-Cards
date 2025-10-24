@@ -3,12 +3,15 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local Packet = require(ReplicatedStorage.Packet)
+local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
-local stores = require(ReplicatedStorage.Datastore.stores)
 
 -- quest.luau
+-- should be ran on the client
 
 local quest_module = {}
 
@@ -48,6 +51,20 @@ function quest_module._getFromName(name: string)
 	end)
 end
 
+local getProfileRF = ReplicatedStorage.Events:WaitForChild("GetProfile") :: RemoteFunction
+
+local function expectProfile()
+	return promise
+		.new(function(resolve: (any) -> ...unknown)
+			local value = getProfileRF:InvokeServer()
+
+			resolve(value)
+		end)
+		:expect() :: {
+		Data: profilestructure.profile,
+	}
+end
+
 --[[
    Adds a new quest for the player
 
@@ -65,7 +82,7 @@ function quest_module.new(player: playerMarshaller.player, name: string)
 	-- manipulate player data
 
 	-- check if the quest does not exist within player data first
-	local data = stores.get(player)
+	local data = expectProfile()
 	if not data or not data.Data then
 		return
 	end
@@ -83,7 +100,13 @@ function quest_module.new(player: playerMarshaller.player, name: string)
 		return
 	end
 
-	return stores:addQuest(player, quest)
+	-- serialize it for the server
+	local serialized = messagepack.encode(quest) -- hopefully ts works
+
+	return Packet.AddQuest.send({
+		player,
+		questData = serialized,
+	})
 end
 
 --[[
@@ -111,7 +134,7 @@ function quest_module:Track(player: playerMarshaller.player)
 
 		lastCheck = 0.0
 
-		local data = stores.get(player)
+		local data = expectProfile()
 		if not data or not data.Data then
 			debug.profileend()
 
@@ -190,7 +213,7 @@ end
 ]]
 function quest_module:Get(player: playerMarshaller.player, quest_name: string?)
 	return promise.new(function(resolve: ({ quest } | quest) -> ...unknown, reject: (string) -> ...unknown)
-		local data = stores.get(player)
+		local data = expectProfile()
 		if not data or not data.Data then
 			reject("couldn't fetch data.")
 		end

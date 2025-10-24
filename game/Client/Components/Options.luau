@@ -6,6 +6,7 @@ local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 
 -- options.luau
 
@@ -195,6 +196,7 @@ function options:render(ancestor: Instance)
 			option.functions[if option.state:Get() == false then "off" else "on"]()
 
 			pop(template.Toggle, 1.1)
+			ripple(template.Toggle, 1.1 / 2)
 
 			option.state:Set(not option.state:Get())
 		end)

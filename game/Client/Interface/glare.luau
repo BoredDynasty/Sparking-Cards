@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
@@ -18,7 +18,7 @@ local glare_module = {
 		size = 100,
 		duration = 1000, -- in milliseconds
 		once = false,
-	},
+	} :: glare,
 	limit = ratelimit(1, 1),
 	tracking = {},
 }
@@ -31,6 +31,7 @@ export type glare = {
 	color: Color3?,
 	opacity: number?,
 	angle: number?,
+	size: number?,
 	duration: number?, -- in milliseconds
 	--[[
       If true, the glare only animates on hover and doesn't return on mouse leave.
@@ -40,7 +41,13 @@ export type glare = {
 
 function glare_module:Watch(object: GuiObject, props: glare?)
 	-- Create holder for the glare so corners clip correctly
-	props = props or {}
+	props = props or glare_module.defaults
+	-- reconcile
+	for k, v in pairs(glare_module.defaults) do
+		if not props[k] or typeof(props[k]) ~= typeof(v) then
+			props[k] = v
+		end
+	end
 
 	local glareHolder = Instance.new("Frame")
 	glareHolder.Name = "GlareHolder"
@@ -68,9 +75,9 @@ function glare_module:Watch(object: GuiObject, props: glare?)
 	glare.BackgroundTransparency = 1
 	glare.BorderSizePixel = 0
 	glare.Size =
-		UDim2.new(0, object.AbsoluteSize.X * props.width_factor or 0.4, 1 * props.height_factor or 1, 0)
+		UDim2.new(0, object.AbsoluteSize.X * (props.width_factor or 0.4), 1 * (props.height_factor or 1), 0)
 	glare.Position = UDim2.new(-0.4)
-	glare.Rotation = props.angle
+	glare.Rotation = props.angle or -45
 	glare.Parent = glareHolder
 	glare.Visible = false
 
@@ -94,6 +101,9 @@ function glare_module:Watch(object: GuiObject, props: glare?)
 
 		local tween = TweenPlus(glare, {
 			Position = UDim2.new(1),
+		}, {
+			Time = (props.duration or 1000) / 1000,
+			EasingStyle = "Linear",
 		})
 
 		tween:Start()
