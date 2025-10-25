@@ -129,7 +129,7 @@ local function update(character: Model?)
 end
 
 local function auto_update()
-	RunService.Heartbeat:Connect(function()
+	RunService.PreAnimation:Connect(function()
 		debug.profilebegin("update-grips")
 
 		if not next(motors) then

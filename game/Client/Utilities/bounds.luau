@@ -13,9 +13,9 @@ local bounds_module = {}
    @return boolean True if the mouse is outside the bounds, false otherwise.
 ]]
 function bounds_module.outer(position: Vector2, size: Vector2, mousePos: Vector3)
-	position = position:Abs()
-	size = size:Abs()
-	mousePos = mousePos:Abs()
+	if not position or not size or not mousePos then
+		return false
+	end
 
 	if
 		not (
@@ -39,10 +39,10 @@ end
    @param mousePos The mouse position (Vector3).
    @return boolean True if the mouse is inside the bounds, false otherwise.
 ]]
-function bounds_module.inner(position: Vector2, size: Vector2, mousePos: Vector3 | Vector2)
-	position = position:Abs()
-	size = size:Abs()
-	mousePos = mousePos:Abs()
+function bounds_module.inner(position: Vector2, size: Vector2, mousePos: Vector3)
+	if not position or not size or not mousePos then
+		return false
+	end
 
 	if
 		mousePos.X >= position.X

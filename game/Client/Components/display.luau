@@ -2,14 +2,15 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local Letterbox = require(script.Parent.Letterbox)
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
+local hover = require(StarterPlayer.StarterPlayerScripts.Interface.hover)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
+local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- display.luau
@@ -33,6 +34,8 @@ local displayGui = playerGui:WaitForChild("Display") :: ScreenGui & {
 	},
 }
 
+shadow(displayGui.CanvasGroup.Frame)
+
 function display.showText(str: string, duration: number?)
 	if display.active:Get() then
 		print("already visible")
@@ -46,12 +49,14 @@ function display.showText(str: string, duration: number?)
 	local frame = displayGui.CanvasGroup.Frame
 	local textLabel = displayGui.CanvasGroup.Frame.TextLabel
 
+	local gradient = Instance.new("UIGradient")
+	gradient.Parent = frame
+
 	-- slide in
 	spr.target(frame, 0.8, 8, {
 		Position = UDim2.fromScale(0.5, 0.5),
 	})
 
-	Letterbox:on()
 	custom_lighting.blur()
 	characterMarshaller.halt(character)
 
@@ -63,11 +68,12 @@ function display.showText(str: string, duration: number?)
 
 		typewriter:Skip(typewriter)
 		custom_lighting.unblur()
-		Letterbox:off()
 		characterMarshaller.continue(character)
 
 		task.defer(typewriter.Destroy)
 	end
+
+	hover:Watch(gradient)
 
 	if duration then
 		repeat

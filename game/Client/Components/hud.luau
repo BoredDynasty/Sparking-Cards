@@ -86,25 +86,6 @@ function hud:render()
 		TextButton.Font = Enum.Font.Gotham
 		TextButton.TextColor3 = Color3.fromHex("ffb5a0")
 		TextButton.TextSize = 14.000
-		--[[
-		if not button.icon then
-			TextButton.Text = button.name
-		else
-			TextButton.Text = "" -- No text if an icon is provided
-		end
-		--]]
-
-		if button.name then
-			-- set icon adjacent to text:
-
-			TextButton.Text = button.name
-			-- get text bounds
-			local text_bounds = TextButton.TextBounds
-			local offset = 15
-
-			Icon.Position = UDim2.new(0.5, text_bounds.X - offset, 0.5)
-			Icon.SizeConstraint = Enum.SizeConstraint.RelativeYY
-		end
 
 		UICorner.CornerRadius = UDim.new(1, 0)
 		UICorner.Parent = TextButton
@@ -118,6 +99,12 @@ function hud:render()
 		if not button.name then
 			-- make the TextButton width smaller.
 			TextButton.Size = UDim2.fromScale(0.2, 0.7)
+		else
+			-- set icon adjacent to text
+			local text_bounds = TextButton.TextBounds
+			local offset = 10
+
+			Icon.Position = UDim2.new(0.5, (-text_bounds.X / 2) - offset, 0.5, 0)
 		end
 
 		local defaultIcon = promise
@@ -157,6 +144,8 @@ function hud:render()
 			audio:SFX("click")
 		end)
 
+		local default_size = TextButton.Size
+
 		TextButton.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
 				return
@@ -165,7 +154,7 @@ function hud:render()
 			spr.stop(TextButton, "Size")
 			spr.target(TextButton, 0.8, 8, {
 				BackgroundColor3 = Color3.fromHex("#342522"),
-				Size = UDim2.fromScale(TextButton.Size.X.Scale * 1.1, TextButton.Size.Y.Scale * 1.1),
+				Size = UDim2.fromScale(default_size.X.Scale * 1.1, default_size.Y.Scale * 1.1),
 			})
 			audio:SFX("hover")
 		end)
@@ -174,7 +163,7 @@ function hud:render()
 			spr.stop(TextButton, "Size")
 			spr.target(TextButton, 0.8, 8, {
 				BackgroundColor3 = Color3.fromHex("#1a110f"),
-				Size = UDim2.fromScale(TextButton.Size.X.Scale / 1.1, TextButton.Size.Y.Scale / 1.1),
+				Size = UDim2.fromScale(default_size.X.Scale / 1.1, default_size.Y.Scale / 1.1),
 			})
 			audio:SFX("hover", {
 				pitch = 0.8,

@@ -19,12 +19,8 @@ local CameraController = require("../Camera/CameraController")
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
 local Dash = require(script.Parent.Parent.Movement.Dash)
-local DynamicFOV = require("../Camera/DynamicFOV")
-local ItemTags = require(ReplicatedStorage.Market.ItemTags)
-local Items = require(ReplicatedStorage.Market.Items)
 local Joint = require("../Movement/Joint")
 local Jump = require(script.Parent.Parent.Movement.Jump)
-local Letterbox = require("../Components/Letterbox")
 local MovementController = require(script.Parent.Parent.Movement.MovementController)
 local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
@@ -33,9 +29,7 @@ local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local Slide = require(script.Parent.Parent.Movement.Slide)
 local Sprint = require(script.Parent.Parent.Movement.Sprint)
 local Stamina = require(script.Parent.Parent.Movement.Stamina)
-local Sway = require("../Camera/Sway")
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local Trail = require("../Camera/Trail")
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local Walk = require(script.Parent.Parent.Movement.Walk)
 local animate = require("../Utilities/animate")
@@ -57,10 +51,10 @@ local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local hud = require(script.Parent.Parent.Components.hud)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
-local keybindlink = require(ReplicatedStorage.ClientModules.keybindlink)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local market = require("../Components/market")
+local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
 local music = require("../Gameplay/music")
 local notify = require("../Components/notify")
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
@@ -216,15 +210,12 @@ local function initializeOptions()
 
 	displayorder.new(optionsCanvas)
 
-	local holder = optionsFrame:WaitForChild("Holder") :: Frame
-	--local templatesFolder = templates:FindFirstChild("Options") :: Folder
-
 	shadow(optionsFrame)
 
 	local optionsList = {
 		-- add new options here
 
-		[1] = {
+		{
 			name = "Shadows",
 			description = "Toggle shadows on or off.",
 			toggleFunctions = {
@@ -237,7 +228,7 @@ local function initializeOptions()
 			},
 			override = "on",
 		},
-		[2] = {
+		{
 			name = "Time",
 			description = "Adjust the in-game time.",
 			toggleFunctions = {
@@ -262,7 +253,7 @@ local function initializeOptions()
 				off = "rbxassetid://10734897102",
 			},
 		},
-		[3] = {
+		{
 			name = "Show Other Players",
 			description = "Toggle visibility of other players.",
 			toggleFunctions = {
@@ -288,7 +279,7 @@ local function initializeOptions()
 			},
 			override = "on",
 		},
-		[4] = {
+		{
 			name = "Clouds",
 			description = "Toggle clouds on or off.",
 			toggleFunctions = {
@@ -305,9 +296,9 @@ local function initializeOptions()
 			},
 			override = "on",
 		},
-		[5] = {
+		{
 			name = "Music",
-			description = "Toggle music on or off",
+			description = "Toggle the soundtrack.",
 			toggleFunctions = {
 				on = function()
 					promise.new(function()
@@ -326,9 +317,21 @@ local function initializeOptions()
 			},
 			override = "on",
 		},
+		{
+			name = "Motion blur",
+			description = "Toggle motion blur. (Depending on your device, this may be laggy.)",
+			toggleFunctions = {
+				on = function()
+					motion_blur:On()
+				end,
+				off = function()
+					motion_blur:Off()
+				end,
+			},
+		},
 	}
 
-	for i, option in pairs(optionsList) do
+	for i, option in ipairs(optionsList) do
 		Options.new({
 			name = option.name,
 			description = option.description,
@@ -337,7 +340,7 @@ local function initializeOptions()
 			state = observer.new(if option.override == "on" then true else false),
 		})
 
-		Options:render(optionsFrame.Holder :: ScrollingFrame)
+		task.spawn(Options.render, Options, optionsFrame.Holder :: ScrollingFrame)
 	end
 
 	hud:create("Options", function()
@@ -367,16 +370,14 @@ local function initializeMatchmaking()
 
 		state:Set(true)
 
-		Letterbox:on():andThen("Searching for a match...", "Top")
 		custom_lighting.blur()
 		task.delay(4, function()
-			Letterbox:off()
 			custom_lighting.unblur()
 		end)
 
 		clock:Start()
 		-- every 0.33_ seconds
-		clock.interval(clock, 1 / 3, function()
+		clock:interval(clock, 1 / 3, function()
 			local totalSeconds = clock:GetTime()
 
 			local minutes = math.floor(totalSeconds / 60)
@@ -649,7 +650,6 @@ local function initializeMusic()
 
 	sway:on(note_image)
 	sway:on(disc);
-
 	(mouse.LeftDown :: RBXScriptSignal):Connect(function()
 		local position = mouse:GetPosition()
 
@@ -687,45 +687,6 @@ local function initializeMusic()
 		})
 		-- Add any additional effects or animations here
 	end)
-end
-local function initializeKeybinds()
-	print("init keybinds")
-
-	local keybinds = {
-		M1 = {
-			name = "M1",
-			key = Enum.KeyCode.MouseLeftButton,
-		},
-		E = {
-			name = "E",
-			key = Enum.KeyCode.E,
-		},
-		R = {
-			name = "R",
-			key = Enum.KeyCode.R,
-		},
-		Q = {
-			name = "Q",
-			key = Enum.KeyCode.Q,
-		},
-		F = {
-			name = "F",
-			key = Enum.KeyCode.F,
-		},
-	}
-
-	local active_list: { [string]: keybindlink.metatable } = table.create(#keybinds)
-
-	for i: string, v: { name: string, key: Enum.KeyCode } in pairs(keybinds :: typeof(keybinds)) do
-		local link = keybindlink.new(v.key, keyboard)
-
-		shadow(link._interface, Color3.new(), 0, 14)
-
-		link:setText(link, v.name)
-		link:autoSetImage(link)
-
-		active_list[v.name] = link
-	end
 end
 local function initializeLoadouts()
 	print("init loadouts")
@@ -1098,7 +1059,6 @@ initializeMatchmaking()
 initializeBadges()
 initializeNotifiers()
 initializeMusic()
-initializeKeybinds()
 initializeLoadouts()
 hud:render()
 displayorder:Watch()
@@ -1131,6 +1091,9 @@ print("rain controller")
 local function getAttackTypeFromKey(key: Enum.KeyCode)
 	-- profile = yoink.client:grab("profile_data")
 	profile = expectProfile()
+	if not profile or not profile.Data then
+		return
+	end
 
 	local attackTypes = table.create(4) :: { [string]: Enum.KeyCode }
 	for i, value in pairs(profile.Data.combatBindings) do
@@ -1164,8 +1127,7 @@ _trove:Add(damage.incoming:Connect(function(a0: damage.Damage)
 	dialogue:speak("You", "yoooowch!")
 end))
 
-profile = expectProfile()
-orion.registerPlayer(player, profile)
+orion.registerPlayer(player, expectProfile())
 
 Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	animate.loadAnimation(data.identification, {

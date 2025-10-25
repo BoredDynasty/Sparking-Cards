@@ -175,7 +175,12 @@ function options:create_setting(ancestor: Instance?): settingUI
 end
 
 function options:render(ancestor: Instance)
+	local visited = table.create(#options.tracked) :: { data }
+
 	for i, option in ipairs(options.tracked :: { data }) do
+		if visited[option] then
+			return
+		end
 		local template = options:create_setting()
 
 		local label = template.Frame.TextDisplay
@@ -185,11 +190,13 @@ function options:render(ancestor: Instance)
 
 		local uri = option.icons and option.icons[option.override or "off"] or ""
 		local iconContent = Content.fromUri(uri) or Content.none
+
 		template.Toggle.Icon.ImageContent = iconContent
 
 		template.Toggle.MouseButton1Click:Connect(function()
 			if not options.limit(template:GetFullName()) then
 				print("cooldown: ", template:GetFullName())
+
 				return
 			end
 

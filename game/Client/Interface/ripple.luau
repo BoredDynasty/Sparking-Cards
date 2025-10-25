@@ -38,14 +38,27 @@ end
 ]]
 local function ripple(ancestor: GuiObject, duration: number?)
 	return promise
-		.new(function(resolve)
+		.new(function(resolve: () -> ...unknown, reject)
 			if not ancestor.ClipsDescendants then
 				ancestor.ClipsDescendants = true
 			end
 
 			duration = duration or 0.4
 
-			local mouse_x, mouse_y = mouse:GetPosition().X, mouse:GetPosition().Y
+			local mouse_position = mouse:GetPosition()
+			if not mouse_position or not mouse_position.X or not mouse_position.Y then
+				reject("no mouse pos?")
+
+				return
+			end
+
+			local mouse_x, mouse_y = mouse_position.X, mouse_position.Y
+
+			if not ancestor.AbsoluteSize or not ancestor.AbsoluteSize.X or not ancestor.AbsoluteSize.Y then
+				reject("no abs size?")
+
+				return
+			end
 
 			local abs_x, abs_y = ancestor.AbsoluteSize.X, ancestor.AbsoluteSize.Y
 
@@ -91,20 +104,40 @@ end
       @return void
 ]]
 local function watch(ancestor: GuiObject, duration: number?)
+	if not ancestor and not ancestor.Destroying then
+		-- we're getting errors on ts
+		return
+	end
+
+	local conn = nil
+
+	promise
+		.new(function(resolve)
+			ancestor.Destroying:Connect(function()
+				if conn then
+					conn:Disconnect()
+				end
+
+				resolve()
+			end)
+		end)
+		:catch(function()
+			return -- damnit
+		end)
+
 	local abs_size = ancestor.AbsoluteSize
 	local abs_position = ancestor.AbsolutePosition
-	local conn = (mouse.LeftDown :: RBXScriptSignal):Connect(function()
+	conn = (mouse.LeftDown :: RBXScriptSignal):Connect(function()
 		local position = mouse:GetPosition()
+		if not position then
+			return
+		end
 
 		if not bounds.inner(abs_position, abs_size, position) then
 			return
 		end
 
 		ripple(ancestor, duration)
-	end)
-
-	ancestor.Destroying:Once(function()
-		conn:Disconnect()
 	end)
 end
 

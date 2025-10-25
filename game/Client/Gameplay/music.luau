@@ -39,7 +39,7 @@ local trove = require(ReplicatedStorage.Packages.trove)
 ]]
 local music = {
 	biomes = {},
-	playing = observer.new({}) :: observer.Observer<{ trackData }>,
+	playing = observer.new({}) :: observer.Observer<trackData>,
 	_trove = trove.new(),
 	_currentBiome = "" :: string?,
 	_currentTrack = nil,
@@ -94,7 +94,7 @@ function music.startTracking()
 
 	-- Track position and check biomes less frequently
 	local lastCheck: number = 0.0
-	local checkInterval = 0.25 -- seconds
+	local checkInterval = 1 / 2 -- 0.5
 	local lastPosition: Vector3? = nil
 	music._trove:Connect(RunService.Heartbeat, function(dt: number)
 		debug.profilebegin("music-track")
@@ -167,7 +167,7 @@ function music:stopCurrentTrack()
 	if music._currentTrack then
 		audio:StopMusic(true)
 		music._currentTrack = nil
-		music.playing:Set({})
+		music.playing:Set()
 	end
 end
 

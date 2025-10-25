@@ -30,6 +30,8 @@ function lighting_module.blur(i: number?)
 	blur.Parent = Lighting
 	blur.Enabled = true
 
+	spr.stop(blur, "Size")
+
 	spr.target(blur, lighting_module.damping_ratio, lighting_module.frequency, {
 		Size = i or 24,
 	})
@@ -38,6 +40,8 @@ end
 function lighting_module.unblur()
 	local blur = Lighting:FindFirstChildOfClass("BlurEffect")
 	if blur then
+		spr.stop(blur, "Size")
+
 		spr.target(blur, lighting_module.damping_ratio, lighting_module.frequency, {
 			Size = 0,
 		})
