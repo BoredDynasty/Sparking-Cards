@@ -1,11 +1,9 @@
 --!nonstrict
 
-local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local TweenPlus = require(script.Parent.TweenPlus)
-local promise = require(ReplicatedStorage.Packages.promise)
 
 local Audio = {}
 Audio.SoundEffects = {}
@@ -20,29 +18,31 @@ local soundFolder = Instance.new("Folder")
 soundFolder.Name = "GameSounds"
 soundFolder.Parent = SoundService
 
-function Audio._getSoundById(id: number | string): Sound?
-	local sound = nil
+function Audio:Init()
+	local camera = workspace.CurrentCamera
 
-	for _, sounds in ReplicatedStorage.Audio:GetChildren() do
-		if sounds:IsA("Sound") and (sounds.SoundId == assetPrefix .. tostring(id) or sounds.Name == id) then
-			sound = sounds:Clone()
-			break
-		end
+	if not camera:FindFirstChild("AudioListener") then
+		local listener = Instance.new("AudioListener", camera)
+		local audioOut = Instance.new("AudioDeviceOutput", listener)
+		local wire = Instance.new("Wire", listener)
+
+		wire.SourceInstance = listener
+		wire.TargetInstance = audioOut
 	end
+end
 
-	if not sound and type(id) == "number" then
-		sound = Instance.new("Sound")
+function Audio._getSoundById(id: number | string): AudioPlayer
+	local sound = ReplicatedStorage.Audio:FindFirstChild(tostring(id))
 
-		sound.Name = promise.retry(function(resolve: (any) -> ...unknown)
-			resolve(MarketplaceService:GetProductInfo(9055474333).Name)
-
-			return MarketplaceService:GetProductInfo(9055474333).Name
-		end, 15)
-		sound.Parent = ReplicatedStorage.Audio
-		sound.SoundId = id
+	if sound and sound:IsA("AudioPlayer") then
+		return sound:Clone()
+	else
+		local player = Instance.new("AudioPlayer")
+		player.AssetId = assetPrefix .. tostring(id)
+		player.Name = tostring(id)
+		player.Parent = ReplicatedStorage.Audio
+		return player
 	end
-
-	return sound
 end
 
 --[=[
@@ -57,27 +57,35 @@ function Audio:PlayMusic(
 		loop: boolean?,
 		fade: boolean?,
 		fadeTime: number?,
-	}
+	}?
 )
+	self:Init()
 	if currentMusic then
 		self:StopMusic(options and options.fade)
 	end
 
-	local music = Instance.new("Sound")
-	music.SoundId = assetPrefix .. tostring(soundId)
-	music.Volume = options and options.volume or 1
-	music.Looped = options and options.loop or false
+	local music = self._getSoundById(soundId)
 	music.Parent = soundFolder
+	local emitter = Instance.new("AudioEmitter")
+	emitter.Parent = music
+	currentMusic = music
+
+	local wire = Instance.new("Wire")
+	wire.SourceInstance = music
+	wire.TargetInstance = emitter
+	wire.Parent = music
+
+	music.Looped = options and options.loop or false
+	emitter.Volume = options and options.volume or 1
 
 	if options and options.fade then
-		music.Volume = 0
+		emitter.Volume = 0
 		local fadeTime = options.fadeTime or 1
-		local tween = TweenPlus(music, { Volume = options.volume or 1 }, fadeTime)
+		local tween = TweenPlus(emitter, { Volume = options.volume or 1 }, fadeTime)
 		tween:Start()
 	end
 
 	music:Play()
-	currentMusic = music
 end
 
 --[=[
@@ -86,8 +94,9 @@ end
 ]=]
 function Audio:StopMusic(fade: boolean?)
 	if currentMusic then
+		local emitter = currentMusic:FindFirstChildOfClass("AudioEmitter")
 		if fade then
-			local tween = TweenPlus(currentMusic, { Volume = 0 }, 1)
+			local tween = TweenPlus(emitter, { Volume = 0 }, 1)
 			tween.Completed:Connect(function()
 				currentMusic:Destroy()
 				currentMusic = nil
@@ -112,28 +121,28 @@ function Audio:SFX(
 		pitch: number?,
 	}?
 )
-	if type(soundId) == "string" then
-		local id = Audio._getSoundById(soundId)
-		if id then
-			soundId = string.gsub(id.SoundId, "rbxassetid://", "")
-		else
-			warn("Sound effect not found: " .. soundId)
-			return
-		end
-	end
+	self:Init()
+	task.spawn(function()
+		local sfx = self._getSoundById(soundId)
+		sfx.Parent = soundFolder
+		local emitter = Instance.new("AudioEmitter")
+		emitter.Parent = sfx
+		currentSFX = sfx
 
-	local sfx = Instance.new("Sound")
-	sfx.SoundId = assetPrefix .. tostring(soundId :: number)
-	sfx.Volume = options and options.volume or 1
-	sfx.PlaybackSpeed = options and options.pitch or 1
-	sfx.Parent = soundFolder
+		local wire = Instance.new("Wire")
+		wire.SourceInstance = sfx
+		wire.TargetInstance = emitter
+		wire.Parent = sfx
 
-	sfx:Play()
-	sfx.Ended:Once(function()
-		sfx:Destroy()
+		emitter.Volume = options and options.volume or 1
+		sfx.PlaybackSpeed = options and options.pitch or 1
+
+		sfx:Play()
+		sfx.Ended:Once(function()
+			sfx:Destroy()
+			emitter:Destroy()
+		end)
 	end)
-
-	currentSFX = sfx
 end
 
 --[=[
@@ -143,11 +152,14 @@ end
 ]=]
 function Audio:SetMusicVolume(volume: number, fade: boolean?)
 	if currentMusic then
-		if fade then
-			local tween = TweenPlus(currentMusic, { Volume = volume }, 1)
-			tween:Start()
-		else
-			currentMusic.Volume = volume
+		local emitter = currentMusic:FindFirstChildOfClass("AudioEmitter")
+		if emitter then
+			if fade then
+				local tween = TweenPlus(emitter, { Volume = volume }, 1)
+				tween:Start()
+			else
+				emitter.Volume = volume
+			end
 		end
 	end
 end
