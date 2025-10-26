@@ -10,7 +10,10 @@ local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 
 local animation_event = {}
 
-function animation_event.hit(animation: AnimationTrack, time_position: number?)
+function animation_event.hit(
+	animation: AnimationTrack,
+	time_position: number?
+): SignalPlus.Signal<number, ...any?>?
 	local hit_signal = SignalPlus() :: SignalPlus.Signal<number, ...any?>
 
 	if not time_position then
@@ -20,7 +23,7 @@ function animation_event.hit(animation: AnimationTrack, time_position: number?)
 
 			hit_signal:Destroy()
 
-			return
+			return nil
 		end
 		signal:Once(function(...: any)
 			local keyframe = animation.TimePosition
@@ -32,7 +35,14 @@ function animation_event.hit(animation: AnimationTrack, time_position: number?)
 		end)
 	else
 		local conn = nil
-		conn = RunService.Heartbeat:Connect(function()
+		conn = RunService.PreAnimation:Connect(function()
+			if not animation.IsPlaying then
+				if conn then
+					conn:Disconnect()
+				end
+				return
+			end
+
 			if animation.TimePosition >= time_position then
 				hit_signal:Fire(animation.TimePosition)
 
@@ -46,6 +56,8 @@ function animation_event.hit(animation: AnimationTrack, time_position: number?)
 			end
 		end)
 	end
+
+	return hit_signal
 end
 
 return animation_event

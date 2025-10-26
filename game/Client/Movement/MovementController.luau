@@ -34,9 +34,11 @@ function MovementController:Start()
 	self._trove:Connect(RunService.Heartbeat, function(deltaTime)
 		debug.profilebegin("movement")
 
-		for _, movement in pairs(self._movements) do
+		for i, movement in pairs(self._movements :: { [string]: { Update: (number) -> ()? } }) do
 			if movement.Update then
+				debug.profilebegin("movement-" .. i)
 				movement:Update(deltaTime)
+				debug.profileend()
 			end
 		end
 

@@ -14,7 +14,7 @@ local self = {
 	speed = 20,
 	rate = 1500,
 	offset = 10,
-	render_priority = Enum.RenderPriority.Camera,
+	render_priority = Enum.RenderPriority.Camera.Value,
 	is_bound = observer.new(false),
 	tag = "speed-lines",
 }

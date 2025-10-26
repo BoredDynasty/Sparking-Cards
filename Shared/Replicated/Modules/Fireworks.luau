@@ -53,7 +53,7 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 			EasingStyle = "Linear",
 		}):Start()
 
-		audio:SFX("blastoff")
+		--audio:SFX("blastoff")
 		task.wait(1)
 
 		Trail.Enabled = false

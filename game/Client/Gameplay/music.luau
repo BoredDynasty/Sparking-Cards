@@ -155,7 +155,8 @@ function music:playRandomTrack(biomeName: string)
 	end
 
 	-- Play the new track
-	music._currentTrack = audio:PlayMusic(tonumber(track.id) :: number, {
+	music._currentTrack = track
+	audio:PlayMusic(tonumber(track.id) :: number, {
 		fade = true,
 		fadeTime = 1,
 		loop = true,

@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local audio = require(ReplicatedStorage.Modules.audio)
+local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -63,7 +64,7 @@ function hud:render()
 		end
 	end
 
-	for _, button: button in pairs(hud.buttons) do
+	for _, button: button in ipairs(hud.buttons) do
 		print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
@@ -126,6 +127,7 @@ function hud:render()
 			Icon.ImageRectOffset = defaultIcon.ImageRectOffset
 			Icon.ImageRectSize = defaultIcon.ImageRectSize
 			Icon.Image = defaultIcon.Url
+			Icon.ImageColor3 = Color3.fromHex("ffb5a0")
 
 			UIAspectRatioConstraint.Parent = Icon
 		else
@@ -141,10 +143,10 @@ function hud:render()
 
 			button.reactor:Set(value)
 
-			audio:SFX("click")
+			--audio:SFX("click")
 		end)
 
-		local default_size = TextButton.Size
+		local default_size = UDim2.fromScale(0.35, 0.7)
 
 		TextButton.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
@@ -156,7 +158,7 @@ function hud:render()
 				BackgroundColor3 = Color3.fromHex("#342522"),
 				Size = UDim2.fromScale(default_size.X.Scale * 1.1, default_size.Y.Scale * 1.1),
 			})
-			audio:SFX("hover")
+			--audio:SFX("hover")
 		end)
 
 		TextButton.MouseLeave:Connect(function()
@@ -165,9 +167,9 @@ function hud:render()
 				BackgroundColor3 = Color3.fromHex("#1a110f"),
 				Size = UDim2.fromScale(default_size.X.Scale / 1.1, default_size.Y.Scale / 1.1),
 			})
-			audio:SFX("hover", {
-				pitch = 0.8,
-			})
+			--audio:SFX("hover", {
+			--pitch = 0.8,
+			--})
 		end)
 
 		button.reactor:Watch(function(newValue: boolean)
@@ -183,10 +185,12 @@ function hud:render()
 			-- tilt the icon
 			-- button size
 			if newValue then
+				spr.stop(Icon)
 				spr.target(Icon, 0.8, 8, {
 					Rotation = 15,
 				})
 			else
+				spr.stop(Icon)
 				spr.target(Icon, 0.8, 8, {
 					Rotation = 0,
 				})
@@ -194,6 +198,9 @@ function hud:render()
 		end)
 
 		ripple:Watch(TextButton, 0.37)
+		glare:Watch(TextButton, {
+			corner_radius = UDim.new(1),
+		})
 
 		shadow(TextButton, Color3.new(), 0.5, 14)
 	end

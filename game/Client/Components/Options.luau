@@ -1,12 +1,11 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
-local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local pop = require("../Interface/pop")
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
-local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
+local ripple = require("../Interface/ripple")
 
 -- options.luau
 
@@ -178,9 +177,14 @@ function options:render(ancestor: Instance)
 	local visited = table.create(#options.tracked) :: { data }
 
 	for i, option in ipairs(options.tracked :: { data }) do
-		if visited[option] then
+		local needle = table.find(visited, option)
+
+		if needle and visited[needle] then
 			return
 		end
+
+		table.insert(visited, option)
+
 		local template = options:create_setting()
 
 		local label = template.Frame.TextDisplay
@@ -216,6 +220,8 @@ function options:render(ancestor: Instance)
 
 		template.Parent = ancestor
 	end
+
+	table.clear(visited)
 end
 
 function options:destroy()

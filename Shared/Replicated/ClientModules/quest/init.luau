@@ -194,7 +194,7 @@ end
 
    @yields
 
-   @return `quest?` | `{quest}`
+   @return `Promise<quest | {quest}>`
 
    ```luau
    local quest = quest_module:Get(player, "take a hike")
@@ -211,25 +211,29 @@ end
    end)
    ```
 ]]
+
 function quest_module:Get(player: playerMarshaller.player, quest_name: string?)
-	return promise.new(function(resolve: ({ quest } | quest) -> ...unknown, reject: (string) -> ...unknown)
-		local data = expectProfile()
-		if not data or not data.Data then
-			reject("couldn't fetch data.")
-		end
-
-		if quest_name then
-			for i, quest_data in ipairs(data.Data.quests :: { quest }) do
-				if string.lower(quest_data.name) == string.lower(quest_name) then
-					resolve(quest_data)
-
-					break
-				end
+	return promise
+		.new(function(resolve: ({ quest } | quest) -> ...unknown, reject: (string) -> ...unknown)
+			local data = expectProfile()
+			if not data or not data.Data then
+				reject("couldn't fetch data.")
+				-- should we mock data or smth
 			end
-		else
-			resolve(data.Data.quests :: { quest })
-		end
-	end)
+
+			if quest_name then
+				for i, quest_data in ipairs(data.Data.quests :: { quest }) do
+					if string.lower(quest_data.name) == string.lower(quest_name) then
+						resolve(quest_data)
+
+						break
+					end
+				end
+			else
+				resolve(data.Data.quests :: { quest })
+			end
+		end)
+		:catch(print)
 end
 
 return quest_module

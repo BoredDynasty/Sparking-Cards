@@ -40,6 +40,7 @@ local bloxstrap_rpc_sdk = require(ReplicatedStorage.Kits["bloxstrap-rpc-sdk"])
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
+local compute_level = require(ReplicatedStorage.ClientModules["compute-level"])
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
@@ -441,7 +442,7 @@ local function initializeMatchmaking()
 
 		if direction == "up" then
 			state:Set(false)
-			audio:SFX("leave")
+			-- audio:SFX("leave")
 
 			promise
 				.new(function(resolve: (boolean) -> ...unknown)
@@ -1023,6 +1024,12 @@ local function initializeLoadouts()
 	shopShortcut.Button.MouseButton1Click:Connect(function()
 		hud:toggle("Market")
 	end)
+
+	local function toggleUI()
+		displayorder:toggle(loadoutCanvas)
+	end
+
+	hud:create("Loadout", toggleUI, lucide.GetAsset("layout-dashboard"))
 end
 
 local function initializeObjectives()
@@ -1038,20 +1045,59 @@ local function initializeObjectives()
 	local profile = expectProfile()
 	profile = expectProfile()
 
-	rank:Set(profile.Data.Level or "Bronze I")
+	promise
+		.new(function(resolve: () -> ...unknown)
+			if profile and profile.Data then
+				rank:Set(profile.Data.Level)
+			else
+				rank:Set("Bronze I")
 
-	local availiable_objectives = quest_ranking:getObjectivesFromRank(rank:Get())
-	for i, objective_name in ipairs(availiable_objectives) do
-		quest.new(player, objective_name)
-	end
+				notify.error("Data", "Couldn't get your Rank.", 5, "error")
+			end
+
+			resolve()
+		end)
+		:catch(print)
+
+	promise
+		.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
+			local rank_number = compute_level:rankNameToNumber()
+			if not rank_number then
+				reject("no rank number for some reason. invalid rank?: ", rank:Get())
+			end
+
+			local availiable_objectives = quest_ranking:getObjectivesFromRank(rank:Get())
+			if not availiable_objectives then
+				reject("no availiable_objectives??")
+
+				return
+			end
+
+			for i, objective_name in ipairs(availiable_objectives) do
+				quest.new(player, objective_name)
+			end
+
+			resolve()
+		end)
+		:catch(print)
 
 	local quest_list = quest:Get(player):expect()
+	if not quest_list then
+		print("no quest list")
+		return
+	end
 
 	for i, data in pairs(quest_list :: { quest.quest }) do
 		objective.new(data)
 	end
 
 	quest:Track(player)
+
+	local function toggleUI()
+		displayorder:toggle(objectiveGui.CanvasGroup)
+	end
+
+	hud:create("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
 end
 initializeMarket()
 initializeOptions()
@@ -1060,6 +1106,7 @@ initializeBadges()
 initializeNotifiers()
 initializeMusic()
 initializeLoadouts()
+initializeObjectives()
 hud:render()
 displayorder:Watch()
 

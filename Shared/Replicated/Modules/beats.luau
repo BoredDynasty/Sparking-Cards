@@ -102,7 +102,9 @@ function beats_module:Start()
 	self._running:Set(true)
 
 	self._conn = RunService.Heartbeat:Connect(function()
+		debug.profilebegin("detect-bpm")
 		self:_Process()
+		debug.profileend()
 	end)
 end
 

@@ -79,7 +79,7 @@ function Sprint:Start()
 
 	-- tween fovspr.target(self._sprintFOV, 0.5, gamecamera.getFOV, gamecamera.setFOV)
 
-	dialogue:speak("You", "Woohoo!")
+	--dialogue:speak("You", "Woohoo!")
 
 	self.speedForceEffect = fetchAsset("Speedlines") :: speed_lines.lines
 	speed_lines:On(gamecamera.camera, self.speedForceEffect)

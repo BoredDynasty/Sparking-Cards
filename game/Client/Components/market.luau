@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -206,10 +206,10 @@ function market:load_items(items: Items.dataType?)
 		})
 
 		purchaseButton.MouseEnter:Connect(function()
-			audio:SFX("hover")
+			--audio:SFX("hover")
 		end)
 		purchaseButton.MouseLeave:Connect(function()
-			audio:SFX("leave")
+			--audio:SFX("leave")
 		end)
 		purchaseButton.MouseButton1Click:Connect(function()
 			if not market.limit(template) then
@@ -224,7 +224,7 @@ function market:load_items(items: Items.dataType?)
 
 			pop(purchaseButton)
 
-			audio:SFX("success")
+			--audio:SFX("success")
 
 			confetti({
 				Color3.fromRGB(255, 0, 255),

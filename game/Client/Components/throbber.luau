@@ -35,7 +35,11 @@ return function(element: GuiObject, signal: SignalPlus.Signal<>)
 		signal:Once(function()
 			pop(loader)
 
-			task.delay(5, trove.Clean, trove)
+			task.delay(5, function()
+				trove:Remove(loader)
+				trove:Remove(signal)
+				trove:Remove(tween)
+			end)
 		end)
 	end)
 end

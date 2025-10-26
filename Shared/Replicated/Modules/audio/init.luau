@@ -1,17 +1,19 @@
 --!nonstrict
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local TweenPlus = require(script.Parent.TweenPlus)
+local promise = require(ReplicatedStorage.Packages.promise)
 
 local Audio = {}
 Audio.SoundEffects = {}
 Audio.Playlists = {}
 
 -- Private variables
-local currentMusic: Sound? = nil
-local currentSFX: Sound? = nil
+local currentMusic: AudioPlayer? = nil
+local currentSFX: AudioPlayer? = nil
 local assetPrefix = "rbxassetid://"
 
 local soundFolder = Instance.new("Folder")
@@ -31,16 +33,46 @@ function Audio:Init()
 	end
 end
 
-function Audio._getSoundById(id: number | string): AudioPlayer
-	local sound = ReplicatedStorage.Audio:FindFirstChild(tostring(id))
+function Audio._getSoundById(id: number | string): AudioPlayer?
+	local sound = nil
+
+	if type(sound) == "number" then
+		local ok, product_info = promise
+			.new(function(resolve, reject)
+				local ok, result = pcall(function()
+					return MarketplaceService:GetProductInfo(id, Enum.InfoType.Asset)
+				end)
+
+				if ok then
+					resolve(result)
+				else
+					reject(result)
+				end
+			end)
+			:await()
+
+		if not ok then
+			return nil
+		end
+
+		sound = ReplicatedStorage.Audio:FindFirstChild(product_info.Name) :: AudioPlayer
+	elseif type(sound) == "string" then
+		sound = ReplicatedStorage.Audio:FindFirstChild(sound)
+	end
 
 	if sound and sound:IsA("AudioPlayer") then
 		return sound:Clone()
 	else
 		local player = Instance.new("AudioPlayer")
-		player.AssetId = assetPrefix .. tostring(id)
 		player.Name = tostring(id)
 		player.Parent = ReplicatedStorage.Audio
+		if type(id) == "number" then
+			player.AssetId = assetPrefix .. tostring(id)
+		else
+			warn("id is not a number: ", id, typeof(id))
+
+			return nil
+		end
 		return player
 	end
 end
@@ -64,10 +96,11 @@ function Audio:PlayMusic(
 		self:StopMusic(options and options.fade)
 	end
 
-	local music = self._getSoundById(soundId)
+	local music = self._getSoundById(soundId) :: AudioPlayer
 	music.Parent = soundFolder
 	local emitter = Instance.new("AudioEmitter")
 	emitter.Parent = music
+
 	currentMusic = music
 
 	local wire = Instance.new("Wire")
@@ -75,13 +108,15 @@ function Audio:PlayMusic(
 	wire.TargetInstance = emitter
 	wire.Parent = music
 
-	music.Looped = options and options.loop or false
-	emitter.Volume = options and options.volume or 1
+	music.Looping = options and options.loop or false
+	music.Volume = options and options.volume or 1
+	--emitter.Volume = options and options.volume or 1
 
 	if options and options.fade then
-		emitter.Volume = 0
+		--emitter.Volume = 0
+		music.Volume = 0
 		local fadeTime = options.fadeTime or 1
-		local tween = TweenPlus(emitter, { Volume = options.volume or 1 }, fadeTime)
+		local tween = TweenPlus(music, { Volume = options.volume or 1 }, { Time = fadeTime })
 		tween:Start()
 	end
 
@@ -96,10 +131,13 @@ function Audio:StopMusic(fade: boolean?)
 	if currentMusic then
 		local emitter = currentMusic:FindFirstChildOfClass("AudioEmitter")
 		if fade then
-			local tween = TweenPlus(emitter, { Volume = 0 }, 1)
+			--local tween = TweenPlus(emitter, { Volume = 0 }, 1)
+			local tween = TweenPlus(currentMusic, { Volume = 0 }, { Time = 1 })
 			tween.Completed:Connect(function()
-				currentMusic:Destroy()
-				currentMusic = nil
+				if currentMusic then
+					currentMusic:Destroy()
+					currentMusic = nil
+				end
 			end)
 			tween:Start()
 		else
@@ -134,7 +172,8 @@ function Audio:SFX(
 		wire.TargetInstance = emitter
 		wire.Parent = sfx
 
-		emitter.Volume = options and options.volume or 1
+		--emitter.Volume = options and options.volume or 1
+		currentSFX.Volume = options and options.volume or 0.9
 		sfx.PlaybackSpeed = options and options.pitch or 1
 
 		sfx:Play()
@@ -155,10 +194,11 @@ function Audio:SetMusicVolume(volume: number, fade: boolean?)
 		local emitter = currentMusic:FindFirstChildOfClass("AudioEmitter")
 		if emitter then
 			if fade then
-				local tween = TweenPlus(emitter, { Volume = volume }, 1)
+				local tween = TweenPlus(currentMusic, { Volume = volume }, { Time = 1 })
 				tween:Start()
 			else
-				emitter.Volume = volume
+				--emitter.Volume = volume
+				currentMusic.Volume = volume
 			end
 		end
 	end
@@ -169,7 +209,7 @@ end
 ]=]
 function Audio:PauseMusic()
 	if currentMusic then
-		currentMusic:Pause()
+		currentMusic:Stop()
 	end
 end
 
@@ -178,7 +218,7 @@ end
 ]=]
 function Audio:ResumeMusic()
 	if currentMusic then
-		currentMusic:Resume()
+		currentMusic:Play()
 	end
 end
 
