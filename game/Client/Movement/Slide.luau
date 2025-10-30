@@ -12,24 +12,48 @@ local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local Signal = require(ReplicatedStorage.Parent.Shared.Replicated.Dependencies.SignalPlus)
 
-local Slide = {}
-Slide.__index = Slide
+local class = {}
+class.__index = class
 
-function Slide.new(movementController)
-	local self = setmetatable({}, Slide)
+export type self = {
+	_movementController: any,
+	_trove: Trove.Trove,
+	_config: any,
+	_keybinds: any,
+	_character: Model,
+	_humanoid: Humanoid,
+	_isSliding: boolean,
+	_onCooldown: boolean,
+	_slideTrove: Trove.Trove?,
+	_raycastParams: RaycastParams,
+	_slideVelocity: LinearVelocity?,
+	_slideAlign: AlignOrientation?,
+	_currentMultiplier: number,
 
-	self._movementController = movementController
-	self._trove = Trove.new()
-	self._config = MovementConfig.Slide
-	self._keybinds = MovementConfig.Keybinds
-	self._character = playerMarshaller.get().Character
-	self._humanoid = self._character:WaitForChild("Humanoid")
-	self._isSliding = false
-	self._onCooldown = false
-	self._slideTrove = nil
+	slideStarted: Signal.Signal,
+	slideStopped: Signal.Signal,
+}
 
-	self._raycastParams = RaycastParams.new()
+function class.new(movementController): setmetatable<self, typeof(class)>
+	local self = setmetatable({
+		_movementController = movementController,
+		_trove = Trove.new(),
+		_config = MovementConfig.Slide,
+		_keybinds = MovementConfig.Keybinds,
+		_character = playerMarshaller.get().Character,
+		_humanoid = playerMarshaller.get().Character:WaitForChild("Humanoid"),
+		_isSliding = false,
+		_onCooldown = false,
+		_slideTrove = nil,
+
+		_raycastParams = RaycastParams.new(),
+
+		slideStarted = Signal.new(),
+		slideStopped = Signal.new(),
+	}, class)
+
 	self._raycastParams.FilterDescendantsInstances = { self._character }
 	self._raycastParams.FilterType = Enum.RaycastFilterType.Exclude
 
@@ -40,21 +64,21 @@ function Slide.new(movementController)
 	return self
 end
 
-function Slide:_connectInputs()
+function class:_connectInputs(self: self)
 	self._trove:Connect(UserInputService.InputBegan, function(input, gameProcessedEvent)
 		if gameProcessedEvent then
 			return
 		end
 
 		if input.KeyCode == self._keybinds.Slide then
-			self:Start()
+			self:start()
 		elseif input.KeyCode == self._keybinds.CancelSlide then
-			self:Cancel()
+			self:cancel()
 		end
 	end)
 end
 
-function Slide:Start()
+function class:start(self: self)
 	if self._isSliding or self._onCooldown then
 		return
 	end
@@ -65,9 +89,11 @@ function Slide:Start()
 		return
 	end
 
+	local settings = self._movementController:get("DirectionalSettings"):getSettings("Slide", self._humanoid.MoveDirection)
+
 	self._isSliding = true
 	self._onCooldown = true
-	task.delay(self._config.Cooldown, function()
+	task.delay(settings.Cooldown, function()
 		self._onCooldown = false
 	end)
 
@@ -82,7 +108,7 @@ function Slide:Start()
 	local velocity = self._slideTrove:Construct(Instance, "LinearVelocity")
 	velocity.Attachment0 = attachment
 	velocity.MaxForce = math.huge
-	velocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector * self._config.BaseSpeed
+	velocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector * settings.BaseSpeed
 	velocity.Parent = self._character.PrimaryPart
 
 	local align = self._slideTrove:Construct(Instance, "AlignOrientation")
@@ -94,9 +120,11 @@ function Slide:Start()
 	self._slideVelocity = velocity
 	self._slideAlign = align
 	self._currentMultiplier = 1
+
+	self.slideStarted:Fire()
 end
 
-function Slide:Stop()
+function class:stop(self: self)
 	if not self._isSliding then
 		return
 	end
@@ -109,21 +137,24 @@ function Slide:Stop()
 		self._slideTrove:Destroy()
 		self._slideTrove = nil
 	end
+
+	self.slideStopped:Fire()
 end
 
-function Slide:Cancel()
+function class:cancel(self: self)
 	if not self._isSliding then
 		return
 	end
 
+	local settings = self._movementController:get("DirectionalSettings"):getSettings("Slide", self._humanoid.MoveDirection)
 	local cancelMultiplier = self._currentMultiplier
-	self:Stop()
+	self:stop()
 
 	local vectorVelocity: Vector3 = (
 		self._character.PrimaryPart.CFrame.LookVector :: Vector3
-		* (self._config.CancelPushForward :: number * cancelMultiplier :: number)
+		* (settings.CancelPushForward :: number * cancelMultiplier :: number)
 	)
-		+ (self._character.PrimaryPart.CFrame.UpVector :: Vector3 * self._config.CancelPushUpward :: number)
+		+ (self._character.PrimaryPart.CFrame.UpVector :: Vector3 * settings.CancelPushUpward :: number)
 
 	local pushVelocity = Instance.new("LinearVelocity")
 	pushVelocity.Parent = self._character.PrimaryPart
@@ -138,17 +169,18 @@ function Slide:Cancel()
 	end)
 end
 
-function Slide:Update(deltaTime: number)
+function class:update(self: self, deltaTime: number)
 	if not self._isSliding then
 		return
 	end
 
+	local settings = self._movementController:get("DirectionalSettings"):getSettings("Slide", self._humanoid.MoveDirection)
 	local direction = -self._character.PrimaryPart.CFrame.UpVector :: Vector3 * 10
 	local ray = workspace:Raycast(self._character.PrimaryPart.Position, direction, self._raycastParams)
 	-- TODO) make this more performant
 
 	if not ray then
-		self:Stop()
+		self:stop()
 		return
 	end
 
@@ -166,28 +198,30 @@ function Slide:Update(deltaTime: number)
 	local verticalChange = ray.Normal.Y
 	if verticalChange > 0.99 then -- Flat ground
 		self._currentMultiplier =
-			math.max(0, self._currentMultiplier - (self._config.SpeedLossFlat :: number * deltaTime))
+			math.max(0, self._currentMultiplier - (settings.SpeedLossFlat :: number * deltaTime))
 	elseif verticalChange < 0.99 and verticalChange > 0 then -- Downhill
 		self._currentMultiplier =
-			math.min(2, self._currentMultiplier + (self._config.SpeedGainDown :: number * deltaTime))
+			math.min(2, self._currentMultiplier + (settings.SpeedGainDown :: number * deltaTime))
 	else -- Uphill
 		self._currentMultiplier =
-			math.max(0, self._currentMultiplier - (self._config.SpeedLossUp :: number * deltaTime))
+			math.max(0, self._currentMultiplier - (settings.SpeedLossUp :: number * deltaTime))
 	end
 
 	if self._slideVelocity :: LinearVelocity then
 		self._slideVelocity.VectorVelocity = self._character.PrimaryPart.CFrame.LookVector :: Vector3
-			* (self._config.BaseSpeed :: number * self._currentMultiplier :: number)
+			* (settings.BaseSpeed :: number * self._currentMultiplier :: number)
 	end
 
 	if self._currentMultiplier <= 0 then
-		self:Stop()
+		self:stop()
 	end
 end
 
-function Slide:Destroy()
-	self:Stop()
+function class:destroy(self: self)
+	self:stop()
 	self._trove:Destroy()
+	self.slideStarted:Destroy()
+	self.slideStopped:Destroy()
 end
 
-return Slide
+return class

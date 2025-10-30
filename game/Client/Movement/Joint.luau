@@ -5,7 +5,7 @@ local RunService = game:GetService("RunService")
 
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local trove = require(ReplicatedStorage.Packages.trove).new()
+local Trove = require(ReplicatedStorage.Packages.trove)
 
 -- Joint.luau
 -- a module for making the character animation (lag)
@@ -14,38 +14,54 @@ local trove = require(ReplicatedStorage.Packages.trove).new()
 local player = playerMarshaller.get()
 local character = characterMarshaller.get(player)
 
-local joints = {} :: { [number]: Motor6D }
+local class = {}
+class.__index = class
 
-local frameRate = 60
-local totalStep = 0
+export type self = {
+	_trove: Trove.Trove,
+	_joints: { [number]: Motor6D },
+	_frameRate: number,
+	_totalStep: number,
+	_lastJointCFrames: { CFrame },
+}
 
-local lastJointCFrames = {} :: { CFrame }
+function class.new(movementController): setmetatable<self, typeof(class)>
+	local self = setmetatable({
+		_trove = Trove.new(),
+		_joints = {},
+		_frameRate = 60,
+		_totalStep = 0,
+		_lastJointCFrames = {},
+	}, class)
 
-local function getJoints(part: Instance)
-	for _, child in part:GetChildren() do
-		if child:IsA("Motor6D") then
-			table.insert(joints, child)
-		end
-	end
-	return joints
+	self:_updateJoints()
+	characterMarshaller.added(player, function()
+		self:_updateJoints()
+	end)
+
+	return self
 end
 
-local function updateJoints()
+function class:_getJoints(self: self, part: Instance)
+	for _, child in part:GetChildren() do
+		if child:IsA("Motor6D") then
+			table.insert(self._joints, child)
+		end
+	end
+end
+
+function class:_updateJoints(self: self)
 	for _, inst in pairs(character:GetDescendants()) do
-		getJoints(inst)
+		self:_getJoints(inst)
 	end
 
 	character.DescendantAdded:Connect(function(descendant)
-		getJoints(descendant)
+		self:_getJoints(descendant)
 	end)
 end
 
-updateJoints()
-
-characterMarshaller.added(player, updateJoints)
-
-trove:Connect(RunService.Stepped, function(_, deltaTime: number)
-	local frame_rate = math.clamp(frameRate, 0, 60)
+function class:update(self: self, deltaTime: number)
+	local frame_rate = math.clamp(self._frameRate, 0, 60)
 
 	local frame_time = 1 / frame_rate
 
@@ -53,9 +69,9 @@ trove:Connect(RunService.Stepped, function(_, deltaTime: number)
 		return
 	end
 
-	if totalStep > 0 then
-		for i, transform in pairs(lastJointCFrames) do
-			local j = joints[i]
+	if self._totalStep > 0 then
+		for i, transform in pairs(self._lastJointCFrames) do
+			local j = self._joints[i]
 
 			if not j then
 				continue
@@ -63,21 +79,23 @@ trove:Connect(RunService.Stepped, function(_, deltaTime: number)
 
 			j.Transform = transform
 		end
-	elseif totalStep <= 0 then
-		for i, motor in pairs(joints) do
-			lastJointCFrames[i] = motor.Transform
+	elseif self._totalStep <= 0 then
+		for i, motor in pairs(self._joints) do
+			self._lastJointCFrames[i] = motor.Transform
 		end
 	end
 
-	if totalStep < frame_time then
-		totalStep += deltaTime
+	if self._totalStep < frame_time then
+		self._totalStep += deltaTime
 
 		return
 	end
 
-	totalStep = 0
-end)
+	self._totalStep = 0
+end
 
-return {
-	_trove = trove,
-}
+function class:destroy(self: self)
+	self._trove:Destroy()
+end
+
+return class

@@ -10,19 +10,26 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local MovementController = {}
-MovementController.__index = MovementController
+local Trove = require(ReplicatedStorage.Packages.trove)
 
-function MovementController.new()
-	local self = setmetatable({}, MovementController)
+local class = {}
+class.__index = class
 
-	self._trove = require(ReplicatedStorage.Packages.trove).new()
-	self._movements = {}
+export type self = {
+	_trove: Trove.Trove,
+	_movements: { [string]: any },
+}
+
+function class.new(): setmetatable<self, typeof(class)>
+	local self = setmetatable({
+		_trove = Trove.new(),
+		_movements = {},
+	}, class)
 
 	return self
 end
 
-function MovementController:Add(movementName: string, movementModule: any)
+function class:add(self: self, movementName: string, movementModule: any)
 	if movementModule.new then
 		local movement = movementModule.new(self)
 		self._movements[movementName] = movement
@@ -30,14 +37,18 @@ function MovementController:Add(movementName: string, movementModule: any)
 	end
 end
 
-function MovementController:Start()
+function class:get(self: self, movementName: string): any
+	return self._movements[movementName]
+end
+
+function class:start(self: self)
 	self._trove:Connect(RunService.Heartbeat, function(deltaTime)
 		debug.profilebegin("movement")
 
-		for i, movement in pairs(self._movements :: { [string]: { Update: (number) -> ()? } }) do
-			if movement.Update then
+		for i, movement in pairs(self._movements :: { [string]: { update: (number) -> ()? } }) do
+			if movement.update then
 				debug.profilebegin("movement-" .. i)
-				movement:Update(deltaTime)
+				movement:update(deltaTime)
 				debug.profileend()
 			end
 		end
@@ -46,8 +57,8 @@ function MovementController:Start()
 	end)
 end
 
-function MovementController:Destroy()
+function class:destroy(self: self)
 	self._trove:Destroy()
 end
 
-return MovementController
+return class
