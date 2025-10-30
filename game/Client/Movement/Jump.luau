@@ -13,20 +13,38 @@ local audio = require(ReplicatedStorage.Modules.audio)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local Signal = require(ReplicatedStorage.Parent.Shared.Replicated.Dependencies.SignalPlus)
+local Trove = require(ReplicatedStorage.Packages.trove)
 
-local Jump = {}
-Jump.__index = Jump
+local class = {}
+class.__index = class
 
-function Jump.new(movementController)
-	local self = setmetatable({}, Jump)
+export type self = {
+	_movementController: any,
+	_trove: Trove.Trove,
+	_config: any,
+	_character: Model,
+	_humanoid: Humanoid,
+	_dustEffect: BasePart,
 
-	self._movementController = movementController
-	self._trove = require(ReplicatedStorage.Packages.trove).new()
-	self._config = MovementConfig.Jump
-	self._character = playerMarshaller.get().Character
-	self._humanoid = self._character:WaitForChild("Humanoid")
+	jumped: Signal.Signal,
+	landed: Signal.Signal,
+}
 
-	self._dustEffect = self:_createDustEffect()
+function class.new(movementController): setmetatable<self, typeof(class)>
+	local self = setmetatable({
+		_movementController = movementController,
+		_trove = Trove.new(),
+		_config = MovementConfig.Jump,
+		_character = playerMarshaller.get().Character,
+		_humanoid = playerMarshaller.get().Character:WaitForChild("Humanoid"),
+		_dustEffect = fetchAsset("FootstepDust"),
+
+		jumped = Signal.new(),
+		landed = Signal.new(),
+	}, class)
+
+	self._trove:Add(self._dustEffect)
 
 	self:_connectJumpRequest()
 	self:_connectLanding()
@@ -34,14 +52,7 @@ function Jump.new(movementController)
 	return self
 end
 
-function Jump:_createDustEffect()
-	local dustEffect = fetchAsset("FootstepDust")
-	self._trove:Add(dustEffect)
-
-	return dustEffect
-end
-
-function Jump:_connectJumpRequest()
+function class:_connectJumpRequest(self: self)
 	self._trove:Connect(UserInputService.JumpRequest, function()
 		if
 			self._humanoid:GetState() == Enum.HumanoidStateType.Jumping
@@ -76,21 +87,25 @@ function Jump:_connectJumpRequest()
 				dust:Destroy()
 			end
 		end)
+		self.jumped:Fire()
 	end)
 end
 
-function Jump:_connectLanding()
+function class:_connectLanding(self: self)
 	self._trove:Connect(self._humanoid.StateChanged, function(oldState, newState)
 		if newState == Enum.HumanoidStateType.Landed then
 			-- Landing mechanic
 			gamecamera:Shake(0.1, 0.2)
 			audio:SFX(150324322)
+			self.landed:Fire()
 		end
 	end)
 end
 
-function Jump:Destroy()
+function class:destroy(self: self)
 	self._trove:Destroy()
+	self.jumped:Destroy()
+	self.landed:Destroy()
 end
 
-return Jump
+return class
