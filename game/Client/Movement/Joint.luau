@@ -24,7 +24,7 @@ local lastJointCFrames = {} :: { CFrame }
 local function getJoints(part: Instance)
 	for _, child in part:GetChildren() do
 		if child:IsA("Motor6D") then
-			joints[#joints + 1] = child
+			table.insert(joints, child)
 		end
 	end
 	return joints

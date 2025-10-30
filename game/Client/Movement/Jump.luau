@@ -10,6 +10,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local audio = require(ReplicatedStorage.Modules.audio)
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
@@ -34,35 +35,8 @@ function Jump.new(movementController)
 end
 
 function Jump:_createDustEffect()
-	local dustEffect = Instance.new("Part")
-	dustEffect.Name = "DustEffect"
-	dustEffect.Size = Vector3.new(1, 1, 1)
-	dustEffect.Anchored = true
-	dustEffect.CanCollide = false
-	dustEffect.Transparency = 1
-
-	local assetsFolder = ReplicatedStorage:WaitForChild("Assets")
-	dustEffect.Parent = assetsFolder
+	local dustEffect = fetchAsset("FootstepDust")
 	self._trove:Add(dustEffect)
-
-	local particleEmitter = Instance.new("ParticleEmitter")
-	particleEmitter.Color = ColorSequence.new(Color3.fromRGB(196, 178, 142))
-	particleEmitter.LightEmission = 0
-	particleEmitter.Size = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0.5, 0),
-		NumberSequenceKeypoint.new(1, 2, 0),
-	})
-	particleEmitter.Texture = "rbxassetid://137952435" -- Smoke texture
-	particleEmitter.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 0, 0),
-		NumberSequenceKeypoint.new(0.5, 0.5, 0),
-		NumberSequenceKeypoint.new(1, 1, 0),
-	})
-	particleEmitter.Lifetime = NumberRange.new(0.5, 1)
-	particleEmitter.Rate = 0
-	particleEmitter.Speed = NumberRange.new(1, 3)
-	particleEmitter.SpreadAngle = Vector2.new(360, 360)
-	particleEmitter.Parent = dustEffect
 
 	return dustEffect
 end
@@ -81,7 +55,7 @@ function Jump:_connectJumpRequest()
 			return
 		end
 
-		gamecamera:Shake(0.5, 0.1)
+		gamecamera:Shake(0.05, 0.1)
 
 		self._humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 		self._character:SetAttribute("Stamina", currentStamina - self._config.StaminaCost)
@@ -109,7 +83,7 @@ function Jump:_connectLanding()
 	self._trove:Connect(self._humanoid.StateChanged, function(oldState, newState)
 		if newState == Enum.HumanoidStateType.Landed then
 			-- Landing mechanic
-			gamecamera:Shake(1.2, 0.2)
+			gamecamera:Shake(0.1, 0.2)
 			audio:SFX(150324322)
 		end
 	end)

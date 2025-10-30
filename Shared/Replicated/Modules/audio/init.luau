@@ -40,7 +40,7 @@ function Audio._getSoundById(id: number | string): AudioPlayer?
 		local ok, product_info = promise
 			.new(function(resolve, reject)
 				local ok, result = pcall(function()
-					return MarketplaceService:GetProductInfo(id, Enum.InfoType.Asset)
+					return MarketplaceService:GetProductInfo(id)
 				end)
 
 				if ok then

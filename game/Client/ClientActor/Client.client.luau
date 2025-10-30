@@ -57,7 +57,6 @@ local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local market = require("../Components/market")
 local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
 local music = require("../Gameplay/music")
-local notify = require("../Components/notify")
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local objective = require("../Components/objective")
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -390,15 +389,7 @@ local function initializeMatchmaking()
 				seconds
 			)
 
-			-- Pulse effect
-			spr.target(pulseImage, 1, 8, {
-				Size = UDim2.fromScale(1.1, 1.1),
-				ImageTransparency = 0.2,
-			})
-			task.delay(1, spr.target, pulseImage, 1, 9, {
-				Size = UDim2.fromScale(1, 1),
-				ImageTransparency = 0.5,
-			})
+			pop(pulseImage, 1.8)
 		end)
 	end
 
@@ -425,7 +416,7 @@ local function initializeMatchmaking()
 		else
 			task.delay(0.5, function()
 				matchmakingCanvas.Visible = false
-				notify.info("Matchmaking", "You have left the queue.", 5, "info")
+				--notify.info("Matchmaking", "You have left the queue.", 5, "info")
 
 				print("Stopped matchmaking")
 
@@ -447,7 +438,7 @@ local function initializeMatchmaking()
 			promise
 				.new(function(resolve: (boolean) -> ...unknown)
 					hideMatchmakingFrame()
-					resolve(true)
+					resolve()
 				end)
 				:catch(warn)
 		else
@@ -588,7 +579,7 @@ local function initializeBadges()
 end
 local function initializeNotifiers()
 	print("init notifiers")
-
+	--[[
 	Packet.SendNotification.listen(function(data)
 		notify[data.type or "info"](
 			data.title or "Notification",
@@ -597,6 +588,7 @@ local function initializeNotifiers()
 			data.type
 		)
 	end)
+	--]]
 end
 local function initializeMusic()
 	print("init music")
@@ -653,6 +645,9 @@ local function initializeMusic()
 	sway:on(disc);
 	(mouse.LeftDown :: RBXScriptSignal):Connect(function()
 		local position = mouse:GetPosition()
+		if not position then
+			return
+		end
 
 		if bounds.inner(disc.AbsolutePosition, disc.AbsoluteSize, position) then
 			ripple(disc)
@@ -744,7 +739,7 @@ local function initializeLoadouts()
 				else
 					reject("Failed to get user thumbnail: " .. tostring(image))
 
-					notify.error("User thumbnail", "Failed to fetch user thumbnail.", 5, "error")
+					--notify.error("User thumbnail", "Failed to fetch user thumbnail.", 5, "error")
 				end
 			end)
 		end)
@@ -902,7 +897,7 @@ local function initializeLoadouts()
 				else
 					reject(`Card "{equippedCard}" not found in CardLibrary.`)
 
-					notify.error("Data", "Couldn't get your Equipped_Card.", 5, "error")
+					--notify.error("Data", "Couldn't get your Equipped_Card.", 5, "error")
 				end
 			end)
 			:andThen(function(lib)
@@ -1052,7 +1047,7 @@ local function initializeObjectives()
 			else
 				rank:Set("Bronze I")
 
-				notify.error("Data", "Couldn't get your Rank.", 5, "error")
+				--notify.error("Data", "Couldn't get your Rank.", 5, "error")
 			end
 
 			resolve()

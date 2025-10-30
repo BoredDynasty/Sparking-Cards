@@ -2,6 +2,7 @@
 local configuration = require(script.configuration)
 local escapeforms = require(script.escapeforms)
 local gradients = require(script.gradients)
+local text_counter = require(script["text-counter"])
 local typeformatter = require(script.typeformatter)
 local typewriter = require(script.typewriter)
 
@@ -9,6 +10,7 @@ local typewriter = require(script.typewriter)
 
 local markdown = {
 	typewriter = typewriter,
+	text_counter = text_counter,
 }
 markdown.__index = markdown
 

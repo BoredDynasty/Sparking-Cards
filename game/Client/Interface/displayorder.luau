@@ -58,7 +58,8 @@ function display_order.new(canvas: CanvasGroup, position: Vector2?, size: Vector
 	local identifier = canvas:GetFullName()
 
 	if not position or not size then
-		local frame = canvas:FindFirstChild("Frame") or canvas:FindFirstChildOfClass("Frame")
+		local frame = canvas:FindFirstChild("Frame") :: Frame?
+			or canvas:FindFirstChildOfClass("Frame") :: Frame?
 		-- i dont usually name my layers sooooo...
 		if not frame then
 			-- thats odd, lmao
@@ -108,6 +109,14 @@ function display_order:toggle(canvas: CanvasGroup)
 		end)
 		:expect() :: interface_data
 
+	if not data then
+		return
+	end
+
+	if not data.debounce then
+		return
+	end
+
 	if data.debounce:Get() then
 		return
 	end
@@ -144,6 +153,7 @@ function display_order:Watch()
 				scale.Scale = 0
 
 				canvas.Visible = true
+				canvas.BackgroundTransparency = 1
 
 				spr.target(scale, 0.8, 1.5, {
 					Scale = 1,

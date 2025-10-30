@@ -2,7 +2,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local retryer = require(ReplicatedStorage.Utility.retryer)
 
 -- timer.luau
 -- A reusable module for tracking and formatting time in Roblox
@@ -47,7 +46,7 @@ function Timer:Start()
 	return self
 end
 
-function Timer.interval<T...>(self: Timer, duration: number, f: (T...) -> (), ...: T...)
+function Timer:interval<T...>(self: Timer, duration: number, f: (T...) -> (), ...: T...)
 	local function inner(duration: number, f: (T...) -> (), ...: T...)
 		local nextTick = os.clock() + duration
 		while true do

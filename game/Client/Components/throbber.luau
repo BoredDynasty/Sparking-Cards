@@ -13,7 +13,7 @@ local trove = require(ReplicatedStorage.Packages.trove).new()
 
 local templates = ReplicatedStorage:WaitForChild("Interfaces") :: Folder
 
-return function(element: GuiObject, signal: SignalPlus.Signal<>)
+local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 	return promise.new(function()
 		local loaderTemplates = templates:FindFirstChild("Loaders") :: Folder
 		local loader = loaderTemplates:WaitForChild("Basic"):Clone() :: ImageLabel
@@ -30,7 +30,6 @@ return function(element: GuiObject, signal: SignalPlus.Signal<>)
 
 		trove:Add(loader)
 		trove:Add(signal)
-		trove:Add(tween)
 
 		signal:Once(function()
 			pop(loader)
@@ -38,8 +37,12 @@ return function(element: GuiObject, signal: SignalPlus.Signal<>)
 			task.delay(5, function()
 				trove:Remove(loader)
 				trove:Remove(signal)
-				trove:Remove(tween)
+				tween:Destroy()
 			end)
 		end)
 	end)
 end
+
+return setmetatable({
+	_trove = trove,
+}, { __call = __call })

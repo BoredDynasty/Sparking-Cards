@@ -21,7 +21,6 @@ GameCamera.camera = workspace.CurrentCamera
 -- Add effects
 controller:Add("Sway", require("../Camera/Sway"))
 -- controller:Add("Follow", require("../Camera/Follow"))
-controller:Add("Trail", require("../Camera/Trail"))
 controller:Add("Shake", require("../Camera/Shake"))
 
 -- Start the camera controller

@@ -10,7 +10,7 @@ local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
-local notify = require(script.Parent.notify)
+local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
@@ -78,8 +78,25 @@ function market:display_spendings(profile: {
 	promise.new(function()
 		local text = ""
 
-		if profile then
-			text = number_abbreviation:Format(profile.Data.Prisms, "space")
+		local prisms = tonumber(profile and profile.Data.Prisms)
+
+		if prisms then
+			local counter = markdown.text_counter.new({
+				to = tonumber(profile and profile.Data.Prisms) or 0,
+				from = 0,
+				direction = "up",
+				delay = 0,
+				duration = 2,
+				label = moneyFrame:FindFirstChild("Amount") :: TextLabel,
+				separator = " ",
+			})
+			counter:Start()
+
+			counter.completed:Wait()
+
+			text = number_abbreviation:Format(prisms, "space")
+
+			task.defer(counter.Destroy, counter)
 		else
 			text = "0"
 		end
@@ -336,7 +353,7 @@ function market:load_inventory(profile: {
 			end
 
 			Packet.SellCard.send({ cardName = i, playerInstance = player })
-			notify.success("Sold Card", `Successfully sold card`, 5, "success")
+			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 
 			local value = Items[i].Price or 1
 			local floor = math.floor(value / 10)
