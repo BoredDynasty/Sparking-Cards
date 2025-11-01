@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 --[=[
 	Dash
 	@class Dash
@@ -6,42 +6,28 @@
 	Handles the dashing mechanic, including speed, effects, and animations.
 ]=]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local Signal = require(ReplicatedStorage.Parent.Shared.Replicated.Dependencies.SignalPlus)
 
-local class = {}
-class.__index = class
+local Dash = {}
+Dash.__index = Dash
 
-export type self = {
-	_movementController: any,
-	_trove: Trove.Trove,
-	_config: any,
-	_keybind: Enum.KeyCode,
-	_character: Model,
-	_humanoid: Humanoid,
-	_onCooldown: boolean,
+function Dash.new(movementController)
+	local self = setmetatable({}, Dash)
 
-	dashed: Signal.Signal,
-}
-
-function class.new(movementController): setmetatable<self, typeof(class)>
-	local self = setmetatable({
-		_movementController = movementController,
-		_trove = Trove.new(),
-		_config = MovementConfig.Dash,
-		_keybind = MovementConfig.Keybinds.Dash,
-		_character = playerMarshaller.get().Character,
-		_humanoid = playerMarshaller.get().Character:WaitForChild("Humanoid"),
-		_onCooldown = false,
-
-		dashed = Signal.new(),
-	}, class)
+	self._movementController = movementController
+	self._trove = Trove.new()
+	self._config = MovementConfig.Dash
+	self._keybind = MovementConfig.Keybinds.Dash
+	self._character = playerMarshaller.get().Character
+	self._humanoid = self._character:WaitForChild("Humanoid")
+	self._onCooldown = observer.new(false)
+	self._camera = workspace.CurrentCamera
 
 	animate.loadAnimation("dash", MovementConfig.Animations.Dash)
 
@@ -50,32 +36,37 @@ function class.new(movementController): setmetatable<self, typeof(class)>
 	return self
 end
 
-function class:_connectInputs(self: self)
+function Dash:_connectInputs()
 	self._trove:Connect(UserInputService.InputBegan, function(input, gameProcessedEvent)
 		if not gameProcessedEvent and input.KeyCode == self._keybind then
-			self:start()
+			self:Start()
 		end
 	end)
 end
 
-function class:start(self: self)
-	if self._onCooldown then
+function Dash:Start()
+	if self._onCooldown:Get() then
 		return
 	end
 
-	local settings = self._movementController:get("DirectionalSettings"):getSettings("Dash", self._humanoid.MoveDirection)
+	if not self._character then
+		return
+	end
+	if self._humanoid.Health <= 0 then
+		return
+	end
 
 	local currentStamina = self._character:GetAttribute("Stamina") :: number? or 0
-	if currentStamina < settings.StaminaCost then
+	if currentStamina < self._config.StaminaCost then
 		return
 	end
 
-	self._onCooldown = true
-	task.delay(settings.Cooldown, function()
-		self._onCooldown = false
+	self._onCooldown:Set(true)
+	task.delay(self._config.Cooldown, function()
+		self._onCooldown:Set(false)
 	end)
 
-	self._character:SetAttribute("Stamina", currentStamina - settings.StaminaCost)
+	self._character:SetAttribute("Stamina", currentStamina - self._config.StaminaCost)
 	self._character:SetAttribute("AntiRegenerate", true)
 
 	animate.play("dash", 0.25)
@@ -86,27 +77,25 @@ function class:start(self: self)
 	velocity.Attachment0 =
 		dashTrove:Construct(Instance, "Attachment", self._character.PrimaryPart) :: Attachment
 	velocity.MaxForce = 30000
-	velocity.VectorVelocity = workspace.CurrentCamera.CFrame.LookVector * settings.Force :: number
-	--self._character.PrimaryPart.CFrame.LookVector :: Vector3
+	velocity.VectorVelocity = (self._camera :: Camera).CFrame.LookVector :: Vector3
+		* self._config.Force :: number
 	velocity.Parent = self._character.PrimaryPart
 
 	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")
 	local windForce = dashTrove:Clone(visualEffects:WaitForChild("WindForce"))
 	windForce.Parent = self._character.PrimaryPart
 
-	task.delay(settings.Duration, function()
+	task.delay(self._config.Duration, function()
 		dashTrove:Destroy()
-		if self._character :: Model? and self._character.Parent then
+		if self._character :: Model? and self._character.Parent ~= nil then
 			self._character:SetAttribute("AntiRegenerate", false)
 		end
 	end)
-
-	self.dashed:Fire()
 end
 
-function class:destroy(self: self)
+function Dash:Destroy()
 	self._trove:Destroy()
-	self.dashed:Destroy()
+	self._onCooldown:Destroy()
 end
 
-return class
+return Dash

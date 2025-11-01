@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 --[=[
 	Walk
 	@class Walk
@@ -7,45 +7,28 @@
 ]=]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local Signal = require(ReplicatedStorage.Parent.Shared.Replicated.Dependencies.SignalPlus)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
-local Trove = require(ReplicatedStorage.Packages.trove)
+local Walk = {}
+Walk.__index = Walk
 
-local class = {}
-class.__index = class
+function Walk.new<a>(movementController: a)
+	local self = setmetatable({}, Walk)
 
-export type self = {
-	_movementController: any,
-	_trove: Trove.Trove,
-	_character: Model,
-	_humanoid: Humanoid,
-	_isMoving: boolean,
-
-	startedMoving: Signal.Signal,
-	stoppedMoving: Signal.Signal,
-}
-
-function class.new(movementController): setmetatable<self, typeof(class)>
-	local self = setmetatable({
-		_movementController = movementController,
-		_trove = Trove.new(),
-		_character = playerMarshaller.get().Character,
-		_humanoid = playerMarshaller.get().Character:WaitForChild("Humanoid"),
-		_isMoving = false,
-
-		startedMoving = Signal.new(),
-		stoppedMoving = Signal.new(),
-	}, class)
+	self._movementController = movementController
+	self._trove = require(ReplicatedStorage.Packages.trove).new()
+	self._character = playerMarshaller.get().Character
+	self._humanoid = self._character:WaitForChild("Humanoid")
+	self._isMoving = false
 
 	animate.loadAnimation("walk", MovementConfig.Animations.Walk)
 
 	return self
 end
 
-function class:update(self: self, deltaTime: number)
+function Walk:Update(deltaTime: number)
 	local moveDirection = self._humanoid.MoveDirection
 	local isMoving = moveDirection.Magnitude > 0.1
 
@@ -53,12 +36,10 @@ function class:update(self: self, deltaTime: number)
 		-- Started moving
 		self._isMoving = true
 		animate.play("walk", 0.25)
-		self.startedMoving:Fire()
 	elseif not isMoving and self._isMoving then
 		-- Stopped moving
 		self._isMoving = false
 		animate.stop("walk")
-		self.stoppedMoving:Fire()
 	end
 
 	if self._isMoving then
@@ -73,10 +54,8 @@ function class:update(self: self, deltaTime: number)
 	end
 end
 
-function class:destroy(self: self)
+function Walk:Destroy()
 	self._trove:Destroy()
-	self.startedMoving:Destroy()
-	self.stoppedMoving:Destroy()
 end
 
-return class
+return Walk

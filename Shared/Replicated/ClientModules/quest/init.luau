@@ -72,9 +72,8 @@ end
 	@param name - The name of the quest
 
    ```luau
-   quest_module.new(player, "take a hike"):andThen(function()
-      print("added new quest!")
-   end)
+   quest_module.new(player, "take a hike")
+	print("added new quest!"
    ```
 
 ]]

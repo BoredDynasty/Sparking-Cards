@@ -1,7 +1,7 @@
 --!strict
 --[=[
-	DirectionalSettings
-	@class DirectionalSettings
+	direction_controller
+	@class direction_controller
 
 	Handles the directional manipulation of movement settings.
 ]=]
@@ -9,24 +9,24 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 
-local class = {}
-class.__index = class
+local direction_controller = {}
+direction_controller.__index = direction_controller
 
 export type self = {
 	_movementController: any,
 	_config: any,
 }
 
-function class.new(movementController): setmetatable<self, typeof(class)>
+function direction_controller.new(movementController): setmetatable<self, typeof(direction_controller)>
 	local self = setmetatable({
 		_movementController = movementController,
 		_config = MovementConfig,
-	}, class)
+	}, direction_controller)
 
 	return self
 end
 
-function class:getSettings(self: self, movementType: string, direction: Vector3): any
+function direction_controller:Get(self: self, movementType: string, direction: Vector3): any
 	local settings = self._config[movementType]
 	if not settings then
 		return nil
@@ -96,7 +96,8 @@ function class:getSettings(self: self, movementType: string, direction: Vector3)
 	return newSettings
 end
 
-function class:destroy(self: self)
+function direction_controller:Destroy(self: self)
+	setmetatable(self, nil)
 end
 
-return class
+return direction_controller

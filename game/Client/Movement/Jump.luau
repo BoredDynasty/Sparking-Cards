@@ -1,7 +1,7 @@
 --!strict
 --[=[
 	Jump
-	@class Jump
+	@jump_controller Jump
 
 	Handles the jumping mechanic, including stamina cost and double jump prevention.
 ]=]
@@ -9,40 +9,40 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local Signal = require(ReplicatedStorage.Parent.Shared.Replicated.Dependencies.SignalPlus)
-local Trove = require(ReplicatedStorage.Packages.trove)
+local trove = require(ReplicatedStorage.Packages.trove)
 
-local class = {}
-class.__index = class
+local jump_controller = {}
+jump_controller.__index = jump_controller
 
 export type self = {
 	_movementController: any,
-	_trove: Trove.Trove,
+	_trove: typeof(trove.new()),
 	_config: any,
 	_character: Model,
 	_humanoid: Humanoid,
 	_dustEffect: BasePart,
 
-	jumped: Signal.Signal,
-	landed: Signal.Signal,
+	landed: SignalPlus.Signal<>,
+	jumped: SignalPlus.Signal<>,
 }
 
-function class.new(movementController): setmetatable<self, typeof(class)>
+function jump_controller.new(movementController): setmetatable<self, typeof(jump_controller)>
 	local self = setmetatable({
 		_movementController = movementController,
-		_trove = Trove.new(),
+		_trove = trove.new(),
 		_config = MovementConfig.Jump,
 		_character = playerMarshaller.get().Character,
 		_humanoid = playerMarshaller.get().Character:WaitForChild("Humanoid"),
 		_dustEffect = fetchAsset("FootstepDust"),
 
-		jumped = Signal.new(),
-		landed = Signal.new(),
-	}, class)
+		jumped = SignalPlus(),
+		landed = SignalPlus(),
+	}, jump_controller)
 
 	self._trove:Add(self._dustEffect)
 
@@ -52,8 +52,14 @@ function class.new(movementController): setmetatable<self, typeof(class)>
 	return self
 end
 
-function class:_connectJumpRequest(self: self)
+function jump_controller:_connectJumpRequest(self: self)
 	self._trove:Connect(UserInputService.JumpRequest, function()
+		if self._humanoid.Health <= 0 then
+			return
+		end
+		if not self._character.PrimaryPart then
+			return
+		end
 		if
 			self._humanoid:GetState() == Enum.HumanoidStateType.Jumping
 			or self._humanoid:GetState() == Enum.HumanoidStateType.Freefall
@@ -91,7 +97,7 @@ function class:_connectJumpRequest(self: self)
 	end)
 end
 
-function class:_connectLanding(self: self)
+function jump_controller:_connectLanding(self: self)
 	self._trove:Connect(self._humanoid.StateChanged, function(oldState, newState)
 		if newState == Enum.HumanoidStateType.Landed then
 			-- Landing mechanic
@@ -102,10 +108,10 @@ function class:_connectLanding(self: self)
 	end)
 end
 
-function class:destroy(self: self)
+function jump_controller:destroy(self: self)
 	self._trove:Destroy()
 	self.jumped:Destroy()
 	self.landed:Destroy()
 end
 
-return class
+return jump_controller
