@@ -129,7 +129,12 @@ local interfaceStartTime = os.clock()
 local PlayerGui = player.PlayerGui
 local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
 
+local characterFolder = ReplicatedStorage:FindFirstChild("Characters") or Instance.new("Folder")
+characterFolder.Name = "Characters"
+characterFolder.Parent = ReplicatedStorage
+
 glove:Apply(character)
+animate.initialize()
 
 print("client starting")
 
@@ -161,6 +166,7 @@ local function initializeMarket()
 	local function callback()
 		market:display_spendings(expectProfile())
 		market:load_items()
+		displayorder:toggle(shopCanvas)
 	end
 
 	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
@@ -333,6 +339,7 @@ local function initializeOptions()
 					motion_blur:Off()
 				end,
 			},
+			override = "false",
 		},
 	}
 
@@ -343,6 +350,7 @@ local function initializeOptions()
 			functions = option.toggleFunctions,
 			icons = option.icons or nil,
 			state = observer.new(if option.override == "on" then true else false),
+			override = if option.override then option.override else nil,
 		})
 
 		task.spawn(Options.render, Options, optionsFrame.Holder :: ScrollingFrame)
@@ -369,16 +377,10 @@ local function initializeMatchmaking()
 	local clock = timer.new()
 
 	local function showMatchmakingFrame()
-		task.delay(5, spr.target, matchmakingFrame, 0.8, 8, {
+		spr.target(matchmakingFrame, 0.8, 8, {
 			Position = UDim2.fromScale(0.5, 0.1),
 		})
-
 		state:Set(true)
-
-		custom_lighting.blur()
-		task.delay(4, function()
-			custom_lighting.unblur()
-		end)
 
 		clock:Start()
 		-- every 0.33_ seconds
@@ -398,7 +400,7 @@ local function initializeMatchmaking()
 		end)
 	end
 
-	local function hideMatchmakingFrame()
+	local function hideMatchmakingFrame(resolve: () -> ...unknown)
 		spr.target(matchmakingFrame, 0.8, 2, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
@@ -409,6 +411,8 @@ local function initializeMatchmaking()
 		clock:Stop()
 
 		hud:toggle("Matchmaking")
+
+		resolve()
 	end
 
 	state:Watch(function(newValue: boolean)
@@ -440,12 +444,7 @@ local function initializeMatchmaking()
 			state:Set(false)
 			-- audio:SFX("leave")
 
-			promise
-				.new(function(resolve: (boolean) -> ...unknown)
-					hideMatchmakingFrame()
-					resolve()
-				end)
-				:catch(warn)
+			promise.new(hideMatchmakingFrame):catch(warn)
 		else
 			return
 		end
@@ -484,6 +483,7 @@ local function initializeBadges()
 
 	local function loadBadges()
 		if not profile then
+			print("no profile to load badges")
 			return
 		end
 
@@ -718,6 +718,7 @@ local function initializeLoadouts()
 
 	ripple(loadoutCanvas)
 	ripple:Watch(profilePicture)
+	displayorder.new(loadoutCanvas)
 
 	local _parallax = parallax.new(Vector2.one * 10)
 	local layers = parallaxLayers.Desert -- placeholder
@@ -729,7 +730,7 @@ local function initializeLoadouts()
 	_parallax:Setup(loadoutCanvas)
 	--_parallax:Enable()
 	local function updatePfp()
-		return promise.async(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
+		return promise.async(function(resolve: (Content) -> ...unknown, reject: (string) -> ...unknown)
 			local userId = player.UserId
 
 			local image = rbx_thumb.avatar_headshot(userId, "420x420")
@@ -775,117 +776,6 @@ local function initializeLoadouts()
 		TextLabel: TextLabel,
 		ImageLabel: ImageLabel?,
 	}
-
-	local function creatCard(ancestor: Instance?, icon: string?): card_display
-		-- dont worry abt the variable names
-		local base = nil
-		if icon then
-			local WeaponType = Instance.new("Frame")
-			local ImageLabel = Instance.new("ImageLabel")
-			local AspectRatio = Instance.new("UIAspectRatioConstraint")
-			local UICorner = Instance.new("UICorner")
-			local TextLabel = Instance.new("TextLabel")
-			local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
-			local AspectRatio_3 = Instance.new("UIAspectRatioConstraint")
-
-			--Properties:
-
-			WeaponType.Name = ""
-			WeaponType.Parent = ancestor or ReplicatedStorage
-			WeaponType.AnchorPoint = Vector2.new(0.5, 0.5)
-			WeaponType.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
-			WeaponType.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			WeaponType.BorderSizePixel = 0
-			WeaponType.Position = UDim2.new(0.757278681, 0, 0.0858655497, 0)
-			WeaponType.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
-
-			ImageLabel.Parent = WeaponType
-			ImageLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-			ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			ImageLabel.BackgroundTransparency = 1.000
-			ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			ImageLabel.BorderSizePixel = 0
-			ImageLabel.Position = UDim2.new(0.293805778, 0, 0.484785527, 0)
-			ImageLabel.Size = UDim2.new(0.103226088, 0, 0.269325286, 0)
-			ImageLabel.Image = "rbxassetid://10734975486"
-
-			AspectRatio.Name = "AspectRatio"
-			AspectRatio.Parent = ImageLabel
-
-			UICorner.CornerRadius = UDim.new(0.139130428, 0)
-			UICorner.Parent = WeaponType
-
-			TextLabel.Parent = WeaponType
-			TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-			TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			TextLabel.BackgroundTransparency = 1.000
-			TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			TextLabel.BorderSizePixel = 0
-			TextLabel.Position = UDim2.new(0.547556996, 0, 0.4953219, 0)
-			TextLabel.Size = UDim2.new(0.40460676, 0, 0.355981946, 0)
-			TextLabel.Font = Enum.Font.Gotham
-			TextLabel.Text = "Sword"
-			TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			TextLabel.TextSize = 12.000
-			TextLabel.TextWrapped = true
-
-			AspectRatio_2.Name = "AspectRatio"
-			AspectRatio_2.Parent = TextLabel
-			AspectRatio_2.AspectRatio = 2.965
-
-			AspectRatio_3.Name = "AspectRatio"
-			AspectRatio_3.Parent = WeaponType
-			AspectRatio_3.AspectRatio = 2.609
-
-			base = WeaponType
-		else
-			local FlavorText = Instance.new("Frame")
-			local UICorner = Instance.new("UICorner")
-			local TextLabel = Instance.new("TextLabel")
-			local AspectRatio = Instance.new("UIAspectRatioConstraint")
-			local AspectRatio_2 = Instance.new("UIAspectRatioConstraint")
-
-			--Properties:
-
-			FlavorText.Name = ""
-			FlavorText.Parent = ancestor or ReplicatedStorage
-			FlavorText.AnchorPoint = Vector2.new(0.5, 0.5)
-			FlavorText.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
-			FlavorText.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			FlavorText.BorderSizePixel = 0
-			FlavorText.Position = UDim2.new(0.238476574, 0, 0.0858655497, 0)
-			FlavorText.Size = UDim2.new(0.476953149, 0, 0.171731099, 0)
-
-			UICorner.CornerRadius = UDim.new(0.139130428, 0)
-			UICorner.Parent = FlavorText
-
-			TextLabel.Parent = FlavorText
-			TextLabel.AnchorPoint = Vector2.new(0.5, 0.5)
-			TextLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			TextLabel.BackgroundTransparency = 1.000
-			TextLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-			TextLabel.BorderSizePixel = 0
-			TextLabel.Position = UDim2.new(0.50702697, 0, 0.497070491, 0)
-			TextLabel.Size = UDim2.new(0.98594588, 0, 1.00585902, 0)
-			TextLabel.Font = Enum.Font.Unknown
-			TextLabel.Text = ""
-			TextLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
-			TextLabel.TextSize = 12.000
-			TextLabel.TextWrapped = true
-
-			AspectRatio.Name = "AspectRatio"
-			AspectRatio.Parent = TextLabel
-			AspectRatio.AspectRatio = 2.557
-
-			AspectRatio_2.Name = "AspectRatio"
-			AspectRatio_2.Parent = FlavorText
-			AspectRatio_2.AspectRatio = 2.609
-
-			base = FlavorText
-		end
-
-		return base
-	end
 
 	local function updateDetails()
 		--
@@ -940,7 +830,7 @@ local function initializeObjectives()
 
 	promise
 		.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
-			local rank_number = compute_level:rankNameToNumber()
+			local rank_number = compute_level:rankNameToNumber(rank:Get())
 			if not rank_number then
 				reject("no rank number for some reason. invalid rank?: ", rank:Get())
 			end
@@ -1004,9 +894,6 @@ movementController:Start(movementController)
 print("client movement")
 print("game camera")
 
-animate.initialize()
-print("animate initialized")
-
 -- local rain_controller = rain.new()
 -- rain_controller:Start(rain_controller)
 
@@ -1067,10 +954,6 @@ local defaultFootstep = _rootPart:FindFirstChild("Running")
 if defaultFootstep then
 	defaultFootstep:Destroy()
 end
-
-local characterFolder = ReplicatedStorage:FindFirstChild("Characters") or Instance.new("Folder")
-characterFolder.Name = "Characters"
-characterFolder.Parent = ReplicatedStorage
 
 Packet.CleanupCharacter.listen(function()
 	animate.cleanup()

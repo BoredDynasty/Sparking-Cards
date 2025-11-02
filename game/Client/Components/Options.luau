@@ -48,6 +48,11 @@ function options.new(data: data)
 		}
 	end
 
+	-- override
+	if data.override and data.functions[data.override] then
+		data.functions[data.override]()
+	end
+
 	table.insert(options.tracked, data)
 
 	return data
@@ -174,16 +179,16 @@ function options:create_setting(ancestor: Instance?): settingUI
 end
 
 function options:render(ancestor: Instance)
-	local visited = table.create(#options.tracked) :: { data }
+	local visited = table.create(#options.tracked) :: { string }
 
 	for i, option in ipairs(options.tracked :: { data }) do
-		local needle = table.find(visited, option)
+		local needle = table.find(visited, option.name)
 
 		if needle and visited[needle] then
 			return
 		end
 
-		table.insert(visited, option)
+		table.insert(visited, option.name)
 
 		local template = options:create_setting()
 
@@ -191,6 +196,14 @@ function options:render(ancestor: Instance)
 		local typewriter = markdown.typewriter.new()
 
 		typewriter:Play(label, option.name .. "\n\n" .. option.description)
+
+		task.spawn(function()
+			repeat
+				task.wait(1)
+			until typewriter:IsPlaying() == false
+
+			typewriter:Destroy()
+		end)
 
 		local uri = option.icons and option.icons[option.override or "off"] or ""
 		local iconContent = Content.fromUri(uri) or Content.none

@@ -85,7 +85,7 @@ return {
 	},
 	Dash = {
 		Cooldown = 3,
-		Force = 25,
+		Force = 50,
 		Duration = 0.3,
 		StaminaCost = 15,
 	},

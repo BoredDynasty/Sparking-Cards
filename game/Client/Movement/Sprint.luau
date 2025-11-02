@@ -95,6 +95,7 @@ function Sprint:Stop()
 
 	speed_lines:Off(self._speedForceEffect)
 	task.defer(function()
+		self._speedForceEffect:Destroy()
 		self._speedForceEffect = nil
 	end)
 end

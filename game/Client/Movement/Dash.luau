@@ -6,13 +6,18 @@
 	Handles the dashing mechanic, including speed, effects, and animations.
 ]=]
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local Trove = require(ReplicatedStorage.Packages.trove)
 local animate = require(game.StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
+local input = require(ReplicatedStorage.Packages.input)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
 
 local Dash = {}
 Dash.__index = Dash
@@ -28,6 +33,7 @@ function Dash.new(movementController)
 	self._humanoid = self._character:WaitForChild("Humanoid")
 	self._onCooldown = observer.new(false)
 	self._camera = workspace.CurrentCamera
+	self._mouse = input.Mouse.new()
 
 	animate.loadAnimation("dash", MovementConfig.Animations.Dash)
 
@@ -71,31 +77,63 @@ function Dash:Start()
 
 	animate.play("dash", 0.25)
 
-	local dashTrove = Trove.new()
+	-- get dash direction
+	local direction = nil
 
-	local velocity: LinearVelocity = dashTrove:Construct(Instance, "LinearVelocity")
-	velocity.Attachment0 =
-		dashTrove:Construct(Instance, "Attachment", self._character.PrimaryPart) :: Attachment
-	velocity.MaxForce = 30000
-	velocity.VectorVelocity = (self._camera :: Camera).CFrame.LookVector :: Vector3
-		* self._config.Force :: number
-	velocity.Parent = self._character.PrimaryPart
+	local head = self._character:FindFirstChild("Head") :: BasePart
+	if not head then
+		animate.stop("dash")
 
-	local visualEffects = ReplicatedStorage:WaitForChild("Assets"):WaitForChild("VisualEffects")
-	local windForce = dashTrove:Clone(visualEffects:WaitForChild("WindForce"))
-	windForce.Parent = self._character.PrimaryPart
-
-	task.delay(self._config.Duration, function()
-		dashTrove:Destroy()
-		if self._character :: Model? and self._character.Parent ~= nil then
+		if self._character then
 			self._character:SetAttribute("AntiRegenerate", false)
 		end
+
+		self._onCooldown:Set(false)
+
+		return
+	end
+
+	if head.LocalTransparencyModifier == 1 then
+		-- we are in first person
+		direction = (self._camera :: Camera).CFrame.LookVector
+	else
+		-- we are not in first person
+		local ray = self._mouse:GetRay() :: Ray
+		if not ray then
+			direction = (self._camera :: Camera).CFrame.LookVector -- lmao
+		end
+
+		local unit_ray = ray.Unit
+		direction = unit_ray.Direction
+	end
+
+	local attachment0 =
+		self._trove:Construct(Instance, "Attachment", self._character.PrimaryPart) :: Attachment
+
+	local velocity: LinearVelocity = self._trove:Construct(Instance, "LinearVelocity")
+	velocity.Attachment0 = attachment0
+	velocity.MaxForce = 30000
+	velocity.VectorVelocity = direction * self._config.Force :: number
+	velocity.Parent = self._character.PrimaryPart
+
+	speed_lines:On(gamecamera.camera, fetchAsset("Speedlines"))
+
+	task.delay(self._config.Duration, function()
+		self._trove:Remove(velocity)
+		self._trove:Remove(attachment0)
+
+		if self._character then
+			self._character:SetAttribute("AntiRegenerate", false)
+		end
+
+		speed_lines:Off()
 	end)
 end
 
 function Dash:Destroy()
 	self._trove:Destroy()
 	self._onCooldown:Destroy()
+	speed_lines:Off()
 end
 
 return Dash

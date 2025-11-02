@@ -13,6 +13,7 @@ local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local gamecamera = require(game.StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local trove = require(ReplicatedStorage.Packages.trove)
 
@@ -72,7 +73,7 @@ function jump_controller:_connectJumpRequest(self: self)
 			return
 		end
 
-		gamecamera:Shake(0.05, 0.1)
+		gamecamera:Shake(0.02, 0.1)
 
 		self._humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
 		self._character:SetAttribute("Stamina", currentStamina - self._config.StaminaCost)
@@ -84,19 +85,21 @@ function jump_controller:_connectJumpRequest(self: self)
 		end)
 
 		local dust: BasePart = self._dustEffect:Clone()
-		dust.CFrame = self._character.PrimaryPart.CFrame
-			* CFrame.new(0, -self._humanoid.HipHeight :: number, 0)
+		dust.CFrame = self._character.PrimaryPart.CFrame * CFrame.new(0, -self._humanoid.HipHeight, 0)
+		dust.CanCollide = false
+		dust.CanQuery = false
+		dust.CanTouch = false
 		dust.Parent = workspace
-		local emitter = dust:FindFirstChildOfClass("ParticleEmitter")
 
+		local emitter = dust:FindFirstChildOfClass("ParticleEmitter")
 		if not emitter then
 			print("no particle emitter?")
 
 			return
 		end
 
-		emitter:Emit(20)
-		task.delay(2, function()
+		emitter:Emit(3)
+		task.delay(1.5, function()
 			if dust and dust.Parent then
 				dust:Destroy()
 			end

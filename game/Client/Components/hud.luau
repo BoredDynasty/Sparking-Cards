@@ -165,7 +165,7 @@ function hud:render()
 			--audio:SFX("click")
 		end)
 
-		local default_size = UDim2.fromScale(0.35, 0.7)
+		local default_size = TextButton.Size
 
 		TextButton.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
