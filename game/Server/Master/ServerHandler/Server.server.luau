@@ -64,8 +64,9 @@ local resourceItemTypes = {
 
 local serverStartTime = os.clock()
 
-Cmdr:RegisterDefaultCommands() -- This loads the default set of commands that Cmdr comes with. (Optional)
-Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
+Cmdr.Registry:RegisterDefaultCommands()
+Cmdr.Registry:RegisterCommandsIn(ReplicatedStorage.Commands)
+Cmdr.Registry:RegisterHooksIn(ReplicatedStorage.Hooks)
 
 -- selene:allow(mixed_table)
 GameAnalytics:initialize(gameAnalyticsConfig)
@@ -195,7 +196,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 	--orion.registerPlayer(player)
 
 	local function addHighlight(character: characterMarshaller.Character)
-		promise
+		return promise
 			.new(function(resolve: (string, Highlight?) -> ...unknown)
 				if character:FindFirstChildOfClass("Highlight") then
 					resolve("already has highlight", nil)
@@ -228,13 +229,13 @@ local function onPlayerAdded(player: playerMarshaller.player)
 	-- Optimize character cleanup
 	characterMarshaller.removing(player, function(character)
 		promise
-			.new(function(resolve: (string) -> ...unknown, reject: (string) -> ...unknown)
+			.new(function(resolve: (string) -> ...unknown, reject: (string, unknown) -> ...unknown)
 				local success, err = pcall(character.Destroy, character)
 
 				if success then
 					resolve("Optimized Character Cleanup.")
 				elseif not success and err then
-					reject("Couldn't optimize character cleanup")
+					reject("Couldn't optimize character cleanup: ", err)
 				end
 			end)
 			:andThen(print)
@@ -249,7 +250,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 end
 
 -- just in case the players have joined the server before the script loaded
-for _, player in ipairs(playerMarshaller.all()) do
+for i, player in ipairs(playerMarshaller.all()) do
 	if player.Parent == Players then
 		task.spawn(onPlayerAdded, player)
 	end

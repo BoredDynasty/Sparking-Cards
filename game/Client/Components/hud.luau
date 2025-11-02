@@ -6,6 +6,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local audio = require(ReplicatedStorage.Modules.audio)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
@@ -28,6 +29,7 @@ export type button = {
 	reactor: observer.Observer<boolean>,
 	limit: ratelimit.Ratelimit<string>,
 	hover_limit: ratelimit.Ratelimit<string>,
+	icon_only: boolean,
 }
 
 export type icon = {
@@ -38,7 +40,7 @@ export type icon = {
 	ImageRectOffset: Vector2, -- Vector2.new(648, 266)
 }
 
-function hud:create(name: string, callback: () -> (), icon: icon)
+function hud:create(name: string, callback: () -> (), icon: icon, icon_only: boolean?)
 	local button = {
 		name = name,
 		callback = callback,
@@ -46,6 +48,7 @@ function hud:create(name: string, callback: () -> (), icon: icon)
 		reactor = observer.new(false),
 		limit = ratelimit(1, 0.5),
 		hover_limit = ratelimit(1, 0.9),
+		icon_only = icon_only or false,
 	}
 	table.insert(hud.buttons, button)
 end
@@ -97,16 +100,32 @@ function hud:render()
 		Icon.BackgroundTransparency = 1
 		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 		Icon.Size = UDim2.fromScale(0.40, 0.40)
-		if not button.name then
-			-- make the TextButton width smaller.
-			TextButton.Size = UDim2.fromScale(0.2, 0.7)
-		else
-			-- set icon adjacent to text
-			local text_bounds = TextButton.TextBounds
-			local offset = 10
+		task.spawn(function()
+			if button.icon_only then
+				-- make the TextButton width smaller.
+				TextButton.Size = UDim2.fromScale(0.2, 0.7)
+			else
+				TextButton.RichText = true
 
-			Icon.Position = UDim2.new(0.5, (-text_bounds.X / 2) - offset, 0.5, 0)
-		end
+				-- set icon adjacent to text
+				local typewriter = markdown.typewriter.new({
+					instantFinishKey = Enum.KeyCode.Unknown,
+				})
+				typewriter:Play(TextButton, button.name)
+
+				-- yield till done
+				repeat
+					task.wait(1)
+				until typewriter:IsPlaying() == false
+
+				local text_bounds = TextButton.TextBounds
+				local offset = 10
+
+				Icon.Position = UDim2.new(0.5, (-text_bounds.X / 2) - offset, 0.5, 0)
+
+				typewriter:Destroy()
+			end
+		end)
 
 		local defaultIcon = promise
 			.new(function(resolve: (icon) -> ...unknown, reject: (string) -> ...unknown)

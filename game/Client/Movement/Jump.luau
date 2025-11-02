@@ -46,8 +46,8 @@ function jump_controller.new(movementController): setmetatable<self, typeof(jump
 
 	self._trove:Add(self._dustEffect)
 
-	self:_connectJumpRequest()
-	self:_connectLanding()
+	self:_connectJumpRequest(self)
+	self:_connectLanding(self)
 
 	return self
 end
@@ -86,8 +86,16 @@ function jump_controller:_connectJumpRequest(self: self)
 		local dust: BasePart = self._dustEffect:Clone()
 		dust.CFrame = self._character.PrimaryPart.CFrame
 			* CFrame.new(0, -self._humanoid.HipHeight :: number, 0)
-		dust.Parent = workspace;
-		(dust.ParticleEmitter :: ParticleEmitter):Emit(20)
+		dust.Parent = workspace
+		local emitter = dust:FindFirstChildOfClass("ParticleEmitter")
+
+		if not emitter then
+			print("no particle emitter?")
+
+			return
+		end
+
+		emitter:Emit(20)
 		task.delay(2, function()
 			if dust and dust.Parent then
 				dust:Destroy()

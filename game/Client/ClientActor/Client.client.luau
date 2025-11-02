@@ -129,15 +129,22 @@ local interfaceStartTime = os.clock()
 local PlayerGui = player.PlayerGui
 local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
 
-Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
-Cmdr:SetActivationUnlocksMouse(true)
-
 glove:Apply(character)
 
 print("client starting")
 
+local function initializeCommands()
+	print("init commands")
+
+	Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
+	Cmdr:SetActivationUnlocksMouse(true)
+	Cmdr:SetPlaceName("Sparking Cards Lobby")
+	Cmdr:SetActivationUnlocksMouse(true)
+	Cmdr:SetHideOnLostFocus(false)
+end
+
 local function initializeMarket()
-	print("init marker")
+	print("init market")
 	local shopGui = PlayerGui:WaitForChild("Shop") :: ScreenGui
 	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
@@ -722,24 +729,22 @@ local function initializeLoadouts()
 	_parallax:Setup(loadoutCanvas)
 	--_parallax:Enable()
 	local function updatePfp()
-		return promise.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
-			task.spawn(function()
-				local userId = player.UserId
+		return promise.async(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
+			local userId = player.UserId
 
-				local image = rbx_thumb.avatar_headshot(userId, "420x420")
+			local image = rbx_thumb.avatar_headshot(userId, "420x420")
 
-				if image then
-					profilePicture.ImageContent = image
+			if image then
+				profilePicture.ImageContent = image
 
-					pop(playerPicture, 1.2)
+				pop(playerPicture, 1.2)
 
-					resolve(image)
-				else
-					reject("Failed to get user thumbnail: " .. tostring(image))
+				resolve(image)
+			else
+				reject("Failed to get user thumbnail: " .. tostring(image))
 
-					--notify.error("User thumbnail", "Failed to fetch user thumbnail.", 5, "error")
-				end
-			end)
+				--notify.error("User thumbnail", "Failed to fetch user thumbnail.", 5, "error")
+			end
 		end)
 	end
 
@@ -883,135 +888,16 @@ local function initializeLoadouts()
 	end
 
 	local function updateDetails()
-		if not equippedCard then
-			return promise.reject("No card equipped")
-		end
-
-		return promise
-			.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
-				local foundLib = CardLibrary[equippedCard]
-				if foundLib then
-					resolve(foundLib)
-				else
-					reject(`Card "{equippedCard}" not found in CardLibrary.`)
-
-					--notify.error("Data", "Couldn't get your Equipped_Card.", 5, "error")
-				end
-			end)
-			:andThen(function(lib)
-				-- Clear existing cards
-				for _, child in ipairs(holder:GetChildren()) do
-					if child:IsA("Frame") then
-						child:Destroy()
-					end
-				end
-
-				-- attack, flavortext, M1, passive, skill, support, ultimate, weapontype(icon)
-				local markdown_controller = {
-					attack_controller = markdown.new(lib.MovesetName),
-					flavor_controller = markdown.new(lib.FlavorText),
-					m1_controller = markdown.new(lib.Moveset.M1),
-					passive_controller = markdown.new(lib.PassiveModuleName),
-					skill_controller = markdown.new(lib.Moveset.Skill),
-					support_controller = markdown.new(lib.Moveset.Support),
-					ultimate_controller = markdown.new(lib.Moveset.Ultimate),
-					weapon_controller = markdown.new(lib.WeaponType),
-				}
-
-				local cardCreationPromise = promise.new(
-					function(resolve: ({ { label: TextLabel, text: string } }) -> ...unknown)
-						local cardsToCreate = {
-							{ Title = "Attack", Text = lib.MovesetName },
-							{
-								Title = "Flavor Text",
-								Text = lib.FlavorText,
-								HighlightedTags = lib.HighlightedFlavorTextTags,
-							},
-							{ Title = "Passive", Text = lib.PassiveModuleName },
-							{ Title = "Skill", Text = lib.Moveset.Skill },
-							{ Title = "Support", Text = lib.Moveset.Support },
-							{ Title = "Ultimate", Text = lib.Moveset.Ultimate },
-							{ Title = "Weapon", Text = lib.WeaponType, Icon = "rbxassetid://10734975486" }, -- Placeholder Icon
-						}
-
-						local textLabels = {}
-
-						for _, cardData in ipairs(cardsToCreate) do
-							if cardData.Text then
-								-- Handle highlighted text
-								if cardData.HighlightedTags and type(cardData.Text) == "string" then
-									for _, tag in ipairs(cardData.HighlightedTags) do
-										cardData.Text = string.gsub(cardData.Text, tag, `<b>{tag}</b>`)
-									end
-								end
-								local card = creatCard(detailsHolder)
-								local textLabel = card.TextLabel
-
-								-- create the card
-								table.insert(textLabels, { label = textLabel, text = cardData.Text })
-							end
-						end
-
-						resolve(textLabels)
-					end
-				)
-
-				return cardCreationPromise:andThen(function(textLabels: {})
-					-- This promise will be the start of our animation chain.
-					local animationChain = promise.resolve()
-
-					for _, data in ipairs(textLabels) do
-						-- Chain the next typewriter animation onto the end of the chain.
-						animationChain = animationChain:andThen(function()
-							-- This function will not execute until the previous promise in the chain resolves.
-							-- It returns a new promise that resolves when the typewriter effect is complete.
-							return promise.new(function(resolve: () -> ...unknown)
-								task.spawn(function()
-									-- Each animation gets its own controller to avoid state conflicts.
-									local typewriteController = markdown.typewriter.new()
-									typewriteController:Play(data.label, data.text, {
-										cps = 45,
-										instantFinishKey = Enum.KeyCode.Space,
-										cursor = "|",
-										cursorTween = true,
-										perCharSound = audio:_getSoundById(9055474333),
-										respectNewlines = false,
-										punctuationPauses = {
-											[","] = 0.06,
-											["."] = 0.25,
-											["?"] = 0.18,
-											["!"] = 0.18,
-										},
-									})
-									-- Resolve the promise once the animation is done.
-									resolve()
-
-									task.defer(typewriteController.Destroy, typewriteController)
-								end)
-							end)
-						end)
-					end
-
-					return animationChain
-				end)
-			end)
+		--
 	end
 
 	updatePfp():catch(warn)
-	updateDetails():catch(warn)
+	updateDetails()
 
 	UserInputService.WindowFocusReleased:Connect(function()
-		local signal = SignalPlus()
-
 		profilePicture.ImageContent = Content.none
 
-		throbber(profilePicture, signal)
-
-		updatePfp()
-			:andThen(function()
-				signal:Fire()
-			end)
-			:catch(warn)
+		updatePfp():catch(warn)
 	end)
 
 	shopShortcut.Button.MouseButton1Click:Connect(function()
@@ -1092,6 +978,7 @@ local function initializeObjectives()
 
 	hud:create("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
 end
+initializeCommands()
 initializeMarket()
 initializeOptions()
 initializeMatchmaking()
@@ -1106,13 +993,13 @@ displayorder:Watch()
 print("client almost done")
 
 local movementController = MovementController.new()
-movementController:Add("Walk", Walk)
-movementController:Add("Jump", Jump)
-movementController:Add("Sprint", Sprint)
-movementController:Add("Dash", Dash)
-movementController:Add("Stamina", Stamina)
-movementController:Add("Joint", Joint)
-movementController:Start()
+movementController:Add(movementController, "Walk", script.Parent.Parent.Movement.Walk)
+movementController:Add(movementController, "Jump", script.Parent.Parent.Movement.Jump)
+movementController:Add(movementController, "Sprint", script.Parent.Parent.Movement.Sprint)
+movementController:Add(movementController, "Dash", script.Parent.Parent.Movement.Dash)
+movementController:Add(movementController, "Stamina", script.Parent.Parent.Movement.Stamina)
+movementController:Add(movementController, "Joint", script.Parent.Parent.Movement.Joint)
+movementController:Start(movementController)
 
 print("client movement")
 print("game camera")

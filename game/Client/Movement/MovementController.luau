@@ -30,7 +30,15 @@ function controller.new(): setmetatable<self, typeof(controller)>
 	return self
 end
 
-function controller:Add(self: self, movementName: string, movementModule: any)
+function controller:Add(self: self, movementName: string, module: ModuleScript)
+	local ok, movementModule = pcall(require, module)
+
+	if not ok then
+		warn("couldn't require movement module: ", movementModule, module)
+
+		return
+	end
+
 	if movementModule.new then
 		local movement = movementModule.new(self)
 		self._movements[movementName] = movement
@@ -44,7 +52,7 @@ end
 
 function controller:Start(self: self)
 	return promise
-		.new(function(resolve)
+		.new(function(resolve: () -> ...unknown)
 			self._trove:Connect(RunService.Heartbeat, function(deltaTime)
 				debug.profilebegin("movement")
 

@@ -11,7 +11,9 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove)
+
 local player = playerMarshaller.get()
 
 type AnimationObject = {
@@ -30,8 +32,8 @@ type AnimationData = {
 
 -- Store animations in a global table
 local animations: { [string]: AnimationObject } = {}
-local currentCharacter = nil
-local currentAnimator = nil
+local currentCharacter = nil :: characterMarshaller.Character?
+local currentAnimator = nil :: Animator?
 
 local _trove = trove.new()
 
@@ -41,11 +43,13 @@ local function initialize()
 	currentCharacter = character
 
 	local humanoid = character.Humanoid
-	local animator = humanoid:FindFirstChildOfClass("Animator")
+	local animator = humanoid:WaitForChild("Animator", 10)
 
-	--assert(animator, "Animator not found in character")
+	assert(animator, "Animator not found in character")
 
-	currentAnimator = animator or humanoid.Animator or currentCharacter.Humanoid.Animator
+	currentAnimator = animator
+
+	table.clear(animations)
 	animations = {}
 end
 
@@ -56,18 +60,47 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 
 	local animation = Instance.new("Animation")
 	animation.AnimationId = data.Id
+	animation.Parent = currentCharacter
 
 	_trove:Add(animation)
+
+	local ok = false
+	promise
+		.new(function(resolve, reject)
+			if currentAnimator then
+				currentAnimator:LoadAnimation(animation)
+
+				resolve("Loaded animation")
+			else
+				reject("No animator")
+			end
+		end)
+		:andThen(function(result: string)
+			print(result)
+
+			ok = true
+		end)
+		:catch(function(result: string)
+			ok = false
+
+			print(result)
+		end)
 
 	local animObject: AnimationObject = {
 		Animation = animation,
 		Track = nil,
 		Weight = data.Weight or 1,
 		Speed = data.Speed or 1,
-		IsLoaded = false,
+		IsLoaded = ok,
 	}
 
 	animations[name] = animObject
+
+	animation.Destroying:Connect(function()
+		pcall(_trove.Remove, _trove, animation)
+		animations[name] = nil
+	end)
+
 	return animObject
 end
 
@@ -80,7 +113,9 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 		return nil
 	end
 
-	if not animObject.IsLoaded and currentAnimator :: Animator? then
+	print("found animation: ", unpack(animObject))
+
+	if not animObject.Track or not animObject.IsLoaded and currentAnimator ~= nil then
 		animObject.Track = currentAnimator:LoadAnimation(animObject.Animation)
 		animObject.IsLoaded = true
 	end
@@ -91,7 +126,10 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 		animObject.Track:Play(fadeTime)
 		animObject.Track:AdjustWeight(animObject.Weight or 1)
 		animObject.Track:AdjustSpeed(animObject.Speed or 1)
+
 		return animObject.Track
+	else
+		warn("no animation-track?: ", table.unpack(animObject))
 	end
 
 	return nil
@@ -104,22 +142,17 @@ local function stopAnimation(name: string, fadeTime: number?)
 
 	if animObject and animObject.Track then
 		animObject.Track:Stop(fadeTime)
-
-		task.delay(fadeTime, function()
-			_trove:Remove(animObject.Animation)
-		end)
+		animObject.Track.TimePosition = 0
 	end
 end
 
 local function stopAllAnimations(fadeTime: number?)
 	fadeTime = fadeTime or 0.25
-	for _, animObject: AnimationObject in animations do
+
+	for _, animObject in pairs(animations) do
 		if animObject.Track then
 			animObject.Track:Stop(fadeTime)
-
-			task.delay(fadeTime, function()
-				_trove:Remove(animObject.Animation)
-			end)
+			animObject.Track.TimePosition = 0
 		end
 	end
 end
@@ -129,11 +162,14 @@ local function getTrack(name: string): AnimationTrack?
 	if animObject and animObject.Track then
 		return animObject.Track
 	end
+
 	return nil
 end
 
 local function cleanup()
 	stopAllAnimations(0.25)
+	-- the animation instances are still there however.
+	-- lets presume the character is detroyed.
 	table.clear(animations)
 	animations = {}
 	currentAnimator = nil
