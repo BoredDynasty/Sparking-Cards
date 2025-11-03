@@ -17,7 +17,7 @@ local UserInputService = game:GetService("UserInputService")
 
 local CameraController = require("../Camera/CameraController")
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
-local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript)
+local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local Dash = require(script.Parent.Parent.Movement.Dash)
 local Joint = require("../Movement/Joint")
 local Jump = require(script.Parent.Parent.Movement.Jump)

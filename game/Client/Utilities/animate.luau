@@ -16,7 +16,7 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 local player = playerMarshaller.get()
 
-type AnimationObject = {
+export type AnimationObject = {
 	Animation: Animation,
 	Track: AnimationTrack?,
 	Weight: number?,
@@ -24,7 +24,7 @@ type AnimationObject = {
 	IsLoaded: boolean,
 }
 
-type AnimationData = {
+export type AnimationData = {
 	Id: string,
 	Weight: number?,
 	Speed: number?,
@@ -129,7 +129,7 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 
 		return animObject.Track
 	else
-		warn("no animation-track?: ", table.unpack(animObject))
+		warn("no animation-track?: ", unpack(animObject))
 	end
 
 	return nil

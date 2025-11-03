@@ -9,24 +9,24 @@ local leventine = require(ReplicatedStorage.Utility.leventine)
 
 local assetFolder = ReplicatedStorage:WaitForChild("Assets", 5) :: Folder
 if not assetFolder then
-    warn("Assets folder not found in ReplicatedStorage. Asset fetching will fail.")
-    assetFolder = Instance.new("Folder")
-    assetFolder.Name = "Assets"
-    assetFolder.Parent = ReplicatedStorage
+	warn("Assets folder not found in ReplicatedStorage. Asset fetching will fail.")
+	assetFolder = Instance.new("Folder")
+	assetFolder.Name = "Assets"
+	assetFolder.Parent = ReplicatedStorage
 end
 local assetsProcessed = false
 
 local function ensureAssetsProcessed()
-    if not assetsProcessed then
-        task.spawn(function()
-            batch(assetFolder:GetDescendants())
-            assetsProcessed = true
-        end)
-    end
+	if not assetsProcessed then
+		task.spawn(function()
+			batch(assetFolder:GetDescendants())
+			assetsProcessed = true
+		end)
+	end
 end
 
 local function fetch(abbreviation: string)
-    ensureAssetsProcessed()
+	ensureAssetsProcessed()
 	local startTime = os.clock() -- benchmarks
 	local n = 1000
 	local raw_list = assetFolder:GetDescendants()
@@ -41,7 +41,7 @@ local function fetch(abbreviation: string)
 	assert(asset, "Couldn't get asset recursively.")
 	asset = asset:Clone()
 	local endTime = os.clock()
-	print(`it took : {math.round((startTime - endTime) * n) / n} to get the asset.`)
+	-- print(`it took : {math.round((startTime - endTime) * n) / n} to get the asset.`)
 	return asset
 end
 

@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local damageIndict = require(ReplicatedStorage.Effects.damageIndict)
+local damage_indicator = require(ReplicatedStorage.Effects["damage-indicator"])
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- damage.luau
@@ -52,7 +52,7 @@ function damage.__call(parameters: Damage)
 
 	-- do a nice lil visual effect for the damage
 	local targetRoot = targetCharacter:WaitForChild("HumanoidRootPart") :: BasePart
-	damageIndict(damageAmount, targetRoot)
+	damage_indicator(damageAmount, targetRoot)
 
 	local targetHumanoid = targetCharacter:WaitForChild("Humanoid") :: Humanoid
 	damage.incoming:Fire({
