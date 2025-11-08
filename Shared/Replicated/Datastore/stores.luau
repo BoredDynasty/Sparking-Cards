@@ -282,7 +282,7 @@ function stores:addQuest(
 			title = "Your data did not load.",
 			type = "error",
 		}, player)
-		return
+		return nil
 	end
 
 	return promise.new(function(resolve: () -> ...unknown)

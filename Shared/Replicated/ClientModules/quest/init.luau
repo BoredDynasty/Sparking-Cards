@@ -101,6 +101,7 @@ function quest_module.new(player: playerMarshaller.player, name: string)
 
 	-- serialize it for the server
 	local serialized = messagepack.encode(quest) -- hopefully ts works
+	print("serialized quest data: ", serialized)
 
 	return Packet.AddQuest.send({
 		player,

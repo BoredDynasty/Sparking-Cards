@@ -31,8 +31,8 @@ type self = {
 	_last_bpm: number,
 	_running: observer.Observer<boolean>,
 	_conn: RBXScriptConnection?,
-	Beat: SignalPlus.Signal<>,
-	BPMUpdate: SignalPlus.Signal<>,
+	Beat: SignalPlus.Signal<number>,
+	BPMUpdate: SignalPlus.Signal<number>,
 }
 
 --[[
@@ -101,9 +101,9 @@ function beats_module:Start()
 
 	self._running:Set(true)
 
-	self._conn = RunService.Heartbeat:Connect(function()
+	self._conn = RunService.Heartbeat:Connect(function(deltaTime)
 		debug.profilebegin("detect-bpm")
-		self:_Process()
+		self:_Process(deltaTime)
 		debug.profileend()
 	end)
 end
@@ -117,7 +117,7 @@ function beats_module:Stop()
 	self._running:Set(false)
 end
 
-function beats_module:_Process()
+function beats_module:_Process(deltaTime: number)
 	local now = os.time()
 
 	local rms = self.analyzer.RmsLevel
@@ -142,7 +142,7 @@ function beats_module:_Process()
 
 		table.insert(self._beat_times, now)
 
-		self.Beat:Fire()
+		self.Beat:Fire(deltaTime)
 
 		while #self._beat_times > 0 and (now - self._beat_times[1]) > self._window_size do
 			table.remove(self._beat_times, 1)

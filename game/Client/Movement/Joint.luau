@@ -50,7 +50,7 @@ trove:Connect(RunService.Stepped, function(_, deltaTime: number)
 	local frame_time = 1 / frame_rate
 
 	if totalStep > 0 then
-		for i, transform in pairs(lastJointCFrames) do
+		for i, transform in ipairs(lastJointCFrames) do
 			local j = joints[i]
 
 			if not j then
@@ -60,7 +60,7 @@ trove:Connect(RunService.Stepped, function(_, deltaTime: number)
 			j.Transform = transform
 		end
 	elseif totalStep <= 0 then
-		for i, motor in pairs(joints) do
+		for i, motor in ipairs(joints) do
 			lastJointCFrames[i] = motor.Transform
 		end
 	end

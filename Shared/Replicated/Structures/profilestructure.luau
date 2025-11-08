@@ -1,6 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+
 -- profilestructure.luau
 
 export type profile = {
@@ -48,10 +50,7 @@ export type profile = {
 	products: {
 		[number]: {
 			id: number,
-			recieptInfo: {
-				PlayerId: number,
-				ProductId: number,
-			},
+			recieptInfo: typemarshaller.ReceiptInfo,
 			times_bought: {
 				[string]: number, ---@type date format: unixtimestamp
 			},

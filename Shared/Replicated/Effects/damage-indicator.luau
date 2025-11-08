@@ -36,6 +36,9 @@ return function(damage: number, ancestor: BasePart)
 	local randomZ = pseudorandom:float(-5, 5)
 
 	local attachment = indicator:FindFirstChildOfClass("Attachment") :: Attachment
+	if not attachment then
+		return
+	end
 
 	local maxForce = 250
 	local y = pseudorandom:float(45, 55)
@@ -77,9 +80,18 @@ return function(damage: number, ancestor: BasePart)
 		EasingDirection = "In",
 		EasingStyle = "Sine",
 	})
+	-- size effect
+	local size_tween = TweenPlus(background, {
+		Size = UDim2.new(),
+	}, {
+		Time = 0.3,
+		EasingDirection = "In",
+		EasingStyle = "Sine",
+	})
 
 	transparency_tween:Start()
 	rotation_tween:Start()
+	size_tween:Start()
 
 	task.delay(0.5, function()
 		linearVelocity:Destroy()

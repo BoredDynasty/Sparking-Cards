@@ -25,6 +25,11 @@ type crosshair_lines = "Bottom" | "Center" | "Left" | "Right" | "Top"
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
 
+--[[
+   Creates a new cross-hair
+
+   @param radius `number`
+]]
 function crosshair_module.new(radius: number?)
 	local self = setmetatable({
 		interface = nil :: crosshair_interface<crosshair_lines>?,
@@ -56,6 +61,11 @@ function crosshair_module:_UpdateLinePositions()
 	} :: { [crosshair_lines]: UDim2 }
 end
 
+--[[
+   Sets the distance between each crosshair line
+
+   @param radii `number`
+]]
 function crosshair_module:SetRadius(radii: number)
 	if typeof(radii) ~= "number" then
 		warn("raddi is not a number")
@@ -79,6 +89,22 @@ function crosshair_module:SetRadius(radii: number)
 	end
 end
 
+--[[
+   Shoves the cross-hair
+
+   ```luau
+   local crosshair_module = require(path.to.crosshair_module)
+
+   local mouse = input.Mouse.new()
+   local crosshair = crosshair_module.new()
+
+   mouse.LeftDown:Connect(function()
+      crosshair:Shove()
+   end
+   ```
+
+   @param radii `number`
+]]
 function crosshair_module:Shove(radii: number)
 	if typeof(radii) ~= "number" then
 		warn("raddi is not a number")

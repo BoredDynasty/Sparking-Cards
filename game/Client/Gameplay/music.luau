@@ -44,6 +44,7 @@ local music = {
 	_currentBiome = "" :: string?,
 	_currentTrack = nil,
 	updated = SignalPlus(),
+	analyzer = nil,
 }
 
 export type trackData = {
@@ -91,6 +92,11 @@ function music.startTracking()
 		character = newCharacter
 		hrp = character:WaitForChild("HumanoidRootPart")
 	end)
+
+	if not music.analyzer then
+		music.analyzer = Instance.new("AudioAnalyzer")
+		music.analyzer.Parent = script -- ok for now
+	end
 
 	-- Track position and check biomes less frequently
 	local lastCheck: number = 0.0
@@ -160,6 +166,7 @@ function music:playRandomTrack(biomeName: string)
 		fade = true,
 		fadeTime = 1,
 		loop = true,
+		analyzer = music.analyzer,
 	})
 	music.playing:Set(track)
 end
@@ -168,7 +175,7 @@ function music:stopCurrentTrack()
 	if music._currentTrack then
 		audio:StopMusic(true)
 		music._currentTrack = nil
-		music.playing:Set()
+		music.playing:Set(nil)
 	end
 end
 

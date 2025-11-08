@@ -51,7 +51,7 @@ local rankOrder: { string } = {
 	"Sparking X",
 }
 
-local nameToNumber: { [string]: number } = {}
+local nameToNumber = table.create(#rankOrder) :: { [string]: number }
 for i, name in ipairs(rankOrder) do
 	nameToNumber[name] = i
 end
@@ -82,11 +82,7 @@ end
 	@return number? rank number or nil if not found
 ]]
 local function rankNameToNumber(rankName: string): number?
-	if type(rankName) ~= "string" then
-		return nil
-	end
-
-	return nameToNumber[rankName]
+	return table.find(rankOrder, rankName)
 end
 
 return setmetatable({

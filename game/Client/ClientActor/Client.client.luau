@@ -69,6 +69,7 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local quest = require(ReplicatedStorage.ClientModules.quest)
 local quest_ranking = require(ReplicatedStorage.ClientModules["quest-ranking"])
 local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
+local retryer = require(ReplicatedStorage.Utility.retryer)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(script.Parent.Parent.Interface.shadow)
@@ -377,7 +378,7 @@ local function initializeMatchmaking()
 	local clock = timer.new()
 
 	local function showMatchmakingFrame()
-		spr.target(matchmakingFrame, 0.8, 8, {
+		spr.target(matchmakingFrame, 0.3, 8, {
 			Position = UDim2.fromScale(0.5, 0.1),
 		})
 		state:Set(true)
@@ -401,7 +402,7 @@ local function initializeMatchmaking()
 	end
 
 	local function hideMatchmakingFrame(resolve: () -> ...unknown)
-		spr.target(matchmakingFrame, 0.8, 2, {
+		spr.target(matchmakingFrame, 1, 2, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
 
@@ -666,27 +667,52 @@ local function initializeMusic()
 	})
 
 	-- rotate effect on disc
-	TweenPlus(disc, { Rotation = 360 }, { Time = 7, RepeatCount = -1, EasingStyle = "Linear" }):Start()
+	local rotation_tween = TweenPlus(
+		disc,
+		{ Rotation = 360 },
+		{ Time = 7, RepeatCount = -1, EasingStyle = "Linear" }
+	)
+	rotation_tween:Start()
 
-	-- pulse effect using BPM
-	local analyzer = Instance.new("AudioAnalyzer")
-	local detector = beats.new({
-		analyzer = analyzer,
-		minimum_gap = 0.3,
-		window_size = 10,
-		threshold_multiplier = 1.2,
-	})
-	analyzer.Parent = musicGui
-	detector:Start()
-	detector.Beat:Connect(function()
-		spr.stop(disc, "Size")
-		spr.target(disc, 0.3, 8, {
-			Size = UDim2.fromScale(1.1, 1.1),
+	retryer.infdelay(3, function()
+		print("getting analyzer for beat detection")
+		-- pulse effect using BPM
+		local analyzer = music.analyzer
+		if not analyzer then
+			return false
+		end
+
+		local detector = beats.new({
+			analyzer = analyzer,
+			minimum_gap = 0.3,
+			window_size = 10,
+			threshold_multiplier = 1.2,
 		})
-		task.delay(0.3, spr.target, disc, 0.3, 9, {
-			Size = UDim2.fromScale(1, 1),
-		})
-		-- Add any additional effects or animations here
+		analyzer.Parent = musicGui
+		detector:Start()
+
+		local lastCheck: number = 0.0
+		local checkInterval = 1 / 1.5
+
+		detector.Beat:Connect(function(deltaTime: number)
+			lastCheck += deltaTime
+			if lastCheck < checkInterval then
+				return
+			end
+
+			lastCheck = 0
+
+			spr.stop(disc, "Size")
+			spr.target(disc, 0.3, 8, {
+				Size = UDim2.fromScale(1.1, 1.1),
+			})
+			task.delay(0.3, spr.target, disc, 0.3, 9, {
+				Size = UDim2.fromScale(1, 1),
+			})
+			-- Add any additional effects or animations here
+		end)
+
+		return true
 	end)
 end
 local function initializeLoadouts()
@@ -831,6 +857,7 @@ local function initializeObjectives()
 	promise
 		.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
 			local rank_number = compute_level:rankNameToNumber(rank:Get())
+			rank_number = rank_number or 1 -- DEBUG
 			if not rank_number then
 				reject("no rank number for some reason. invalid rank?: ", rank:Get())
 			end

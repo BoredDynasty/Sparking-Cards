@@ -43,7 +43,7 @@ local function initialize()
 	currentCharacter = character
 
 	local humanoid = character.Humanoid
-	local animator = humanoid:WaitForChild("Animator", 10)
+	local animator = humanoid:WaitForChild("Animator")
 
 	assert(animator, "Animator not found in character")
 
@@ -83,7 +83,7 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 		:catch(function(result: string)
 			ok = false
 
-			print(result)
+			warn(result)
 		end)
 
 	local animObject: AnimationObject = {
@@ -115,8 +115,19 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 
 	print("found animation: ", unpack(animObject))
 
-	if not animObject.Track or not animObject.IsLoaded and currentAnimator ~= nil then
-		animObject.Track = currentAnimator:LoadAnimation(animObject.Animation)
+	if currentAnimator then
+		if animObject.Track then
+			animObject.Track:Destroy()
+		end
+
+		local ok, track = pcall(currentAnimator.LoadAnimation, currentAnimator, animObject.Animation)
+
+		if ok then
+			animObject.Track = track
+		else
+			print("couldn't load animation: ", track)
+		end
+
 		animObject.IsLoaded = true
 	end
 

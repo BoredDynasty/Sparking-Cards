@@ -75,10 +75,6 @@ return bytenet.defineNamespace("MainNet", function()
 	local parrySuccess = bytenet.struct({
 		[1] = bytenet.nothing, -- Placeholder for future data
 	})
-	local parryResult = bytenet.struct({
-		[1] = bytenet.unknown,
-		[2] = bytenet.unknown,
-	})
 	local attemptParryStruct = bytenet.struct({
 		[1] = bytenet.nothing,
 	})
@@ -101,6 +97,9 @@ return bytenet.defineNamespace("MainNet", function()
 	local addQuestStruct = bytenet.struct({
 		player = bytenet.inst,
 		questData = bytenet.string, -- Serialized quest data
+	})
+	local setClockTime = bytenet.struct({
+		clock_time = bytenet.int8,
 	})
 	return {
 		-- General Game Packets
@@ -129,5 +128,6 @@ return bytenet.defineNamespace("MainNet", function()
 		IndictEffect = bytenet.definePacket({ value = indictEffectStruct }),
 		SetNetworkOwner = bytenet.definePacket({ value = setNetworkOwnerStruct }),
 		AddQuest = bytenet.definePacket({ value = addQuestStruct }),
+		SetTime = bytenet.definePacket({ value = setClockTime }),
 	}
 end)

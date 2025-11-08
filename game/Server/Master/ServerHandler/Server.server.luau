@@ -5,6 +5,7 @@
 print(script.Name)
 
 local HttpService = game:GetService("HttpService")
+local Lighting = game:GetService("Lighting")
 local LogService = game:GetService("LogService")
 local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
@@ -33,9 +34,11 @@ local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
 local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
 local stores = require(ReplicatedStorage.Datastore.stores)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
 local remoteEvents = ReplicatedStorage.Events
@@ -416,9 +419,38 @@ local function getProfile(player: playerMarshaller.player): { Data: profilestruc
 	}
 end
 
+local function setClock(number: number)
+	spr.stop(Lighting, "ClockTime")
+	spr.target(Lighting, 1, 1, {
+		ClockTime = number,
+	})
+end
+
+local function addQuest(player: playerMarshaller.player, quest_data: string)
+	-- deserialize
+	quest_data = messagepack.decode(quest_data) :: {
+		name: string,
+		description: string,
+		inquirer_img: number | Instance, -- img id or a model
+		progress: number,
+		date_acquired: number, -- unix timestamp millis
+		date_completed: number?,
+		completed: boolean?,
+		module: ModuleScript?,
+	}
+
+	stores:addQuest(player, quest_data)
+
+	print("server: added quest")
+end
+
+local function addProducts()
+	-- TODO) add the product thingies
+end
+
 -- Set the callback; this can only be done once by one server-side script
-MarketplaceService.ProcessReceipt = function(receiptInfo: { PlayerId: number, ProductId: number })
-	return productMarshaller.processReceipt(receiptInfo, productMarshaller.product_callbacks)
+MarketplaceService.ProcessReceipt = function(receiptInfo: typemarshaller.ReceiptInfo)
+	productMarshaller._call(receiptInfo)
 end
 
 -- Register Events
@@ -438,6 +470,12 @@ end
 --("SetPlayerExperience", setPlayerExperience)
 --("GetStats", getStats)
 
+Packet.AddQuest.listen(function(data: { player: Instance, questData: string }, player: Player?)
+	addQuest(data.player, data.questData)
+end)
+Packet.SetTime.listen(function(data: { clock_time: number }, player: Player?)
+	setClock(data.clock_time)
+end)
 Packet.StreamArea.listen(function(data: { areaCenter: Vector3 }, player: playerMarshaller.player)
 	streamArea(player, data.areaCenter)
 end)

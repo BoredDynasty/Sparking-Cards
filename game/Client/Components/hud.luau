@@ -205,12 +205,12 @@ function hud:render()
 			-- button size
 			if newValue then
 				spr.stop(Icon)
-				spr.target(Icon, 0.8, 8, {
+				spr.target(Icon, 0.35, 8, {
 					Rotation = 15,
 				})
 			else
 				spr.stop(Icon)
-				spr.target(Icon, 0.8, 8, {
+				spr.target(Icon, 0.35, 8, {
 					Rotation = 0,
 				})
 			end

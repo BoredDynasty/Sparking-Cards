@@ -1,86 +1,84 @@
---!nonstrict
+--!strict
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local promise = require(ReplicatedStorage.Packages.promise)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- productMarshaller.luau
 
-export type productTable = {
-	[string]: {
-		name: string,
-		description: string,
-		identification: number,
-		cost: number,
-	},
-}
+local product_mt = setmetatable({}, {})
 
-export type reciept = {
-	PlayerId: number,
-	ProductId: number,
-}
+function product_mt.new(product: typemarshaller.Product)
+	assert(product, "Did you forget to input a product?")
 
-return {
-	products = {
-		["Extra Cards"] = {
-			name = "Extra Cards",
-			description = [[
-            Buy yourself 50 Extra Cards!
-         ]],
-			identification = 1904591683,
-			cost = 15.00,
-		},
-		["Donation"] = {
-			name = "Donation",
-			description = [[
-            Thanks for donating!
-         ]],
-			identification = 1906572512,
-			cost = 20.00,
-		},
-	} :: productTable,
-	product_callbacks = {} :: { (reciept?, player: playerMarshaller.player) -> boolean },
-	processReceipt = function(receiptInfo: { PlayerId: number, ProductId: number }, product_callbacks)
-		local userId = receiptInfo.PlayerId :: number
-		local productId = receiptInfo.ProductId :: number
+	table.insert(product_mt, product)
+end
 
-		local player = playerMarshaller.getByUserId(userId) :: playerMarshaller.player
+function product_mt.remove(product: typemarshaller.Product)
+	assert(product, "Did you forget to input a product?")
 
-		if player then
-			local handler = product_callbacks[productId]
+	local needle = table.find(product_mt, product)
 
-			if not handler then
-				warn("No handler for productId: " .. productId)
-				return Enum.ProductPurchaseDecision.NotProcessedYet
-			end
+	if needle then
+		table.remove(product_mt, needle)
+	end
+end
 
-			promise
-				.try(handler, receiptInfo, player)
-				:andThen(function()
-					return Enum.ProductPurchaseDecision.PurchaseGranted
-				end)
-				:catch(function(...)
-					warn(`product purchase went wrong somewhere : {receiptInfo}, {...}`)
-				end)
-		end
-		--[[
+function product_mt.get(id: number): typemarshaller.ProductInfo?
+	local ok, result = pcall(MarketplaceService.GetProductInfo, MarketplaceService, id, Enum.InfoType.Asset)
+
+	if ok then
+		return result
+	else
+		print("Couldn't get product info: ", result)
+		return nil
+	end
+end
+
+--[[
+	Use the `pages.luau` module to format.
+]]
+function product_mt.get_all()
+	return MarketplaceService:GetDeveloperProductsAsync()
+end
+
+local __call = function(receiptInfo: typemarshaller.ReceiptInfo)
+	local user_id = receiptInfo.PlayerId
+	local product_id = receiptInfo.ProductId
+
+	local player = playerMarshaller.getByUserId(user_id)
 	if player then
-		-- Get the handler function associated with the developer product ID and attempt to run it
-		local handler = productFunctions[productId]
-		local success, result = pcall(handler, receiptInfo, player)
-		if success then
-			-- The user has received their benefits
-			-- Return "PurchaseGranted" to confirm the transaction
+		local product_data = nil :: typemarshaller.Product?
+
+		-- get our data
+		for i, data: typemarshaller.Product in pairs(product_mt :: { typemarshaller.Product }) do
+			if data.Id == product_id then
+				product_data = data
+			end
+		end
+
+		if not product_data then
+			return Enum.ProductPurchaseDecision.NotProcessedYet
+		end
+
+		local handler = product_data.Callback
+
+		local ok, result = pcall(handler, receiptInfo, player)
+
+		if ok then
+			-- The user has received their items
+			-- Returns "PurchaseGranted" to confirm the transaction
 			return Enum.ProductPurchaseDecision.PurchaseGranted
 		else
-			warn("Failed to process receipt: ", receiptInfo, result)
+			warn("Failed to process receipt:", receiptInfo, result)
 		end
 	end
-	]]
 
-		-- The user's benefits couldn't be awarded
-		-- Return "NotProcessedYet" to try again next time the user joins
-		return Enum.ProductPurchaseDecision.NotProcessedYet
-	end,
-}
+	return Enum.ProductPurchaseDecision.NotProcessedYet
+end
+
+product_mt._call = __call
+
+return product_mt

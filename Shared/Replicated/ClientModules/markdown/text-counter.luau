@@ -57,6 +57,8 @@ local function getDecimalPlaces(num: number)
 end
 
 --// Spring-based lerp (simple, not physically accurate)
+-- we can use shared/modules/mathematics/physical-spring
+-- but we're not going to to do that.
 local function springLerp(
 	current: number,
 	target: number,

@@ -30,6 +30,8 @@ function Audio:Init()
 
 		wire.SourceInstance = listener
 		wire.TargetInstance = audioOut
+
+		print("initialized audio listeners! : ", wire, audioOut, listener)
 	end
 end
 
@@ -81,6 +83,8 @@ end
     Plays background music with optional fade
     @param soundId number
     @param options table?
+
+	 @return Promise
 ]=]
 function Audio:PlayMusic(
 	soundId: number,
@@ -89,6 +93,7 @@ function Audio:PlayMusic(
 		loop: boolean?,
 		fade: boolean?,
 		fadeTime: number?,
+		analyzer: AudioAnalyzer?,
 	}?
 )
 	self:Init()
@@ -97,6 +102,10 @@ function Audio:PlayMusic(
 	end
 
 	local music = self._getSoundById(soundId) :: AudioPlayer
+	if not music then
+		warn("couldn't get audio player!!!")
+	end
+
 	music.Parent = soundFolder
 	local emitter = Instance.new("AudioEmitter")
 	emitter.Parent = music
@@ -107,6 +116,14 @@ function Audio:PlayMusic(
 	wire.SourceInstance = music
 	wire.TargetInstance = emitter
 	wire.Parent = music
+
+	if options.analyzer then
+		local wire_analyzer = Instance.new("Wire")
+		wire_analyzer.SourceInstance = music
+		wire_analyzer.TargetInstance = options.analyzer
+		wire_analyzer.Parent = music
+		wire_analyzer.Name = "Wire_Analyzer"
+	end
 
 	music.Looping = options and options.loop or false
 	music.Volume = options and options.volume or 1
@@ -121,6 +138,7 @@ function Audio:PlayMusic(
 	end
 
 	music:Play()
+	print("playing music: ", music.Asset)
 end
 
 --[=[
@@ -157,6 +175,7 @@ function Audio:SFX(
 	options: {
 		volume: number?,
 		pitch: number?,
+		analyzer: AudioAnalyzer?,
 	}?
 )
 	self:Init()
@@ -171,6 +190,13 @@ function Audio:SFX(
 		wire.SourceInstance = sfx
 		wire.TargetInstance = emitter
 		wire.Parent = sfx
+
+		if options.analyzer then
+			local wire_analyzer = Instance.new("Wire")
+			wire_analyzer.SourceInstance = sfx
+			wire_analyzer.TargetInstance = options.analyzer
+			wire_analyzer.Parent = sfx
+		end
 
 		--emitter.Volume = options and options.volume or 1
 		currentSFX.Volume = options and options.volume or 0.9
