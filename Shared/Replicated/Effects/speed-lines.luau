@@ -32,11 +32,11 @@ local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 function self:On(camera: Camera, lines: lines)
 	camera = camera or workspace.CurrentCamera
 
+	assert(lines, "Did you forget to input the lines model?")
+
 	local function compute()
 		if not character or not humanoid or humanoid.Health <= 0 then
-			lines:Destroy()
-
-			return
+			self:Off(lines)
 		end
 
 		local viewport_size = camera.ViewportSize
@@ -58,11 +58,14 @@ function self:On(camera: Camera, lines: lines)
 		lines.CFrame = coordinate + look_vector * (self.offset / (fov / 70))
 		lines.Attachment.ParticleEmitter.Rate = (humanoid.WalkSpeed / self.speed :: number)
 			* self.rate :: number
-		lines.Parent = camera
 	end
 
+	lines.Name = "Speed_Lines"
+	lines.Parent = camera
+	lines.Attachment.ParticleEmitter.Enabled = true
+
 	if self.is_bound:Get() == true then
-		self:Off():catch(warn)
+		self:Off(camera:FindFirstChild("Speed_Lines")):catch(warn)
 	end
 
 	RunService:BindToRenderStep(self.tag, self.render_priority, compute)
