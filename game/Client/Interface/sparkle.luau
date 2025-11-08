@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
-local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local random = require(ReplicatedStorage.Utility.random)
 local trove = require(ReplicatedStorage.Packages.trove)
 
@@ -148,7 +147,6 @@ function sparkle:on(ancestor: GuiObject, config: config?)
 
 	config = config or {}
 
-	--dictionary.reconcile(config, sparkle.default)
 	for key, value in sparkle.default do
 		if not config[key] then
 			config[key] = value

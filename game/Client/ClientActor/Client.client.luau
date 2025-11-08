@@ -648,18 +648,7 @@ local function initializeMusic()
 	end)
 
 	sway:on(note_image)
-	sway:on(disc);
-	(mouse.LeftDown :: RBXScriptSignal):Connect(function()
-		local position = mouse:GetPosition()
-		if not position then
-			return
-		end
-
-		if bounds.inner(disc.AbsolutePosition, disc.AbsoluteSize, position) then
-			ripple(disc)
-			pop(disc)
-		end
-	end)
+	sway:on(disc)
 
 	glare:Watch(disc, {
 		once = false,
@@ -702,13 +691,7 @@ local function initializeMusic()
 
 			lastCheck = 0
 
-			spr.stop(disc, "Size")
-			spr.target(disc, 0.3, 8, {
-				Size = UDim2.fromScale(1.1, 1.1),
-			})
-			task.delay(0.3, spr.target, disc, 0.3, 9, {
-				Size = UDim2.fromScale(1, 1),
-			})
+			pop(disc, 1.4)
 			-- Add any additional effects or animations here
 		end)
 
@@ -870,6 +853,7 @@ local function initializeObjectives()
 			end
 
 			for i, objective_name in ipairs(availiable_objectives) do
+				print(objective_name)
 				quest.new(player, objective_name)
 			end
 

@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 -- animate.luau
 
@@ -13,8 +13,6 @@ local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshalle
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove)
-
-local player = playerMarshaller.get()
 
 export type AnimationObject = {
 	Animation: Animation,
@@ -32,26 +30,20 @@ export type AnimationData = {
 
 -- Store animations in a global table
 local animations: { [string]: AnimationObject } = {}
-local currentCharacter = nil :: characterMarshaller.Character?
-local currentAnimator = nil :: Animator?
+
+local player = playerMarshaller.get()
+local character = characterMarshaller.get(player)
+
+local humanoid = character.Humanoid
+local animator = humanoid:WaitForChild("Animator") :: Animator
+
+humanoid.Died:Connect(function()
+	task.defer(function()
+		character = characterMarshaller.get(player)
+	end)
+end)
 
 local _trove = trove.new()
-
-local function initialize()
-	local character = characterMarshaller.get(player)
-
-	currentCharacter = character
-
-	local humanoid = character.Humanoid
-	local animator = humanoid:WaitForChild("Animator")
-
-	assert(animator, "Animator not found in character")
-
-	currentAnimator = animator
-
-	table.clear(animations)
-	animations = {}
-end
 
 local function loadAnimation(name: string, data: AnimationData): AnimationObject
 	if animations[name] then
@@ -60,38 +52,18 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 
 	local animation = Instance.new("Animation")
 	animation.AnimationId = data.Id
-	animation.Parent = currentCharacter
+	animation.Parent = character
 
 	_trove:Add(animation)
 
-	local ok = false
-	promise
-		.new(function(resolve, reject)
-			if currentAnimator then
-				currentAnimator:LoadAnimation(animation)
-
-				resolve("Loaded animation")
-			else
-				reject("No animator")
-			end
-		end)
-		:andThen(function(result: string)
-			print(result)
-
-			ok = true
-		end)
-		:catch(function(result: string)
-			ok = false
-
-			warn(result)
-		end)
+	local track = animator:LoadAnimation(animation)
 
 	local animObject: AnimationObject = {
 		Animation = animation,
-		Track = nil,
+		Track = track,
 		Weight = data.Weight or 1,
 		Speed = data.Speed or 1,
-		IsLoaded = ok,
+		IsLoaded = true,
 	}
 
 	animations[name] = animObject
@@ -105,7 +77,7 @@ local function loadAnimation(name: string, data: AnimationData): AnimationObject
 end
 
 local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
-	--assert(currentAnimator, "Animator not initialized. Call initialize() first.")
+	--assert(animator, "Animator not initialized. Call initialize() first.")
 
 	local animObject: AnimationObject = animations[name]
 	if not animObject then
@@ -113,35 +85,19 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 		return nil
 	end
 
-	print("found animation: ", unpack(animObject))
-
-	if currentAnimator then
-		if animObject.Track then
-			animObject.Track:Destroy()
-		end
-
-		local ok, track = pcall(currentAnimator.LoadAnimation, currentAnimator, animObject.Animation)
-
-		if ok then
-			animObject.Track = track
-		else
-			print("couldn't load animation: ", track)
-		end
-
-		animObject.IsLoaded = true
-	end
+	print("found animation: ", animObject)
 
 	fadeTime = fadeTime or 0.25
 
-	if animObject.Track then
-		animObject.Track:Play(fadeTime)
-		animObject.Track:AdjustWeight(animObject.Weight or 1)
-		animObject.Track:AdjustSpeed(animObject.Speed or 1)
-
-		return animObject.Track
-	else
-		warn("no animation-track?: ", unpack(animObject))
+	local track = animObject.Track
+	if track == nil then
+		warn("no anim-track")
+		return nil
 	end
+
+	track:Play()
+	track:AdjustWeight(animObject.Weight or 1)
+	track:AdjustSpeed(animObject.Speed or 1)
 
 	return nil
 end
@@ -182,14 +138,10 @@ local function cleanup()
 	-- the animation instances are still there however.
 	-- lets presume the character is detroyed.
 	table.clear(animations)
-	animations = {}
-	currentAnimator = nil
-	currentCharacter = nil
 	_trove:Clean()
 end
 
 return {
-	initialize = initialize,
 	loadAnimation = loadAnimation,
 	play = playAnimation,
 	stop = stopAnimation,

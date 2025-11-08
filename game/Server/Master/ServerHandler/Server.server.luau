@@ -23,7 +23,6 @@ local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
-local dictionary = require(ReplicatedStorage.Utility.dictionary)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -93,40 +92,8 @@ if RunService:IsStudio() then
 	playerStore = playerStore.Mock
 end
 --]]
--- This product Id gives the player more cards (cards as in money)
-productMarshaller.product_callbacks[1904591683] = function(
-	receipt: any | string?,
-	player: playerMarshaller.player
-)
-	local profile = stores.get(player)
-	if not profile then
-		return false -- indicate a failed purchase
-	end
 
-	if player and stores.getPrisms(player) then
-		stores:addPrisms(player, 50)
-
-		local resourceEventParams = {
-			flowType = GameAnalytics.EGAResourceFlowType.Source,
-			currency = "Prisms",
-			amount = 50,
-			itemType = "IAP", -- In-App Purchase
-		}
-
-		GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
-	end
-	return true -- indicate a successful purchase
-end
-
-productMarshaller.product_callbacks[1906572512] = function(
-	receipt: any | string?,
-	player: playerMarshaller.player
-)
-	print(`Donated Successfully: {player.Name}.`)
-
-	print(receipt) -- debug
-	return true
-end
+-- TODO) add the products
 
 LogService.MessageOut:Connect(function(message: string, messageType: Enum.MessageType)
 	if messageType == Enum.MessageType.MessageError then

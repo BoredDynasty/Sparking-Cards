@@ -116,7 +116,9 @@ function Dash:Start()
 	velocity.VectorVelocity = direction * self._config.Force :: number
 	velocity.Parent = self._character.PrimaryPart
 
-	speed_lines:On(gamecamera.camera, fetchAsset("Speedlines"))
+	local lines = fetchAsset("Speedlines")
+
+	speed_lines:On(gamecamera.camera, lines)
 
 	task.delay(self._config.Duration, function()
 		self._trove:Remove(velocity)
@@ -126,7 +128,7 @@ function Dash:Start()
 			self._character:SetAttribute("AntiRegenerate", false)
 		end
 
-		speed_lines:Off()
+		speed_lines:Off(lines)
 	end)
 end
 

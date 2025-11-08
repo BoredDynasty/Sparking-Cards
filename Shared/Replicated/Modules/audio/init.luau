@@ -117,13 +117,14 @@ function Audio:PlayMusic(
 	wire.TargetInstance = emitter
 	wire.Parent = music
 
-	if options.analyzer then
-		local wire_analyzer = Instance.new("Wire")
-		wire_analyzer.SourceInstance = music
-		wire_analyzer.TargetInstance = options.analyzer
-		wire_analyzer.Parent = music
-		wire_analyzer.Name = "Wire_Analyzer"
-	end
+	pcall(function()
+		if options.analyzer then
+			local wire_analyzer = Instance.new("Wire")
+			wire_analyzer.SourceInstance = music
+			wire_analyzer.TargetInstance = options.analyzer
+			wire_analyzer.Parent = music
+		end
+	end)
 
 	music.Looping = options and options.loop or false
 	music.Volume = options and options.volume or 1
@@ -191,12 +192,14 @@ function Audio:SFX(
 		wire.TargetInstance = emitter
 		wire.Parent = sfx
 
-		if options.analyzer then
-			local wire_analyzer = Instance.new("Wire")
-			wire_analyzer.SourceInstance = sfx
-			wire_analyzer.TargetInstance = options.analyzer
-			wire_analyzer.Parent = sfx
-		end
+		pcall(function()
+			if options.analyzer then
+				local wire_analyzer = Instance.new("Wire")
+				wire_analyzer.SourceInstance = sfx
+				wire_analyzer.TargetInstance = options.analyzer
+				wire_analyzer.Parent = sfx
+			end
+		end)
 
 		--emitter.Volume = options and options.volume or 1
 		currentSFX.Volume = options and options.volume or 0.9

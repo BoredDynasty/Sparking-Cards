@@ -50,6 +50,10 @@ function self:Apply(character: characterMarshaller.Character)
 	local leftHand = characterMarshaller.getLimb(character, "LeftHand")
 	local rightHand = characterMarshaller.getLimb(character, "RightHand")
 
+	if not leftHand or not rightHand then
+		warn("where are the hands vro :skull:", leftHand, rightHand)
+	end
+
 	if leftHand and rightHand then
 		local gloveL = self.gloveL:Clone()
 		gloveL.Name = "GloveL"
@@ -74,6 +78,9 @@ function self:Apply(character: characterMarshaller.Character)
 		weldR.Part0 = rightHand
 		weldR.Part1 = gloveR
 		weldR.Parent = gloveR
+
+		gloveL:AddTag("Glove")
+		gloveR:AddTag("Glove")
 
 		-- set the positioning
 		-- and orientation
