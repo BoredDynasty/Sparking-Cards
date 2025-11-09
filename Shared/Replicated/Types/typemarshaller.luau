@@ -42,4 +42,21 @@ export type ProductInfo = {
 	TargetId: number,
 }
 
+-- combat
+
+export type ProjectileConfig = {
+	direction: Vector3,
+	projectile: BasePart?,
+	speed: number?,
+	gravity: Vector3?,
+}
+
+-- features
+
+export type GlidingConfig = {
+	speed: number?,
+	down_force: number?,
+	glider_model: Model?,
+}
+
 return nil

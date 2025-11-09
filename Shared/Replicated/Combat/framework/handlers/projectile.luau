@@ -1,72 +1,140 @@
---!strict
+--!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-local Packet = require(ReplicatedStorage.Packet)
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local explosion = require(ReplicatedStorage.Combat.framework.effects.explosion)
+local hydration = require(ReplicatedStorage.Utility.hydration)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
-local Projectile = {}
---[[
-	Projectile needs to be:
-	- unanchored
-	- cancollide true or false
-	- if its a model weld all parts together
-	Metric table HAS to contain these and in the same order:
-	- position1
-	- position2
-	- duration
-	- position2Object
-	
-	Function returns:
-	- force
-]]
-export type metricTypes = {
-	position1: Vector3,
-	position2: Vector3,
-	duration: number,
-	position2Object: BasePart,
+-- projectile.luau
+
+local projectile_module = {
+	active_projectiles = {},
 }
-local function getMetrics(metricTable: metricTypes): Vector3
-	local position1 = metricTable.position1 :: Vector3
-	local position2 = metricTable.position2 :: Vector3
-	local duration = metricTable.duration :: number
-	local position2Object = metricTable.position2Object :: BasePart
 
-	local gravity = game.Workspace.Gravity :: number
+type active_projectiles = {
+	speed: number,
+	gravity: Vector3,
+	projectile: BasePart,
+	total_distance: number,
+	max_distance: number,
+	velocity: Vector3,
+	origin: Vector3,
+	raycast_params: RaycastParams,
+}
 
-	position2 = position2Object.Position
+-- TODO) add hit detection
 
-	local direction = position2 - position1
-	position2 = position2 + position2Object.AssemblyLinearVelocity * duration
-	direction = position2 - position1
-	task.wait()
-	local force = direction / duration + Vector3.new(0, gravity * duration * 0.5, 0)
+function projectile_module:Fire(player: playerMarshaller.player, config: typemarshaller.ProjectileConfig)
+	local character = characterMarshaller.get(player)
 
-	return force
+	local root_part = character.HumanoidRootPart
+
+	local origin = root_part.Position
+
+	local gravity_factor = 1
+
+	-- reconcile
+	config.speed = config.speed or 250
+	config.gravity = config.gravity or Vector3.new(0, -workspace.Gravity, 0) * gravity_factor
+	if not config.projectile then
+		-- wow what a lazy fatty
+		config.projectile = Instance.new("Part")
+		hydration(config.projectile) {
+			CFrame = CFrame.new(origin, origin + config.direction),
+			Size = Vector3.one,
+			CanCollide = true,
+			Shape = Enum.PartType.Ball,
+			Anchored = true,
+			Parent = workspace,
+		}
+	end
+
+	local velocity = config.direction.Unit * (config.speed :: number)
+
+	local max_distance = 500
+	local total_distance = 0
+
+	local raycast_params = RaycastParams.new()
+	raycast_params.RespectCanCollide = true
+	raycast_params.FilterType = Enum.RaycastFilterType.Exclude
+
+	table.insert(projectile_module.active_projectiles, {
+		speed = config.speed :: number,
+		gravity = config.gravity :: Vector3,
+		projectile = config.projectile :: BasePart,
+		total_distance = total_distance,
+		max_distance = max_distance,
+		velocity = velocity,
+		origin = origin,
+		raycast_params = raycast_params,
+	})
 end
-function Projectile.new(object: BasePart, metricTable: metricTypes)
-	local force = getMetrics(metricTable)
-	if object:IsA("Model") then
-		local primaryPart = nil
-		local totalMass = 0
-		local clone = object:Clone()
-		primaryPart = clone.PrimaryPart
-		primaryPart.Position = metricTable.position1
-		clone.Parent = game.Workspace
 
-		for _, part: BasePart in clone:GetDescendants() do
-			if part:IsA("BasePart") then
-				totalMass = totalMass + part:GetMass()
+function projectile_module:Update(deltaTime: number)
+	if next(projectile_module.active_projectiles) == nil then
+		-- empty
+		return
+	end
+
+	for i, projectile_data in ipairs(projectile_module.active_projectiles :: { active_projectiles }) do
+		local step_velocity = projectile_data.velocity + projectile_data.gravity * deltaTime
+		local step_displacement = (projectile_data.velocity + step_velocity) / 2 * deltaTime
+
+		projectile_data.velocity = step_velocity
+
+		local next_position = projectile_data.origin + step_displacement
+		local ray_direction = next_position - projectile_data.origin
+
+		local raycast_result =
+			workspace:Raycast(projectile_data.origin, ray_direction, projectile_data.raycast_params)
+
+		if raycast_result then
+			local hit_position = raycast_result.Position
+			explosion.kaboom({
+				position = hit_position,
+				duration = 1.5,
+				colors = {
+					Color3.fromRGB(255, 89, 0), -- Orange
+					Color3.fromRGB(255, 0, 0), -- Red
+					Color3.fromRGB(255, 255, 0), -- Yellow
+				},
+			})
+
+			projectile_data.projectile:Destroy()
+
+			table.remove(projectile_module.active_projectiles[i])
+		else
+			projectile_data.origin = next_position
+			projectile_data.projectile.CFrame =
+				CFrame.new(projectile_data.origin, projectile_data.origin + projectile_data.velocity.Unit)
+			projectile_data.total_distance += ray_direction.Magnitude
+
+			if projectile_data.total_distance >= projectile_data.max_distance then
+				explosion.kaboom({
+					position = projectile_data.projectile.Position,
+					duration = 1.5,
+					colors = {
+						Color3.fromRGB(255, 89, 0), -- Orange
+						Color3.fromRGB(255, 0, 0), -- Red
+						Color3.fromRGB(255, 255, 0), -- Yellow
+					},
+				})
+
+				projectile_data.projectile:Destroy()
+
+				table.remove(projectile_module.active_projectiles[i])
 			end
-			task.wait()
 		end
-
-		primaryPart:ApplyImpulse(force * totalMass)
-		Packet.SetNetworkOwner.send({ player = nil, object = primaryPart })
-	else
-		object.Position = metricTable.position1
-		object.Parent = game.Workspace
-		task.wait()
-		object:ApplyImpulse(force * object.AssemblyMass)
-		Packet.SetNetworkOwner.send({ player = nil, object = object })
 	end
 end
-return Projectile
+
+-- start tracking
+
+RunService.Heartbeat:Connect(function(deltaTime)
+	debug.profilebegin("simulate-projectiles")
+	projectile_module:Update(deltaTime)
+	debug.profileend()
+end)

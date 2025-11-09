@@ -35,7 +35,4 @@ function dash.execute(player: playerMarshaller.player, direction: Vector3)
 			damage.__call({ amount = 10, source = player, target = hitPlayer })
 		end
 	end
-
-	-- move the player in the direction
-	rootPart.CFrame += direction.Unit * dashLength
 end
