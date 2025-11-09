@@ -16,7 +16,7 @@ export type notification = ScreenGui & {
 	},
 }
 
-local state = observer.new("close")
+local state = observer.new(false)
 
 local notification = playerGui:WaitForChild("Notify") :: notification
 

@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 -- Pooler+
 -- riftkuro '25
 local Analytics = require(script.Parent.Analytics)
-local Constants = require(script.Parent.Constaints)
+local Constants = require(script.Parent.Constants)
 local Debug = require(script.Parent.Debug)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local Types = require(script.Parent.Types)

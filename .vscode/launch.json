@@ -12,8 +12,8 @@
         {
             "type": "luau",
             "request": "attach",
-            "name": "attach to luau debugger",
-            "address": "localhost",
+            "name": "luaunch luau debugger",
+            "program": "${workspaceFolder}/",
             "port": 58000
         }
     ]
