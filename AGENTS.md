@@ -5,7 +5,7 @@ This project is an advanced fighting Roblox game built with Luau
 
 ## Code Style
 - Use Luau strict mode.
-- Use snake-case.
+- Use snake-case for variable names, otherwise use any variable case
 - Follow stylua configurations
 - Use type-casting for things Luau can't inference
 - Use function generics when applicable and necessary
@@ -15,7 +15,13 @@ This project is an advanced fighting Roblox game built with Luau
 - Use type unions and intersections
 - Do not nest if statements unless necessary
 - Ignore typechecking libraries if they cannot be typechecked easily
-- Place types many scripts/modules might need in the Shared\Replicated\Types\typemarshaller.luau file
+- Type exports scripts/modules might need in the Shared\Replicated\Types\typemarshaller.luau file
+- Document code in moonwave style
+- Use native Luau functions when necessary
+
+## Code Optimization
+- Avoid additional computation in RunService loops
+
 
 ## PR instructions
 - Update sourcemap.json file by using `rojo sourcemap` before commiting
