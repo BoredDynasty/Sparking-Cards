@@ -17,7 +17,7 @@ local reaction_chart = {
          Freezes the target for 1.5 seconds or until hit; shatter damage when broken.
       ]],
 		duration = 1.5,
-		module = script.freeze,
+		module = nil,
 	},
 	{
 		elements = {
@@ -29,6 +29,30 @@ local reaction_chart = {
          Freezes the target for 1.5 seconds or until hit; shatter damage when broken.
       ]],
 		duration = 1.5,
+		module = nil,
+	},
+	{
+		elements = {
+			"Pyro",
+			"Hydro",
+		},
+		reaction = "Steam Burst",
+		description = [[
+			Creates a brief smoke cloud that blurs vision and deals light AoE burn.
+		]],
+		duration = 5,
+		module = nil,
+	},
+	{
+		elements = {
+			"Cryo",
+			"Electro",
+		},
+		reaction = "Cryocharge",
+		description = [[
+			Electric hits deal bonus damage and cause frost sparks; visual sparkle storm effect.
+		]],
+		duration = 4.6,
 		module = nil,
 	},
 } :: reaction_chart

@@ -51,6 +51,7 @@ local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local hud = require(script.Parent.Parent.Components.hud)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
+local logger = require(ReplicatedStorage.ClientModules.logger)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local market = require("../Components/market")
@@ -134,6 +135,7 @@ local characterFolder = ReplicatedStorage:FindFirstChild("Characters") or Instan
 characterFolder.Name = "Characters"
 characterFolder.Parent = ReplicatedStorage
 
+logger.new()
 glove:Apply(character)
 animate.initialize()
 

@@ -70,6 +70,7 @@ return {
 		Hydro = 0,
 	},
 	Prisms = 5,
+	Affinity = 5, -- skill points
 	Level = "Bronze I",
 	Experience = 0,
 	LastLogin = 0,

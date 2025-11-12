@@ -19,7 +19,6 @@ export type Card = {
 		Support: string?, -- Optional AttackName for the R support move
 		-- Potentially add M1_2, M1_3 etc. if combo pieces have unique AttackNames not covered by Orion's NextComboAttack
 	},
-	PassiveModuleName: string?, -- Optional name of the passive module associated with this card (e.g., "CryoArmor")
 	-- Other card-specific properties could include:
 	-- DefaultDamageValues: { M1 = 10, Skill = 25, Ultimate = 50, Support = 0 }?
 	-- DefaultCooldowns: { M1 = 0.5, Skill = 8, Ultimate = 20, Support = 15 }?
@@ -27,10 +26,6 @@ export type Card = {
 	-- SoundIds: { M1_Swing = "rbxassetid://...", Skill_Cast = "rbxassetid://..." }?
 	-- StatusEffectOnHit: { Name: string, Chance: number, Duration: number, Potency: number }?,
 }
-
--- It's crucial that the AttackNames listed in Moveset (e.g., "CryoGauntlet_M1_1")
--- from the combat modules (e.g., Cryo.moveset.M1) with Orion.RegisterAttack.
-
 local CardLibrary = {
 	CryoGauntlet = {
 		DisplayName = "Cryo Gauntlet",
@@ -40,7 +35,7 @@ local CardLibrary = {
 		The will of the tundra made manifest; where the Emperor treads, life itself slows to a halt.
 		]],
 		TextColor = Color3.fromRGB(100, 193, 255),
-		BaseDamageMultiplier = 1.0,
+		BaseDamageMultiplier = 1.15,
 		MaxCombo = 7,
 		Moveset = {
 			M1 = "CryoGauntlet_M1_1",
@@ -48,7 +43,6 @@ local CardLibrary = {
 			Ultimate = "CryoGauntlet_Blizzard_Ultimate",
 			Support = "CryoGauntlet_Aegis_Support",
 		},
-		PassiveModuleName = "PermaFrost",
 	},
 	PyroKatana = {
 		DisplayName = "Fiery Katana",
@@ -62,7 +56,7 @@ local CardLibrary = {
 			"burn",
 		},
 		TextColor = Color3.fromRGB(255, 88, 88),
-		BaseDamageMultiplier = 1.1,
+		BaseDamageMultiplier = 1.3,
 		MaxCombo = 3,
 
 		Moveset = {
@@ -71,11 +65,6 @@ local CardLibrary = {
 			Ultimate = "PyroKatana_InfernalSlash_Ultimate",
 			Support = "PyroKatana_HeatAura_Support",
 		},
-		AttackSpeed = 0.4,
-		RecoveryTime = 0.5,
-		StunTime = 0.175,
-		HitboxSize = vector.one * 5,
-		PassiveModuleName = "DrawIn",
 	},
 	HydroCatalyst = {
 		DisplayName = "Hydro Catalyst",
@@ -85,43 +74,105 @@ local CardLibrary = {
 		In the crushing darkness of the abyss, even light bends. Accept the judgment of the tides.
 		]],
 		TextColor = Color3.fromRGB(119, 151, 255),
-		BaseDamageMultiplier = 1.15,
+		BaseDamageMultiplier = 1.1,
 		MaxCombo = 3,
 		Moveset = {
 			M1 = "HydroCatalyst_WashingTide_1",
 			Skill = "HydroCatalyst_Vortex_Skill",
 			Ultimate = "HydroCatalyst_BlueTyphoon_Ultimate",
-			Support = "CryoGauntlet_TidalSurge_Support",
+			Support = "HydroCatalyst_WaveRider_Support",
 		},
-		PassiveModuleName = "WaveRider",
 	},
-	ShadowPolearm = {
-		DisplayName = "ShadowReaper Polearm",
-		WeaponType = "Polearm",
-		BaseDamageMultiplier = 1.2,
-		MaxCombo = 2,
+	ShadowScythe = {
+		DisplayName = "Shadow Scythe",
+		WeaponType = "Scythe",
+		MovesetName = "wip",
+		FlavorText = [[
+			Power drawn from silence, feeding on fear and motion.
+		]],
+		TextColor = Color3.fromRGB(80, 0, 120),
+		BaseDamageMultiplier = 1.35,
 		Moveset = {
-			M1 = "ShadowPolearm_M1_1",
-			Skill = "ShadowPolearm_SpectralReach_Skill",
-			Ultimate = "ShadowPolearm_VoidSweep_Ultimate",
-			Support = nil,
+			M1 = "ShadowScythe_VoidSlice_1",
+			Skill = "ShadowScythe_DarkSpiral_Skill",
+			Ultimate = "ShadowScythe_OblivionRift_Ultimate",
+			Support = "ShadowScyhe_FadeStep_Support",
 		},
-		PassiveModuleName = "ShadowLeech", -- Example for a hypothetical passive
 	},
-	StoneClaymore = {
-		DisplayName = "Granite Greatsword",
+	AnemoTwinBlades = {
+		DisplayName = "Anemo Twin Blades",
+		WeaponType = "TwinBlades",
+		MovesetName = "wip",
+		FlavorText = [[
+			The unseen force that cuts between heartbeats.
+		]],
+		TextColor = Color3.fromRGB(180, 255, 243),
+		BaseDamageMultiplier = 1.05,
+		Moveset = {
+			M1 = "AnemoTwinBlades_GaleSlash_1",
+			Skill = "AnemoTwinBlades_CycloneStep_Skill",
+			Ultimate = "AnemoTwinBlades_Heaven'sCurrent_Ultimate",
+			Support = "AnemoTwinBlades_AirStep_Support",
+		},
+	},
+
+	-- geo claymore
+	GeoClaymore = {
+		DisplayName = "Geo Claymore",
 		WeaponType = "Claymore",
-		BaseDamageMultiplier = 0.9,
-		MaxCombo = 3,
+		MovesetName = "wip",
+		FlavorText = [[
+			Strength that doesn’t ask permission.
+		]],
+		TextColor = Color3.fromRGB(180, 120, 60),
+		BaseDamageMultiplier = 1.4,
 		Moveset = {
-			M1 = "StoneClaymore_M1_1",
-			Skill = "StoneClaymore_Earthshatter_Skill",
-			Ultimate = "StoneClaymore_QuakeStomp_Ultimate",
-			Support = "StoneClaymore_RockWall_Support",
+			M1 = "GeoClaymore_StoneSlam_1",
+			Skill = "GeoClaymore_QuakeSpiral_Skill",
+			Ultimate = "GeoClaymore_Earthshatter_Ultimate",
+			Support = "GeoClaymore_GraniteGuard_Support",
 		},
-		PassiveModuleName = "StoneForm", -- Example for a hypothetical passive
 	},
+
+	-- light staff
+	LightStaff = {
+		DisplayName = "Light Staff",
+		WeaponType = "Staff",
+		MovesetName = "wip",
+		FlavorText = [[
+			A beacon of hope, illuminating the path ahead.
+		]],
+		TextColor = Color3.fromRGB(255, 255, 200),
+		BaseDamageMultiplier = 1.1,
+		Moveset = {
+			M1 = "LightStaff_RadiantStrike_1",
+			Skill = "LightStaff_SolarFlare_Skill",
+			Ultimate = "LightStaff_DivineNova_Ultimate",
+			Support = "LightStaff_GloryShield_Support",
+		},
+	},
+
+	-- electro polearm
+	ElectroPolearm = {
+		DisplayName = "Electro Polearm",
+		WeaponType = "Polearm",
+		MovesetName = "wip",
+		FlavorText = [[
+			A conduit for the storm's fury, striking with lightning speed.
+		]],
+		TextColor = Color3.fromRGB(200, 180, 255),
+		BaseDamageMultiplier = 1.25,
+		Moveset = {
+			M1 = "ElectroPolearm_ThunderPierce_1",
+			Skill = "ElectroPolearm_StaticSurge_Skill",
+			Ultimate = "ElectroPolearm_ThunderGate_Ultimate",
+			Support = "ElectroPolearm_ChargeGuard_Support",
+		},
+	},
+
 	-- Add more cards/weapons here
+	-- goal is to have almost all known/fictional elements
+	-- in this chart
 }
 
 return CardLibrary

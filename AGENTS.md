@@ -18,10 +18,11 @@ This project is an advanced fighting Roblox game built with Luau
 - Type exports scripts/modules might need in the Shared\Replicated\Types\typemarshaller.luau file
 - Document code in moonwave style
 - Use native Luau functions when necessary
+- Do not use functions/methods that dont exist; instead, comment a 
+utility that the developer can implement themselves. An alternative is to look at the API/libray you're using and choose the correct function.
 
 ## Code Optimization
 - Avoid additional computation in RunService loops
-
 
 ## PR instructions
 - Update sourcemap.json file by using `rojo sourcemap` before commiting

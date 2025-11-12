@@ -1,247 +1,218 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
+local lucide = require(ReplicatedStorage.Packages.lucide)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require("../Interface/pop")
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
-local ripple = require("../Interface/ripple")
+local shadow = require("../Interface/shadow")
+local typewriter = require(ReplicatedStorage.ClientModules.markdown.typewriter)
 
 -- options.luau
 
-local options = {
-	tracked = {},
-	limit = ratelimit(1, 3),
+local module = {
+	tracked = {} :: { config },
+	limit = ratelimit(1, 0.5),
 }
 
-export type data = {
+type lucide_icon = typeof(lucide.GetAsset(""))
+export type option_callbacks<T> = {
+	on: (T?) -> ...unknown,
+	off: (T?) -> ...unknown,
+}
+export type config = {
 	name: string,
-	description: string,
-	state: observer.Observer<boolean>,
-	functions: {
-		on: (newValue: any) -> (),
-		off: (newValue: any) -> (),
-		toggle: () -> (),
-	},
+	details: string?,
+	callbacks: option_callbacks<unknown>,
 	icons: {
-		on: string,
-		off: string,
+		on: lucide_icon,
+		off: lucide_icon,
 	}?,
-	override: "on" | "off" | nil,
+	state: observer.Observer<boolean>,
 }
 
-export type settingUI = Frame & {
-	Frame: Frame & {
-		TextDisplay: TextLabel,
-	},
-	Toggle: TextButton & {
-		Icon: ImageLabel,
-	},
-	OptionTemplate: Frame,
-}
-
-function options.new(data: data)
-	if not data.icons then
-		data.icons = {
-			on = "rbxassetid://10709790644",
-			off = "rbxassetid://10747384394",
-		}
-	end
-
-	-- override
-	if data.override and data.functions[data.override] then
-		data.functions[data.override]()
-	end
-
-	table.insert(options.tracked, data)
-
-	return data
+function module.new(config: config)
+	table.insert(module.tracked, config)
 end
 
-function options:get(name: string): data?
-	for _, option in ipairs(options.tracked :: { data }) do
-		if option.name == name then
-			return option
+local function createOption(ancestor: Instance?)
+	local Instances = {
+		OptionTemplate = Instance.new("Frame"),
+		Frame = Instance.new("Frame"),
+		UICorner = Instance.new("UICorner"),
+		TextDisplay = Instance.new("TextLabel"),
+		AspectRatio = Instance.new("UIAspectRatioConstraint"),
+		AspectRatio_2 = Instance.new("UIAspectRatioConstraint"),
+		Toggle = Instance.new("TextButton"),
+		UICorner_2 = Instance.new("UICorner"),
+		Icon = Instance.new("ImageLabel"),
+		AspectRatio_3 = Instance.new("UIAspectRatioConstraint"),
+		AspectRatio_4 = Instance.new("UIAspectRatioConstraint"),
+		UICorner_3 = Instance.new("UICorner"),
+		AspectRatio_5 = Instance.new("UIAspectRatioConstraint"),
+	}
+
+	Instances.OptionTemplate.Name = "OptionTemplate"
+	Instances.OptionTemplate.AnchorPoint = Vector2.new(0.5, 0.5)
+	Instances.OptionTemplate.Size = UDim2.new(0.82, 0, 0.13, 0)
+	Instances.OptionTemplate.BorderColor3 = Color3.new(0, 0, 0)
+	Instances.OptionTemplate.BackgroundTransparency = 1
+	Instances.OptionTemplate.Position = UDim2.new(0.41, 0, 0.06, 0)
+	Instances.OptionTemplate.BorderSizePixel = 0
+	Instances.OptionTemplate.BackgroundColor3 = Color3.new(1, 1, 1)
+	Instances.OptionTemplate.Parent = ancestor or ReplicatedStorage
+
+	Instances.Frame.Name = "Frame"
+	Instances.Frame.AnchorPoint = Vector2.new(0.5, 0.5)
+	Instances.Frame.Size = UDim2.new(0.65, 0, 0.7, 0)
+	Instances.Frame.BorderColor3 = Color3.new(0, 0, 0)
+	Instances.Frame.BackgroundTransparency = 1
+	Instances.Frame.Position = UDim2.new(0.36, 0, 0.5, 0)
+	Instances.Frame.BorderSizePixel = 0
+	Instances.Frame.BackgroundColor3 = Color3.new(1, 1, 1)
+	Instances.Frame.Parent = Instances.OptionTemplate
+
+	Instances.UICorner.Name = "UICorner"
+	Instances.UICorner.CornerRadius = UDim.new(0.32, 0)
+	Instances.UICorner.Parent = Instances.Frame
+
+	Instances.TextDisplay.Name = "TextDisplay"
+	Instances.TextDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
+	Instances.TextDisplay.Size = UDim2.new(1, 0, 1, 0)
+	Instances.TextDisplay.BorderColor3 = Color3.new(0, 0, 0)
+	Instances.TextDisplay.BackgroundTransparency = 1
+	Instances.TextDisplay.Position = UDim2.new(0.5, 0, 0.5, 0)
+	Instances.TextDisplay.BorderSizePixel = 0
+	Instances.TextDisplay.BackgroundColor3 = Color3.new(1, 1, 1)
+	Instances.TextDisplay.FontFace =
+		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+	Instances.TextDisplay.RichText = true
+	Instances.TextDisplay.TextColor3 = Color3.new(0.95, 0.87, 0.85)
+	Instances.TextDisplay.Text = "Option-Template"
+	Instances.TextDisplay.Parent = Instances.Frame
+
+	Instances.AspectRatio.Name = "AspectRatio"
+	Instances.AspectRatio.AspectRatio = 4.79
+	Instances.AspectRatio.Parent = Instances.TextDisplay
+
+	Instances.AspectRatio_2.Name = "AspectRatio"
+	Instances.AspectRatio_2.AspectRatio = 4.79
+	Instances.AspectRatio_2.Parent = Instances.Frame
+
+	Instances.Toggle.Name = "Toggle"
+	Instances.Toggle.AnchorPoint = Vector2.new(0.5, 0.5)
+	Instances.Toggle.Size = UDim2.new(0.25, 0, 0.7, 0)
+	Instances.Toggle.BorderColor3 = Color3.new(0, 0, 0)
+	Instances.Toggle.Position = UDim2.new(0.98, 0, 0.5, 0)
+	Instances.Toggle.BorderSizePixel = 0
+	Instances.Toggle.BackgroundColor3 = Color3.new(0.36, 0.25, 0.22)
+	Instances.Toggle.FontFace = Font.new(
+		"rbxasset://fonts/families/SourceSansPro.json",
+		Enum.FontWeight.Regular,
+		Enum.FontStyle.Normal
+	)
+	Instances.Toggle.TextColor3 = Color3.new(0, 0, 0)
+	Instances.Toggle.Text = ""
+	Instances.Toggle.Parent = Instances.OptionTemplate
+
+	Instances.UICorner_2.Name = "UICorner"
+	Instances.UICorner_2.CornerRadius = UDim.new(0.32, 0)
+	Instances.UICorner_2.Parent = Instances.Toggle
+
+	Instances.Icon.Name = "Icon"
+	Instances.Icon.AnchorPoint = Vector2.new(0.5, 0.5)
+	Instances.Icon.Size = UDim2.new(0.15, 0, 0.29, 0)
+	Instances.Icon.BackgroundTransparency = 1
+	Instances.Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
+	Instances.Icon.ImageColor3 = Color3.new(1, 0.86, 0.82)
+	Instances.Icon.Image = "rbxassetid://10747384394"
+	Instances.Icon.Parent = Instances.Toggle
+
+	Instances.AspectRatio_3.Name = "AspectRatio"
+	Instances.AspectRatio_3.Parent = Instances.Icon
+
+	Instances.AspectRatio_4.Name = "AspectRatio"
+	Instances.AspectRatio_4.AspectRatio = 1.86
+	Instances.AspectRatio_4.Parent = Instances.Toggle
+
+	Instances.UICorner_3.Name = "UICorner"
+	Instances.UICorner_3.CornerRadius = UDim.new(0.32, 0)
+	Instances.UICorner_3.Parent = Instances.OptionTemplate
+
+	Instances.AspectRatio_5.Name = "AspectRatio"
+	Instances.AspectRatio_5.AspectRatio = 5.18
+	Instances.AspectRatio_5.Parent = Instances.OptionTemplate
+
+	return Instances.OptionTemplate
+end
+
+local function booleanToString(boolean: boolean): "on" | "off"
+	if boolean then
+		return "on"
+	else
+		return "off"
+	end
+end
+
+local function updateIcon(btn_icon: ImageLabel, boolean_state: boolean, icon_data: any)
+	local current_icon = icon_data[booleanToString(boolean_state)]
+	assert(current_icon, "wdym no current icon")
+
+	btn_icon.ImageContent = Content.fromAssetId(current_icon.Id)
+	btn_icon.ImageRectOffset = current_icon.ImageRectOffset
+	btn_icon.ImageRectSize = current_icon.ImageRectSize
+end
+
+function module:Render(holder: Instance)
+	-- cleanup existing
+	for i, object in ipairs(holder:GetChildren()) do
+		if object:IsA("Frame") then
+			object:Destroy()
 		end
 	end
 
-	return nil
-end
+	-- render
+	for i, option in ipairs(module.tracked) do
+		local option_template = createOption(holder)
 
-function options:all(): { data }
-	return options.tracked
-end
+		local text_display = option_template:FindFirstChild("TextDisplay", true) :: TextLabel
+		local toggle_btn = option_template:FindFirstChild("Toggle", true) :: TextButton
+		local btn_icon = option_template:FindFirstChild("Icon", true) :: ImageLabel
 
-function options:reset()
-	for _, option in ipairs(options.tracked :: { data }) do
-		option.state:Set(false)
-	end
-end
+		shadow(toggle_btn)
 
-function options:enable(name: string)
-	local option = options:get(name)
-	if option then
-		option.state:Set(true)
-	end
-end
+		local callbacks = option.callbacks
+		local icon_data = option.icons
+		local state = option.state
 
-function options:disable(name: string)
-	local option = options:get(name)
-	if option then
-		option.state:Set(false)
-	end
-end
+		updateIcon(btn_icon, state:Get(), icon_data)
 
-function options:toggle(name: string)
-	local option = options:get(name)
-	if option then
-		option.state:Set(not option.state:Get())
-	end
-end
+		local fancy = [[
+		<b>%s</b></br>%s
+		]]
 
-function options:create_setting(ancestor: Instance?): settingUI
-	-- Instances:
+		text_display.Text = string.format(fancy :: any, option.name, option.details)
 
-	local OptionTemplate = Instance.new("Frame")
-	local Frame = Instance.new("Frame")
-	local UICorner = Instance.new("UICorner")
-	local TextDisplay = Instance.new("TextLabel")
-	local Toggle = Instance.new("TextButton")
-	local UICorner_2 = Instance.new("UICorner")
-	local Icon = Instance.new("ImageLabel")
-	local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
-	local UICorner_3 = Instance.new("UICorner")
-
-	--Properties:
-
-	OptionTemplate.Name = "OptionTemplate"
-	OptionTemplate.Parent = ancestor or ReplicatedStorage
-	OptionTemplate.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	OptionTemplate.BackgroundTransparency = 1.000
-	OptionTemplate.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	OptionTemplate.BorderSizePixel = 0
-	OptionTemplate.Position = UDim2.new(-4.00597671e-08, 0, 0, 0)
-	OptionTemplate.Size = UDim2.new(0, 518, 0, 100)
-
-	Frame.Parent = OptionTemplate
-	Frame.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Frame.BackgroundTransparency = 1.000
-	Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Frame.BorderSizePixel = 0
-	Frame.Position = UDim2.new(0.0354033373, 0, 0.150000006, 0)
-	Frame.Size = UDim2.new(0.647876382, 0, 0.699999988, 0)
-
-	UICorner.CornerRadius = UDim.new(0.319999993, 0)
-	UICorner.Parent = Frame
-
-	TextDisplay.Name = "TextDisplay"
-	TextDisplay.Parent = Frame
-	TextDisplay.AnchorPoint = Vector2.new(0.5, 0.5)
-	TextDisplay.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	TextDisplay.BackgroundTransparency = 1.000
-	TextDisplay.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	TextDisplay.BorderSizePixel = 0
-	TextDisplay.Position = UDim2.new(0.5, 0, 0.5, 0)
-	TextDisplay.Size = UDim2.new(1, 0, 1, 0)
-	TextDisplay.Font = Enum.Font.Gotham
-	TextDisplay.Text = "option"
-	TextDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-	TextDisplay.TextSize = 14.000
-
-	Toggle.Name = "Toggle"
-	Toggle.Parent = OptionTemplate
-	Toggle.BackgroundColor3 = Color3.fromRGB(143, 76, 56)
-	Toggle.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Toggle.BorderSizePixel = 0
-	Toggle.Position = UDim2.new(0.720077217, 0, 0.150000006, 0)
-	Toggle.Size = UDim2.new(0, 130, 0, 70)
-	Toggle.Font = Enum.Font.SourceSans
-	Toggle.Text = ""
-	Toggle.TextColor3 = Color3.fromRGB(0, 0, 0)
-	Toggle.TextSize = 14.000
-
-	UICorner_2.CornerRadius = UDim.new(0.319999993, 0)
-	UICorner_2.Parent = Toggle
-
-	Icon.Name = "Icon"
-	Icon.Parent = Toggle
-	Icon.BackgroundTransparency = 1.000
-	Icon.Position = UDim2.new(0.423076928, 0, 0.357142866, 0)
-	Icon.Size = UDim2.new(0, 20, 0, 20)
-	Icon.Image = "rbxassetid://10747384394"
-
-	UIAspectRatioConstraint.Parent = Icon
-
-	UICorner_3.CornerRadius = UDim.new(0.319999993, 0)
-	UICorner_3.Parent = OptionTemplate
-
-	return OptionTemplate
-end
-
-function options:render(ancestor: Instance)
-	local visited = table.create(#options.tracked) :: { string }
-
-	for i, option in ipairs(options.tracked :: { data }) do
-		local needle = table.find(visited, option.name)
-
-		if needle and visited[needle] then
-			return
-		end
-
-		table.insert(visited, option.name)
-
-		local template = options:create_setting()
-
-		local label = template.Frame.TextDisplay
-		local typewriter = markdown.typewriter.new()
-
-		typewriter:Play(label, option.name .. "\n\n" .. option.description)
-
-		task.spawn(function()
-			repeat
-				task.wait(1)
-			until typewriter:IsPlaying() == false
-
-			typewriter:Destroy()
-		end)
-
-		local uri = option.icons and option.icons[option.override or "off"] or ""
-		local iconContent = Content.fromUri(uri) or Content.none
-
-		template.Toggle.Icon.ImageContent = iconContent
-
-		template.Toggle.MouseButton1Click:Connect(function()
-			if not options.limit(template:GetFullName()) then
-				print("cooldown: ", template:GetFullName())
-
+		toggle_btn.Activated:Connect(function()
+			if module.limit(option.name) then
 				return
 			end
 
-			option.functions[if option.state:Get() == false then "off" else "on"]()
+			pop(toggle_btn)
 
-			pop(template.Toggle, 1.1)
-			ripple(template.Toggle, 1.1 / 2)
+			state:Map(function(current: boolean)
+				return not current
+			end)
 
-			option.state:Set(not option.state:Get())
+			local boolean_state = state:Get()
+
+			local next_callback = callbacks[booleanToString(boolean_state)]
+			if next_callback then
+				task.spawn(next_callback)
+				updateIcon(btn_icon, boolean_state, icon_data)
+			end
 		end)
-
-		option.state:Watch(function(newValue: boolean)
-			local newUri = option.icons and option.icons[if newValue then "on" else "off"] or ""
-			local newIconContent = Content.fromUri(newUri) or Content.none
-			template.Toggle.Icon.ImageContent = newIconContent
-		end)
-
-		template.Parent = ancestor
 	end
-
-	table.clear(visited)
 end
-
-function options:destroy()
-	for i, option in ipairs(options.tracked :: { data }) do
-		option.state:Destroy()
-	end
-	table.clear(options.tracked)
-end
-
-return options

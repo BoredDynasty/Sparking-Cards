@@ -20,7 +20,7 @@ export type Observer<T> = {
 	Insert: (self: Observer<T>, key: any?, value: any) -> (),
 	Remove: (self: Observer<T>, key: number | any) -> (),
 	Find: (self: Observer<T>, predicate: (value: any, key: any) -> boolean) -> (any?, any?),
-	Calculate: (self: Observer<T>, fn: (current: T) -> T) -> (),
+	Map: (self: Observer<T>, fn: (current: T) -> T) -> (),
 	Destroy: (self: Observer<T>) -> (),
 	__concat: (self: Observer<T>, ...Observer<T>) -> string,
 	__add: (self: Observer<T>, ...Observer<T>) -> number,

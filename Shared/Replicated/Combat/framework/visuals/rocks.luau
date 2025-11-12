@@ -22,6 +22,7 @@ return function(position: CFrame, size_factor: number, amount: number)
 	for i = 1, 5 do
 		task.wait(0.2)
 		-- hold the execution hostage for 0.2s
+
 		pos_padding -= 3
 		size_padding += 1
 
@@ -40,19 +41,23 @@ return function(position: CFrame, size_factor: number, amount: number)
 				rock.Orientation = orientation
 
 				task.delay(1, function()
-					TweenPlus(rock, {
+					local tween = TweenPlus(rock, {
 						Transparency = 1,
 						Size = Vector3.one * 0.1,
 					}, {
 						Time = 1,
 					})
+
+					tween:Start()
 				end)
 				task.delay(2.5, function()
-					TweenPlus(rock, {
+					local tween = TweenPlus(rock, {
 						Transparency = 1,
 					}, {
 						Time = 1,
 					})
+
+					tween:Start()
 				end)
 
 				angle += 24
