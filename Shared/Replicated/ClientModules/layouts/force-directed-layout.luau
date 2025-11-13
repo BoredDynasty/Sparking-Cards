@@ -2,6 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
+local random = require(ReplicatedStorage.Utility.random)
 
 -- force-directed-layout
 -- uses a force-directed graph drawing algorithm to position nodes
@@ -10,13 +11,22 @@ export type Edge = { source: GuiObject, target: GuiObject }
 export type Node = GuiObject
 
 export type config = {
-	nodes: {Node},
-	edges: {Edge},
+	nodes: { Node },
+	edges: { Edge },
 	canvas: GuiObject,
 	stiffness: number?,
 	repulsion: number?,
 	damping: number?,
 	energy_threshold: number?,
+}
+
+type node_data = {
+	{
+		node: GuiObject,
+		position: vector,
+		velocity: vector,
+		force: vector,
+	}
 }
 
 return function(config: config)
@@ -32,12 +42,12 @@ return function(config: config)
 	local damping = config.damping or 0.5
 	local energy_threshold = config.energy_threshold or 0.1
 
-	local node_data = {}
+	local node_data = {} :: node_data
 
 	for _, node in ipairs(nodes) do
 		table.insert(node_data, {
 			node = node,
-			position = vector.create(math.random() * canvas_size.X, math.random() * canvas_size.Y),
+			position = vector.create(random.float() * canvas_size.X, random.float() * canvas_size.Y),
 			velocity = vector.create(0, 0),
 			force = vector.create(0, 0),
 		})
@@ -52,8 +62,8 @@ return function(config: config)
 				end
 
 				local delta = data2.position - data1.position
-				local distance = delta.magnitude
-				local direction = delta.unit
+				local distance = vector.magnitude(delta)
+				local direction = vector.normalize(delta)
 
 				if distance > 0 then
 					local force = direction * (repulsion / distance)
@@ -73,8 +83,8 @@ return function(config: config)
 			end
 
 			local delta = target_data.position - source_data.position
-			local distance = delta.magnitude
-			local direction = delta.unit
+			local distance = vector.magnitude(delta)
+			local direction = vector.normalize(delta)
 
 			if distance > 0 then
 				local force = direction * (distance * stiffness / 100)
@@ -91,7 +101,7 @@ return function(config: config)
 			data.velocity = (data.velocity + data.force) * damping
 			data.position = data.position + data.velocity
 
-			total_energy = total_energy + data.velocity.magnitude
+			total_energy = total_energy + vector.magnitude(data.velocity)
 		end
 
 		return total_energy
@@ -107,8 +117,10 @@ return function(config: config)
 	while true do
 		reset_forces()
 		compute_forces()
+
 		local total_energy = update_positions()
-		iterations = iterations + 1
+
+		iterations += 1
 
 		if total_energy < energy_threshold or iterations > 1000 then
 			break

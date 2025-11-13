@@ -128,5 +128,22 @@ export type skill_chart = {
 		next: { string? },
 		blacklisted: { string? }, -- what cards CAN'T use this skill
 		icon: Content | string, -- content or "rbxassetid://ASSET_ID"
+		type: "major" | "minor",
 	}
 }
+
+export type skill = {
+	name: string,
+	technique: string?,
+	upgrade_number: number?,
+	description: string,
+	cost: number, -- must be rounded to the nearest tenth
+	level_required: number, -- dont worry, we can convert level number to rank name
+	requirements: { string? }, -- ahem, ALL skill requirements.
+	next: { string? },
+	blacklisted: { string? }, -- what cards CAN'T use this skill
+	icon: Content | string, -- content or "rbxassetid://ASSET_ID"
+	type: "major" | "minor",
+}
+
+return skill_chart

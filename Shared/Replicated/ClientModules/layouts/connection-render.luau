@@ -6,26 +6,13 @@ local hydration = require(ReplicatedStorage.Utility.hydration)
 
 -- connection-render.luau
 
---[[
-   Each node should draw a line to connect to another node.
+type connections = { { nodeA: GuiObject, nodeB: GuiObject, line: GuiObject } }
 
-   ```luau
-   local connection_render = require(path.to.connection_render)
-
-   connection_render(ancestor, nodeA, nodeB, function()
-      local line = Instance.new("Frame")
-      line.Size = UDim2.new(0, 2, 0, 50)
-      line.BackgroundColor3 = Color3.new(1, 1, 1)
-      return line
-   end)
-   ```
-
-   You can call this function multiple times to visually connect multiple nodes.
-]]
-
-local connections = {}
+local connections = {} :: connections
 
 RunService.Heartbeat:Connect(function()
+	debug.profilebegin("update-line-connections")
+
 	for _, connection in ipairs(connections) do
 		local nodeA = connection.nodeA
 		local nodeB = connection.nodeB
@@ -50,8 +37,26 @@ RunService.Heartbeat:Connect(function()
 
 		line.Size = UDim2.new(0, (nodeA.AbsolutePosition - nodeB.AbsolutePosition).Magnitude, 0, 2)
 	end
+
+	debug.profileend()
 end)
 
+--[[
+   Each node should draw a line to connect to another node.
+
+   ```luau
+   local connection_render = require(path.to.connection_render)
+
+   connection_render(ancestor, nodeA, nodeB, function()
+      local line = Instance.new("Frame")
+      line.Size = UDim2.new(0, 2, 0, 50)
+      line.BackgroundColor3 = Color3.new(1, 1, 1)
+      return line
+   end)
+   ```
+
+   You can call this function multiple times to visually connect multiple nodes.
+]]
 return function(ancestor: Instance, nodeA: GuiObject, nodeB: GuiObject, create_line: () -> GuiObject)
 	local line = create_line()
 	hydration(line) {

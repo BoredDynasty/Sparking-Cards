@@ -4,11 +4,11 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local connection_render = require(ReplicatedStorage.ClientModules.layouts["connection-render"])
+local force_directed_layout = require(ReplicatedStorage.ClientModules.layouts["force-directed-layout"])
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local force_directed_layout = require(ReplicatedStorage.ClientModules.layouts["force-directed-layout"])
-local skills = require(ReplicatedStorage["skill-data"])
+local skill_tree = require(ReplicatedStorage.Combat.framework["skill-tree"])
 local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transition)
 
 -- skill-tree-renderer.luau
@@ -30,45 +30,8 @@ type node_frame = Frame & {
 	UICorner: UICorner,
 }
 
-local function createNode(skill: {any}, ancestor: Instance?): node_frame
-	local Instances = {
-		Frame = Instance.new("Frame"),
-		UICorner = Instance.new("UICorner"),
-		ImageLabel = Instance.new("ImageLabel"),
-		UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint"),
-	}
-
-	Instances.Frame.Name = skill.name
-	Instances.Frame.AnchorPoint = Vector2.one / 2
-	Instances.Frame.Size = if skill.type == "major" then UDim2.new(0.12, 0, 0.16, 0) else UDim2.new(0.08, 0, 0.11, 0)
-	Instances.Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Instances.Frame.Position = UDim2.fromScale(0.5, 0.5)
-	Instances.Frame.BorderSizePixel = 0
-	Instances.Frame.BackgroundColor3 = if skill.type == "major" then Color3.fromRGB(114, 53, 35) else Color3.fromRGB(70, 70, 70)
-	Instances.Frame.Parent = ancestor or ReplicatedStorage
-
-	Instances.UICorner.Name = "UICorner"
-	Instances.UICorner.CornerRadius = UDim.new(1, 0)
-	Instances.UICorner.Parent = Instances.Frame
-
-	Instances.ImageLabel.Name = "Icon"
-	Instances.ImageLabel.Size = UDim2.new(0, 50, 0, 50)
-	Instances.ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Instances.ImageLabel.BackgroundTransparency = 1
-	Instances.ImageLabel.Position = UDim2.new(0.25, 0, 0.25, 0)
-	Instances.ImageLabel.BorderSizePixel = 0
-	Instances.ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-	Instances.ImageLabel.ImageColor3 = Color3.fromRGB(255, 219, 209)
-	Instances.ImageLabel.Image = skill.icon
-	Instances.ImageLabel.Parent = Instances.Frame
-
-	Instances.UIAspectRatioConstraint.Name = "UIAspectRatioConstraint"
-	Instances.UIAspectRatioConstraint.Parent = Instances.ImageLabel
-
-	Instances.Frame:SetAttribute("Node", true)
-
-	return Instances.Frame :: any
-end
+local major_size_factor = 1.3
+local minor_size_factor = 0.4
 
 local function setNodeSizeFactor(node: node_frame, factor: number)
 	local ui_scale = node:FindFirstChildOfClass("UIScale")
@@ -102,12 +65,64 @@ local function setNodeSizeFactor(node: node_frame, factor: number)
 	end
 end
 
+local function createNode(skill: skill_tree.skill, ancestor: Instance?): node_frame
+	local Instances = {
+		Frame = Instance.new("Frame"),
+		UICorner = Instance.new("UICorner"),
+		ImageLabel = Instance.new("ImageLabel"),
+		UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint"),
+	}
+
+	Instances.Frame.Name = skill.name
+	Instances.Frame.AnchorPoint = Vector2.one / 2
+	Instances.Frame.Size = if skill.type == "major"
+		then setNodeSizeFactor(Instances.Frame, major_size_factor)
+		else setNodeSizeFactor(Instances.Frame, minor_size_factor)
+
+	Instances.Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Instances.Frame.Position = UDim2.fromScale(0.5, 0.5)
+	Instances.Frame.BorderSizePixel = 0
+	Instances.Frame.BackgroundColor3 = if skill.type == "major"
+		then Color3.fromRGB(114, 53, 35)
+		else Color3.fromHex("#5d4037")
+	Instances.Frame.Parent = ancestor or ReplicatedStorage
+
+	Instances.UICorner.Name = "UICorner"
+	Instances.UICorner.CornerRadius = UDim.new(1, 0)
+	Instances.UICorner.Parent = Instances.Frame
+
+	Instances.ImageLabel.Name = "Icon"
+	Instances.ImageLabel.Size = UDim2.new(0, 50, 0, 50)
+	Instances.ImageLabel.BorderColor3 = Color3.fromRGB(0, 0, 0)
+	Instances.ImageLabel.BackgroundTransparency = 1
+	Instances.ImageLabel.Position = UDim2.new(0.25, 0, 0.25, 0)
+	Instances.ImageLabel.BorderSizePixel = 0
+	Instances.ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+	Instances.ImageLabel.ImageColor3 = Color3.fromRGB(255, 219, 209)
+	Instances.ImageLabel.Parent = Instances.Frame
+
+	if typeof(skill.icon) == "Content" then
+		Instances.ImageLabel.ImageContent = skill.icon
+	else
+		Instances.ImageLabel.Image = skill.icon
+	end
+
+	Instances.UIAspectRatioConstraint.Name = "UIAspectRatioConstraint"
+	Instances.UIAspectRatioConstraint.Parent = Instances.ImageLabel
+
+	Instances.Frame:SetAttribute("Node", true)
+
+	return Instances.Frame :: any
+end
+
 function module:Open()
 	if state:Get() then
 		print("already open skill-tree")
 
 		return
 	end
+
+	state:Set(true)
 
 	task.spawn(transition.Circle, transition, {
 		duration = 5,
@@ -126,24 +141,28 @@ function module:Open()
 	end
 
 	-- create the nodes
-	local nodes = {}
-	for _, skill in pairs(skills) do
-		local node = createNode(skill, skill_canvas)
-		nodes[skill.name] = node
-	end
-
 	-- create the edges
+	-- convert nodes to an array
+	local nodes = {}
+	local nodes_array = {}
 	local edges = {}
-	for _, skill in pairs(skills) do
-		for _, dependency in ipairs(skill.dependencies) do
+	for i, skill in ipairs(skill_tree) do
+		local node = createNode(skill, skill_canvas)
+
+		nodes[skill.name] = node
+
+		for j, dependency in ipairs(skill.requirements) do
+			if not dependency then
+				print("no dependency")
+
+				return
+			end
 			table.insert(edges, { source = nodes[skill.name], target = nodes[dependency] })
 		end
-	end
 
-	-- convert nodes to an array
-	local nodes_array = {}
-	for _, node in pairs(nodes) do
-		table.insert(nodes_array, node)
+		for j, v in pairs(nodes :: { [string]: Frame & { any } }) do
+			table.insert(nodes_array, v)
+		end
 	end
 
 	-- position the nodes using the force-directed layout
@@ -154,11 +173,15 @@ function module:Open()
 	})
 
 	-- render the connections
-	for _, edge in ipairs(edges) do
+	for _, edge in ipairs(edges :: { { source: GuiObject, target: GuiObject } }) do
 		connection_render(skill_canvas, edge.source, edge.target, function()
 			local line = Instance.new("Frame")
-			line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
-			line.BorderSizePixel = 0
+			hydration(line) {
+				BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+				BorderSizePixel = 0,
+				Name = `{edge.source:GetFullName()}_{edge.target:GetFullName()}`,
+			}
+
 			return line
 		end)
 	end
@@ -180,4 +203,12 @@ function module:Close()
 	hydration(skill_canvas) {
 		BackgroundTransparency = 1,
 	}
+
+	for _, child in ipairs(skill_canvas:GetChildren()) do
+		if child:GetAttribute("Node") then
+			child:Destroy()
+		end
+	end
+
+	state:Set(false)
 end

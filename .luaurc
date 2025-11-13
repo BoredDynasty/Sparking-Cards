@@ -2,7 +2,5 @@
     "languageMode": "nonstrict",
     "lintErrors": false,
     "typeErrors": false,
-    "globals": [
-        "vector"
-    ]
+    "globals": []
 }
