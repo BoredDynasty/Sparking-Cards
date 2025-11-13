@@ -7,7 +7,8 @@ local connection_render = require(ReplicatedStorage.ClientModules.layouts["conne
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local radial_branching = require(ReplicatedStorage.ClientModules.layouts["radial-branching"])
+local force_directed_layout = require(ReplicatedStorage.ClientModules.layouts["force-directed-layout"])
+local skills = require(ReplicatedStorage["skill-data"])
 local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transition)
 
 -- skill-tree-renderer.luau
@@ -29,7 +30,7 @@ type node_frame = Frame & {
 	UICorner: UICorner,
 }
 
-local function createNode(i: number?, ancestor: Instance?): node_frame
+local function createNode(skill: {any}, ancestor: Instance?): node_frame
 	local Instances = {
 		Frame = Instance.new("Frame"),
 		UICorner = Instance.new("UICorner"),
@@ -37,13 +38,13 @@ local function createNode(i: number?, ancestor: Instance?): node_frame
 		UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint"),
 	}
 
-	Instances.Frame.Name = "Node"
+	Instances.Frame.Name = skill.name
 	Instances.Frame.AnchorPoint = Vector2.one / 2
-	Instances.Frame.Size = UDim2.new(0.08, 0, 0.11, 0)
+	Instances.Frame.Size = if skill.type == "major" then UDim2.new(0.12, 0, 0.16, 0) else UDim2.new(0.08, 0, 0.11, 0)
 	Instances.Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
 	Instances.Frame.Position = UDim2.fromScale(0.5, 0.5)
 	Instances.Frame.BorderSizePixel = 0
-	Instances.Frame.BackgroundColor3 = Color3.fromRGB(114, 53, 35)
+	Instances.Frame.BackgroundColor3 = if skill.type == "major" then Color3.fromRGB(114, 53, 35) else Color3.fromRGB(70, 70, 70)
 	Instances.Frame.Parent = ancestor or ReplicatedStorage
 
 	Instances.UICorner.Name = "UICorner"
@@ -58,7 +59,7 @@ local function createNode(i: number?, ancestor: Instance?): node_frame
 	Instances.ImageLabel.BorderSizePixel = 0
 	Instances.ImageLabel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 	Instances.ImageLabel.ImageColor3 = Color3.fromRGB(255, 219, 209)
-	Instances.ImageLabel.Image = "rbxassetid://10723425852" -- lightbulb image
+	Instances.ImageLabel.Image = skill.icon
 	Instances.ImageLabel.Parent = Instances.Frame
 
 	Instances.UIAspectRatioConstraint.Name = "UIAspectRatioConstraint"
@@ -124,13 +125,43 @@ function module:Open()
 		print("no texture?")
 	end
 
-	local center_node = createNode(nil, skill_canvas)
+	-- create the nodes
+	local nodes = {}
+	for _, skill in pairs(skills) do
+		local node = createNode(skill, skill_canvas)
+		nodes[skill.name] = node
+	end
 
-	radial_branching({
-		radius = 20,
-		angle_step = math.rad(360 / 3),
-		nodes = 20,
-	}, createNode)
+	-- create the edges
+	local edges = {}
+	for _, skill in pairs(skills) do
+		for _, dependency in ipairs(skill.dependencies) do
+			table.insert(edges, { source = nodes[skill.name], target = nodes[dependency] })
+		end
+	end
+
+	-- convert nodes to an array
+	local nodes_array = {}
+	for _, node in pairs(nodes) do
+		table.insert(nodes_array, node)
+	end
+
+	-- position the nodes using the force-directed layout
+	force_directed_layout({
+		nodes = nodes_array,
+		edges = edges,
+		canvas = skill_canvas,
+	})
+
+	-- render the connections
+	for _, edge in ipairs(edges) do
+		connection_render(skill_canvas, edge.source, edge.target, function()
+			local line = Instance.new("Frame")
+			line.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+			line.BorderSizePixel = 0
+			return line
+		end)
+	end
 end
 
 function module:Close()
