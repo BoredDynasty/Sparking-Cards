@@ -216,3 +216,5 @@ function module:Render(holder: Instance)
 		end)
 	end
 end
+
+return module

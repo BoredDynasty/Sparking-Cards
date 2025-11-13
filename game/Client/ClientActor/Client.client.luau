@@ -42,7 +42,6 @@ local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local compute_level = require(ReplicatedStorage.ClientModules["compute-level"])
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
-local dialogue = require(ReplicatedStorage.ClientModules.dialogue)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
@@ -614,7 +613,7 @@ local function initializeMusic()
 		},
 	}
 
-	for i, track in pairs(tracks) do
+	for i, track in ipairs(tracks) do
 		music.newBiome(track.biome, {
 			track,
 		}, track.coordinates.position, track.coordinates.size)
@@ -949,10 +948,6 @@ _trove:Add(mouse.LeftDown:Connect(function()
 	end
 end))
 
-_trove:Add(damage.incoming:Connect(function(a0: damage.Damage)
-	dialogue:speak("You", "yoooowch!")
-end))
-
 orion.registerPlayer(player, expectProfile())
 
 Packet.ReplicateAnimation.listen(function(data: { identification: string })
@@ -975,7 +970,6 @@ Packet.CleanupCharacter.listen(function()
 	Options:destroy()
 	hud:clear()
 	dropper._trove:Clean()
-	dialogue._trove:Clean()
 end)
 
 local interfaceEndTime = os.clock()
