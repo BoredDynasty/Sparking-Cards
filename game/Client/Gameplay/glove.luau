@@ -17,8 +17,8 @@ local self = {
 -- note: we are using R6
 
 function self:Get(character: characterMarshaller.Character): (MeshPart?, MeshPart?)
-	local leftHand = characterMarshaller.getLimb(character, "LeftHand")
-	local rightHand = characterMarshaller.getLimb(character, "RightHand")
+	local leftHand = characterMarshaller.getLimb(character, "Left Hand")
+	local rightHand = characterMarshaller.getLimb(character, "Right Hand")
 
 	if not leftHand or not rightHand then
 		warn("where are the hands vro :skull:", leftHand, rightHand)
@@ -28,7 +28,7 @@ function self:Get(character: characterMarshaller.Character): (MeshPart?, MeshPar
 
 	local gloveL, gloveR
 
-	for i, v in pairs(character:GetDescendants()) do
+	for i, v in ipairs(character:GetDescendants()) do
 		if not v:IsA("MeshPart") then
 			return nil, nil
 		end
@@ -47,8 +47,8 @@ function self:Get(character: characterMarshaller.Character): (MeshPart?, MeshPar
 end
 
 function self:Apply(character: characterMarshaller.Character)
-	local leftHand = characterMarshaller.getLimb(character, "LeftHand")
-	local rightHand = characterMarshaller.getLimb(character, "RightHand")
+	local leftHand = characterMarshaller.getLimb(character, "Left Hand")
+	local rightHand = characterMarshaller.getLimb(character, "Right Hand")
 
 	if not leftHand or not rightHand then
 		warn("where are the hands vro :skull:", leftHand, rightHand)

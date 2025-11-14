@@ -5,7 +5,6 @@ local drop_manager = {}
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
-local dialogue = require(script.Parent.dialogue)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -69,12 +68,7 @@ function drop_manager:Drop(player: playerMarshaller.player, amount: number, obje
 				return
 			end
 
-			dialogue
-				.speak("You", "yay!")
-				:andThen(function()
-					already_touched:Set(true)
-				end)
-				:catch(warn)
+			-- TODO) do a dialog
 		end)
 
 		_trove:Add(attachment)

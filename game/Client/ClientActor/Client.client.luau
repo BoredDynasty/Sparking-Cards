@@ -7,7 +7,6 @@ print(script.Name)
 task.wait()
 
 -- // Services -- //
-local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
@@ -18,19 +17,12 @@ local UserInputService = game:GetService("UserInputService")
 local CameraController = require("../Camera/CameraController")
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
-local Dash = require(script.Parent.Parent.Movement.Dash)
-local Joint = require("../Movement/Joint")
-local Jump = require(script.Parent.Parent.Movement.Jump)
-local MovementController = require(script.Parent.Parent.Movement.MovementController)
 local Navi = require("../Components/Navi")
 local Options = require("../Components/Options")
 local Packet = require(ReplicatedStorage.Packet)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local Sprint = require(script.Parent.Parent.Movement.Sprint)
-local Stamina = require(script.Parent.Parent.Movement.Stamina)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
-local Walk = require(script.Parent.Parent.Movement.Walk)
 local animate = require("../Utilities/animate")
 local audio = require(ReplicatedStorage.Modules.audio)
 local badges = require(ReplicatedStorage.Structures.badges)
@@ -50,11 +42,13 @@ local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local hud = require(script.Parent.Parent.Components.hud)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
+local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
 local logger = require(ReplicatedStorage.ClientModules.logger)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local market = require("../Components/market")
 local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
+local movement_controller = require(StarterPlayer.StarterPlayerScripts.Movement["movement-controller"])
 local music = require("../Gameplay/music")
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local objective = require("../Components/objective")
@@ -136,7 +130,6 @@ characterFolder.Parent = ReplicatedStorage
 
 logger.new()
 glove:Apply(character)
-animate.initialize()
 
 print("client starting")
 
@@ -224,143 +217,6 @@ local function initializeOptions()
 	displayorder.new(optionsCanvas)
 
 	shadow(optionsFrame)
-
-	local optionsList = {
-		-- add new options here
-
-		{
-			name = "Shadows",
-			description = "Toggle shadows on or off.",
-			toggleFunctions = {
-				on = function()
-					Lighting.GlobalShadows = true
-				end,
-				off = function()
-					Lighting.GlobalShadows = false
-				end,
-			},
-			override = "on",
-		},
-		{
-			name = "Time",
-			description = "Adjust the in-game time.",
-			toggleFunctions = {
-				on = function()
-					TweenPlus(
-						Lighting,
-						{ ClockTime = 12 },
-						{ Time = 1, EasingStyle = "Back", EasingDirection = "Out" }
-					):Start()
-				end,
-				off = function()
-					TweenPlus(
-						Lighting,
-						{ ClockTime = 4 },
-						{ Time = 1, EasingStyle = "Back", EasingDirection = "Out" }
-					):Start()
-				end,
-			},
-			override = "off",
-			icons = {
-				on = "rbxassetid://10734974297",
-				off = "rbxassetid://10734897102",
-			},
-		},
-		{
-			name = "Show Other Players",
-			description = "Toggle visibility of other players.",
-			toggleFunctions = {
-				on = function()
-					local characterFolder = ReplicatedStorage:WaitForChild("Characters") :: Folder
-					for _, character in ipairs(characterFolder:GetChildren()) do
-						if character:IsA("Model") and character:FindFirstChild("HumanoidRootPart") then
-							character.Parent = workspace
-						end
-					end
-				end,
-				off = function()
-					local characterFolder = workspace:GetChildren() :: Folder
-					for _, otherCharacter: Instance in ipairs(characterFolder) :: { Model } do
-						local condition = otherCharacter:IsA("Model")
-							and playerMarshaller.getByName(otherCharacter.Name)
-
-						if condition and otherCharacter.Name ~= player.Name then
-							character.Parent = ReplicatedStorage:WaitForChild("Characters")
-						end
-					end
-				end,
-			},
-			override = "on",
-		},
-		{
-			name = "Clouds",
-			description = "Toggle clouds on or off.",
-			toggleFunctions = {
-				on = function()
-					local clouds = workspace.Terrain:FindFirstChildWhichIsA("Clouds")
-					assert(clouds, "Clouds not found")
-					clouds.Enabled = true
-				end,
-				off = function()
-					local clouds = workspace.Terrain:FindFirstChildWhichIsA("Clouds")
-					assert(clouds, "Clouds not found")
-					clouds.Enabled = false
-				end,
-			},
-			override = "on",
-		},
-		{
-			name = "Music",
-			description = "Toggle the soundtrack.",
-			toggleFunctions = {
-				on = function()
-					promise.new(function()
-						music:stopCurrentTrack()
-
-						RunService.Heartbeat:Wait()
-
-						music:startTracking()
-					end)
-				end,
-				off = function()
-					promise.new(function()
-						music:stopCurrentTrack()
-					end)
-				end,
-			},
-			override = "on",
-		},
-		{
-			name = "Motion blur",
-			description = "Toggle motion blur. (Depending on your device, this may be laggy.)",
-			toggleFunctions = {
-				on = function()
-					motion_blur:On()
-				end,
-				off = function()
-					motion_blur:Off()
-				end,
-			},
-			override = "false",
-		},
-	}
-
-	for i, option in ipairs(optionsList) do
-		Options.new({
-			name = option.name,
-			description = option.description,
-			functions = option.toggleFunctions,
-			icons = option.icons or nil,
-			state = observer.new(if option.override == "on" then true else false),
-			override = if option.override then option.override else nil,
-		})
-
-		task.spawn(Options.render, Options, optionsFrame.Holder :: ScrollingFrame)
-	end
-
-	hud:create("Options", function()
-		displayorder:toggle(optionsCanvas)
-	end, lucide.GetAsset("cog"))
 end
 local function initializeMatchmaking()
 	print("init matchmaking")
@@ -894,17 +750,16 @@ displayorder:Watch()
 
 print("client almost done")
 
-local movementController = MovementController.new()
-movementController:Add(movementController, "Walk", script.Parent.Parent.Movement.Walk)
-movementController:Add(movementController, "Jump", script.Parent.Parent.Movement.Jump)
-movementController:Add(movementController, "Sprint", script.Parent.Parent.Movement.Sprint)
-movementController:Add(movementController, "Dash", script.Parent.Parent.Movement.Dash)
-movementController:Add(movementController, "Stamina", script.Parent.Parent.Movement.Stamina)
-movementController:Add(movementController, "Joint", script.Parent.Parent.Movement.Joint)
-movementController:Start(movementController)
+movement_controller:Add(script.Parent.Parent.Movement["dash-controller"])
+movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
+movement_controller:Add(script.Parent.Parent.Movement["jump-controller"])
+movement_controller:Add(script.Parent.Parent.Movement["stamina-controller"])
+movement_controller:Add(script.Parent.Parent.Movement["walk-controller"])
+movement_controller:Add(script.Parent.Parent.Movement["joint-controller"])
+
+movement_controller:Start()
 
 print("client movement")
-print("game camera")
 
 -- local rain_controller = rain.new()
 -- rain_controller:Start(rain_controller)
@@ -965,7 +820,6 @@ end
 
 Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
-	movementController:Destroy()
 	music.cleanup()
 	Options:destroy()
 	hud:clear()

@@ -120,10 +120,13 @@ function character.isRoot(inst: Instance): (boolean?, BasePart?)
 	if Players:FindFirstChild(inst.Parent.Name) then
 		return true, inst :: BasePart
 	end
+
+	return false, nil
 end
 
 function character.getLimb(char: Character, limbName: string): BasePart?
 	local limb = char:FindFirstChild(limbName)
+
 	if limb and limb:IsA("BasePart") then
 		return limb
 	end

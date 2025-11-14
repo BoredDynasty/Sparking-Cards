@@ -85,8 +85,6 @@ local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
 		return nil
 	end
 
-	print("found animation: ", animObject)
-
 	fadeTime = fadeTime or 0.25
 
 	local track = animObject.Track
