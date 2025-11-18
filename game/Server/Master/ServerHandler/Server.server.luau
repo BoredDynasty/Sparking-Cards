@@ -122,7 +122,7 @@ end)
 local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model
 ServerAsset.Parent = game.Workspace
 
-local function enterMatch(player: playerMarshaller.player)
+local function enterMatch(player: Player)
 	print("player entered match")
 
 	if not player then
@@ -139,7 +139,7 @@ local function enterMatch(player: playerMarshaller.player)
 	)
 end
 
-local function cancelMatch(player: playerMarshaller.player)
+local function cancelMatch(player: Player)
 	print("cancel match")
 
 	if not player then
@@ -152,7 +152,7 @@ local function cancelMatch(player: playerMarshaller.player)
 	)
 end
 
-local function onPlayerAdded(player: playerMarshaller.player)
+local function onPlayerAdded(player: Player)
 	-- for the client to mess around with
 	local editConfig = Instance.new("BindableEvent")
 	editConfig.Parent = player
@@ -165,7 +165,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 	GameAnalytics:PlayerJoined(player)
 	--orion.registerPlayer(player)
 
-	local function addHighlight(character: characterMarshaller.Character)
+	local function addHighlight(character: typemarshaller.Character)
 		return promise
 			.new(function(resolve: (string, Highlight?) -> ...unknown)
 				if character:FindFirstChildOfClass("Highlight") then
@@ -189,7 +189,7 @@ local function onPlayerAdded(player: playerMarshaller.player)
 			:catch(warn)
 	end
 
-	characterMarshaller.added(player, function(character: characterMarshaller.Character)
+	characterMarshaller.added(player, function(character: typemarshaller.Character)
 		character:SetAttribute("Stamina", 100)
 		character:SetAttribute("MaxStamina", 100)
 
@@ -226,7 +226,7 @@ for i, player in ipairs(playerMarshaller.all()) do
 	end
 end
 
-local function onPlayerRemoving(player: playerMarshaller.player)
+local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
 	local profile = stores.get(player)
 
@@ -247,7 +247,7 @@ local function onPlayerRemoving(player: playerMarshaller.player)
 	task.defer(player.Destroy, player)
 end
 
-local function purchaseCard(player: playerMarshaller.player, cardName: string)
+local function purchaseCard(player: Player, cardName: string)
 	local resourceEventParams = {
 		flowType = GameAnalytics.EGAResourceFlowType.Sink,
 		currency = "Prisms",
@@ -285,7 +285,7 @@ local function purchaseCard(player: playerMarshaller.player, cardName: string)
 	end
 end
 
-local function streamArea(player: playerMarshaller.player, area: Vector3)
+local function streamArea(player: Player, area: Vector3)
 	if not player then
 		return
 	end
@@ -355,7 +355,7 @@ local function sellCards(player: Player, cardName: string)
 	stores:wrapSave(player)
 end
 
-local function setNetworkOwner(player: playerMarshaller.player?, object: BasePart)
+local function setNetworkOwner(player: Player?, object: BasePart)
 	if not object then
 		return
 	end
@@ -365,7 +365,7 @@ local function setNetworkOwner(player: playerMarshaller.player?, object: BasePar
 	end)
 end
 
-local function getProfile(player: playerMarshaller.player): { Data: profilestructure.profile? }
+local function getProfile(player: Player): { Data: profilestructure.profile? }
 	local profile = stores.get(player)
 
 	print("getting profile: server")
@@ -393,7 +393,7 @@ local function setClock(number: number)
 	})
 end
 
-local function addQuest(player: playerMarshaller.player, quest_data: string)
+local function addQuest(player: Player, quest_data: string)
 	-- deserialize
 	quest_data = messagepack.decode(quest_data) :: {
 		name: string,
@@ -443,27 +443,25 @@ end)
 Packet.SetTime.listen(function(data: { clock_time: number }, player: Player?)
 	setClock(data.clock_time)
 end)
-Packet.StreamArea.listen(function(data: { areaCenter: Vector3 }, player: playerMarshaller.player)
+Packet.StreamArea.listen(function(data: { areaCenter: Vector3 }, player: Player)
 	streamArea(player, data.areaCenter)
 end)
-Packet.CreateMatch.listen(function(_, player: playerMarshaller.player)
+Packet.CreateMatch.listen(function(_, player: Player)
 	enterMatch(player)
 end)
-Packet.BuyCard.listen(function(data: { cardName: string }, player: playerMarshaller.player)
+Packet.BuyCard.listen(function(data: { cardName: string }, player: Player)
 	purchaseCard(player, data.cardName)
 end)
 Packet.PayPrisms.listen(function(data: { amount: number, recipientUsername: string })
 	payPrisms(data.amount, data.recipientUsername)
 end)
-Packet.CancelMatch.listen(function(_, player: playerMarshaller.player)
+Packet.CancelMatch.listen(function(_, player: Player)
 	cancelMatch(player)
 end)
-Packet.SellCard.listen(
-	function(data: { cardName: string, playerInstance: Instance }, player: playerMarshaller.player)
-		local cardName = data.cardName
-		sellCards(player, cardName)
-	end
-)
+Packet.SellCard.listen(function(data: { cardName: string, playerInstance: Instance }, player: Player)
+	local cardName = data.cardName
+	sellCards(player, cardName)
+end)
 Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instance? })
 	setNetworkOwner(data.player, data.object)
 end);
@@ -472,10 +470,10 @@ end);
 local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
 
 -- TODO) add player saving options
-playerMarshaller.added(function(player: playerMarshaller.player)
+playerMarshaller.added(function(player: Player)
 	onPlayerAdded(player)
 end)
-playerMarshaller.removing(function(player: playerMarshaller.player)
+playerMarshaller.removing(function(player: Player)
 	onPlayerRemoving(player)
 end)
 

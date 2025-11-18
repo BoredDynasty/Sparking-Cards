@@ -59,4 +59,44 @@ export type GlidingConfig = {
 	glider_model: Model?,
 }
 
+-- player related
+
+export type Character = Model & {
+	Humanoid: Humanoid & {
+		HumanoidDescription: HumanoidDescription & {
+			[string]: (AccessoryDescription | BodyPartDescription)?,
+		},
+		Animator: Animator,
+	},
+	HumanoidRootPart: BasePart,
+	BodyColors: BodyColors,
+	PrimaryPart: BasePart,
+	Animate: LocalScript & {
+		ScaleDampeningPercent: NumberValue,
+		PlayEmote: BindableEvent,
+		cheer: StringValue,
+		climb: StringValue,
+		dance: StringValue,
+		dance2: StringValue,
+		dance3: StringValue,
+		fall: StringValue,
+		idle: StringValue,
+		jump: StringValue,
+		laugh: StringValue,
+		mood: StringValue,
+		point: StringValue,
+		pose: StringValue,
+		run: StringValue,
+		sit: StringValue,
+		swim: StringValue,
+		swimidle: StringValue,
+		toollunge: StringValue,
+		toolnone: StringValue,
+		toolslash: StringValue,
+		walk: StringValue,
+		wave: StringValue,
+	},
+	Head: BasePart,
+}
+
 return nil

@@ -26,7 +26,7 @@ export type quest = {
 	module: ModuleScript?,
 }
 
-type module_run = (data: quest, playerMarshaller.player) -> quest?
+type module_run = (data: quest, Player) -> quest?
 
 quest_module.registered = {
 	{
@@ -77,7 +77,7 @@ end
    ```
 
 ]]
-function quest_module.new(player: playerMarshaller.player, name: string)
+function quest_module.new(player: Player, name: string)
 	-- manipulate player data
 
 	-- check if the quest does not exist within player data first
@@ -116,7 +116,7 @@ end
 
 	@return RBXScriptConnection
 ]]
-function quest_module:Track(player: playerMarshaller.player)
+function quest_module:Track(player: Player)
 	local lastCheck: number = 0.0
 	local checkInterval = 0.25 -- seconds
 
@@ -212,7 +212,7 @@ end
    ```
 ]]
 
-function quest_module:Get(player: playerMarshaller.player, quest_name: string?)
+function quest_module:Get(player: Player, quest_name: string?)
 	return promise
 		.new(function(resolve: ({ quest } | quest) -> ...unknown, reject: (string) -> ...unknown)
 			local data = expectProfile()

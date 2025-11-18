@@ -7,13 +7,14 @@ local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshalle
 local impact = require(ReplicatedStorage.Combat.framework.effects.impact)
 local observer = require(ReplicatedStorage.Utility.observer)
 local trove = require(ReplicatedStorage.Packages.trove)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- throw.luau
 
 export type throw = {
 	direction: Vector3,
 	speed: number, -- studs/s -- studs per second
-	character: characterMarshaller.Character,
+	character: typemarshaller.Character,
 }
 
 local castParams = RaycastParams.new()

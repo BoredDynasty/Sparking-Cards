@@ -15,7 +15,6 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-local promise = require(ReplicatedStorage.Packages.promise)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
@@ -209,7 +208,7 @@ local function createTemplate(ancestor: Instance?): template
 end
 
 function market:unload()
-	for _, item in itemHolder:GetChildren() do
+	for _, item in ipairs(itemHolder:GetChildren()) do
 		if item and item:IsA("Frame") then
 			item:Destroy()
 
@@ -220,47 +219,38 @@ function market:unload()
 			RunService.Heartbeat:Wait()
 		end
 	end
-
-	return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
 end
 
 function market:display_spendings(profile: {
 	Data: profilestructure.profile,
 })
 	local moneyFrame = spendings:FindFirstChild("Money") :: Frame
+	local money_label = moneyFrame:WaitForChild("Amount") :: TextLabel
 
-	promise.new(function()
-		local text = ""
+	local prisms = tonumber(profile and profile.Data.Prisms)
 
-		local prisms = tonumber(profile and profile.Data.Prisms)
+	if prisms then
+		local counter = markdown.text_counter.new({
+			to = tonumber(profile and profile.Data.Prisms) or 0,
+			from = 0,
+			direction = "up",
+			delay = 0,
+			duration = 2,
+			label = money_label,
+			separator = " ",
+		})
+		counter:Start()
 
-		if prisms then
-			local counter = markdown.text_counter.new({
-				to = tonumber(profile and profile.Data.Prisms) or 0,
-				from = 0,
-				direction = "up",
-				delay = 0,
-				duration = 2,
-				label = moneyFrame:FindFirstChild("Amount") :: TextLabel,
-				separator = " ",
-			})
-			counter:Start()
+		counter.completed:Wait()
 
-			counter.completed:Wait()
-
-			text = number_abbreviation:Format(prisms, "space")
-
-			task.defer(counter.Destroy, counter)
-		else
-			text = "0"
-		end
-	end)
+		task.defer(counter.Destroy, counter)
+	else
+		money_label.Text = "?"
+	end
 end
 
 function market:load_items(items: Items.dataType?)
-	local unload_time = market:unload()
-
-	task.wait(unload_time)
+	market:unload()
 
 	items = items or Items
 
@@ -270,10 +260,10 @@ function market:load_items(items: Items.dataType?)
 
 		shadow(template)
 
-		local title = template:FindFirstChild("Title", true)
+		local title = template:WaitForChild("Title", true) :: TextLabel
 
-		local purchaseButton = template.Buy
-		local experimentButton = template.Test
+		local purchaseButton = template:WaitForChild("Buy", true) :: TextButton
+		local experimentButton = template:WaitForChild("Test", true) :: TextButton
 
 		title.Text = item.Name
 			.. [[<br/>
@@ -285,9 +275,7 @@ function market:load_items(items: Items.dataType?)
 		template.Visible = true
 		purchaseButton.AutoButtonColor = false
 
-		if item.ExperimentsEnabled ~= false then
-			experimentButton.Visible = true
-
+		if item.ExperimentsEnabled then
 			experimentButton.Visible = true
 
 			experimentButton.MouseButton1Click:Connect(function()
@@ -351,11 +339,6 @@ function market:load_items(items: Items.dataType?)
 				Color3.fromRGB(0, 0, 255),
 			}, shopCanvas, true)
 		end)
-
-		ripple:Watch(purchaseButton)
-		if item.ExperimentsEnabled then
-			ripple:Watch(experimentButton)
-		end
 	end
 
 	print("done")
@@ -364,9 +347,7 @@ end
 function market:load_inventory(profile: {
 	Data: profilestructure.profile,
 })
-	local unload_time = market:unload()
-
-	task.wait(unload_time)
+	market:unload()
 
 	if not profile then
 		print("no profile to load inventory")
@@ -382,10 +363,10 @@ function market:load_inventory(profile: {
 
 		shadow(template)
 
-		local title = template:FindFirstChild("Title", true)
+		local title = template:WaitForChild("Title", true) :: TextLabel
 
-		local sell_btn = template.Buy
-		local experimentButton = template.Test
+		local sell_btn = template:WaitForChild("Buy", true) :: TextButton
+		local experimentButton = template:WaitForChild("Test", true) :: TextButton
 
 		title.Text = i
 			.. [[<br/>

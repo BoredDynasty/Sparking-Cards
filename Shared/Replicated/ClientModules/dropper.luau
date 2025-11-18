@@ -34,7 +34,7 @@ drop_manager._randomseed = randomseed
 	drop_manager:Drop(player, 5, "PrismDrop")
 	```
 ]]
-function drop_manager:Drop(player: playerMarshaller.player, amount: number, object: string?)
+function drop_manager:Drop(player: Player, amount: number, object: string?)
 	local obj = fetchAsset(object or "CardDrop") :: BasePart?
 	if not obj then
 		return

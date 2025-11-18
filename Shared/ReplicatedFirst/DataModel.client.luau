@@ -49,8 +49,6 @@ local function skipPreloading()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
-
-	status.Text = "Skipped."
 end
 
 local function preload()
@@ -73,6 +71,9 @@ local function preload()
 	local pre_allocated = 3000
 	local assets = table.create(pre_allocated) :: { Instance } -- pre-allocate approximate size
 	-- for a more accurate maxAssets count, make it asynchronous
+	for i, asset in ipairs(player:GetDescendants()) do
+		table.insert(assets, asset)
+	end
 	for i, asset in ipairs(ReplicatedStorage:GetDescendants()) do
 		table.insert(assets, asset)
 	end
@@ -108,6 +109,7 @@ local function preload()
 		end
 
 		activeThreads += 1
+
 		task.spawn(function()
 			local success, err = pcall(ContentProvider.PreloadAsync, ContentProvider, batch)
 			if not success or err ~= nil then

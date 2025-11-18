@@ -9,7 +9,7 @@ local Orion = require(ReplicatedStorage.Combat.orion) -- For AttackData type
 local Packet = require(ReplicatedStorage.Packet) -- For sending effects
 local PlayerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
-type Player = PlayerMarshaller.player
+type Player = Player
 type AttackData = Orion.AttackData
 
 local CryoArmor = {}

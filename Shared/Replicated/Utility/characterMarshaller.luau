@@ -8,38 +8,32 @@
 --]]
 
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-export type Character = Model & {
-	Humanoid: Humanoid & {
-		HumanoidDescription: HumanoidDescription,
-		Animator: Animator,
-	},
-	HumanoidRootPart: BasePart,
-	BodyColors: BodyColors,
-	PrimaryPart: BasePart,
-	Animate: LocalScript,
-	Head: BasePart,
-	LocalAnimation: Animation?,
-}
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- maps players w their characters appearance loaded to their character
-local CHARACTER_APPEARANCE_LOADED = {} :: { [Player]: Character? }
+local CHARACTER_APPEARANCE_LOADED = {} :: { [Player]: typemarshaller.Character? }
 
-local function GET_APPEARANCE_LOADED(player: Player): Character?
+local function GET_APPEARANCE_LOADED(player: Player): typemarshaller.Character?
 	return CHARACTER_APPEARANCE_LOADED[player]
-end
-
--- this function exists so u dont have to do
--- local character = (player.Character :: any) :: character.Character?
-local function getCharacter(player: Player): Character
-	local char = player.Character or player.CharacterAdded:Wait()
-
-	return char :: any
 end
 
 local character = {}
 
-function character.removing_once(player: Player, f: (character: Character) -> ()): () -> ()
+-- this function exists so u dont have to do
+-- local character = (player.Character :: any) :: character.Character?
+local function getCharacter(player: Player): typemarshaller.Character
+	local char = player.Character
+
+	character.added(player, function(c)
+		char = c
+	end)
+
+	return char :: any
+end
+
+function character.removing_once(player: Player, f: (character: typemarshaller.Character) -> ()): () -> ()
 	local removing_conn = player.CharacterRemoving:Once(f :: any)
 
 	return function()
@@ -49,7 +43,7 @@ function character.removing_once(player: Player, f: (character: Character) -> ()
 	end
 end
 
-function character.removing(player: Player, f: (character: Character) -> ()): () -> ()
+function character.removing(player: Player, f: (character: typemarshaller.Character) -> ()): () -> ()
 	local removing_conn = player.CharacterRemoving:Connect(f :: any)
 
 	return function()
@@ -59,7 +53,7 @@ end
 
 function character.added(
 	player: Player,
-	f: (character: Character) -> (),
+	f: (character: typemarshaller.Character) -> (),
 	dont_run_for_existing_character: boolean?
 ): () -> ()
 	local characterModel = getCharacter(player)
@@ -110,7 +104,8 @@ function character.getRoot(player: Player): BasePart?
 	if not char then
 		return nil
 	end
-	return char.HumanoidRootPart
+
+	return char:FindFirstChild("HumanoidRootPart") :: any
 end
 
 function character.isRoot(inst: Instance): (boolean?, BasePart?)
@@ -124,7 +119,7 @@ function character.isRoot(inst: Instance): (boolean?, BasePart?)
 	return false, nil
 end
 
-function character.getLimb(char: Character, limbName: string): BasePart?
+function character.getLimb(char: typemarshaller.Character, limbName: string): BasePart?
 	local limb = char:FindFirstChild(limbName)
 
 	if limb and limb:IsA("BasePart") then
@@ -133,7 +128,7 @@ function character.getLimb(char: Character, limbName: string): BasePart?
 	return nil
 end
 
-function character.halt(char: Character)
+function character.halt(char: typemarshaller.Character)
 	local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
 	if humanoid then
 		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
@@ -141,7 +136,7 @@ function character.halt(char: Character)
 	end
 end
 
-function character.continue(char: Character)
+function character.continue(char: typemarshaller.Character)
 	local humanoid = char:FindFirstChild("Humanoid") :: Humanoid
 	if humanoid then
 		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
@@ -151,7 +146,7 @@ end
 
 function character.added_once(
 	player: Player,
-	f: (character: Character) -> (),
+	f: (character: typemarshaller.Character) -> (),
 	dont_run_for_existing_character: boolean?
 ): () -> ()
 	local characterModel = getCharacter(player)
@@ -182,7 +177,7 @@ end
 
 function character.appearance_loaded(
 	player: Player,
-	f: (character: Character) -> (),
+	f: (character: typemarshaller.Character) -> (),
 	dont_run_for_existing_character: boolean?
 ): () -> ()
 	local characterModel = GET_APPEARANCE_LOADED(player)
@@ -214,7 +209,7 @@ end
 
 function character.appearance_loaded_once(
 	player: Player,
-	f: (character: Character) -> (),
+	f: (character: typemarshaller.Character) -> (),
 	dont_run_for_existing_character: boolean?
 ): () -> ()
 	local characterModel = GET_APPEARANCE_LOADED(player)

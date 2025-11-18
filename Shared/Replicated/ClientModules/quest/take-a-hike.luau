@@ -24,7 +24,7 @@ local constants = {
 	distance = 200,
 }
 
-return function(data: quest, player: playerMarshaller.player)
+return function(data: quest, player: Player)
 	return promise
 		.new(function(resolve: (quest?) -> ...unknown)
 			local character = characterMarshaller.get(player)

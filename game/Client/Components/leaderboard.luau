@@ -72,13 +72,13 @@ local function getAllProfiles()
 		local getAllProfilesRF = ReplicatedStorage.Events:WaitForChild("GetAllProfiles") :: RemoteFunction
 
 		local profiles =
-			getAllProfilesRF:InvokeServer() :: { [playerMarshaller.player]: { ["Data"]: profilestructure.profile } }
+			getAllProfilesRF:InvokeServer() :: { [Player]: { ["Data"]: profilestructure.profile } }
 
 		resolve(profiles)
 	end)
 end
 
-function self:PlayerSelected(otherPlayer: playerMarshaller.player)
+function self:PlayerSelected(otherPlayer: Player)
 	if self.selecting:Get() then
 		for i, conn in ipairs(self.selecting_conns) do
 			conn:Disconnect()

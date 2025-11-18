@@ -22,7 +22,7 @@ local module = {
 
 type active_gliders = {
 	{
-		player: playerMarshaller.player,
+		player: Player,
 		config: typemarshaller.GlidingConfig,
 	}
 }
@@ -31,7 +31,7 @@ module.cast_params.FilterType = Enum.RaycastFilterType.Exclude
 
 -- should be ran on the server
 
-function module:Toggle(player: playerMarshaller.player, config: typemarshaller.GlidingConfig)
+function module:Toggle(player: Player, config: typemarshaller.GlidingConfig)
 	if module.ratelimit(player) then
 		print("Glider cooldown")
 		return
@@ -149,7 +149,7 @@ function module:Update(deltaTime: number)
 
 	for i, glider_data in ipairs(module.active_gliders) do
 		local player = glider_data.player
-		local character = player.Character :: characterMarshaller.Character
+		local character = player.Character :: typemarshaller.Character
 		-- we can't afford to use characterMarshaller.get() because we need to be quick
 
 		if not character then

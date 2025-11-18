@@ -31,12 +31,15 @@ function controller:Update()
 			return
 		end
 
+		is_animating:Set(true)
+
 		if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
 			track:AdjustSpeed(0.25)
 		else
 			track:AdjustSpeed(1)
 		end
 	elseif not is_moving and is_animating:Get() then
+		is_animating:Set(false)
 		animate.stop("walk")
 	end
 end

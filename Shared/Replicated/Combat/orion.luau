@@ -32,10 +32,10 @@ local events = ReplicatedStorage.Events
 export type attack_type = "M1" | "Skill" | "Ultimate" | "Support"
 export type attack_module = {
 	moveset: {
-		M1: ((playerMarshaller.player, ...any?) -> ...any?)?,
-		Skill: ((playerMarshaller.player, ...any?) -> ...any?)?,
-		Ultimate: ((playerMarshaller.player, ...any?) -> ...any?)?,
-		Support: ((playerMarshaller.player, ...any?) -> ...any?)?,
+		M1: ((Player, ...any?) -> ...any?)?,
+		Skill: ((Player, ...any?) -> ...any?)?,
+		Ultimate: ((Player, ...any?) -> ...any?)?,
+		Support: ((Player, ...any?) -> ...any?)?,
 	},
 }
 
@@ -44,10 +44,7 @@ grip.auto_update()
 --[[
 	Should be ran on the client side.
 ]]
-function orion.registerPlayer(
-	player: playerMarshaller.player & Player,
-	profile: { Data: profilestructure.profile }
-)
+function orion.registerPlayer(player: Player & Player, profile: { Data: profilestructure.profile })
 	local identification = player.UserId
 
 	if not profile then
@@ -94,11 +91,7 @@ end
 	-- do whatever else with your info and data ig
 	```
 ]]
-function orion:execute(
-	player: playerMarshaller.player,
-	attack_type: attack_type,
-	...: any?
-): ...observer.Meta<any?>
+function orion:execute(player: Player, attack_type: attack_type, ...: any?): ...observer.Meta<any?>
 	local attack_module = nil
 
 	local playerData = data:Fetch(player)
@@ -127,8 +120,7 @@ function orion:execute(
 		return nil
 	end
 
-	local attack_function =
-		attack_module.moveset[attack_type] :: (playerMarshaller.player, ...any?) -> ...any?
+	local attack_function = attack_module.moveset[attack_type] :: (Player, ...any?) -> ...any?
 
 	if not attack_function and type(attack_function) ~= "function" then
 		warn("attack function not found")

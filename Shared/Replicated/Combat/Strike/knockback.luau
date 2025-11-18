@@ -11,7 +11,7 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 local _trove = trove.new()
 
-return function(player: playerMarshaller.player, direction: Vector3)
+return function(player: Player, direction: Vector3)
 	local character = player.Character
 	local rootPart = character.HumanoidRootPart
 	local humanoid = character.Humanoid

@@ -23,6 +23,7 @@ local Packet = require(ReplicatedStorage.Packet)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local achievement = require(StarterPlayer.StarterPlayerScripts.Components.achievement)
 local animate = require("../Utilities/animate")
 local audio = require(ReplicatedStorage.Modules.audio)
 local badges = require(ReplicatedStorage.Structures.badges)
@@ -258,7 +259,7 @@ local function initializeMatchmaking()
 		end)
 	end
 
-	local function hideMatchmakingFrame(resolve: () -> ...unknown)
+	local function hideMatchmakingFrame()
 		spr.target(matchmakingFrame, 1, 2, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
@@ -269,8 +270,6 @@ local function initializeMatchmaking()
 		clock:Stop()
 
 		hud:toggle("Matchmaking")
-
-		resolve()
 	end
 
 	state:Watch(function(newValue: boolean)
@@ -281,20 +280,20 @@ local function initializeMatchmaking()
 
 			Packet.CreateMatch.send({}, player)
 		else
-			task.delay(0.5, function()
-				matchmakingCanvas.Visible = false
-				--notify.info("Matchmaking", "You have left the queue.", 5, "info")
+			matchmakingCanvas.Visible = false
+			--notify.info("Matchmaking", "You have left the queue.", 5, "info")
 
-				print("Stopped matchmaking")
+			print("Stopped matchmaking")
 
-				Packet.CancelMatch.send({ matchInstance = player }, player)
-			end)
+			Packet.CancelMatch.send({ matchInstance = player }, player)
 		end
 	end)
 
 	local swipeDetector = swipe.new(matchmakingFrame)
 	swipeDetector.OnSwipe:Connect(function(direction: swipe.direction, delta: Vector3)
 		if state:Get() == false then
+			-- how sir
+
 			return
 		end
 
@@ -302,7 +301,7 @@ local function initializeMatchmaking()
 			state:Set(false)
 			-- audio:SFX("leave")
 
-			promise.new(hideMatchmakingFrame):catch(warn)
+			pcall(hideMatchmakingFrame)
 		else
 			return
 		end
@@ -326,116 +325,10 @@ local function initializeBadges()
 
 	displayorder.new(badgesCanvas)
 
-	profile = expectProfile()
-
-	local function unloadBadges()
-		for _, item in itemHolder:GetChildren() do
-			if item and item:IsA("Frame") then
-				item:Destroy()
-				task.wait()
-			end
-		end
-
-		return #(itemHolder:GetChildren()) * RunService.Heartbeat:Wait()
-	end
-
-	local function loadBadges()
-		if not profile then
-			print("no profile to load badges")
-			return
-		end
-
-		for i, badge_data in pairs(profile.Data.achievements :: { badges.badge }) do
-			-- print("got item: " .. item.Name)
-			local itemTemplate = badgeFolder:FindFirstChild("ItemTemplate") :: Frame & {
-				Title: Frame,
-				Price: Frame,
-				Buy: TextButton & {
-					TextHolder: Frame,
-				},
-				Test: TextButton,
-				Tags: Frame,
-			}
-			itemTemplate = itemTemplate:Clone()
-			itemTemplate:SetAttribute("name", badge_data.name)
-			itemTemplate.Parent = itemHolder
-
-			shadow(itemTemplate, Color3.new(), 0, 14)
-
-			local title = itemTemplate.Title
-			local price = itemTemplate.Price
-
-			local purchaseButton = itemTemplate.Buy
-			local experimentButton = itemTemplate.Test
-
-			TextPlus.Create(title, badge_data.name, {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.SemiBold, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 16,
-				Color = Color3.fromHex("#f5f5f5"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-
-			local description =
-				`{badge_data.description}\n\n Data Achieved: {DateTime.fromUnixTimestampMillis(
-					badge_data.date_acquired
-				)
-					:FormatUniversalTime("LL", "en-us")}`
-
-			-- LL means MM/DD/YYYY
-
-			TextPlus.Create(price, description, {
-				Font = Font.new(
-					"rbxasset://fonts/families/Montserrat.json", -- Family.
-					Enum.FontWeight.Regular, -- Weight.
-					Enum.FontStyle.Normal -- Style.
-				),
-				Size = 12.5,
-				Color = Color3.fromHex("#f5f5f5"),
-				XAlignment = "Left",
-				YAlignment = "Center",
-				LineSorting = true,
-				WordSorting = true,
-				Dynamic = true,
-			})
-
-			characterIteration:jump(title)
-			characterIteration:jump(price)
-
-			itemTemplate.Visible = true
-			purchaseButton.Visible = false
-			experimentButton.Visible = false
-		end
-	end
-
-	if profile and profile ~= nil then
-		TextPlus.Create(totalBadges, `Total Achievements: {#profile.Data.achievements}`, {
-			Font = Font.new(
-				"rbxasset://fonts/families/Montserrat.json", -- Family.
-				Enum.FontWeight.SemiBold, -- Weight.
-				Enum.FontStyle.Normal -- Style.
-			),
-			Size = 16,
-			Color = Color3.fromHex("#f5f5f5"),
-			XAlignment = "Left",
-			YAlignment = "Center",
-			LineSorting = true,
-			WordSorting = true,
-			Dynamic = true,
-		})
-	end
-
 	local function callback()
 		displayorder:toggle(badgesCanvas)
-		unloadBadges()
-		loadBadges()
+		achievement:DisplayTotal(expectProfile())
+		achievement:Load(expectProfile())
 	end
 
 	hud:create("Badges", callback, lucide.GetAsset("trophy", 48))
@@ -559,112 +452,6 @@ local function initializeLoadouts()
 	print("init loadouts")
 	local loadoutsGui = PlayerGui:FindFirstChild("Loadout") :: ScreenGui
 	local loadoutCanvas = loadoutsGui:FindFirstChild("CanvasGroup") :: CanvasGroup
-	local loadoutFrame = loadoutCanvas:FindFirstChild("Background") :: Frame
-
-	local navigation = loadoutFrame:FindFirstChild("Navigation") :: Frame
-
-	local detailsHolder = loadoutFrame:FindFirstChild("Details") :: Frame
-	local shopShortcut = detailsHolder.ShopShortcut :: Frame & {
-		Button: TextButton, -- press to open shop
-		ImageLabel: ImageLabel,
-	}
-	local holder = detailsHolder.Holder :: Frame
-	local card_image = detailsHolder.CardImage :: ImageLabel
-	local moveset_display = detailsHolder.MovesetName :: TextLabel
-
-	local playerPicture = loadoutFrame.ProfilePicture :: Frame
-	local playerPictureInner = playerPicture.Inner :: Frame
-	local profilePicture = playerPictureInner.Image :: ImageLabel
-
-	local loadoutFolder = templates.Loadout :: Folder
-
-	shadow(navigation)
-	shadow(detailsHolder)
-	shadow(profilePicture)
-
-	ripple(loadoutCanvas)
-	ripple:Watch(profilePicture)
-	displayorder.new(loadoutCanvas)
-
-	local _parallax = parallax.new(Vector2.one * 10)
-	local layers = parallaxLayers.Desert -- placeholder
-
-	for i, data in ipairs(layers) do
-		_parallax:AddLayer(nil, data.depthFactor, "rbxassetid://" .. data.image)
-	end
-
-	_parallax:Setup(loadoutCanvas)
-	--_parallax:Enable()
-	local function updatePfp()
-		return promise.async(function(resolve: (Content) -> ...unknown, reject: (string) -> ...unknown)
-			local userId = player.UserId
-
-			local image = rbx_thumb.avatar_headshot(userId, "420x420")
-
-			if image then
-				profilePicture.ImageContent = image
-
-				pop(playerPicture, 1.2)
-
-				resolve(image)
-			else
-				reject("Failed to get user thumbnail: " .. tostring(image))
-
-				--notify.error("User thumbnail", "Failed to fetch user thumbnail.", 5, "error")
-			end
-		end)
-	end
-
-	-- alright so this entire system uses TextLabel
-	-- in favor of TextPlus
-	-- because i do NOT want to use textplus.
-	-- for obvious reasons :blush:
-
-	profile = expectProfile() -- we def need this.
-
-	local equippedCard = promise
-		.new(function(resolve: (string?) -> ...unknown)
-			local value = nil
-
-			if profile ~= nil then
-				value = profile.Data.EquippedCard
-			else
-				value = nil
-			end
-
-			resolve(value)
-
-			return value
-		end)
-		:expect() :: string?
-
-	type card_display = Frame & {
-		TextLabel: TextLabel,
-		ImageLabel: ImageLabel?,
-	}
-
-	local function updateDetails()
-		--
-	end
-
-	updatePfp():catch(warn)
-	updateDetails()
-
-	UserInputService.WindowFocusReleased:Connect(function()
-		profilePicture.ImageContent = Content.none
-
-		updatePfp():catch(warn)
-	end)
-
-	shopShortcut.Button.MouseButton1Click:Connect(function()
-		hud:toggle("Market")
-	end)
-
-	local function toggleUI()
-		displayorder:toggle(loadoutCanvas)
-	end
-
-	hud:create("Loadout", toggleUI, lucide.GetAsset("layout-dashboard"))
 end
 
 local function initializeObjectives()
@@ -724,7 +511,7 @@ local function initializeObjectives()
 		return
 	end
 
-	for i, data in pairs(quest_list :: { quest.quest }) do
+	for i, data in ipairs(quest_list :: { quest.quest }) do
 		objective.new(data)
 	end
 

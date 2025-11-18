@@ -6,7 +6,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- stun.luau
 
-return function(player: playerMarshaller.player, duration: number)
+return function(player: Player, duration: number)
 	local character = player.Character
 	local humanoid = character.Humanoid
 	if humanoid then

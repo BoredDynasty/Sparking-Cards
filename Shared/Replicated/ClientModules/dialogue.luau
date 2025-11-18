@@ -10,6 +10,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- dialogue.luau
 
@@ -32,7 +33,7 @@ local state = observer.new(false)
 
 local module = {}
 
-function module.new(npc: characterMarshaller.Character, lexicon: string?)
+function module.new(npc: typemarshaller.Character, lexicon: string?)
 	local self = setmetatable({}, module)
 
 	self.npc = npc

@@ -9,21 +9,11 @@
 
 local Players = game:GetService("Players")
 
-local characterMarshaller = require(script.Parent.characterMarshaller)
-
-export type player = Player & {
-	UserId: number,
-	Name: string,
-	DisplayName: string,
-	PlayerGui: PlayerGui,
-	Character: characterMarshaller.Character,
-}
-
 local playerMarshaller = {}
 
 -- Utility to get a player by UserId
-function playerMarshaller.getByUserId(userId: number): player?
-	for _, player in playerMarshaller.all() do
+function playerMarshaller.getByUserId(userId: number): Player?
+	for _, player in ipairs(playerMarshaller.all()) do
 		if player.UserId == userId then
 			return player :: any
 		end
@@ -32,8 +22,8 @@ function playerMarshaller.getByUserId(userId: number): player?
 end
 
 -- Utility to get a player by Name (case-sensitive)
-function playerMarshaller.getByName(name: string): player?
-	for _, player in playerMarshaller.all() do
+function playerMarshaller.getByName(name: string): Player?
+	for _, player in ipairs(playerMarshaller.all()) do
 		if player.Name == name then
 			return player :: any
 		end
@@ -42,8 +32,8 @@ function playerMarshaller.getByName(name: string): player?
 end
 
 -- Utility to get a player by DisplayName (case-insensitive)
-function playerMarshaller.getByDisplayName(displayName: string): player?
-	for _, player in playerMarshaller.all() do
+function playerMarshaller.getByDisplayName(displayName: string): Player?
+	for _, player in ipairs(playerMarshaller.all()) do
 		if player.DisplayName:lower() == displayName:lower() then
 			return player :: any
 		end
@@ -52,22 +42,22 @@ function playerMarshaller.getByDisplayName(displayName: string): player?
 end
 
 -- Utility to get the local player
-function playerMarshaller.get(): player
+function playerMarshaller.get(): Player
 	local localPlayer = Players.LocalPlayer
-	--[[
+
 	localPlayer = playerMarshaller.added(function(p)
-		if localPlayer.Name == p.Name then
+		if localPlayer.UserId == p.UserId then
 			localPlayer = p
 		end
 	end)
-	]]
+
 	assert(localPlayer, "Local player is not available | ensure this is run on the client")
 	return localPlayer :: any
 end
 
 -- Utility to get a player from a character instance
-function playerMarshaller.getFromCharacter(character: Model): player?
-	for _, player in playerMarshaller.all() do
+function playerMarshaller.getFromCharacter(character: Model): Player?
+	for _, player in ipairs(playerMarshaller.all()) do
 		if player.Character == character then
 			return player :: any
 		end
@@ -76,16 +66,16 @@ function playerMarshaller.getFromCharacter(character: Model): player?
 end
 
 --  Asynchronous utility to get all players
-function playerMarshaller.all(): { player }
+function playerMarshaller.all(): { Player }
 	local list: { Player } = {}
-	for _, player in Players:GetPlayers() do
+	for _, player in ipairs(Players:GetPlayers()) do
 		table.insert(list, player)
 	end
 	return list
 end
 
 -- Listen for when a player joins
-function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing_players: boolean?): player
+function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing_players: boolean?): Player
 	local connections = {}
 
 	if not dont_run_for_existing_players then
@@ -96,7 +86,7 @@ function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing
 
 	local conn = Players.PlayerAdded:Connect(function(player)
 		f(player :: any)
-		return player :: player
+		return player :: Player
 	end)
 	table.insert(connections, conn)
 
@@ -110,7 +100,7 @@ function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing
 end
 
 -- Listen for when a player leaves
-function playerMarshaller.removing(f: (player: player) -> ())
+function playerMarshaller.removing(f: (player: Player) -> ())
 	local conn = Players.PlayerRemoving:Connect(function(player)
 		f(player :: any)
 	end)

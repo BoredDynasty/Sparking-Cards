@@ -35,7 +35,7 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset.M1_1(player: playerMarshaller.player, ...: any?): any?
+function pyro.moveset.M1_1(player: Player, ...: any?): any?
 	print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
@@ -91,7 +91,7 @@ function pyro.moveset.M1_1(player: playerMarshaller.player, ...: any?): any?
 	return true
 end
 
-function pyro.moveset.BurningBlade_Skill(player: playerMarshaller.player, ...: any?): any?
+function pyro.moveset.BurningBlade_Skill(player: Player, ...: any?): any?
 	print("Pyro Skill executed for player:", player.Name)
 	-- Implement the actual attack logic here
 	return true

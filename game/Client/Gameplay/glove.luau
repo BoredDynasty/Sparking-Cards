@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- glove.luau
 
@@ -16,9 +17,9 @@ local self = {
 
 -- note: we are using R6
 
-function self:Get(character: characterMarshaller.Character): (MeshPart?, MeshPart?)
-	local leftHand = characterMarshaller.getLimb(character, "Left Hand")
-	local rightHand = characterMarshaller.getLimb(character, "Right Hand")
+function self:Get(character: typemarshaller.Character): (MeshPart?, MeshPart?)
+	local leftHand = character:WaitForChild("Left Arm")
+	local rightHand = character:WaitForChild("Right Arm")
 
 	if not leftHand or not rightHand then
 		warn("where are the hands vro :skull:", leftHand, rightHand)
@@ -46,12 +47,12 @@ function self:Get(character: characterMarshaller.Character): (MeshPart?, MeshPar
 	return gloveL, gloveR
 end
 
-function self:Apply(character: characterMarshaller.Character)
-	local leftHand = characterMarshaller.getLimb(character, "Left Hand")
-	local rightHand = characterMarshaller.getLimb(character, "Right Hand")
+function self:Apply(character: typemarshaller.Character)
+	local leftHand = character:WaitForChild("Left Arm") :: BasePart
+	local rightHand = character:WaitForChild("Right Arm") :: BasePart
 
 	if not leftHand or not rightHand then
-		warn("where are the hands vro :skull:", leftHand, rightHand)
+		warn("where are the hands vro :skull: ", leftHand, rightHand)
 	end
 
 	if leftHand and rightHand then

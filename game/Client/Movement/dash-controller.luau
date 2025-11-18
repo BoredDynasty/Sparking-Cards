@@ -67,27 +67,7 @@ local function onBegan()
 
 	-- get dash direction
 
-	local direction = nil
-
-	local head = character:FindFirstChild("Head") :: BasePart
-	if not head then
-		return
-	end
-
-	if head.LocalTransparencyModifier == 1 then
-		-- we are in first person
-		direction = camera.CFrame.LookVector
-	else
-		-- we are NOT in first person
-		local ray = mouse:GetRay()
-		if not ray then
-			direction = camera.CFrame.LookVector -- lmao
-		end
-
-		direction = ray.Unit.Direction
-		-- getting the (unit::Ray) then after that we get direction;
-		-- it gives us the normalized vec3!
-	end
+	local direction = camera.CFrame.LookVector.Unit
 
 	-- negate stamina
 	local new_stamina = current_stamina - stamina_cost
@@ -97,13 +77,11 @@ local function onBegan()
 
 	-- add the velocity
 
-	local attachment0 = _trove:Construct(Instance, "Attachment", primary_part)
-
-	local velocity = _trove:Construct(Instance, "LinearVelocity")
+	-- yeah its deprecated; who cares
+	local velocity = _trove:Construct(Instance, "BodyVelocity", primary_part)
 	hydration(velocity) {
-		Attachment0 = attachment0,
-		MaxForce = math.huge,
-		VectorVelocity = direction * MovementConfig.Dash.Force,
+		MaxForce = Vector3.new(1, 0, 1) * math.huge,
+		Velocity = direction * MovementConfig.Dash.Force,
 		Parent = primary_part,
 	}
 

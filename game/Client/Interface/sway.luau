@@ -5,72 +5,85 @@ local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local lerp = require(StarterPlayer.StarterPlayerScripts.Utilities.lerp)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local promise = require(ReplicatedStorage.Packages.promise)
 
 -- sway.luau
 -- a module for making UI, "sway"
 
-local sway = {}
+local module = {}
 
 local player = playerMarshaller.get()
 local character = player.Character
-local rootPart = character.HumanoidRootPart
+local root_part = character.PrimaryPart
 local humanoid = character.Humanoid
 
-local swayVector = Vector2.one
-local bobbleVector = Vector2.one
+local sway_vector = Vector2.one
+local bobble_vector = Vector2.one
 
 local swaySpeed = 2.5
 
-export type objectList = {
-	[string]: {
-		disconnect: () -> (),
-		initialPosition: UDim2,
-	},
+type objectList = {
+	{
+		canvas: CanvasGroup | Frame,
+		initial_position: UDim2,
+	}
 }
 
---local list: objectList = {}
+local tracked = table.create(100) :: objectList
 
-local function renderStepped(deltaTime: number, canvas: CanvasGroup | Frame, initialPosition: UDim2)
-	if not initialPosition then
+local function onRenderStepped(deltaTime: number, canvas: CanvasGroup | Frame, initial_position: UDim2)
+	if not initial_position then
 		return
 	end
 
 	local delta = UserInputService:GetMouseDelta()
 
-	local currentTime = tick()
+	local current_time = os.time()
 
-	local x = lerp(swayVector.X, delta.X * 2.5, deltaTime * swaySpeed)
-	local y = lerp(swayVector.Y, delta.Y * 2.5, deltaTime * swaySpeed)
+	local x = lerp(sway_vector.X, delta.X * 2.5, deltaTime * swaySpeed)
+	local y = lerp(sway_vector.Y, delta.Y * 2.5, deltaTime * swaySpeed)
 
-	swayVector = Vector2.new(x, y)
+	sway_vector = Vector2.new(x, y)
 
 	if humanoid.MoveDirection.Magnitude > 0 then
 		-- lowers speed, change divided by ...
-		x = math.cos(currentTime * 10) * rootPart.AssemblyLinearVelocity.Magnitude / 2
-		y = math.abs(math.sin(currentTime * 10)) * rootPart.AssemblyLinearVelocity.Magnitude / 2
-		bobbleVector = Vector2.new(x, y)
 
-		canvas.Position = initialPosition
-			+ UDim2.fromOffset(bobbleVector.X + swayVector.X, bobbleVector.Y + swayVector.Y)
+		local velocity = root_part.AssemblyLinearVelocity
+		local magnitude = velocity.Magnitude
+
+		x = math.cos(current_time * 10) * magnitude / 2
+		y = math.abs(math.sin(current_time * 10)) * magnitude / 2
+
+		bobble_vector = Vector2.new(x, y)
+
+		local offset = UDim2.fromOffset(bobble_vector.X + sway_vector.X, bobble_vector.Y + sway_vector.Y)
+
+		canvas.Position = initial_position + offset
 	else
-		if swayVector and swayVector.X and swayVector.Y then
-			canvas.Position = initialPosition + UDim2.fromOffset(swayVector.X, swayVector.Y)
+		if sway_vector and sway_vector.X and sway_vector.Y then
+			local offset = UDim2.fromOffset(sway_vector.X, sway_vector.Y)
+
+			canvas.Position = initial_position + offset
 		end
 	end
 end
 
-function sway:on(canvas: CanvasGroup | Frame)
-	local initialPosition = canvas.Position
-
-	gamecamera:Bind("sway", renderStepped, canvas, initialPosition)
+function module:Track(canvas: CanvasGroup | Frame)
+	table.insert(tracked, {
+		canvas = canvas,
+		initial_position = canvas.Position,
+	})
 end
 
-function sway:off(canvas: CanvasGroup | Frame)
-	gamecamera:UnBind("sway")
-end
+RunService.RenderStepped:Connect(function(deltaTime)
+	debug.profilebegin("ui-sway")
 
-return sway
+	for i, object in ipairs(tracked) do
+		onRenderStepped(deltaTime, object.canvas, object.initial_position)
+	end
+
+	debug.profileend()
+end)
+
+return module

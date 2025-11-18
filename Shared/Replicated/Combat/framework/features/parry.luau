@@ -21,7 +21,7 @@ local parry = {
 
 local parryingPlayers = {}
 
-local function startParry(player: playerMarshaller.player)
+local function startParry(player: Player)
 	local playerId = player.UserId
 	if parryingPlayers[playerId] then
 		return
@@ -66,7 +66,7 @@ local function onDamageIncoming(damageData: damage.Damage)
 	end
 end
 
-Packet.AttemptParry.listen(function(player: playerMarshaller.player)
+Packet.AttemptParry.listen(function(player: Player)
 	startParry(player)
 end)
 

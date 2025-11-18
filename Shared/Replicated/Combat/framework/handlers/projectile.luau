@@ -27,7 +27,7 @@ type active_projectiles = {
 
 -- TODO) add hit detection
 
-function projectile_module:Fire(player: playerMarshaller.player, config: typemarshaller.ProjectileConfig)
+function projectile_module:Fire(player: Player, config: typemarshaller.ProjectileConfig)
 	local character = characterMarshaller.get(player)
 
 	local root_part = character.HumanoidRootPart

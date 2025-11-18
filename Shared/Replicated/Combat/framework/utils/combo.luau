@@ -21,7 +21,7 @@ export type ComboData = {
 	MaxCombo: number,
 }
 
-function combo_module.new(player: playerMarshaller.player, MaxCombo: number?)
+function combo_module.new(player: Player, MaxCombo: number?)
 	return promise.new(function()
 		data_module.arbitrary[player].ComboData = {
 			CurrentCombo = 0,
@@ -31,7 +31,7 @@ function combo_module.new(player: playerMarshaller.player, MaxCombo: number?)
 	end)
 end
 
-function combo_module.incrementCombo(player: playerMarshaller.player): ComboData
+function combo_module.incrementCombo(player: Player): ComboData
 	local combo_data: ComboData = data_module:Fetch(player):expect().ComboData
 
 	local currentTime = os.clock()
@@ -50,7 +50,7 @@ function combo_module.incrementCombo(player: playerMarshaller.player): ComboData
 
 	return combo_data
 end
-function combo_module.resetCombo(player: playerMarshaller.player): ComboData
+function combo_module.resetCombo(player: Player): ComboData
 	local combo_data: ComboData = data_module:Fetch(player):expect().ComboData
 
 	combo_data.CurrentCombo = 0

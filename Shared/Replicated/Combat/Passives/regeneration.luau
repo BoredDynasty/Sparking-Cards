@@ -7,7 +7,7 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 -- regeneration.luau
 
-return function(player: playerMarshaller.player, interval: number, increment: number?): string?
+return function(player: Player, interval: number, increment: number?): string?
 	local _trove = trove.new()
 
 	local character = player.Character

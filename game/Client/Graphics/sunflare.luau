@@ -8,6 +8,7 @@ local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshalle
 local gamecamera = require("../Modules/gamecamera")
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local trove = require(ReplicatedStorage.Packages.trove)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- sunflare.luau
 
@@ -84,7 +85,7 @@ function sunflare._brightness(x: number)
 	return sunflare._clip(1 - (1 - sunflare.MIN_BRIGHT_TRANS * x), 0, 1)
 end
 
-local function characterAdded(character: characterMarshaller.Character)
+local function characterAdded(character: typemarshaller.Character)
 	local rootPart = character.PrimaryPart
 
 	local flares = table.create(#sunflare.FLARE_DIST) :: { ImageLabel }

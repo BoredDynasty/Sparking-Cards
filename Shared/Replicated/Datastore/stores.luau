@@ -28,7 +28,7 @@ if RunService:IsStudio() then
 	player_related = player_related.Mock
 end
 
-function stores.load(player: playerMarshaller.player)
+function stores.load(player: Player)
 	-- Start profile session with timeout
 	local profile: typeof(player_related:StartSessionAsync("", {}))?
 
@@ -77,7 +77,7 @@ function stores.load(player: playerMarshaller.player)
 	return profile
 end
 
-function stores.get(player: playerMarshaller.player)
+function stores.get(player: Player)
 	local value = nil
 
 	value = promise
@@ -110,7 +110,7 @@ function stores.get(player: playerMarshaller.player)
 	return value :: typeof(player_related:StartSessionAsync("", {}))
 end
 
-function stores.wrapSave(player: playerMarshaller.player)
+function stores.wrapSave(player: Player)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -137,7 +137,7 @@ function stores.wrapSave(player: playerMarshaller.player)
 	end)
 end
 
-local function notifyWarning(player: playerMarshaller.player)
+local function notifyWarning(player: Player)
 	Packet.SendNotification.sendTo({
 		message = "Something went wrong with the current operation.",
 		title = "Task failed.",
@@ -147,7 +147,7 @@ end
 
 -- native methods
 
-function stores:deductPrims(player: playerMarshaller.player, amount: number)
+function stores:deductPrims(player: Player, amount: number)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -168,7 +168,7 @@ function stores:deductPrims(player: playerMarshaller.player, amount: number)
 		end)
 end
 
-function stores:addPrisms(player: playerMarshaller.player, amount: number)
+function stores:addPrisms(player: Player, amount: number)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -189,7 +189,7 @@ function stores:addPrisms(player: playerMarshaller.player, amount: number)
 		end)
 end
 
-function stores:deductCards(player: playerMarshaller.player, name: string, amount: number)
+function stores:deductCards(player: Player, name: string, amount: number)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -215,7 +215,7 @@ function stores:deductCards(player: playerMarshaller.player, name: string, amoun
 		end)
 end
 
-function stores:resetCards(player: playerMarshaller.player)
+function stores:resetCards(player: Player)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -236,7 +236,7 @@ function stores:resetCards(player: playerMarshaller.player)
 		end)
 end
 
-function stores:addCard(player: playerMarshaller.player, name: string, amount: number)
+function stores:addCard(player: Player, name: string, amount: number)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -262,7 +262,7 @@ function stores:addCard(player: playerMarshaller.player, name: string, amount: n
 end
 
 function stores:addQuest(
-	player: playerMarshaller.player,
+	player: Player,
 	quest: {
 		name: string,
 		description: string,
@@ -294,7 +294,7 @@ end
 
 -- native functions
 
-function stores.getPrisms(player: playerMarshaller.player)
+function stores.getPrisms(player: Player)
 	local profile = stores.get(player)
 	if not profile then
 		Packet.SendNotification.sendTo({
@@ -312,7 +312,7 @@ function stores.getPrisms(player: playerMarshaller.player)
 	return profile.Data.Prisms
 end
 
-function stores.getQuests(player: playerMarshaller.player): {
+function stores.getQuests(player: Player): {
 	name: string,
 	description: string,
 	inquirer_img: string | Instance, -- img id or a model

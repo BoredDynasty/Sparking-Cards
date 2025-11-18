@@ -11,15 +11,15 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 export type Damage = {
 	amount: number, -- The amount of damage dealt
-	source: playerMarshaller.player?, -- Optional player who dealt the damage
-	target: playerMarshaller.player, -- player who received the damage
+	source: Player?, -- Optional player who dealt the damage
+	target: Player, -- player who received the damage
 }
 
 local damage = setmetatable({}, {
 	--[[
 	@param amount: number, -- The amount of damage dealt
-	@param source: playerMarshaller.player?, -- Optional player who dealt the damage
-	@param target: playerMarshaller.player, -- player who received the damage
+	@param source: Player?, -- Optional player who dealt the damage
+	@param target: Player, -- player who received the damage
 ]]
 	__call = function(self, parameters: Damage)
 		return self.__call(parameters)
@@ -35,8 +35,8 @@ damage.cancel = SignalPlus()
 
 --[[
 	@param amount: number, -- The amount of damage dealt
-	@param source: playerMarshaller.player?, -- Optional player who dealt the damage
-	@param target: playerMarshaller.player, -- player who received the damage
+	@param source: Player?, -- Optional player who dealt the damage
+	@param target: Player, -- player who received the damage
 ]]
 function damage.__call(parameters: Damage)
 	-- Process damage logic here

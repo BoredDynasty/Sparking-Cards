@@ -25,7 +25,7 @@ export type option_callbacks<T> = {
 export type config = {
 	name: string,
 	details: string?,
-	callbacks: option_callbacks<unknown>,
+	callbacks: option_callbacks<nil>,
 	icons: {
 		on: lucide_icon,
 		off: lucide_icon,
@@ -207,8 +207,9 @@ function module:Render(holder: Instance)
 			end)
 
 			local boolean_state = state:Get()
+			local str_state = booleanToString(boolean_state)
 
-			local next_callback = callbacks[booleanToString(boolean_state)]
+			local next_callback = callbacks[str_state]
 			if next_callback then
 				task.spawn(next_callback)
 				updateIcon(btn_icon, boolean_state, icon_data)

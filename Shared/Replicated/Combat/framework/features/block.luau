@@ -8,14 +8,9 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- block.luau
 
-return function(player: playerMarshaller.player)
+return function(player: Player)
 	local character = player.Character
-	local state = orion.player_data[player.UserId].states
-	if state:getCurrentState() == "Blocking" then
-		return
-	else
-		state:transition("Blocking")
-	end
+
 	damage.incoming:Connect(function(target: damage.Damage)
 		if target.target == player then
 			target.amount = 0 -- yep...
