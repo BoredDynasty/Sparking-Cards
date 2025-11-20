@@ -19,8 +19,8 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
 local player = playerMarshaller.get()
 
-local hud = {}
-hud.buttons = {}
+local module = {}
+module.buttons = {}
 
 export type button = {
 	name: string,
@@ -40,7 +40,7 @@ export type icon = {
 	ImageRectOffset: Vector2, -- Vector2.new(648, 266)
 }
 
-function hud:create(name: string, callback: () -> (), icon: icon, icon_only: boolean?)
+function module.new(name: string, callback: () -> (), icon: icon, icon_only: boolean?)
 	local button = {
 		name = name,
 		callback = callback,
@@ -50,14 +50,15 @@ function hud:create(name: string, callback: () -> (), icon: icon, icon_only: boo
 		hover_limit = ratelimit(1, 0.9),
 		icon_only = icon_only or false,
 	}
-	table.insert(hud.buttons, button)
+
+	table.insert(module.buttons, button)
 end
 
 local function getOppositeReactorValue(reactor: observer.Observer<boolean>): boolean
 	return not reactor:Get()
 end
 
-function hud:render()
+function module:render()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
 	for _, button in ipairs(hudContainer:GetChildren()) do
@@ -67,7 +68,7 @@ function hud:render()
 		end
 	end
 
-	for _, button: button in ipairs(hud.buttons) do
+	for _, button: button in ipairs(module.buttons) do
 		print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
@@ -225,7 +226,7 @@ function hud:render()
 	end
 end
 
-function hud:toggle(buttonName: string)
+function module:toggle(buttonName: string)
 	local button: button? = nil
 
 	if not hud.buttons then
@@ -244,8 +245,8 @@ function hud:toggle(buttonName: string)
 	end
 end
 
-function hud:clear()
-	for i, btn in pairs(hud.buttons) do
+function module:clear()
+	for i, btn in pairs(module.buttons) do
 		btn.reactor:Destroy()
 
 		if btn.limit.count_map[btn.name] then
@@ -256,10 +257,10 @@ function hud:clear()
 			btn.hover_limit.count_map[btn.name] = nil
 		end
 
-		hud.buttons[i] = nil
+		module.buttons[i] = nil
 	end
 
-	table.clear(hud.buttons) -- just to make sure we don't keep any references
+	table.clear(module.buttons) -- just to make sure we don't keep any references
 
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 
@@ -270,13 +271,13 @@ function hud:clear()
 	end
 end
 
-function hud:hide()
+function module:hide()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	hudContainer.Enabled = false
 end
-function hud:show()
+function module:show()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	hudContainer.Enabled = true
 end
 
-return hud
+return module

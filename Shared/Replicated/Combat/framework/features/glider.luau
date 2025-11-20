@@ -1,4 +1,5 @@
---!strict
+--!nonstrict
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -6,7 +7,6 @@ local Packet = require(ReplicatedStorage.Packet)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 

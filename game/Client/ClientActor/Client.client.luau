@@ -30,14 +30,12 @@ local badges = require(ReplicatedStorage.Structures.badges)
 local beats = require(ReplicatedStorage.Modules.beats)
 local bloxstrap_rpc_sdk = require(ReplicatedStorage.Kits["bloxstrap-rpc-sdk"])
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
-local characterIteration = require(ReplicatedStorage.ClientModules.characterIteration)
 local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
 local compute_level = require(ReplicatedStorage.ClientModules["compute-level"])
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
-local gamecamera = require(script.Parent.Parent.Modules.gamecamera)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local hud = require(script.Parent.Parent.Components.hud)
@@ -75,59 +73,46 @@ local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
 local throbber = require("../Components/throbber")
 local timer = require(ReplicatedStorage.Modules.timer)
 local trove = require(ReplicatedStorage.Packages.trove)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
 
 print("Client Requirements")
 
+-- // Events -- //
+local events = ReplicatedStorage.Events
+local get_profile = events:WaitForChild("GetProfile") :: RemoteFunction
+
 -- // Variables -- //
 
 local player = playerMarshaller.get()
-local profile: {
-	Data: profilestructure.profile,
-} = promise
-	.new(function(resolve: (any) -> ...unknown)
-		local value = (ReplicatedStorage.Events.GetProfile :: RemoteFunction):InvokeServer()
-
-		resolve(value)
-
-		return value
-	end)
-	:expect()
+local profile = nil
 
 local _trove = trove.new()
 
--- // Events -- //
-local getProfileRF = ReplicatedStorage.Events:WaitForChild("GetProfile") :: RemoteFunction
-
 local character = characterUtility.get(player)
-local _rootPart = character.HumanoidRootPart
-local _assets = ReplicatedStorage:WaitForChild("Assets") :: Folder
-local remoteEvents = ReplicatedStorage.Events
 
 -- // Functions -- //
 local function expectProfile()
-	return promise
-		.new(function(resolve: (any) -> ...unknown)
-			local value = getProfileRF:InvokeServer()
+	local profile_request = function(resolve)
+		resolve(get_profile:InvokeServer())
+	end
 
-			resolve(value)
-		end)
-		:expect() :: {
-		Data: profilestructure.profile,
-	}
+	local ok, result = promise.new(profile_request):await()
+
+	if ok then
+		return result
+	else
+		warn("failed to request profile: ", result)
+
+		return nil
+	end
 end
 
 ---------------------------------- Client --------------------------------
 
-local interfaceStartTime = os.clock()
-
 local PlayerGui = player.PlayerGui
-local templates = ReplicatedStorage:WaitForChild("Interfaces", 5) :: Folder
-
-local characterFolder = ReplicatedStorage:FindFirstChild("Characters") or Instance.new("Folder")
-characterFolder.Name = "Characters"
-characterFolder.Parent = ReplicatedStorage
 
 logger.new()
 glove:Apply(character)
@@ -154,7 +139,6 @@ local function initializeMarket()
 
 	local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
 	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
-	local shopFolder = templates:FindFirstChild("Shop") :: Folder
 	local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 
 	print("got market gui")
@@ -260,6 +244,7 @@ local function initializeMatchmaking()
 	end
 
 	local function hideMatchmakingFrame()
+		spr.stop(matchmakingFrame)
 		spr.target(matchmakingFrame, 1, 2, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
@@ -317,11 +302,10 @@ local function initializeBadges()
 	local badgeFrame = badgesCanvas:FindFirstChild("Frame") :: Frame
 
 	local itemHolder = badgeFrame:WaitForChild("Holder") :: Frame
-	local badgeFolder = templates:FindFirstChild("Shop") :: Folder -- lmao
 	local totalBadges = badgeFrame:FindFirstChild("Total") :: Frame
 
-	shadow(badgeFrame, Color3.new(), 0, 14)
-	shadow(totalBadges, Color3.new(), 0, 14)
+	shadow(badgeFrame)
+	shadow(totalBadges)
 
 	displayorder.new(badgesCanvas)
 
@@ -464,11 +448,11 @@ local function initializeObjectives()
 	local uncompleted_value = observer.new(0)
 
 	local rank = observer.new("")
-	local profile = expectProfile()
-	profile = expectProfile()
 
 	promise
 		.new(function(resolve: () -> ...unknown)
+			profile = expectProfile()
+
 			if profile and profile.Data then
 				rank:Set(profile.Data.Level)
 			else
@@ -553,6 +537,12 @@ print("client movement")
 
 print("rain controller")
 
+do
+	local char_folder = ReplicatedStorage:FindFirstChild("Characters") or Instance.new("Folder")
+	char_folder.Name = "Characters"
+	char_folder.Parent = ReplicatedStorage
+end
+
 -- control
 
 local function getAttackTypeFromKey(key: Enum.KeyCode)
@@ -562,18 +552,12 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 		return
 	end
 
-	local attackTypes = table.create(4) :: { [string]: Enum.KeyCode }
+	local attack_types = {}
 	for i, value in pairs(profile.Data.combatBindings) do
-		attackTypes[i] = Enum.KeyCode:FromValue(value)
+		attack_types[i] = Enum.KeyCode:FromValue(value)
 	end
 
-	local attackType: string = promise
-		.new(function()
-			return attackTypes[key]
-		end)
-		:expect()
-
-	return attackType
+	return attack_types[key]
 end
 
 _trove:Add(keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
@@ -585,9 +569,7 @@ end))
 
 _trove:Add(mouse.LeftDown:Connect(function()
 	local attack_type = "M1"
-	if attack_type then
-		orion:execute(player, attack_type)
-	end
+	orion:execute(player, attack_type)
 end))
 
 orion.registerPlayer(player, expectProfile())
@@ -600,11 +582,6 @@ Packet.ReplicateAnimation.listen(function(data: { identification: string })
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
 end)
 
-local defaultFootstep = _rootPart:FindFirstChild("Running")
-if defaultFootstep then
-	defaultFootstep:Destroy()
-end
-
 Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
 	music.cleanup()
@@ -613,8 +590,6 @@ Packet.CleanupCharacter.listen(function()
 	dropper._trove:Clean()
 end)
 
-local interfaceEndTime = os.clock()
-local totalExecutionTime = math.round((interfaceEndTime - interfaceStartTime) * 10000) / 10000
 -- This results in four decimal places.
 
-print("Client has finished with an execution time of: ", totalExecutionTime)
+print("Client has finished")

@@ -2,7 +2,6 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
@@ -10,14 +9,14 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- just for applying glove models to the player character
 
-local self = {
+local module = {
 	gloveL = fetchAsset("GloveL") :: MeshPart,
 	gloveR = fetchAsset("GloveR") :: MeshPart,
 }
 
 -- note: we are using R6
 
-function self:Get(character: typemarshaller.Character): (MeshPart?, MeshPart?)
+function module:Get(character: typemarshaller.Character): (MeshPart?, MeshPart?)
 	local leftHand = character:WaitForChild("Left Arm")
 	local rightHand = character:WaitForChild("Right Arm")
 
@@ -47,7 +46,7 @@ function self:Get(character: typemarshaller.Character): (MeshPart?, MeshPart?)
 	return gloveL, gloveR
 end
 
-function self:Apply(character: typemarshaller.Character)
+function module:Apply(character: typemarshaller.Character)
 	local leftHand = character:WaitForChild("Left Arm") :: BasePart
 	local rightHand = character:WaitForChild("Right Arm") :: BasePart
 
@@ -56,7 +55,7 @@ function self:Apply(character: typemarshaller.Character)
 	end
 
 	if leftHand and rightHand then
-		local gloveL = self.gloveL:Clone()
+		local gloveL = module.gloveL:Clone()
 		gloveL.Name = "GloveL"
 		gloveL.CFrame = leftHand.CFrame
 		gloveL.Parent = leftHand
@@ -68,7 +67,7 @@ function self:Apply(character: typemarshaller.Character)
 		weldL.Part1 = gloveL
 		weldL.Parent = gloveL
 
-		local gloveR = self.gloveR:Clone()
+		local gloveR = module.gloveR:Clone()
 		gloveR.Name = "GloveR"
 		gloveR.CFrame = rightHand.CFrame
 		gloveR.Parent = rightHand
@@ -91,4 +90,4 @@ function self:Apply(character: typemarshaller.Character)
 	end
 end
 
-return self
+return module
