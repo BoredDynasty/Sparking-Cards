@@ -101,8 +101,12 @@ return bytenet.defineNamespace("MainNet", function()
 	local setClockTime = bytenet.struct({
 		clock_time = bytenet.int8,
 	})
+	local meleeAttackStruct = bytenet.struct({
+		weapon_name = bytenet.string,
+	})
 	return {
 		-- General Game Packets
+		MeleeAttack = bytenet.definePacket({ value = meleeAttackStruct }),
 		CreateMatch = bytenet.definePacket({ value = newMatchStruct }),
 		CancelMatch = bytenet.definePacket({ value = removeMatchStruct }),
 		StreamArea = bytenet.definePacket({ value = requestStreamStruct }),
