@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 --[[
 	Packet.luau
 	bytenet packet definitions for network communication.

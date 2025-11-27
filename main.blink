@@ -1,0 +1,138 @@
+-- .blink
+
+option Casing = "Snake"
+option PromiseLibrary = "ReplicatedStorage.Packages.promise"
+option FutureLibrary = "ReplicatedStorage.Packages.future"
+
+
+import "./Shared/Replicated/Types/typemarshaller.luau" as "TypeMarshaller"
+
+type Profile = TypeMarshaller.Profile
+
+struct RankAscensionEnum {
+    NewRank: i8,
+    NewTitle: string
+}
+
+option TypesOutput = "./Network/Types.luau"
+option ServerOutput = "./Network/Server.luau"
+option ClientOutput = "./Network/Client.luau"
+
+event CreateMatch {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync
+    Data: Instance
+}
+
+event CancelMatch {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: Instance
+}
+
+event StreamArea {
+    From: Client,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: vector
+}
+
+event PurchaseCard {
+    From: Client,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: string
+}
+
+event RewardExperience {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: i16
+}
+
+event AscendRank {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: RankAscensionEnum
+}
+
+event SellCard {
+    From: Client,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: string
+}
+
+event PayPrisms {
+    From: Client,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: i32
+}
+
+event ReplicateAnimation {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: string
+}
+
+event CancelAnimation {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: string
+}
+
+event StopAllAnimations {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync
+    Data: Instance
+}
+
+event DeductStamina {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: i8
+}
+
+event AddStamina {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: i8
+}
+
+event SetNetworkOwner {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: Instance
+}
+
+event AddQuest {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: string -- serialized Quest data
+}
+
+event SetTime {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: f16
+}
+
+function FetchProfile {
+    From: Server,
+    Type: Reliable,
+    Call: ManyAsync,
+    Data: Profile
+}

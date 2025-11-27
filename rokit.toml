@@ -4,5 +4,5 @@
 # New tools can be added by running `rokit add <tool>` in a terminal.
 
 [tools]
-lune = "lune-org/lune@0.10.2"
-blink = "1Axen/blink@0.18.1"
+lune = "lune-org/lune@0.10.4"
+blink = "1Axen/blink@0.18.6"

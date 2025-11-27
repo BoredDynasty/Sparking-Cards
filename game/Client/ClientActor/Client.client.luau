@@ -36,6 +36,7 @@ local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
+local future = require(ReplicatedStorage.Packages.future)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local hud = require(script.Parent.Parent.Components.hud)
@@ -95,19 +96,11 @@ local character = characterUtility.get(player)
 
 -- // Functions -- //
 local function expectProfile()
-	local profile_request = function(resolve)
-		resolve(get_profile:InvokeServer())
-	end
+	local fut = future.new(function()
+		return get_profile:InvokeServer()
+	end)
 
-	local ok, result = promise.new(profile_request):await()
-
-	if ok then
-		return result
-	else
-		warn("failed to request profile: ", result)
-
-		return nil
-	end
+	return fut:Await()
 end
 
 ---------------------------------- Client --------------------------------
@@ -286,7 +279,7 @@ local function initializeMatchmaking()
 			state:Set(false)
 			-- audio:SFX("leave")
 
-			pcall(hideMatchmakingFrame)
+			future.new(hideMatchmakingFrame)
 		else
 			return
 		end

@@ -99,4 +99,75 @@ export type Character = Model & {
 	Head: BasePart,
 }
 
+export type ProfileData = {
+	Cards: {
+		string: number,
+	},
+	Prisms: number,
+	Level: string,
+	Experience: number,
+	LastLogin: number,
+	EquippedCard: string,
+	victories: number,
+	emotes: {
+		{
+			name: string,
+			identification: number,
+			-- add more fields if necessary
+			-- e.g., description: string,
+			--       rarity: string,
+			--       etc.
+		}
+	},
+	options: {
+		string: any,
+	},
+	equippedEmotes: { number },
+	achievements: {
+		{
+			name: string,
+			description: string,
+			points: number,
+		}
+	},
+	quests: {
+		{
+			name: string,
+			description: string,
+			inquirer_img: string | Instance, -- img id or a model
+			progress: number,
+			date_acquired: number, -- unix timestamp millis
+			date_completed: number?,
+			module: ModuleScript?,
+		} -- another cyclic module dependency
+	},
+	products: {
+		[number]: {
+			id: number,
+			recieptInfo: ReceiptInfo,
+			times_bought: {
+				[string]: number, ---@type date format: unixtimestamp
+			},
+		},
+	},
+	keybinds: {
+		string: number,
+	},
+}
+
+export type Profile = {
+	Data: ProfileData,
+}
+
+export type Quest = {
+	name: string,
+	description: string,
+	inquirer_img: number | Instance, -- img id or a model
+	progress: number,
+	date_acquired: number, -- unix timestamp millis
+	date_completed: number?,
+	completed: boolean?,
+	module: ModuleScript?,
+}
+
 return nil

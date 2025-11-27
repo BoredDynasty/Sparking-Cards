@@ -56,7 +56,7 @@ export type profile = {
 			},
 		},
 	},
-	combatBindings: {
+	keybinds: {
 		string: number,
 	},
 }

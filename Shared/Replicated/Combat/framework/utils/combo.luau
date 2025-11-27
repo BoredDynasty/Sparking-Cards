@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
@@ -7,13 +7,7 @@ local RunService = game:GetService("RunService")
 
 -- using ./data.luau
 
-local data_module = require("./data")
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local promise = require(ReplicatedStorage.Packages.promise)
-
-local combo_module = {
-	COMBO_RESET_TIME = 2, -- seconds
-}
 
 export type ComboData = {
 	CurrentCombo: number,
@@ -21,77 +15,56 @@ export type ComboData = {
 	MaxCombo: number,
 }
 
-function combo_module.new(player: Player, MaxCombo: number?)
-	return promise.new(function()
-		data_module.arbitrary[player].ComboData = {
-			CurrentCombo = 0,
-			LastHitTime = 0,
-			MaxCombo = MaxCombo or 0,
-		} :: ComboData
-	end)
+local combo_module = {
+	COMBO_RESET_TIME = 2, -- seconds
+}
+
+--- Creates a new combo data table
+--- @param initial_combo number -- initial combo count
+--- @return ComboData
+function combo_module.new(initial_combo: number?): ComboData
+	return {
+		CurrentCombo = initial_combo or 0,
+		LastHitTime = 0,
+		MaxCombo = initial_combo or 0,
+	}
 end
 
-function combo_module.incrementCombo(player: Player): ComboData
-	local combo_data: ComboData = data_module:Fetch(player):expect().ComboData
-
-	local currentTime = os.clock()
-
-	if currentTime - combo_data.LastHitTime > combo_module.COMBO_RESET_TIME then
-		combo_data.CurrentCombo = 1
-	else
+--- Increments the combo counter
+--- @param combo_data ComboData
+--- @param current_time number
+function combo_module:increment(combo_data: ComboData, current_time: number): ()
+	if combo_module:is_active(combo_data, current_time) then
 		combo_data.CurrentCombo += 1
+	else
+		combo_data.CurrentCombo = 1
 	end
 
-	combo_data.LastHitTime = currentTime
-
-	if combo_data.CurrentCombo > combo_data.MaxCombo then
-		combo_data.MaxCombo = combo_data.CurrentCombo
-	end
-
-	return combo_data
+	combo_data.LastHitTime = current_time
+	combo_data.MaxCombo = math.max(combo_data.MaxCombo, combo_data.CurrentCombo)
 end
-function combo_module.resetCombo(player: Player): ComboData
-	local combo_data: ComboData = data_module:Fetch(player):expect().ComboData
 
+--- Resets the combo counter
+--- @param combo_data ComboData
+function combo_module:reset(combo_data: ComboData): ()
 	combo_data.CurrentCombo = 0
 	combo_data.LastHitTime = 0
-
-	return combo_data
 end
 
--- listen every once in a while to reset combos for players who haven't attacked in a while
-local lastCheck: number = 0.0
-local checkInterval = 0.1 -- seconds
+--- Checks if combo is still active based on reset time
+--- @param combo_data ComboData
+--- @param current_time number
+--- @return boolean
+function combo_module:is_active(combo_data: ComboData, current_time: number): boolean
+	return (current_time - combo_data.LastHitTime) < combo_module.COMBO_RESET_TIME
+end
 
-RunService.Heartbeat:Connect(function(dt: number)
-	lastCheck += dt :: number
-	if lastCheck < checkInterval then
-		return
-	end
-
-	debug.profilebegin("check_combo")
-
-	lastCheck = 0
-
-	for _, player in ipairs(playerMarshaller.all()) do
-		local success, combo_data: ComboData? = pcall(function()
-			return data_module:Fetch(player):expect().ComboData
-		end)
-
-		if success and combo_data then
-			local currentTime = os.clock()
-
-			if
-				combo_data.CurrentCombo > 0
-				and currentTime - combo_data.LastHitTime > combo_module.COMBO_RESET_TIME
-			then
-				combo_data.CurrentCombo = 0
-				combo_data.LastHitTime = 0
-			end
-		end
-	end
-
-	debug.profileend()
-end)
+--- Gets the time elapsed since last hit
+--- @param combo_data ComboData
+--- @param current_time number
+--- @return number
+function combo_module:get_time_since_last_hit(combo_data: ComboData, current_time: number): number
+	return current_time - combo_data.LastHitTime
+end
 
 return combo_module

@@ -64,7 +64,7 @@ function Observer.scope<T...>(...: T...): ...Meta<any?>
 	local r = {}
 
 	for i, v in ipairs(tuple) do
-		r[i] = Observer.new(v)
+		table.insert(r, Observer.new(v))
 	end
 
 	return unpack(r)
@@ -134,6 +134,10 @@ end
     ```
 ]]
 function Observer:Watch(callback: (newValue: any, oldValue: any) -> ()): SignalPlus.Connection
+	if not self._connections then
+		self._connections = {}
+	end
+
 	local conn = self.Changed:Connect(callback)
 
 	table.insert(self._connections, conn)
@@ -223,7 +227,7 @@ end
 function Observer:__concat<T>(...: Observer<T>)
 	local scope = { ... }
 
-	local str = 0
+	local str = ""
 
 	for i, v in scope do
 		str ..= v:Get()
