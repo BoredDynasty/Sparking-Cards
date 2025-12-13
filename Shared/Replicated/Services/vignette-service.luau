@@ -47,7 +47,7 @@ local function getHorizontalFOV(fov: number, viewport_size: Vector2)
 	return horizontal
 end
 
-local function newViewModel(effects: { ParticleEmitter }): view_model & any
+local function newViewModel(effects: { ParticleEmitter }): view_model | any
 	local view_model = {}
 
 	local vertical_fov = camera.FieldOfView
@@ -199,8 +199,8 @@ function vignette_service.new(effects: { ParticleEmitter })
 		updating = observer.new(false),
 
 		_connections = {
-			viewport = observer.None,
-			fov = observer.None,
+			viewport = observer.new(nil),
+			fov = observer.new(nil),
 		},
 	}, { __index = vignette_service })
 

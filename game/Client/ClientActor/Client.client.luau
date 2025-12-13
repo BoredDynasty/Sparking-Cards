@@ -50,6 +50,7 @@ local market = require("../Components/market")
 local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
 local movement_controller = require(StarterPlayer.StarterPlayerScripts.Movement["movement-controller"])
 local music = require("../Gameplay/music")
+local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local objective = require("../Components/objective")
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -154,9 +155,6 @@ local function initializeMarket()
 					market:unload()
 					market:load_items()
 				end,
-				disabledCallback = function()
-					market:unload()
-				end,
 			},
 			{
 				name = "Inventory",
@@ -165,20 +163,10 @@ local function initializeMarket()
 					market:unload()
 					market:load_inventory(expectProfile())
 				end,
-				disabledCallback = function()
-					market:unload()
-				end,
 			},
 		}
 		for i, data in ipairs(navi_btns) do
-			Navi:add(
-				shopNavigation,
-				data.name,
-				data.icon,
-				data.callback,
-				data.disabledCallback,
-				if data.name == "Home" then true else false
-			)
+			navigation_rail.new(data)
 		end
 		Navi:render(shopNavigation)
 		shopNavigation.Visible = true
@@ -442,45 +430,45 @@ local function initializeObjectives()
 
 	local rank = observer.new("")
 
-	promise
-		.new(function(resolve: () -> ...unknown)
-			profile = expectProfile()
+	future.new(function(profile: { read Data: unknown })
+		-- we're not typechecking ts
 
-			if profile and profile.Data then
-				rank:Set(profile.Data.Level)
-			else
-				rank:Set("Bronze I")
+		if profile and profile.Data then
+			rank:Set(profile.Data.Level)
+		else
+			rank:Set("Bronze I")
 
-				--notify.error("Data", "Couldn't get your Rank.", 5, "error")
-			end
+			--notify.error("Data", "Couldn't get your Rank.", 5, "error")
+		end
+	end, expectProfile())
 
-			resolve()
-		end)
-		:catch(print)
+	local create_quests = future.new(function(...)
+		local rank_number = compute_level:rankNameToNumber(rank:Get())
+		rank_number = rank_number or 1 -- DEBUG
 
-	promise
-		.new(function(resolve: () -> ...unknown, reject: (string) -> ...unknown)
-			local rank_number = compute_level:rankNameToNumber(rank:Get())
-			rank_number = rank_number or 1 -- DEBUG
-			if not rank_number then
-				reject("no rank number for some reason. invalid rank?: ", rank:Get())
-			end
+		local rank_str: string = rank:Get()
 
-			local availiable_objectives = quest_ranking:getObjectivesFromRank(rank:Get())
-			if not availiable_objectives then
-				reject("no availiable_objectives??")
+		if not rank_number then
+			return "no rank number for some reason. invalid rank?: " .. rank_str
+		end
 
-				return
-			end
+		local availiable_objectives = quest_ranking:getObjectivesFromRank(rank_str)
+		if not availiable_objectives then
+			return "no availiable_objectives??"
+		end
 
-			for i, objective_name in ipairs(availiable_objectives) do
-				print(objective_name)
-				quest.new(player, objective_name)
-			end
+		for i, objective_name in ipairs(availiable_objectives) do
+			print(objective_name)
 
-			resolve()
-		end)
-		:catch(print)
+			quest.new(player, objective_name)
+		end
+
+		return true
+	end)
+
+	local result: concat<string, boolean> = create_quests:Unwrap()
+
+	print("creating new quests info: ", result)
 
 	local quest_list = quest:Get(player):expect()
 	if not quest_list then
@@ -489,7 +477,7 @@ local function initializeObjectives()
 	end
 
 	for i, data in ipairs(quest_list :: { quest.quest }) do
-		objective.new(data)
+		future.new(objective.new, data):Await()
 	end
 
 	quest:Track(player)
@@ -500,6 +488,7 @@ local function initializeObjectives()
 
 	hud:create("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
 end
+
 initializeCommands()
 initializeMarket()
 initializeOptions()

@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 -- observer.luau
 
@@ -13,7 +13,7 @@ Observer.__index = Observer
 export type Observer<T> = {
 	_value: T,
 	Changed: SignalPlus.Signal<(newValue: T, oldValue: T) -> ()>,
-	_connections: { SignalPlus.Connection },
+	_connections: { SignalPlus.Connection }?,
 	Get: (self: Observer<T>) -> T,
 	Set: (self: Observer<T>, value: T) -> (),
 	Watch: (self: Observer<T>, callback: (newValue: T, oldValue: T) -> ()) -> SignalPlus.Connection,
@@ -33,7 +33,7 @@ export type Observer<T> = {
 	__tostring: (self: Observer<T>) -> string,
 }
 
-export type Meta<T> = setmetatable<Observer<T>, typeof(Observer)>
+export type observer_mt<T> = setmetatable<Observer<T>, typeof(Observer)>
 
 --[[
     ```luau
@@ -43,11 +43,11 @@ export type Meta<T> = setmetatable<Observer<T>, typeof(Observer)>
     local counter = Observer.new(0)
     ```
 ]]
-function Observer.new<T>(initialValue: T?): Meta<T>
+function Observer.new<T>(initialValue: T?): observer_mt<T?>
 	return setmetatable({
 		_value = initialValue,
 		Changed = SignalPlus() :: SignalPlus.Signal<T, T>,
-		_connections = table.create(1e2),
+		_connections = table.create(1e2) :: { SignalPlus.Connection },
 	}, Observer)
 end
 
@@ -59,15 +59,15 @@ end
 	-- creates multiple observers from a tuple/variadic
 
 ]]
-function Observer.scope<T...>(...: T...): ...Meta<any?>
-	local tuple = { ... }
-	local r = {}
+function Observer.scope<T...>(...: T...)
+	local tuple = { ... } :: { any }
+	local r = {} :: { observer_mt<any> }
 
 	for i, v in ipairs(tuple) do
 		table.insert(r, Observer.new(v))
 	end
 
-	return unpack(r)
+	return table.unpack(r)
 end
 
 --[[
@@ -79,7 +79,8 @@ end
 	none:Expect("nil value")
 ]]
 
-Observer.None = setmetatable({ _value = nil, Changed = SignalPlus() }, Observer) :: Meta<any?>
+Observer.None =
+	table.freeze(setmetatable({ _value = nil, Changed = SignalPlus() }, Observer)) :: observer_mt<any?>
 
 --[[
     ```luau
@@ -102,7 +103,8 @@ end
 	-- if no value, it throws an error.
 ]]
 function Observer:Expect<T>(str: string): T
-	return if self:Get() ~= nil then self:Get() else error(str or "Expected a value from observer.")
+	return assert(self:Get(), str or "Expected a value from observer.")
+	--return if self:Get() ~= nil then self:Get() else error(str or "Expected a value from observer.")
 end
 
 --[[
@@ -118,10 +120,10 @@ function Observer:Set<T>(newValue: T)
 		return
 	end
 
-	local oldValue = self._value
+	local old_value = self._value
 	self._value = newValue
 
-	self.Changed:Fire(newValue, oldValue)
+	self.Changed:Fire(newValue, old_value)
 end
 
 --[[
@@ -154,13 +156,17 @@ function Observer:Insert(key: any?, value: any)
 	assert(type(self._value) == "table", "Cannot use :Insert, Observer value isn't a table.")
 
 	if key then
-		local oldValue = self._value
+		local old_value = self._value
 
 		self._value[key] = value
 
-		self.Changed:Fire(self._value, oldValue)
+		self.Changed:Fire(self._value, old_value)
 	elseif not key then
+		local old_value = self._value
+
 		table.insert(self._value, value)
+
+		self.Changed:Fire(self._value, old_value)
 	end
 end
 
@@ -224,7 +230,7 @@ function Observer:Map<T>(fn: (current: T) -> T)
 	self:Set(newValue)
 end
 
-function Observer:__concat<T>(...: Observer<T>)
+function Observer:__concat<T>(...: Observer<T>): T
 	local scope = { ... }
 
 	local str = ""
@@ -314,7 +320,7 @@ function Observer:__pow(...: Observer<number>)
 	local power = 0
 
 	for i, v in scope do
-		power ^= v:Get()
+		power = math.pow(power, v:Get())
 	end
 
 	return power
@@ -324,9 +330,11 @@ function Observer:__tostring()
 	return tostring(self._value)
 end
 
-function Observer:__call(...: any)
+function Observer:__call(...: any): ...unknown?
 	if type(self._value) == "function" then
-		self._value(...)
+		return self._value(...)
+	else
+		return nil
 	end
 end
 

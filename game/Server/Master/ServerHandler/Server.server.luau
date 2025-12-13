@@ -23,6 +23,7 @@ local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -31,7 +32,6 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-local promise = require(ReplicatedStorage.Packages.promise)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
@@ -63,8 +63,6 @@ local resourceItemTypes = {
 	"IAP",
 	"Gameplay",
 }
-
-local serverStartTime = os.clock()
 
 Cmdr.Registry:RegisterDefaultCommands()
 Cmdr.Registry:RegisterCommandsIn(ReplicatedStorage.Commands)
@@ -166,12 +164,10 @@ local function onPlayerAdded(player: Player)
 	--orion.registerPlayer(player)
 
 	local function addHighlight(character: typemarshaller.Character)
-		return promise
-			.new(function(resolve: (string, Highlight?) -> ...unknown)
+		return future
+			.new(function()
 				if character:FindFirstChildOfClass("Highlight") then
-					resolve("already has highlight", nil)
-
-					return
+					return "already has highlight"
 				end
 				local highlight = Instance.new("Highlight")
 				highlight.Adornee = character
@@ -183,10 +179,9 @@ local function onPlayerAdded(player: Player)
 				highlight.OutlineTransparency = 0.7
 				highlight.Enabled = true
 
-				resolve("new highlight: ", highlight)
+				return "new highlight"
 			end)
-			:andThen(print)
-			:catch(warn)
+			:Expect("couldn't make highlight for some reason")
 	end
 
 	characterMarshaller.added(player, function(character: typemarshaller.Character)
@@ -198,18 +193,17 @@ local function onPlayerAdded(player: Player)
 
 	-- Optimize character cleanup
 	characterMarshaller.removing(player, function(character)
-		promise
-			.new(function(resolve: (string) -> ...unknown, reject: (string, unknown) -> ...unknown)
-				local success, err = pcall(character.Destroy, character)
+		future
+			.new(function()
+				local success = pcall(character.Destroy, character)
 
 				if success then
-					resolve("Optimized Character Cleanup.")
-				elseif not success and err then
-					reject("Couldn't optimize character cleanup: ", err)
+					return true
+				else
+					return false
 				end
 			end)
-			:andThen(print)
-			:catch(warn)
+			:Await()
 	end)
 
 	addHighlight(player.Character or player.CharacterAdded:Wait())
@@ -360,9 +354,7 @@ local function setNetworkOwner(player: Player?, object: BasePart)
 		return
 	end
 
-	promise.new(function()
-		object:SetNetworkOwner(player or nil)
-	end)
+	future.new(object.SetNetworkOwner, object, player or nil)
 end
 
 local function getProfile(player: Player): { Data: profilestructure.profile? }
@@ -481,6 +473,4 @@ windshake:Init({
 	MatchWorkspaceWind = true,
 })
 
-local serverEndTime = os.clock()
-local serverTime = math.round((serverEndTime - serverStartTime) * 10000) / 10000
-print("The server completed execution with a time of: " .. tostring(serverTime))
+print("The server completed execution.")

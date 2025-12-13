@@ -4,8 +4,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local future = require(ReplicatedStorage.Packages.future)
 local pop = require("../Interface/pop")
-local promise = require(ReplicatedStorage.Packages.promise)
 
 -- throbber.luau
 -- for indicating preloads
@@ -13,9 +13,9 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local templates = ReplicatedStorage:WaitForChild("Interfaces") :: Folder
 
 local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
-	return promise.new(function()
+	return future.new(function()
 		if typeof(element) ~= "GuiObject" then
-			return
+			return false
 		end
 
 		local loaderTemplates = templates:FindFirstChild("Loaders") :: Folder
@@ -40,6 +40,8 @@ local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 				tween:Destroy()
 			end)
 		end)
+
+		return "indicating preload!"
 	end)
 end
 

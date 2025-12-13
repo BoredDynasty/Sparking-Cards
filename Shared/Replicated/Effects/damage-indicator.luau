@@ -10,7 +10,7 @@ local random = require(ReplicatedStorage.Utility.random)
 -- damage-indicator.luau
 
 -- This module does a cool effect when a player is damaged.
-type indicator = BasePart & {
+type Indicator = BasePart & {
 	PhysicalTooltip: BillboardGui & {
 		CanvasGroup: CanvasGroup & {
 			Background: Frame & {
@@ -22,8 +22,8 @@ type indicator = BasePart & {
 
 local pseudorandom = random.create()
 
-return function(damage: number, ancestor: BasePart)
-	local indicator: indicator = fetchAsset("DamageIndict") :: indicator
+return function(damage: number, text_color: Color3?, ancestor: BasePart)
+	local indicator: Indicator = fetchAsset("DamageIndict") :: Indicator
 	hydration(indicator) {
 		Anchored = false,
 		Parent = ancestor,
@@ -53,6 +53,11 @@ return function(damage: number, ancestor: BasePart)
 	-- Set the tooltip text to show damage amount
 	local background = indicator.PhysicalTooltip.CanvasGroup.Background
 	local label = background.TextLabel
+
+	-- set text color
+	if text_color then
+		label.TextColor3 = text_color
+	end
 
 	-- count up effect
 	local counter = markdown.text_counter.new({

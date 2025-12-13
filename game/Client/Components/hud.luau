@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local audio = require(ReplicatedStorage.Modules.audio)
+local future = require(ReplicatedStorage.Packages.future)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
@@ -197,7 +198,7 @@ function module:render()
 			print("Button state changed:", oppositeValue, "->", newValue)
 
 			if button.callback then
-				promise.new(button.callback):catch(warn)
+				future.new(button.callback)
 			else
 				warn("No callback defined for button:", button.name)
 			end

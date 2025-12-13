@@ -2,8 +2,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local future = require(ReplicatedStorage.Packages.future)
 local observer = require(script.Parent.observer)
-local promise = require(ReplicatedStorage.Packages.promise)
 
 -- hydration.luau
 
@@ -20,17 +20,18 @@ local function isObserver(value)
 		return false
 	end
 
-	local ok, hasConnect = pcall(function()
-		return type(value.Changed) == "table" and type(value.Changed.Connect) == "function"
-	end)
+	local ok, hasConnect = future
+		.Try(function()
+			return type(value.Changed) == "table" and type(value.Changed.Connect) == "function"
+		end)
+		:Unwrap()
 
 	return ok and hasConnect
 end
 
 local function safeSetProperty<a, b>(instance: { [a]: b }, key: a, value: b)
-	return promise.new(function(resolve: () -> ...unknown)
+	return future.new(function(...)
 		instance[key] = value
-		resolve()
 	end)
 end
 
@@ -86,19 +87,25 @@ function hydration.hydrate<b, c, a>(instance: { [b]: c } & { [string]: a })
 	local function bind(key: string, value: observer.Observer<any?> | any)
 		-- Observer value: set initial value and connect Changed
 		if isObserver(value) then
-			local ok, current = pcall(function()
-				return value:Get()
-			end)
+			local ok, current = future
+				.Try(function()
+					return value:Get()
+				end)
+				:Unwrap()
 
 			if ok then
 				safeSetProperty(instance, key, current)
 			end
 
-			local okConn, conn = pcall(function()
-				return value.Changed:Connect(function(newValue: a & c, oldValue: unknown)
-					safeSetProperty(instance, key, newValue)
+			local okConn, conn = future
+				.Try(function()
+					return value.Changed:Connect(
+							function(newValue: a & c, oldValue: unknown)
+								safeSetProperty(instance, key, newValue)
+							end
+						) :: SignalPlus.Connection
 				end)
-			end)
+				:Unwrap()
 
 			if okConn and conn then
 				table.insert(connections, conn)
@@ -110,9 +117,11 @@ function hydration.hydrate<b, c, a>(instance: { [b]: c } & { [string]: a })
 		-- If value is a table and the instance has a child/property of that name which is also an Instance/table,
 		-- attempt recursive hydration so nested tables can be applied to child objects.
 		if type(value) == "table" then
-			local okChild, child = pcall(function()
-				return instance[key]
-			end)
+			local okChild, child = future
+				.Try(function()
+					return instance[key]
+				end)
+				:Unwrap()
 
 			if okChild and type(child) == "table" then
 				-- Use hydration recursively on the child.
@@ -140,10 +149,10 @@ function hydration.hydrate<b, c, a>(instance: { [b]: c } & { [string]: a })
 
 		-- return a destructor so callers can clean up observer connections
 		return function()
-			for _, conn in ipairs(connections) do
+			for i, conn in ipairs(connections :: connections) do
 				-- Support Connection objects with Disconnect or Destroy
-				pcall(function()
-					if type(conn.Disconnect) == "function" then
+				future.new(function()
+					if typeof(conn.Disconnect) == "function" then
 						conn:Disconnect()
 					elseif type(conn.Destroy) == "function" then
 						conn:Destroy()

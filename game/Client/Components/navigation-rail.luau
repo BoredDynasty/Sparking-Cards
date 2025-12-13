@@ -2,15 +2,18 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local future = require(ReplicatedStorage.Packages.future)
+local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
-local future = require(ReplicatedStorage.Packages.future)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
 export type config = {
 	name: string,
 	icon: Content,
-	callback: (...unknown) -> ...unknown,
+	callback: (boolean | unknown) -> ...unknown,
 	holder: Instance,
+	active: observer.Observer<boolean>,
 }
 
 local module = {}
@@ -67,8 +70,12 @@ local function createButton(ancestor: Instance)
 	return Instances.ButtonTemplate
 end
 
-function module.new(config: config)
-	table.insert(module.watching, config)
+function module.new(config: config & unknown)
+	local configuration = tablekit.Reconcile(config :: any, {
+		active = observer.new(false),
+	}) :: config
+
+	table.insert(module.watching, configuration)
 end
 
 function module:Render()
@@ -83,18 +90,20 @@ function module:Render()
 
 					return "set navi button image content!"
 				end)
-				:After(function(a0: string)
-					print(a0)
+				:After(function(str: string)
+					print(str)
 				end)
 		end
 
 		button.Activated:Connect(function()
-			future.new(data.callback):Await()
+			local is_active = data.active:Get()
 
-         pop(button)
+			future.new(data.callback, is_active):Await()
+
+			pop(button)
 		end)
 
-      shadow(button)
+		shadow(button)
 	end
 end
 

@@ -2,10 +2,10 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local promise = require(ReplicatedStorage.Packages.promise)
 local quest = require(ReplicatedStorage.ClientModules.quest)
 local spr = require(ReplicatedStorage.Modules.spr)
 local timer = require(ReplicatedStorage.Modules.timer)
@@ -219,15 +219,15 @@ function objective_module.new(data: quest.quest)
 
 	local completed: observer.Observer<number>, uncompleted: observer.Observer<number> = observer.scope(0, 0)
 
-	local load_promises = {
-		[1] = promise.new(function(resolve: (string) -> ...unknown)
+	local load_futures = {
+		[1] = future.new(function()
 			-- load title and details
 			card.Title = data.name
 			card.Details = data.description
 
-			resolve("title & details")
+			return "title & details"
 		end),
-		[2] = promise.new(function(resolve: (string) -> ...unknown)
+		[2] = future.new(function()
 			-- load viewports
 			if type(data.inquirer_img) == "number" then
 				-- it is a content
@@ -260,9 +260,9 @@ function objective_module.new(data: quest.quest)
 				-- todo) find a way to sway the camera and rotate the model
 			end
 
-			resolve("viewports")
+			return "viewports"
 		end),
-		[3] = promise.new(function(resolve: (string) -> ...unknown)
+		[3] = future.new(function()
 			-- load progress
 			local bar = card.Progress.Bar
 
@@ -281,9 +281,9 @@ function objective_module.new(data: quest.quest)
 				})
 			end)
 
-			resolve("progress")
+			return "progress"
 		end),
-		[4] = promise.new(function(resolve: (string) -> ...unknown)
+		[4] = future.new(function()
 			-- completed and uncompleted
 			if data.completed or data.date_completed > 0 then
 				completed:Map(function(current: number)
@@ -307,23 +307,22 @@ function objective_module.new(data: quest.quest)
 				Text = uncompleted,
 			}
 
-			resolve("completed & uncompleted status's")
+			return "completed & uncompleted status's"
 		end),
 	}
 
-	promise
-		.all(load_promises)
-		:andThen(function(status: string)
-			print("finished: " .. status)
-		end)
-		:catch(print)
+	for i, fut in ipairs(load_futures) do
+		fut:Await()
 
-	local function onDestroying(...: any)
-		return promise.new(function(resolve: () -> ...unknown)
+		local unwrapped = fut:UnwrapOr("couldn't do task, go debug")
+
+		print(unwrapped)
+	end
+
+	local function onDestroying()
+		return future.new(function()
 			objective_module.current_timer.cancel_interval:Fire()
 			objective_module.current_timer:Reset()
-
-			resolve()
 		end)
 	end
 

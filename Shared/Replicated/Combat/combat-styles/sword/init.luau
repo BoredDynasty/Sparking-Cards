@@ -10,6 +10,7 @@ local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
 local orion = require(ReplicatedStorage.Combat.orion)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
 -- sword.luau
 -- the main controller for the sword weapons.
@@ -66,6 +67,10 @@ function module.new(player: Player, sword_name: string)
 	return self
 end
 
+function module:GetGripData(): grip.GripInfo
+	return self.grip_info
+end
+
 function module:Activate()
 	-- swing the sword (client animation + server hit window)
 	print(string.format("%s swings the sword!", tostring(self.player and self.player.Name)))
@@ -112,21 +117,20 @@ function module:Equip()
 end
 
 function module:Unequip()
-	for _, conn in ipairs(self._connections :: { RBXScriptConnection }) do
+	for i, conn in ipairs(self._connections :: { RBXScriptConnection }) do
 		if conn and conn.Connected then
 			conn:Disconnect()
 		end
 	end
+
+	local model = self.model :: Model
+
 	self._connections = {}
 
-	future
-		.new(function(...)
-			return grip.removeGrip(self.model)
-		end)
-		:Await()
+	future.new(grip.removeGrip, model):Await()
 
 	-- store model back into ReplicatedStorage so it isn't lost
-	self.model.Parent = ReplicatedStorage
+	model.Parent = ReplicatedStorage
 end
 
 function module:OnTouched(hit: Instance)
@@ -152,21 +156,18 @@ function module:OnTouched(hit: Instance)
 	if os.clock() - last_hit < 0.5 then
 		return
 	end
+
 	self._hit_cache[target_player] = os.clock()
 
 	local params = {
 		amount = 10,
-		source = self.player,
+		source = self.player :: Player?,
 		target = target_player,
 	}
 
-	future
-		.new(function(...)
-			return damage(params) :: boolean
-		end)
-		:After(function(ok)
-			print("hit: ", ok)
-		end)
+	future.Try(damage.__call, params):After(function(ok, result)
+		print("hit: ", ok, result)
+	end)
 end
 
 function module:CreateTrail()
@@ -214,7 +215,7 @@ function module:RemoveTrail()
 		self._trail:Destroy()
 	end
 
-	self._trail = nil
+	(self._trail) = nil
 end
 
 function module:Destroy()
@@ -222,6 +223,8 @@ function module:Destroy()
 	self:RemoveTrail()
 
 	table.clear(self._hit_cache)
+
+	table.clear(self)
 
 	setmetatable(self, nil)
 end

@@ -34,10 +34,9 @@ local status = statusBar:FindFirstChildOfClass("TextButton") :: TextButton
 local skipButton = statusBar:FindFirstChild("Skip") :: TextButton
 local loader = background:FindFirstChild("LoaderImage") :: ImageLabel -- the spinning wheel
 
-local connection: RBXScriptConnection? = nil
+local connection = nil
 
-local BATCH_SIZE = 12
-local MAX_PARALLEL_LOADS = 32
+local BATCH_SIZE, MAX_PARALLEL_LOADS = 12, 32
 
 local function skipPreloading()
 	loadingUI:Destroy()
@@ -63,23 +62,35 @@ local function preload()
 		return
 	end
 	debug.profilebegin("PreloadAssets")
-	local startTime = os.clock()
+	local start_time = os.clock()
 
 	textIndicator.Text = ("%s"):format(tostring(game.PlaceId)) or "hi"
 
 	-- Combine assets into one table
 	local pre_allocated = 3000
 	local assets = table.create(pre_allocated) :: { Instance } -- pre-allocate approximate size
+
+	local descendant_index = 1
+
 	-- for a more accurate maxAssets count, make it asynchronous
 	for i, asset in ipairs(player:GetDescendants()) do
 		table.insert(assets, asset)
+
+		descendant_index += 1
 	end
 	for i, asset in ipairs(ReplicatedStorage:GetDescendants()) do
 		table.insert(assets, asset)
+
+		descendant_index += 1
 	end
 
-	local maxAssets = #assets
-	local loadedCount = 0
+	-- trim excess if over-allocated
+	if descendant_index <= pre_allocated then
+		table.move(assets, 1, descendant_index - 1, 1, assets)
+	end
+
+	local max_assets = #assets
+	local loaded_count = 0
 
 	skipButton.MouseButton1Click:Once(skipPreloading)
 
@@ -90,38 +101,50 @@ local function preload()
 
 	-- split into batches
 	local batches = {} :: { { Instance } }
-	for i = 1, maxAssets, BATCH_SIZE do
+	for i = 1, max_assets, BATCH_SIZE do
+		-- better variable names pls
+		local end_index = math.min(i + BATCH_SIZE - 1, max_assets)
+
 		local batch = table.create(BATCH_SIZE) :: { Instance }
 
-		for j = i, math.min(i + BATCH_SIZE - 1, maxAssets) do
-			table.insert(batch, assets[j])
-		end
+		local asset = table.move(assets, i, end_index, 1, batch)
 
-		table.insert(batches, batch)
+		table.insert(batches, asset)
+
+		--[[
+			local batch = table.create(BATCH_SIZE) :: { Instance }
+
+			for j = i, math.min(i + BATCH_SIZE - 1, max_assets) do
+				table.insert(batch, assets[j])
+			end
+
+			table.insert(batches, batch)
+		]]
 	end
 
-	local activeThreads = 0
+	local active_threads = 0
 	local completed = Instance.new("BindableEvent")
 	-- process batches simultaneously
 	for _, batch in ipairs(batches) do
-		while activeThreads >= MAX_PARALLEL_LOADS do
+		while active_threads >= MAX_PARALLEL_LOADS do
 			RunService.Heartbeat:Wait()
 		end
 
-		activeThreads += 1
+		active_threads += 1
 
 		task.spawn(function()
-			local success, err = pcall(ContentProvider.PreloadAsync, ContentProvider, batch)
-			if not success or err ~= nil then
+			local ok, err = pcall(ContentProvider.PreloadAsync, ContentProvider, batch)
+			if not ok or err ~= nil then
 				warn(err)
 			end
-			loadedCount += #batch
+
+			loaded_count += #batch
 			---task.defer(function()
-			status.Text = string.format("Loaded: %d/%d", loadedCount, maxAssets)
+			status.Text = string.format("Loaded: %d/%d", loaded_count, max_assets)
 			---end)
 
-			activeThreads -= 1
-			if loadedCount >= maxAssets then
+			active_threads -= 1
+			if loaded_count >= max_assets then
 				completed:Fire()
 			end
 		end)
@@ -132,9 +155,8 @@ local function preload()
 	completed:Destroy()
 
 	status.Text = "Finalizing..."
-	local rawEndTime = os.clock() - startTime
-	local endTime = ("%.2f seconds"):format(rawEndTime)
-	print("Loaded in: " .. tostring(endTime))
+	local end_time = string.format("%.2f", os.clock() - start_time)
+	print(`Loaded in {end_time}s.`) -- lets hope we don't get a negative number
 
 	loadingUI:Destroy()
 	if connection then

@@ -69,7 +69,7 @@ function DynamicFOV:Update(deltaTime: number, cframe: CFrame): CFrame
 
 	spr.stop(self._camera, "FieldOfView")
 	spr.target(self._camera, 1, 8, {
-		FieldOfView = (self._baseFOV :: number) + math.clamp(distance * 0.1, 60, 120),
+		FieldOfView = (self._baseFOV :: number) + math.clamp(distance * 0.9, 60, 120),
 	})
 
 	return cframe

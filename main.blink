@@ -1,35 +1,77 @@
 -- .blink
 
-option Casing = "Snake"
-option PromiseLibrary = "ReplicatedStorage.Packages.promise"
+option Casing = Snake
 option FutureLibrary = "ReplicatedStorage.Packages.future"
-
-
-import "./Shared/Replicated/Types/typemarshaller.luau" as "TypeMarshaller"
-
-type Profile = TypeMarshaller.Profile
-
-struct RankAscensionEnum {
-    NewRank: i8,
-    NewTitle: string
-}
-
 option TypesOutput = "./Network/Types.luau"
 option ServerOutput = "./Network/Server.luau"
 option ClientOutput = "./Network/Client.luau"
 
+
+type Player = Instance(Player)
+
+map str_to_int = {[string]: i32}
+
+struct Profile {
+	Data: struct {
+		Cards: str_to_int,
+		Prisms: i32,
+		Level: i8,
+		Experience: i32,
+		EquippedCard: string,
+		victories: i16,
+		emotes: struct {
+			i8: struct {
+				name: string,
+				identification: i32
+			}
+		},
+		options: struct {
+			string: unknown -- we're not about to format ts
+		},
+		equipped_emotes: i32[],
+		achievements: struct{
+			i8: struct{
+				name: string,
+		description: string,
+		points: i32		
+		},
+		quests: struct {
+			i8: struct {
+				name: string,
+				description: string,
+				inquirer_img: unknown ,-- string or model
+				progress: i8,
+				date_acquired: u32,
+				date_completed: u32?,
+				module: Instance?
+			}
+		},
+		products: struct {
+			i16: struct {
+				id: i32,
+				reciept_info: unknown, -- not today pls
+				times_bought: str_to_int -- unixtimpstamp
+			}
+			},
+			keybinds: str_to_int
+	}
+		
+	}
+}
+
+
 event CreateMatch {
     From: Server,
     Type: Reliable,
-    Call: ManyAsync
-    Data: Instance
+    Call: ManyAsync,
+    Data: Player
 }
 
 event CancelMatch {
     From: Server,
     Type: Reliable,
     Call: ManyAsync,
-    Data: Instance
+    Data: Player
 }
 
 event StreamArea {
@@ -57,7 +99,7 @@ event AscendRank {
     From: Server,
     Type: Reliable,
     Call: ManyAsync,
-    Data: RankAscensionEnum
+    Data: i8
 }
 
 event SellCard {
@@ -92,21 +134,21 @@ event StopAllAnimations {
     From: Server,
     Type: Reliable,
     Call: ManyAsync
-    Data: Instance
+    Data: Player
 }
 
 event DeductStamina {
     From: Server,
     Type: Reliable,
     Call: ManyAsync,
-    Data: i8
+    Data: i8(1..100)
 }
 
 event AddStamina {
     From: Server,
     Type: Reliable,
     Call: ManyAsync,
-    Data: i8
+    Data: i8(0..100)
 }
 
 event SetNetworkOwner {
@@ -127,7 +169,7 @@ event SetTime {
     From: Server,
     Type: Reliable,
     Call: ManyAsync,
-    Data: f16
+    Data: u8(0..24)
 }
 
 function FetchProfile {

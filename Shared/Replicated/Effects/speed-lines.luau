@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local future = require(ReplicatedStorage.Packages.future)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
@@ -77,7 +78,7 @@ end
 function module:Off(lines: lines?)
 	RunService:UnbindFromRenderStep(module.tag)
 
-	return pcall(function()
+	return future.new(function()
 		if lines then
 			lines:Destroy()
 		else

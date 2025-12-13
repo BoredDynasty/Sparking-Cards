@@ -46,6 +46,7 @@ type PlayerData = {
 	profile: { Data: profilestructure.profile },
 	current_card: string,
 	combo_info: combo.ComboData,
+	shield_info: unknown,
 }
 
 grip.auto_update()
