@@ -1,13 +1,12 @@
---!nonstrict
-local Debris = game:GetService("Debris")
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
-local promise = require(ReplicatedStorage.Packages.promise)
+local future = require(ReplicatedStorage.Packages.future)
 local random = require(ReplicatedStorage.Utility.random)
 
-export type ExplodeEffect = {
+export type explode_model = {
 	position: Vector3,
 	duration: number,
 	colors: { Color3 },
@@ -31,26 +30,26 @@ export type ExplodeEffect = {
       }
    })
 ]]
-local function kaboom(parameters: ExplodeEffect)
-	local explodeEffect = fetchAsset("ExplosionModel") :: Model & any
-	local primaryPart = explodeEffect.PrimaryPart :: BasePart
+local function kaboom(parameters: explode_model)
+	local explode_model = fetchAsset("ExplosionModel") :: Model
+	local primary_part = explode_model.PrimaryPart :: BasePart
 
 	-- Set initial position and size
-	primaryPart.Position = parameters.position
-	local inner = primaryPart.Inner :: BasePart
-	local outer = primaryPart.Outer :: BasePart
+	primary_part.Position = parameters.position
+	local inner = primary_part:FindFirstChild("Inner") :: BasePart
+	local outer = primary_part:FindFirstChild("Outer") :: BasePart
 
 	-- Random rotation angles
-	local randomRotX = random.float(-180, 180)
-	local randomRotY = random.float(-180, 180)
-	local randomRotZ = random.float(-180, 180)
+	local rotation_x = random.float(-180, 180)
+	local rotation_y = random.float(-180, 180)
+	local rotation_z = random.float(-180, 180)
 
 	-- Create explosion tweens
 	local innerTween = TweenPlus(inner, {
 		Size = inner.Size * 3,
 		Transparency = 1,
 		CFrame = inner.CFrame
-			* CFrame.Angles(math.rad(randomRotX), math.rad(randomRotY), math.rad(randomRotZ)),
+			* CFrame.Angles(math.rad(rotation_x), math.rad(rotation_y), math.rad(rotation_z)),
 	}, {
 		Time = parameters.duration * 0.8,
 		EasingStyle = "Quad",
@@ -61,7 +60,7 @@ local function kaboom(parameters: ExplodeEffect)
 		Size = outer.Size * 5,
 		Transparency = 1,
 		CFrame = outer.CFrame
-			* CFrame.Angles(math.rad(-randomRotX), math.rad(-randomRotY), math.rad(-randomRotZ)),
+			* CFrame.Angles(math.rad(-rotation_x), math.rad(-rotation_y), math.rad(-rotation_z)),
 	}, {
 		Time = parameters.duration,
 		EasingStyle = "Sine",
@@ -80,8 +79,8 @@ local function kaboom(parameters: ExplodeEffect)
 	outerTween:Start()
 
 	-- Cleanup
-	promise.new(function()
-		task.delay(parameters.duration, explodeEffect.Destroy)
+	future.Try(function()
+		return task.delay(parameters.duration, explode_model.Destroy, explode_model)
 	end)
 end
 

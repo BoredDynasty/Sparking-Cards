@@ -1,9 +1,9 @@
---!nonstrict
+--!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local random = require(ReplicatedStorage.Utility.random)
 local trove = require(ReplicatedStorage.Packages.trove)
 
@@ -12,44 +12,41 @@ local trove = require(ReplicatedStorage.Packages.trove)
 local _trove = trove.new()
 
 return function(player: Player, direction: Vector3)
-	local character = player.Character
-	local rootPart = character.HumanoidRootPart
-	local humanoid = character.Humanoid
+	local character = characterMarshaller.get(player)
+	local root_part = character.PrimaryPart
+	local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 
-	local forcePower = 200
-	local forceTime = 0.75
-	local minimimRotation = 1
-	local maxRotation = 10
+	if not humanoid or humanoid.Health <= 0 then
+		return
+	end
 
-	local signal = SignalPlus()
+	local force_power = 200
+	local expiry = 0.75
+	local minimum_rotation = 1
+	local max_rotation = 10
 
 	-- disable movement
 	humanoid.PlatformStand = true
 
-	local force = Instance.new("LinearVelocity")
-	force.Parent = rootPart
-	force.MaxForce = math.huge
-	force.VectorVelocity = (direction + Vector3.new(0, 1, 0)).Unit * 26
+	local force = _trove:Construct(Instance, "LinearVelocity", root_part) :: LinearVelocity
+	hydration(force) {
+		Parent = root_part,
+		MaxForce = math.huge,
+		VectorVelocity = (direction + Vector3.new(0, 1, 0)).Unit * 26,
+	}
 
-	local rotation = Instance.new("AngularVelocity")
-	rotation.Parent = rootPart
-	rotation.AngularVelocity = Vector3.one * math.pi * random.integer(minimimRotation, maxRotation)
-	rotation.MaxTorque = math.huge
+	local rotation = _trove:Construct(Instance, "AngularVelocity", root_part) :: AngularVelocity
+	hydration(rotation) {
+		Parent = root_part,
+		AngularVelocity = Vector3.one * math.pi * random.integer(minimum_rotation, max_rotation),
+		MaxTorque = force_power,
+	}
 	-- the aggresiveness should be (5000)
 
-	_trove:Add(force)
-	_trove:Add(rotation)
-	_trove:Add(signal)
-
-	task.delay(forceTime, function()
+	task.delay(expiry, function()
 		humanoid.PlatformStand = false
-
-		signal:Fire()
 
 		_trove:Remove(force)
 		_trove:Remove(rotation)
-		_trove:Remove(signal)
 	end)
-
-	return signal
 end

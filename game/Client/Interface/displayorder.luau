@@ -1,155 +1,115 @@
---!nonstrict
+--!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
-local input = require(ReplicatedStorage.Packages.input)
+local future = require(ReplicatedStorage.Packages.future)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
-local promise = require(ReplicatedStorage.Packages.promise)
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- displayorder.luau
 
-local display_order = {
-	tracked_interfaces = {},
-	_trove = trove.new(),
-	_mouse = input.Mouse.new(),
-}
+local module = {}
 
-export type interface_data = {
-	identifier: string,
-	state: observer.Observer<boolean>,
+export type CanvasData = {
 	canvas: CanvasGroup,
-	debounce: observer.Observer<boolean>,
-	bounds: {
-		position: Vector2,
-		size: Vector2,
-	},
+	state: observer.observer_mt<boolean>,
+	connections: { SignalPlus.Connection },
 }
 
-function display_order._createScale(ancestor: Instance?)
-	local scale = display_order._trove:Construct(
-		Instance,
-		"UIScale",
-		if ancestor then ancestor else ReplicatedStorage
-	) :: UIScale
+local _trove = trove.new()
+local tracked = {} :: { [string]: CanvasData }
 
-	scale.Scale = 1
-	scale.Name = "ui_scale"
+local limit = ratelimit(1, 2)
+
+function createScale(ancestor: Instance)
+	local scale = _trove:Construct(Instance, "UIScale", ancestor) :: UIScale
+	hydration(scale) {
+		Scale = 1,
+		Name = "ui_scale",
+	}
 
 	return scale
 end
 
-function display_order._getScale(ancestor: Instance)
-	local scale = ancestor:FindFirstChild("ui_scale", true) :: UIScale?
-
-	if scale then
-		return scale
-	end
-
-	return nil
+function getScale(ancestor: Instance)
+	return ancestor:FindFirstChild("ui_scale", true) :: UIScale?
 end
 
-function display_order.new(canvas: CanvasGroup, position: Vector2?, size: Vector2?)
+function module.new(canvas: CanvasGroup, position: Vector2?, size: Vector2?)
 	local identifier = canvas:GetFullName()
 
-	if not position or not size then
-		local frame = canvas:FindFirstChild("Frame") :: Frame?
-			or canvas:FindFirstChildOfClass("Frame") :: Frame?
-		-- i dont usually name my layers sooooo...
-		if not frame then
-			-- thats odd, lmao
-			return
-		end
-
-		position = frame.AbsolutePosition
-		size = frame.AbsoluteSize
-	end
-
-	display_order.tracked_interfaces[identifier] = {
-		identifier = identifier,
-		state = observer.new(false),
+	local data = {
 		canvas = canvas,
-		debounce = observer.new(false),
-		bounds = {
-			position = position,
-			size = size,
-		},
+		state = observer.new(canvas.Visible),
 		connections = {} :: { SignalPlus.Connection },
 	}
 
-	canvas.Destroying:Once(function()
-		local data = display_order.tracked_interfaces[identifier]
+	tracked[identifier] = data
 
-		for i, conn in pairs(data.connections) do
+	canvas.Destroying:Once(function()
+		local data = tracked[identifier]
+
+		for i, conn in ipairs(data.connections :: { SignalPlus.Connection }) do
 			conn:Disconnect()
 		end
 
-		display_order.tracked_interfaces[identifier].state:Destroy()
-		display_order.tracked_interfaces[identifier].debounce:Destroy()
+		table.clear(tracked[identifier])
 
-		table.clear(display_order.tracked_interfaces[identifier])
-
-		display_order.tracked_interfaces[identifier] = nil
+		tracked[identifier] = nil
 	end)
 
-	return display_order.tracked_interfaces[identifier]
+	return data
 end
 
-function display_order:toggle(canvas: CanvasGroup)
+function module:Toggle(canvas: CanvasGroup)
 	local identifier = canvas:GetFullName()
 
-	local data = promise
-		.new(function(resolve)
-			resolve(display_order.tracked_interfaces[identifier])
+	local ok, data = future
+		.Try(function()
+			return tracked[identifier]
 		end)
-		:expect() :: interface_data
+		:Unwrap()
 
-	if not data then
+	if not ok or not data then
 		return
 	end
 
-	if not data.debounce then
+	if limit(identifier) then
 		return
 	end
-
-	if data.debounce:Get() then
-		return
-	end
-
-	data.debounce:Set(true)
-
-	task.delay(0.5, function()
-		data.debounce:Set(false)
-	end)
 
 	local state = data.state
 
-	state:Set(not state:Get())
+	state:Map(function(current: boolean)
+		return not current
+	end)
 
 	-- hide every other one
-	for i, interface_data in pairs(display_order.tracked_interfaces) do
+	for i, interface_data in pairs(tracked) do
 		if data == interface_data then
-			return
+			continue
 		end
 
 		interface_data.state:Set(false)
 	end
 end
 
-function display_order:Watch()
-	for i, interface_data in pairs(display_order.tracked_interfaces) do
-		interface_data.state:Watch(function(newValue: boolean, oldValue: boolean)
+function module:Watch()
+	for i, interface_data in pairs(tracked) do
+		local conn = nil
+
+		conn = interface_data.state:Watch(function(newValue: boolean)
 			local canvas = interface_data.canvas
 
 			if newValue then
 				-- visible
 
-				local scale = display_order._createScale(canvas)
+				local scale = createScale(canvas)
 				scale.Scale = 0
 
 				canvas.Visible = true
@@ -158,10 +118,8 @@ function display_order:Watch()
 				spr.target(scale, 0.8, 1.5, {
 					Scale = 1,
 				})
-
-				custom_lighting.blur()
 			else
-				local scale = display_order._getScale(canvas)
+				local scale = getScale(canvas)
 				if not scale then
 					return
 				end
@@ -171,9 +129,7 @@ function display_order:Watch()
 				})
 
 				spr.completed(scale, function()
-					promise.new(function()
-						display_order._trove:Remove(scale)
-					end)
+					future.Try(_trove.Remove, _trove, scale :: any)
 
 					canvas.Visible = false
 				end)
@@ -182,16 +138,10 @@ function display_order:Watch()
 			end
 		end)
 
-		local conn = (display_order._mouse.LeftDown :: RBXScriptSignal):Connect(function()
-			local mousePos = display_order._mouse:GetPosition()
-
-			if bounds.outer(interface_data.bounds.position, interface_data.bounds.size, mousePos) then
-				interface_data.state:Set(false)
-			end
-		end)
-
-		table.insert(interface_data.connections, conn)
+		if conn then
+			table.insert(interface_data.connections, conn)
+		end
 	end
 end
 
-return display_order
+return module

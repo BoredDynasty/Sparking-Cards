@@ -4,20 +4,25 @@ local RunService = game:GetService("RunService")
 
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local trove = require(ReplicatedStorage.Packages.trove)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- regeneration.luau
 
 return function(player: Player, interval: number, increment: number?): string?
 	local _trove = trove.new()
 
-	local character = player.Character
+	local character = player.Character :: typemarshaller.Character
 
 	if not character then
 		print("theres no character to regen for lol")
 		return nil
 	end
 
-	local humanoid = character.Humanoid
+	local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
+	if not humanoid then
+		print("no humanoid for regen")
+		return nil
+	end
 
 	increment = (increment :: number) or 6
 

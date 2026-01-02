@@ -10,12 +10,12 @@ local url = require(ReplicatedStorage.Modules.Serialization.url)
 
 -- prism-spawner.luau
 
-local self = {
+local module = {
 	Tracking = {},
 	update_conn = nil :: RBXScriptConnection?,
 }
 
-function self:Spawn(position: Vector3)
+function module:Spawn(position: Vector3)
 	local prism_model = fetchAsset("Prism_OBJ") :: MeshPart
 
 	-- put it in position
@@ -26,11 +26,21 @@ function self:Spawn(position: Vector3)
 		Anchored = true,
 	}
 
-	table.insert(self.Tracking, prism_model)
+	table.insert(module.Tracking, prism_model)
+
+	prism_model.Destroying:Connect(function()
+		for i, v in ipairs(module.Tracking) do
+			if v == prism_model then
+				table.remove(module.Tracking, i)
+
+				break
+			end
+		end
+	end)
 end
 
-function self:Update()
-	if self.update_conn then
+function module:Update()
+	if module.update_conn then
 		return
 	end
 
@@ -40,7 +50,7 @@ function self:Update()
 	local amplitude = 5.0 -- the max distance from the center
 	local frequency = 1.0 -- how fast the part moves back and forth
 
-	self.update_conn = RunService.Heartbeat:Connect(function(deltaTime: number)
+	module.update_conn = RunService.Heartbeat:Connect(function(deltaTime: number)
 		debug.profilebegin("track-prisms")
 
 		lastCheck += deltaTime :: number
@@ -65,4 +75,4 @@ function self:Update()
 	end)
 end
 
-return self
+return module

@@ -18,7 +18,7 @@ type self = {
 	_cancelDragging: SignalPlus.Signal<>,
 	_connections: { RBXScriptConnection },
 	new: () -> drag,
-	affix: (self: self, { GuiObject }) -> (),
+	Affix: (self: self, { GuiObject }) -> (),
 }
 
 export type direction = "up" | "down" | "left" | "right"
@@ -49,7 +49,7 @@ function drag.new(): drag
 	}, drag)
 end
 
-function drag:affix(self: self, objects: { GuiObject })
+function drag:Affix(self: self, objects: { GuiObject })
 	local dragInput = nil
 	local dragStart: Vector3 = Vector3.new()
 	local startPosition = UDim2.new() -- Changed from UDim to UDim2
@@ -133,7 +133,7 @@ function drag:affix(self: self, objects: { GuiObject })
 	end
 end
 
-function drag:destroy()
+function drag:Destroy()
 	-- Cleanup connections
 	for _, connection: RBXScriptConnection in ipairs(self._connections :: { RBXScriptConnection }) do
 		connection:Disconnect()

@@ -86,10 +86,10 @@ local function rankNameToNumber(rankName: string): number?
 end
 
 return setmetatable({
-	fromLevel = computeExperience,
-	fromExperience = computeRank,
-	rankNumberToName = rankNumberToName,
-	rankNameToNumber = rankNameToNumber,
+	FromLevel = computeExperience,
+	FromExperience = computeRank,
+	RankNumberToName = rankNumberToName,
+	RankNameToNumber = rankNameToNumber,
 }, {
 	__call = function(mode: mode, value: number): number?
 		if mode == "experience" then

@@ -1,4 +1,4 @@
---!nonstrict
+--!strict
 
 -- Server.server.luau
 
@@ -17,11 +17,11 @@ local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
 local MatchMaker = require(ReplicatedStorage.Modules.MatchMaker)
 local Packet = require(ReplicatedStorage.Packet)
-local ParryHandler = require(ReplicatedStorage.Combat.framework.features.parry)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
+local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
@@ -32,16 +32,141 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local promise = require(ReplicatedStorage.Packages.promise)
+local random = require(ReplicatedStorage.Utility.random)
+local retryer = require(ReplicatedStorage.Utility.retryer)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
 local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
-local stores = require(ReplicatedStorage.Datastore.stores)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
-local remoteEvents = ReplicatedStorage.Events
+local remoteEvents = ReplicatedStorage:WaitForChild("Events") :: Folder
 local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
+
+local profiles = {}
+local profile_key = "playerdata"
+local player_related = profilestore.New(profile_key, profilestructure)
+
+-- change this if i want data to save in studio
+if RunService:IsStudio() then
+	player_related = player_related.Mock
+end
+
+local function loadProfile(player: Player)
+	local profile = retryer.infdelay(random.integer(0, 5), function(...)
+		return player_related:StartSessionAsync(`player_{player.UserId}`, {
+			Cancel = function()
+				return player.Parent ~= Players
+			end,
+		})
+	end)
+
+	if profile then
+		profile:AddUserId(player.UserId)
+		profile:Reconcile()
+		profile.OnSessionEnd:Connect(function()
+			profiles[player] = nil
+			player:Kick("Session Locked, rejoin")
+		end)
+		if player:FindFirstAncestorOfClass("Players") then
+			profiles[player] = profile
+			profile.Data.last_login = DateTime.now().UnixTimestampMillis
+			profile:Reconcile()
+			profile:Save()
+		else
+			profile:EndSession()
+			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
+		end
+	elseif not profile then
+		player:Kick("The Roblox Servers are on fire, try rejoining.")
+	end
+
+	return profile
+end
+
+local function FetchProfileData(player: Player): typemarshaller.ProfileData?
+	local profile = profiles[player] :: typemarshaller.Profile?
+	if not profile and profile == nil then
+		Packet.SendNotification.sendTo({
+			message = "Couldn't get data",
+			title = "Profile not found",
+			type = "error",
+		}, player)
+
+		local list = tablekit.Values(profiles :: any)
+
+		warn("Couldn't fetch profile from table: ", table.unpack(list))
+
+		return nil
+	end
+
+	return profile.Data
+end
+
+local function SaveProfileData(player: Player)
+	local profile = profiles[player] -- we need the full table
+	if not profile then
+		warn("Cannot save profile; couldn't find one.")
+	end
+
+	profile:Reconcile()
+	profile:Save()
+end
+
+local function GetPrisms(player: Player)
+	local profile = FetchProfileData(player)
+	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+
+	return profile.prisms
+end
+
+local function AddPrisms(player: Player, amount: number)
+	local profile = FetchProfileData(player)
+	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+
+	profile.prisms += amount
+end
+
+local function DeductPrisms(player: Player, amount: number)
+	local profile = FetchProfileData(player)
+	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+
+	profile.prisms -= amount
+end
+
+local function AddCards(player: Player, name: string, amount: number)
+	local profile = FetchProfileData(player)
+	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+
+	future.new(function(...)
+		if profile.cards[name] then
+			profile.cards[name] += amount
+		else
+			profile.cards[name] = amount
+		end
+	end)
+end
+
+local function DeductCards(player: Player, name: string, amount: number)
+	local profile = FetchProfileData(player)
+	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+
+	future.new(function(...)
+		if profile.cards[name] then
+			profile.cards[name] -= math.clamp(amount, 0, profile.cards[name])
+		end
+	end)
+end
+
+local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
+	local profile = FetchProfileData(player)
+	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+
+	future.new(table.insert, profile.quests, quest)
+end
 
 print("GameAnalytics is enabled.")
 
@@ -73,49 +198,23 @@ GameAnalytics:initialize(gameAnalyticsConfig)
 GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
 -- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 
-local matchSettings = MatchMaker:NewOptions()
-matchSettings.MatchPlaceId = 13609839542
-matchSettings.NumberOfTeams = 2
-matchSettings.MaxPlayersPerTeam = 1
-matchSettings.MatchExpirationTime = 600
+local solo_matchmaking = MatchMaker.new({
+	name = "Solo",
+	matchmaking = function(parties: { MatchMaker.Party })
+		local matches = {}
 
-local queue = MatchMaker:GetQueue("global", matchSettings)
+		for _, party in ipairs(parties) do
+			table.insert(matches, {
+				place_id = game.PlaceId,
+				parties = { party },
+			})
+		end
 
---[[
-	This is only for if I want to write
-	data to the profiles while testing.
-]]
---[[
-if RunService:IsStudio() then
-	playerStore = playerStore.Mock
-end
---]]
+		return matches
+	end,
+})
 
 -- TODO) add the products
-
-LogService.MessageOut:Connect(function(message: string, messageType: Enum.MessageType)
-	if messageType == Enum.MessageType.MessageError then
-		GameAnalytics:addErrorEvent({
-			message = message,
-			severity = GameAnalytics.EGAErrorSeverity.error,
-		})
-	elseif messageType == Enum.MessageType.MessageWarning then
-		GameAnalytics:addErrorEvent({
-			message = message,
-			severity = GameAnalytics.EGAErrorSeverity.warning,
-		})
-	elseif messageType == Enum.MessageType.MessageInfo then
-		GameAnalytics:addErrorEvent({
-			message = message,
-			severity = GameAnalytics.EGAErrorSeverity.info,
-		})
-	elseif messageType == Enum.MessageType.MessageOutput then
-		GameAnalytics:addErrorEvent({
-			message = message,
-			severity = GameAnalytics.EGAErrorSeverity.debug,
-		})
-	end
-end)
 
 local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model
 ServerAsset.Parent = game.Workspace
@@ -126,10 +225,6 @@ local function enterMatch(player: Player)
 	if not player then
 		return
 	end
-
-	print(queue)
-
-	queue:QueuePlayers({ player })
 
 	Packet.SendNotification.sendTo(
 		{ message = "Joined matchmaking queue", title = "Matchmaking", type = "info", duration = 5 },
@@ -151,66 +246,39 @@ local function cancelMatch(player: Player)
 end
 
 local function onPlayerAdded(player: Player)
-	-- for the client to mess around with
-	local editConfig = Instance.new("BindableEvent")
-	editConfig.Parent = player
-	editConfig.Name = "EditConfig"
-
-	local toggleShiftLock = Instance.new("BindableEvent")
-	toggleShiftLock.Parent = player
-	toggleShiftLock.Name = "ToggleShiftLock"
-
 	GameAnalytics:PlayerJoined(player)
+	future.new(GameAnalytics.PlayerJoined, GameAnalytics, player)
 	--orion.registerPlayer(player)
 
 	local function addHighlight(character: typemarshaller.Character)
-		return future
-			.new(function()
-				if character:FindFirstChildOfClass("Highlight") then
-					return "already has highlight"
-				end
-				local highlight = Instance.new("Highlight")
-				highlight.Adornee = character
-				highlight.Parent = character
-				highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-				highlight.FillColor = Color3.fromRGB(255, 255, 255)
-				highlight.FillTransparency = 0.95
-				highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-				highlight.OutlineTransparency = 0.7
-				highlight.Enabled = true
+		return future.new(function()
+			if character:FindFirstChildOfClass("Highlight") then
+				return "already has highlight"
+			end
+			local highlight = Instance.new("Highlight")
+			highlight.Adornee = character
+			highlight.Parent = character
+			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+			highlight.FillColor = Color3.fromRGB(255, 255, 255)
+			highlight.FillTransparency = 0.95
+			highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+			highlight.OutlineTransparency = 0.7
+			highlight.Enabled = true
 
-				return "new highlight"
-			end)
-			:Expect("couldn't make highlight for some reason")
+			return "new highlight"
+		end)
 	end
 
 	characterMarshaller.added(player, function(character: typemarshaller.Character)
 		character:SetAttribute("Stamina", 100)
 		character:SetAttribute("MaxStamina", 100)
 
-		addHighlight(character)
+		addHighlight(character):Expect("couldn't make highlight for some reason")
 	end)
 
-	-- Optimize character cleanup
-	characterMarshaller.removing(player, function(character)
-		future
-			.new(function()
-				local success = pcall(character.Destroy, character)
-
-				if success then
-					return true
-				else
-					return false
-				end
-			end)
-			:Await()
-	end)
-
-	addHighlight(player.Character or player.CharacterAdded:Wait())
+	addHighlight(player.Character or player.CharacterAdded:Wait() :: any)
 	batch(player:GetDescendants())
-	stores.load(player)
-
-	Packet.SendNotification.sendTo({ message = "Player fully loaded", title = "Server" }, player)
+	loadProfile(player)
 end
 
 -- just in case the players have joined the server before the script loaded
@@ -222,57 +290,57 @@ end
 
 local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
-	local profile = stores.get(player)
+	local profile = profiles[player]
 
 	if profile ~= nil then
-		stores:wrapSave(player)
+		SaveProfileData(player)
 
-		print("saved data for " .. player.DisplayName)
+		print("saved data for " .. player.Name)
 
 		profile:EndSession()
 
-		stores.server[player] = nil
+		profiles[player] = nil
 
-		print("ended session for " .. player.DisplayName)
+		print("ended session for " .. player.Name)
 	else
-		print("couldn't save in time for " .. player.DisplayName)
+		print("couldn't save in time for " .. player.Name)
 	end
 
 	task.defer(player.Destroy, player)
 end
 
-local function purchaseCard(player: Player, cardName: string)
-	local resourceEventParams = {
+local function purchaseCard(player: Player, card_name: string)
+	local event_parameters = {
 		flowType = GameAnalytics.EGAResourceFlowType.Sink,
 		currency = "Prisms",
 		amount = 1,
 		itemType = "Weapons",
-		itemId = cardName .. " Card",
+		itemId = card_name .. " Card",
 	}
 
-	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+	GameAnalytics:addResourceEvent(player.UserId, event_parameters)
 
-	local price = Items[cardName].Price
+	local price = Items[card_name].Price
 
-	local prisms = stores.getPrisms(player)
+	local prisms = GetPrisms(player)
 
 	if prisms >= price then
-		stores:addCard(player, cardName, 1)
+		AddCards(player, card_name, 1)
 
-		local deductAmount = math.ceil(price) or 1
+		local deduct_amount = math.ceil(price) or 1
 
-		stores:deductPrims(player, deductAmount)
+		DeductPrisms(player, deduct_amount)
 
-		stores:wrapSave(player)
+		SaveProfileData(player)
 
 		Packet.SendNotification.sendTo({
-			message = `You purchased a {cardName} Card.`,
+			message = `You purchased a {card_name} Card.`,
 			title = `Card purchased`,
 			type = "success",
 		}, player)
 	else
 		Packet.SendNotification.sendTo({
-			message = `Could not buy {cardName}`,
+			message = `Could not buy {card_name}`,
 			title = "Not enough Prisms.",
 			type = "error",
 		}, player)
@@ -289,12 +357,13 @@ local function streamArea(player: Player, area: Vector3)
 	end)
 end
 
-local function payPrisms(amount: number, playerName: string)
-	local player = playerMarshaller.getByName(playerName)
+local function payPrisms(amount: number, username: string)
+	local player = playerMarshaller.getByName(username)
+	assert(player, "Couldn't fetch player by name: " .. username)
 
-	stores:addPrisms(player, amount)
+	AddPrisms(player, amount)
 
-	local resourceEventParams = {
+	local event_parameters = {
 		flowType = GameAnalytics.EGAResourceFlowType.Source,
 		currency = "Prisms",
 		amount = amount,
@@ -302,51 +371,39 @@ local function payPrisms(amount: number, playerName: string)
 		itemId = "Prisms",
 	}
 
-	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+	GameAnalytics:addResourceEvent(player.UserId, event_parameters)
 
-	stores:wrapSave(player)
+	SaveProfileData(player)
 end
 
-local function sellCards(player: Player, cardName: string)
-	local profile = stores.get(player)
-	if not profile then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-			title = "Your data did not load.",
-			type = "error",
-		}, player)
-		return
-	end
+local function sellCards(player: Player, card_name: string)
+	local profile = FetchProfileData(player)
 
-	if not profile.Data.Cards[cardName] or profile.Data.Cards[cardName] <= 0 then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-			title = "You don't have any " .. cardName .. " Cards to sell.",
-			type = "warning",
-		}, player)
+	if not profile.cards[card_name] or profile.cards[card_name] <= 0 then
+		-- you ain't got nun to sell boi.
 
 		warn("No cards to sell for player: " .. player.Name)
 		return
 	end
 
 	-- calculate sell price (usually half of buy price)
-	local sellPrice = math.floor(Items[cardName].Price * 0.5)
+	local sellPrice = math.floor(Items[card_name].Price * 0.5)
 
 	-- update profile
-	stores:addPrisms(player, sellPrice)
-	stores:deductCards(player, cardName, 1)
+	AddPrisms(player, sellPrice)
+	DeductCards(player, card_name, 1)
 
-	local resourceEventParams = {
+	local event_parameters = {
 		flowType = GameAnalytics.EGAResourceFlowType.Sink,
 		currency = "Prisms",
 		amount = sellPrice,
 		itemType = "Gameplay",
-		itemId = cardName .. "_Sell",
+		itemId = card_name .. "_Sell",
 	}
 
-	GameAnalytics:addResourceEvent(player.UserId, resourceEventParams)
+	GameAnalytics:addResourceEvent(player.UserId, event_parameters)
 	-- Save changes
-	stores:wrapSave(player)
+	SaveProfileData(player)
 end
 
 local function setNetworkOwner(player: Player?, object: BasePart)
@@ -357,21 +414,12 @@ local function setNetworkOwner(player: Player?, object: BasePart)
 	future.new(object.SetNetworkOwner, object, player or nil)
 end
 
-local function getProfile(player: Player): { Data: profilestructure.profile? }
-	local profile = stores.get(player)
+local function getProfile(player: Player): typemarshaller.Profile
+	local ok, profile = retryer.delay(1, 10, function()
+		return profiles[player]
+	end)
 
-	print("getting profile: server")
-
-	if not profile then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-			title = "Your data did not load.",
-			type = "error",
-			duration = 5,
-		}, player)
-
-		return nil
-	end
+	assert(ok, "Failed to index table for a profile.")
 
 	return {
 		Data = profile.Data,
@@ -380,6 +428,7 @@ end
 
 local function setClock(number: number)
 	spr.stop(Lighting, "ClockTime")
+
 	spr.target(Lighting, 1, 1, {
 		ClockTime = number,
 	})
@@ -387,7 +436,7 @@ end
 
 local function addQuest(player: Player, quest_data: string)
 	-- deserialize
-	quest_data = messagepack.decode(quest_data) :: {
+	local deserialized_data = messagepack.decode(quest_data) :: {
 		name: string,
 		description: string,
 		inquirer_img: number | Instance, -- img id or a model
@@ -398,7 +447,7 @@ local function addQuest(player: Player, quest_data: string)
 		module: ModuleScript?,
 	}
 
-	stores:addQuest(player, quest_data)
+	InsertQuestData(player, deserialized_data)
 
 	print("server: added quest")
 end
@@ -441,8 +490,8 @@ end)
 Packet.CreateMatch.listen(function(_, player: Player)
 	enterMatch(player)
 end)
-Packet.BuyCard.listen(function(data: { cardName: string }, player: Player)
-	purchaseCard(player, data.cardName)
+Packet.BuyCard.listen(function(data: { card_name: string }, player: Player)
+	purchaseCard(player, data.card_name)
 end)
 Packet.PayPrisms.listen(function(data: { amount: number, recipientUsername: string })
 	payPrisms(data.amount, data.recipientUsername)
@@ -450,9 +499,9 @@ end)
 Packet.CancelMatch.listen(function(_, player: Player)
 	cancelMatch(player)
 end)
-Packet.SellCard.listen(function(data: { cardName: string, playerInstance: Instance }, player: Player)
-	local cardName = data.cardName
-	sellCards(player, cardName)
+Packet.SellCard.listen(function(data: { card_name: string, playerInstance: Instance }, player: Player)
+	local card_name = data.card_name
+	sellCards(player, card_name)
 end)
 Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instance? })
 	setNetworkOwner(data.player, data.object)
@@ -462,12 +511,8 @@ end);
 local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
 
 -- TODO) add player saving options
-playerMarshaller.added(function(player: Player)
-	onPlayerAdded(player)
-end)
-playerMarshaller.removing(function(player: Player)
-	onPlayerRemoving(player)
-end)
+playerMarshaller.added(onPlayerAdded)
+playerMarshaller.removing(onPlayerRemoving)
 
 windshake:Init({
 	MatchWorkspaceWind = true,

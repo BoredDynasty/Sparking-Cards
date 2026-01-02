@@ -5,12 +5,13 @@ local Workspace = game:GetService("Workspace")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local random = require(ReplicatedStorage.Utility.random)
 
 -- collector.luau
 
-local self = {
+local module = {
 	default = {
 		shape = Enum.PartType.Ball,
 		material = Enum.Material.Neon,
@@ -31,7 +32,7 @@ export type props = {
 local player = playerMarshaller.get()
 local character = characterMarshaller.get(player)
 
-function self:Fire(position: Vector3, props: props)
+function module:Fire(position: Vector3, props: props)
 	props = props or {}
 	-- reconcile props with defaults
 	for key, value in pairs(self.default) do
@@ -50,14 +51,17 @@ function self:Fire(position: Vector3, props: props)
 
 	for i = 1, random.integer(5, 15) do
 		local part = Instance.new("Part")
-		part.Anchored = true
-		part.CanCollide = false
-		part.Shape = props.shape
-		part.Material = props.material
-		part.Color = props.color
-		part.Size = props.size
-		part.CFrame = CFrame.new(position + offset)
-		part.Parent = Workspace
+		hydration(part) {
+			Anchored = true,
+			CanCollide = false,
+			Shape = props.shape,
+			Material = props.material,
+			Color = props.color,
+			Size = props.size,
+			Position = position + offset,
+			Transparency = 0,
+			Parent = Workspace,
+		}
 
 		local mid_point = position + Vector3.new(x_y, random.float(5, 8), x_y)
 
@@ -111,4 +115,4 @@ function self:Fire(position: Vector3, props: props)
 	end
 end
 
-return self
+return module

@@ -135,7 +135,7 @@ end
     end)
     ```
 ]]
-function Observer:Watch(callback: (newValue: any, oldValue: any) -> ()): SignalPlus.Connection
+function Observer:Watch<T>(callback: (newValue: T, oldValue: T) -> ()): SignalPlus.Connection
 	if not self._connections then
 		self._connections = {}
 	end

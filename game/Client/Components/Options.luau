@@ -1,40 +1,36 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
-local lucide = require(ReplicatedStorage.Packages.lucide)
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
+local future = require(ReplicatedStorage.Packages.future)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require("../Interface/pop")
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require("../Interface/shadow")
-local typewriter = require(ReplicatedStorage.ClientModules.markdown.typewriter)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- options.luau
 
 local module = {
-	tracked = {} :: { config },
+	tracked = {} :: { Option },
 	limit = ratelimit(1, 0.5),
 }
-
-type lucide_icon = typeof(lucide.GetAsset(""))
-export type option_callbacks<T> = {
-	on: (T?) -> ...unknown,
-	off: (T?) -> ...unknown,
+export type option_callbacks = {
+	on: (...unknown) -> ...unknown,
+	off: (...unknown) -> ...unknown,
 }
-export type config = {
+export type Option = {
 	name: string,
 	details: string?,
-	callbacks: option_callbacks<nil>,
+	callbacks: option_callbacks,
 	icons: {
-		on: lucide_icon,
-		off: lucide_icon,
+		on: typemarshaller.LucideIcon,
+		off: typemarshaller.LucideIcon,
 	}?,
 	state: observer.Observer<boolean>,
 }
 
-function module.new(config: config)
-	table.insert(module.tracked, config)
+function module.new(data: Option)
+	table.insert(module.tracked, data)
 end
 
 local function createOption(ancestor: Instance?)
@@ -158,11 +154,27 @@ end
 
 local function updateIcon(btn_icon: ImageLabel, boolean_state: boolean, icon_data: any)
 	local current_icon = icon_data[booleanToString(boolean_state)]
-	assert(current_icon, "wdym no current icon")
+	if not current_icon then
+		return false
+	end
 
-	btn_icon.ImageContent = Content.fromAssetId(current_icon.Id)
-	btn_icon.ImageRectOffset = current_icon.ImageRectOffset
-	btn_icon.ImageRectSize = current_icon.ImageRectSize
+	task.spawn(function()
+		btn_icon.ImageContent = Content.fromAssetId(current_icon.Id)
+		btn_icon.ImageRectOffset = current_icon.ImageRectOffset
+		btn_icon.ImageRectSize = current_icon.ImageRectSize
+	end)
+
+	return true
+end
+
+function module:Get(name: string): Option?
+	for i, option in ipairs(module.tracked) do
+		if string.lower(name) == string.lower(option.name) then
+			return option
+		end
+	end
+
+	return nil
 end
 
 function module:Render(holder: Instance)
@@ -183,11 +195,11 @@ function module:Render(holder: Instance)
 
 		shadow(toggle_btn)
 
-		local callbacks = option.callbacks
+		local callbacks = option.callbacks :: { [string]: (...unknown) -> () }
 		local icon_data = option.icons
 		local state = option.state
 
-		updateIcon(btn_icon, state:Get(), icon_data)
+		future.new(updateIcon, btn_icon, state:Get(), icon_data):After(print)
 
 		local fancy = [[
 		<b>%s</b></br>%s
@@ -211,11 +223,16 @@ function module:Render(holder: Instance)
 
 			local next_callback = callbacks[str_state]
 			if next_callback then
-				task.spawn(next_callback)
-				updateIcon(btn_icon, boolean_state, icon_data)
+				task.spawn(future.new, next_callback)
+
+				future.new(updateIcon, btn_icon, boolean_state, icon_data):After(print)
 			end
 		end)
 	end
+end
+
+function module:Clear()
+	return future.new(table.clear, module.tracked):Await()
 end
 
 return module

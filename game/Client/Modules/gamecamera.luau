@@ -11,12 +11,16 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CameraController = require("../Camera/CameraController")
 
-local GameCamera = {}
+local module = {}
 
 local controller = CameraController.new()
 
-GameCamera.updated = controller._update
-GameCamera.camera = workspace.CurrentCamera
+module.updated = controller._update
+module.camera = workspace.CurrentCamera
+
+workspace.CurrentCamera.Changed:Connect(function()
+	module.camera = workspace.CurrentCamera
+end)
 
 -- Add effects
 controller:Add("Sway", require("../Camera/Sway"))
@@ -27,23 +31,27 @@ controller:Add("Shake", require("../Camera/Shake"))
 controller:Start()
 
 -- Public API
-function GameCamera:Shake(strength: number, duration: number)
+function module:Shake(strength: number, duration: number)
 	local shaker = controller:Get("Shake")
 	if shaker then
 		shaker:Shake(strength, duration)
 	end
 end
 
-function GameCamera:Bind(name: string, f: (any) -> ...any?, ...: any)
+function module:Bind(name: string, f: (any) -> ...any?, ...: any)
 	controller:Bind(name, f, ...)
 end
 
-function GameCamera:UnBind(name: string)
+function module:UnBind(name: string)
 	controller:UnBind(name)
 end
 
-function GameCamera:Destroy()
+function module:GetCamera()
+	return module.camera
+end
+
+function module:Destroy()
 	controller:Destroy()
 end
 
-return GameCamera
+return module

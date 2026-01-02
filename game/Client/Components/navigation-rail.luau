@@ -70,7 +70,7 @@ local function createButton(ancestor: Instance)
 	return Instances.ButtonTemplate
 end
 
-function module.new(config: config & unknown)
+function module.new(config: config | unknown)
 	local configuration = tablekit.Reconcile(config :: any, {
 		active = observer.new(false),
 	}) :: config

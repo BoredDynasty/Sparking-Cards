@@ -8,7 +8,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 -- a function for finding the nearest player within a radius
 
 return function(root: BasePart, max_distance: number)
-	local nearest_players, distances = {}, {}
+	local nearest_players: { Player }, distances: { number } = {}, {}
 
 	for i, player in ipairs(playerMarshaller.all()) do
 		local character = player.Character

@@ -27,7 +27,7 @@ local function createLayerCollector(ancestor: Instance?)
 		Name = "TransitionScreen",
 		IgnoreGuiInset = true,
 		Enabled = true,
-		DisplayOrder = math.huge, -- your mom :speed-try-not-to-laugh
+		DisplayOrder = math.huge, -- your mom :speed-try-not-to-laugh:
 	}
 
 	return layer_collector

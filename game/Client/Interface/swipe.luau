@@ -17,7 +17,7 @@ type self = {
 	_threshold: number,
 	_startPos: Vector3?,
 	_connections: { RBXScriptConnection },
-	OnSwipe: SignalPlus.Signal<string, Vector3>,
+	OnSwipe: SignalPlus.Signal<direction, Vector3>,
 	new: (guiObject: GuiObject) -> SwipeDetector,
 	SetThreshold: (self: self, threshold: number) -> (),
 	Destroy: (self: self) -> (),

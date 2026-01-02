@@ -25,6 +25,12 @@ local function impactNameToAsset(name: string): Instance?
 	return assetNames[name]
 end
 
+--[[
+	@param position Vector3
+	@param direction Vector3
+	@param magnitude number
+	@param duration number
+]]
 return function(impact: ImpactEffect)
 	local asset = impactNameToAsset(impact.name)
 	if not asset then

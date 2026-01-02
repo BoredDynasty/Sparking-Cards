@@ -1,16 +1,19 @@
 --!optimize 2
 --!native
 
+-- Services.
+local CollectionService = game:GetService("CollectionService")
+
 -- Elastic constants.
 local elasticInP = 0.3
 local elasticInA = 1.0
-local elasticInS = elasticInP / 4
+local elasticInS = elasticInP * 0.25
 local elasticOutP = 0.3
 local elasticOutA = 1.0
-local elasticOutS = elasticOutP / 4
+local elasticOutS = elasticOutP * 0.25
 local elasticInOutP = 0.45
 local elasticInOutA = 1.0
-local elasticInOutS = elasticInOutP / 4
+local elasticInOutS = elasticInOutP * 0.25
 
 -- Back constants.
 local backS = 1.70158
@@ -23,28 +26,29 @@ end
 
 -- Quad easing.
 local function inQuad(alpha)
-	return alpha ^ 2
+	return alpha * alpha
 end
 local function outQuad(alpha)
 	return alpha * (2 - alpha)
 end
 local function inOutQuad(alpha)
-	return if alpha < 0.5 then 0.5 * (alpha * 2) ^ 2 else 1 - 0.5 * ((1 - alpha) * 2) ^ 2
+	alpha *= 2
+	return if alpha < 1 then 0.5 * alpha * alpha else 1 - 0.5 * (2 - alpha) ^ 2
 end
 local function outInQuad(alpha)
-	return if alpha < 0.5 then 0.5 * (alpha * 2) * (2 - alpha * 2) else 0.5 * ((2 * alpha - 1) ^ 2) + 0.5
+	return if alpha < 0.5 then 0.5 * outQuad(alpha * 2) else 0.5 * inQuad((alpha - 0.5) * 2) + 0.5
 end
 
 -- Cubic easing.
 local function inCubic(alpha)
-	return alpha ^ 3
+	return alpha * alpha * alpha
 end
 local function outCubic(alpha)
 	return 1 + (alpha - 1) ^ 3
 end
 local function inOutCubic(alpha)
 	alpha *= 2
-	return if alpha < 1 then 0.5 * alpha ^ 3 else 0.5 * ((alpha - 2) ^ 3 + 2)
+	return if alpha < 1 then 0.5 * alpha * alpha * alpha else 0.5 * ((alpha - 2) ^ 3 + 2)
 end
 local function outInCubic(alpha)
 	return if alpha < 0.5 then 0.5 * ((2 * alpha - 1) ^ 3 + 1) else 0.5 * (2 * alpha - 1) ^ 3 + 0.5
@@ -52,14 +56,14 @@ end
 
 -- Quart easing.
 local function inQuart(alpha)
-	return alpha ^ 4
+	return alpha * alpha * alpha * alpha
 end
 local function outQuart(alpha)
 	return 1 - (alpha - 1) ^ 4
 end
 local function inOutQuart(alpha)
 	alpha *= 2
-	return if alpha < 1 then 0.5 * alpha ^ 4 else -0.5 * ((alpha - 2) ^ 4 - 2)
+	return if alpha < 1 then 0.5 * alpha * alpha * alpha * alpha else -0.5 * ((alpha - 2) ^ 4 - 2)
 end
 local function outInQuart(alpha)
 	return if alpha < 0.5 then 0.5 * (1 - (alpha * 2 - 1) ^ 4) else 0.5 * ((2 * alpha - 1) ^ 4) + 0.5
@@ -67,14 +71,14 @@ end
 
 -- Quint easing.
 local function inQuint(alpha)
-	return alpha ^ 5
+	return alpha * alpha * alpha * alpha * alpha
 end
 local function outQuint(alpha)
 	return 1 + (alpha - 1) ^ 5
 end
 local function inOutQuint(alpha)
 	alpha *= 2
-	return if alpha < 1 then 0.5 * alpha ^ 5 else 0.5 * ((alpha - 2) ^ 5 + 2)
+	return if alpha < 1 then 0.5 * alpha * alpha * alpha * alpha * alpha else 0.5 * ((alpha - 2) ^ 5 + 2)
 end
 local function outInQuint(alpha)
 	return if alpha < 0.5 then 0.5 * ((2 * alpha - 1) ^ 5 + 1) else 0.5 * (2 * alpha - 1) ^ 5 + 0.5
@@ -98,21 +102,14 @@ end
 
 -- Exponential easing.
 local function inExponential(alpha)
-	return if alpha == 0 then 0 else 2 ^ (10 * (alpha - 1)) - 1e-3
+	return 2 ^ (10 * (alpha - 1))
 end
 local function outExponential(alpha)
-	return if alpha == 1 then 1 else 1.001 * (1 - 2 ^ (-10 * alpha))
+	return if alpha == 1 then 1 else 1 - 2 ^ (-10 * alpha)
 end
 local function inOutExponential(alpha)
-	if alpha == 0 then
-		return 0
-	end
-	if alpha == 1 then
-		return 1
-	end
-	return if alpha < 0.5
-		then 0.5 * 2 ^ (10 * (2 * alpha - 1)) - 5e-4
-		else 0.5 * 1.0005 * (2 - 2 ^ (-10 * (2 * alpha - 1)))
+	alpha *= 2
+	return if alpha < 1 then 0.5 * 2 ^ (10 * (alpha - 1)) else 0.5 * (2 - 2 ^ (-10 * (alpha - 1)))
 end
 local function outInExponential(alpha)
 	return if alpha < 0.5 then 0.5 * outExponential(alpha * 2) else 0.5 * (inExponential(2 * alpha - 1) + 1)
@@ -120,7 +117,7 @@ end
 
 -- Circular easing.
 local function inCircular(alpha)
-	return 1 - math.sqrt(1 - alpha ^ 2)
+	return 1 - math.sqrt(1 - alpha * alpha)
 end
 local function outCircular(alpha)
 	return math.sqrt(1 - (alpha - 1) ^ 2)
@@ -128,7 +125,7 @@ end
 local function inOutCircular(alpha)
 	alpha *= 2
 	return if alpha < 1
-		then 0.5 * (1 - math.sqrt(1 - alpha ^ 2))
+		then 0.5 * (1 - math.sqrt(1 - alpha * alpha))
 		else 0.5 * (math.sqrt(1 - (alpha - 2) ^ 2) + 1)
 end
 local function outInCircular(alpha)
@@ -137,40 +134,27 @@ end
 
 -- Elastic easing.
 local function inElastic(alpha)
-	if alpha == 0 then
-		return 0
-	end
-	if alpha == 1 then
-		return 1
-	end
+	local s = if elasticInA < 1
+		then elasticInP * 0.25
+		else elasticInP / (2 * math.pi) * math.asin(1 / elasticInA)
 	local t = alpha - 1
-	return -elasticInA * 2 ^ (10 * t) * math.sin((t - elasticInS) * (2 * math.pi / elasticInP))
+	return -elasticInA * 2 ^ (10 * t) * math.sin((t - s) * (2 * math.pi / elasticInP))
 end
 local function outElastic(alpha)
-	if alpha == 0 then
-		return 0
-	end
-	if alpha == 1 then
-		return 1
-	end
-	return elasticOutA * 2 ^ (-10 * alpha) * math.sin((alpha - elasticOutS) * (2 * math.pi / elasticOutP)) + 1
+	local s = if elasticOutA < 1
+		then elasticOutP * 0.25
+		else elasticOutP / (2 * math.pi) * math.asin(1 / elasticOutA)
+	return elasticOutA * 2 ^ (-10 * alpha) * math.sin((alpha - s) * (2 * math.pi / elasticOutP)) + 1
 end
 local function inOutElastic(alpha)
-	if alpha == 0 then
-		return 0
-	end
-	if alpha == 1 then
-		return 1
-	end
+	local s = if elasticInOutA < 1
+		then elasticInOutP * 0.25
+		else elasticInOutP / (2 * math.pi) * math.asin(1 / elasticInOutA)
 	alpha *= 2
 	local t = alpha - 1
 	return if alpha < 1
-		then -0.5 * elasticInOutA * 2 ^ (10 * t) * math.sin(
-			(t - elasticInOutS) * (2 * math.pi / elasticInOutP)
-		)
-		else 0.5 * elasticInOutA * 2 ^ (-10 * t) * math.sin(
-			(t - elasticInOutS) * (2 * math.pi / elasticInOutP)
-		) + 1
+		then -0.5 * elasticInOutA * 2 ^ (10 * t) * math.sin((t - s) * (2 * math.pi / elasticInOutP))
+		else 0.5 * elasticInOutA * 2 ^ (-10 * t) * math.sin((t - s) * (2 * math.pi / elasticInOutP)) + 1
 end
 local function outInElastic(alpha)
 	return if alpha < 0.5 then 0.5 * outElastic(alpha * 2) else 0.5 * (inElastic(2 * alpha - 1) + 1)
@@ -178,19 +162,19 @@ end
 
 -- Back easing.
 local function inBack(alpha)
-	return alpha ^ 2 * ((backS + 1) * alpha - backS)
+	return alpha * alpha * ((backS + 1) * alpha - backS)
 end
 local function outBack(alpha)
 	local a = alpha - 1
-	return a ^ 2 * ((backS + 1) * a + backS) + 1
+	return a * a * ((backS + 1) * a + backS) + 1
 end
 local function inOutBack(alpha)
 	alpha *= 2
 	if alpha < 1 then
-		return 0.5 * alpha ^ 2 * ((backInOutS + 1) * alpha - backInOutS)
+		return 0.5 * alpha * alpha * ((backInOutS + 1) * alpha - backInOutS)
 	else
 		alpha -= 2
-		return 0.5 * (alpha ^ 2 * ((backInOutS + 1) * alpha + backInOutS) + 2)
+		return 0.5 * (alpha * alpha * ((backInOutS + 1) * alpha + backInOutS) + 2)
 	end
 end
 local function outInBack(alpha)
@@ -200,7 +184,7 @@ end
 -- Bounce easing.
 local function outBounce(alpha)
 	return if alpha < 1 / 2.75
-		then 7.5625 * alpha ^ 2
+		then 7.5625 * alpha * alpha
 		elseif alpha < 2 / 2.75 then 7.5625 * (alpha - 1.5 / 2.75) ^ 2 + 0.75
 		elseif alpha < 2.5 / 2.75 then 7.5625 * (alpha - 2.25 / 2.75) ^ 2 + 0.9375
 		else 7.5625 * (alpha - 2.625 / 2.75) ^ 2 + 0.984375
@@ -215,8 +199,8 @@ local function outInBounce(alpha)
 	return if alpha < 0.5 then 0.5 * outBounce(2 * alpha) else 0.5 * inBounce(2 * alpha - 1) + 0.5
 end
 
--- Map and return easing functions.
-return {
+-- Map built-in functions.
+local easingFunctions = {
 	Linear = linear,
 	Quad = {
 		In = inQuad,
@@ -279,3 +263,51 @@ return {
 		OutIn = outInBounce,
 	},
 }
+
+-- Handle user functions.
+local userFunctions = CollectionService:GetTagged("EasingFunctions")[1]
+if userFunctions then
+	userFunctions = require(userFunctions)
+
+	local directions = {
+		In = true,
+		Out = true,
+		InOut = true,
+		OutIn = true,
+	}
+
+	for key, value in userFunctions do
+		if type(key) ~= "string" then
+			warn("Invalid easing function name:", key)
+			continue
+		end
+		if easingFunctions[key] then
+			warn("Easing function name '" .. key .. "' already used.")
+			continue
+		end
+
+		local valueType = type(value)
+		if valueType ~= "function" and valueType ~= "table" then
+			warn("Missing function for '" .. key .. "' easing definition.")
+			continue
+		end
+
+		if valueType == "table" then
+			local missing
+			for _, direction in directions do
+				if type(value[direction]) ~= "function" then
+					missing = true
+					warn("Missing " .. direction .. " direction function for '" .. key .. "' easing.")
+				end
+			end
+			if missing then
+				continue
+			end
+		end
+
+		easingFunctions[key] = value
+	end
+end
+
+-- Return all functions.
+return easingFunctions

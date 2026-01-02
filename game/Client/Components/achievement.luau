@@ -10,6 +10,7 @@ local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- achievement.luau
 
@@ -205,16 +206,14 @@ function module:Unload()
 	end
 end
 
-function module:DisplayTotal(profile: {
-	Data: profilestructure.profile,
-})
+function module:DisplayTotal(profile: typemarshaller.Profile)
 	local total_label = total:WaitForChild("Amount") :: TextLabel
 
 	local prisms = tonumber(profile and #profile.Data.achievements)
 
 	if prisms then
 		local counter = markdown.text_counter.new({
-			to = tonumber(profile and profile.Data.Prisms) or 0,
+			to = tonumber(profile and profile.Data.prisms) or 0,
 			from = 0,
 			direction = "up",
 			delay = 0,
@@ -232,9 +231,7 @@ function module:DisplayTotal(profile: {
 	end
 end
 
-function module:Load(profile: {
-	Data: profilestructure.profile,
-})
+function module:Load(profile: typemarshaller.Profile)
 	if not profile then
 		print("no profile to load badges")
 

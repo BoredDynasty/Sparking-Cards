@@ -59,7 +59,7 @@ local function getOppositeReactorValue(reactor: observer.Observer<boolean>): boo
 	return not reactor:Get()
 end
 
-function module:render()
+function module:Render()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
 	for _, button in ipairs(hudContainer:GetChildren()) do
@@ -129,25 +129,12 @@ function module:render()
 			end
 		end)
 
-		local defaultIcon = promise
-			.new(function(resolve: (icon) -> ...unknown, reject: (string) -> ...unknown)
-				local ok, output = pcall(function()
-					return lucide.GetAsset(icon, 256 * 2)
-				end)
+		local default_icon = future.new(lucide.GetAsset, icon, 256 * 2):Await()
 
-				if ok then
-					resolve(output)
-				else
-					reject("Couldn't get lucide icon asset")
-				end
-			end)
-			:catch(warn)
-			:expect() :: icon
-
-		if defaultIcon then
-			Icon.ImageRectOffset = defaultIcon.ImageRectOffset
-			Icon.ImageRectSize = defaultIcon.ImageRectSize
-			Icon.Image = defaultIcon.Url
+		if default_icon then
+			Icon.ImageRectOffset = default_icon.ImageRectOffset
+			Icon.ImageRectSize = default_icon.ImageRectSize
+			Icon.Image = default_icon.Url
 			Icon.ImageColor3 = Color3.fromHex("ffb5a0")
 
 			UIAspectRatioConstraint.Parent = Icon
@@ -227,14 +214,14 @@ function module:render()
 	end
 end
 
-function module:toggle(buttonName: string)
+function module:Toggle(buttonName: string)
 	local button: button? = nil
 
-	if not hud.buttons then
+	if not module.buttons then
 		return
 	end
 
-	for _, b in ipairs(hud.buttons :: { button }) do
+	for _, b in ipairs(module.buttons :: { button }) do
 		if b.name == buttonName then
 			button = b
 			break
@@ -246,7 +233,7 @@ function module:toggle(buttonName: string)
 	end
 end
 
-function module:clear()
+function module:Clear()
 	for i, btn in pairs(module.buttons) do
 		btn.reactor:Destroy()
 
@@ -272,13 +259,26 @@ function module:clear()
 	end
 end
 
-function module:hide()
+function module:Hide()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	hudContainer.Enabled = false
+
+	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
+	spr.stop(hudBackground)
+	spr.target(hudBackground, 0.5, 8, {
+		BackgroundTransparency = 1,
+	})
 end
-function module:show()
+
+function module:Show()
 	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
 	hudContainer.Enabled = true
+
+	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
+	spr.stop(hudBackground)
+	spr.target(hudBackground, 0.5, 8, {
+		BackgroundTransparency = 0,
+	})
 end
 
 return module

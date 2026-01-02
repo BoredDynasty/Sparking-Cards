@@ -43,16 +43,9 @@ return bytenet.defineNamespace("MainNet", function()
 		amount = bytenet.int16,
 		recipientUsername = bytenet.string,
 	})
-	local raycastValidationStruct =
-		bytenet.struct({ -- For general raycast validation, e.g. client interactions
-			hitModelName = bytenet.string, -- Name of the model that was hit
-		})
 	local sprintStruct = bytenet.struct({
 		walkSpeed = bytenet.int8, -- Stamina cost of the sprint action
 		isSprinting = bytenet.bool, -- True if starting to sprint, false if stopping
-	})
-	local profileChangedStruct = bytenet.struct({
-		[1] = bytenet.nothing,
 	})
 	local replicateAnimation = bytenet.struct({
 		identification = bytenet.string, -- The animation ID should be formatted into a string.
@@ -71,21 +64,6 @@ return bytenet.defineNamespace("MainNet", function()
 	})
 	local addStaminaStruct = bytenet.struct({
 		amount = bytenet.int16, -- Amount of stamina to add
-	})
-	local parrySuccess = bytenet.struct({
-		[1] = bytenet.nothing, -- Placeholder for future data
-	})
-	local attemptParryStruct = bytenet.struct({
-		[1] = bytenet.nothing,
-	})
-	local shakeCamera = bytenet.struct({
-		intensity = bytenet.float32, -- Intensity of the camera shake
-		duration = bytenet.float32, -- Duration of the camera shake
-	})
-	local shakeFromAreaStruct = bytenet.struct({
-		origin = bytenet.vec3, -- Origin point for the shake effect
-		maxDistance = bytenet.float32, -- Maximum distance for the shake effect
-		strength = bytenet.float32, -- Strength of the shake effect
 	})
 	local cleanupCharacter = bytenet.struct({
 		[1] = bytenet.nothing, -- Placeholder for future data
@@ -117,17 +95,11 @@ return bytenet.defineNamespace("MainNet", function()
 		SellCard = bytenet.definePacket({ value = sellCardStruct }),
 		PayPrisms = bytenet.definePacket({ value = payPrismsStruct }),
 		SprintRemote = bytenet.definePacket({ value = sprintStruct }),
-		RayValidation = bytenet.definePacket({ value = raycastValidationStruct }), -- For general client-side raycast validation
-		profileChanged = bytenet.definePacket({ value = profileChangedStruct }),
 		ReplicateAnimation = bytenet.definePacket({ value = replicateAnimation }),
 		CancelAnimation = bytenet.definePacket({ value = cancelAnimation }),
 		StopAllAnimations = bytenet.definePacket({ value = stopAllAnimations }),
 		DeductStamina = bytenet.definePacket({ value = deductStaminaStruct }),
 		AddStamina = bytenet.definePacket({ value = addStaminaStruct }),
-		ParrySuccess = bytenet.definePacket({ value = parrySuccess }),
-		AttemptParry = bytenet.definePacket({ value = attemptParryStruct }),
-		ShakeCamera = bytenet.definePacket({ value = shakeCamera }),
-		ShakeFromArea = bytenet.definePacket({ value = shakeFromAreaStruct }),
 		CleanupCharacter = bytenet.definePacket({ value = cleanupCharacter }),
 		IndictEffect = bytenet.definePacket({ value = indictEffectStruct }),
 		SetNetworkOwner = bytenet.definePacket({ value = setNetworkOwnerStruct }),

@@ -100,14 +100,14 @@ export type Character = Model & {
 }
 
 export type ProfileData = {
-	Cards: {
+	cards: {
 		string: number,
 	},
-	Prisms: number,
-	Level: string,
-	Experience: number,
-	LastLogin: number,
-	EquippedCard: string,
+	prisms: number,
+	level: string,
+	experience: number,
+	last_login: number,
+	equipped_card: string,
 	victories: number,
 	emotes: {
 		{
@@ -122,7 +122,6 @@ export type ProfileData = {
 	equipped_emotes: {
 		string: any,
 	},
-	equippedEmotes: { number },
 	achievements: {
 		{
 			name: string,
@@ -170,20 +169,12 @@ export type Quest = {
 	module: ModuleScript?,
 }
 
-export type function SnakeCase(t: type)
-	local new = types.newtable()
-
-	for prop_type, prop in t:properties() do
-		local str = prop_type:value()
-
-		str = string.lower(string.gsub(str, "([^_%u])(%u)", "%1_%2"))
-		str = string.gsub(str, "(%-)(%w)", "%1_%2")
-		str = string.gsub(str, "%-", "")
-
-		new:setproperty(types.singleton(str), prop.read)
-	end
-
-	return new
-end
+export type LucideIcon = {
+	Iconame: string,
+	Id: number,
+	Url: string,
+	ImageRectSize: Vector2,
+	ImageRectOffset: Vector2,
+}
 
 return nil

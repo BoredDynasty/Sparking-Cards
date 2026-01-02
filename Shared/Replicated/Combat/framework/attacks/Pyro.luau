@@ -4,17 +4,21 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local Packet = require(ReplicatedStorage.Packet)
-local boundingbox = require(ReplicatedStorage.Classes.boundingbox)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
-local data = require(ReplicatedStorage.Combat.framework.utils.data)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
-local nearest = require(ReplicatedStorage.Combat.framework.utils.nearest)
+local impact = require(ReplicatedStorage.Combat.framework.effects.impact)
+local knockback = require(ReplicatedStorage.Combat.Strike.knockback)
+local nearest = require(ReplicatedStorage.Combat.hitbox.nearest)
+local orion = require(ReplicatedStorage.Combat.orion)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
+local rocks = require(ReplicatedStorage.Combat.framework.visuals.rocks)
 local space = require(ReplicatedStorage.Modules.Serialization.space)
+local sword = require(ReplicatedStorage.Combat["combat-styles"].sword)
+local visuals = require(ReplicatedStorage.Combat.framework.visuals)
 
 -- Pyro.luau
 
@@ -35,65 +39,41 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset.M1_1(player: Player, ...: any?): any?
+function pyro.moveset:M1(player: Player, ...: any?): any?
 	print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
 	local character = characterMarshaller.get(player)
 
-	local sword = character:FindFirstDescendant("Katana_Asset")
-	if not sword then
-		sword = fetchAsset("PyroKatana")
-		sword.Parent = character
-		sword:SetAttribute("Katana", character)
+	local sword_asset = character:FindFirstDescendant("Katana_Asset")
 
-		local gripInfo = grip.createGrip(character, sword, "Right", CFrame.new(0, 0, 2))
+	local player_data = orion:GetPlayerData(player)
+	assert(player_data, "no player data???????")
 
-		promise
-			.new(function()
-				data.arbitrary[player].gripInfo = gripInfo
-			end)
-			:catch(warn)
+	local singleton = player_data.element_singleton :: typeof(sword.new(player, ""))
+	if not singleton then
+		player_data.element_singleton = sword.new(player, "Katana")
 
-		return
-	end
-	if not sword:GetAttribute("Katana") then
-		return
+		singleton = player_data.element_singleton :: typeof(sword.new(player, ""))
+		singleton:Equip()
 	end
 
-	local combo_data = combo.incrementCombo(player)
+	singleton:Activate()
 
-	characterMarshaller.halt(character)
-
-	Packet.ReplicateAnimation.sendTo({ identification = comboToAnimationId(combo_data.CurrentCombo) }, player)
-
-	-- You can add hit detection and damage application logic here
-	-- region checks!!!
-
-	local primary = sword.PrimaryPart
-
-	local range = vector.magnitude(pyro.lib.HitboxSize)
-	print("range: ", range)
-
-	local plr = nearest(primary, range)
-	if plr then
-		local params = {
-			amount = 10 * pyro.lib.BaseDamageMultiplier,
-			source = player,
-			target = plr,
-		}
-
-		damage.__call(params)
+	local nearest_players = nearest(character.PrimaryPart, CardLibrary.PyroKatana, 10)
+	for _, other_player in ipairs(nearest_players) do
+		singleton:OnTouched(other_player.Character.PrimaryPart)
 	end
-
-	task.delay(1, characterMarshaller.continue, character)
 
 	return true
 end
 
-function pyro.moveset.BurningBlade_Skill(player: Player, ...: any?): any?
+function pyro.moveset:Skill(player: Player, ...: any?): any?
 	print("Pyro Skill executed for player:", player.Name)
 	-- Implement the actual attack logic here
+
+	-- a slash
+
 	return true
 end
 

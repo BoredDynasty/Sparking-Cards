@@ -3,12 +3,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local compute_level = require(ReplicatedStorage.ClientModules["compute-level"])
 local future = require(ReplicatedStorage.Packages.future)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- advance-level.luau
 
 -- a level up sequence.
 
-local events = ReplicatedStorage:FindFirstChild("Events") :: Folder
+local events = ReplicatedStorage:WaitForChild("Events") :: Folder
 local get_profile = events:WaitForChild("GetProfile") :: RemoteFunction
 
 local function expectProfile()
@@ -16,7 +17,7 @@ local function expectProfile()
 		return get_profile:InvokeServer()
 	end)
 
-	return fut:Await()
+	return fut:Await() :: typemarshaller.Profile
 end
 
 local rankOrder: { string } = {
@@ -36,9 +37,9 @@ local function onLevelUp()
 	local now = tick()
 
 	local profile = expectProfile()
-	local current_level = profile.Data.Level
+	local current_level = profile.Data.level
 
-	local current_level_index = compute_level.rankNameToNumber(current_level)
+	local current_level_index = compute_level:RankNameToNumber(current_level)
 
 	if not current_level_index then
 		warn("no rank index")

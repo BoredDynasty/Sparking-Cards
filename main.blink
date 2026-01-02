@@ -133,7 +133,7 @@ event CancelAnimation {
 event StopAllAnimations {
     From: Server,
     Type: Reliable,
-    Call: ManyAsync
+    Call: ManyAsync,
     Data: Player
 }
 
@@ -172,9 +172,3 @@ event SetTime {
     Data: u8(0..24)
 }
 
-function FetchProfile {
-    From: Server,
-    Type: Reliable,
-    Call: ManyAsync,
-    Data: Profile
-}

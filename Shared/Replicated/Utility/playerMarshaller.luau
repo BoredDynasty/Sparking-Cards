@@ -45,7 +45,7 @@ end
 function playerMarshaller.get(): Player
 	local localPlayer = Players.LocalPlayer
 
-	localPlayer = playerMarshaller.added(function(p)
+	playerMarshaller.added(function(p)
 		if localPlayer.UserId == p.UserId then
 			localPlayer = p
 		end
@@ -75,7 +75,7 @@ function playerMarshaller.all(): { Player }
 end
 
 -- Listen for when a player joins
-function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing_players: boolean?): Player
+function playerMarshaller.added(f: (player: Player) -> (), dont_run_for_existing_players: boolean?)
 	local connections = {}
 
 	if not dont_run_for_existing_players then

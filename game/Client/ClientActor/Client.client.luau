@@ -4,7 +4,6 @@
 -- Client.client.luau
 
 print(script.Name)
-task.wait()
 
 -- // Services -- //
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -14,28 +13,15 @@ local UserInputService = game:GetService("UserInputService")
 
 -- // Requires -- //
 
-local CameraController = require("../Camera/CameraController")
-local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
-local Navi = require("../Components/Navi")
-local Options = require("../Components/Options")
 local Packet = require(ReplicatedStorage.Packet)
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local TextPlus = require(ReplicatedStorage.Utility.TextPlus)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local achievement = require(StarterPlayer.StarterPlayerScripts.Components.achievement)
 local animate = require("../Utilities/animate")
-local audio = require(ReplicatedStorage.Modules.audio)
-local badges = require(ReplicatedStorage.Structures.badges)
-local beats = require(ReplicatedStorage.Modules.beats)
-local bloxstrap_rpc_sdk = require(ReplicatedStorage.Kits["bloxstrap-rpc-sdk"])
-local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
-local characterUtility = require(ReplicatedStorage.Utility.characterMarshaller)
-local compute_level = require(ReplicatedStorage.ClientModules["compute-level"])
-local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local displayorder = require(script.Parent.Parent.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
+local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local future = require(ReplicatedStorage.Packages.future)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
@@ -54,6 +40,7 @@ local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["n
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 local objective = require("../Components/objective")
 local observer = require(ReplicatedStorage.Utility.observer)
+local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 local parallax = require("../Interface/parallax")
 local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
@@ -83,7 +70,7 @@ local mouse = input.Mouse.new()
 print("Client Requirements")
 
 -- // Events -- //
-local events = ReplicatedStorage.Events
+local events = ReplicatedStorage:WaitForChild("Events")
 local get_profile = events:WaitForChild("GetProfile") :: RemoteFunction
 
 -- // Variables -- //
@@ -93,7 +80,7 @@ local profile = nil
 
 local _trove = trove.new()
 
-local character = characterUtility.get(player)
+local character = characterMarshaller.get(player)
 
 -- // Functions -- //
 local function expectProfile()
@@ -101,7 +88,7 @@ local function expectProfile()
 		return get_profile:InvokeServer()
 	end)
 
-	return fut:Await()
+	return fut:Await() :: typemarshaller.Profile
 end
 
 ---------------------------------- Client --------------------------------
@@ -138,37 +125,42 @@ local function initializeMarket()
 	print("got market gui")
 
 	local function callback()
-		market:display_spendings(expectProfile())
-		market:load_items()
-		displayorder:toggle(shopCanvas)
+		market:DisplaySpendings(expectProfile())
+		market:LoadItems()
+		displayorder:Toggle(shopCanvas)
 	end
 
-	hud:create("Market", callback, lucide.GetAsset("shopping-cart"))
+	hud.new("Market", callback, lucide.GetAsset("shopping-cart"))
 
 	local function populateNavigation()
 		-- home, inventory, passive
 		local navi_btns = {
 			{
 				name = "Home",
-				icon = "rbxassetid://73790023098856",
+				icon = Content.fromAssetId(73790023098856),
 				callback = function()
-					market:unload()
-					market:load_items()
+					market:Unload()
+					market:LoadItems()
 				end,
+				holder = shopNavigation,
 			},
 			{
 				name = "Inventory",
-				icon = "rbxassetid://10709769841",
+				icon = Content.fromAssetId(10709769841),
 				callback = function()
-					market:unload()
-					market:load_inventory(expectProfile())
+					market:Unload()
+					market:LoadInventory(expectProfile())
 				end,
+				holder = shopNavigation,
 			},
 		}
+
 		for i, data in ipairs(navi_btns) do
 			navigation_rail.new(data)
 		end
-		Navi:render(shopNavigation)
+
+		navigation_rail:Render()
+
 		shopNavigation.Visible = true
 	end
 
@@ -195,25 +187,26 @@ local function initializeMatchmaking()
 
 	--displayorder:add(matchmakingCanvas)
 
-	shadow(matchmakingFrame, Color3.new(), 0, 14)
+	shadow(matchmakingFrame)
 
-	local state = observer.new(false)
+	local state = observer.new(false) :: observer.Observer<boolean>
 	local clock = timer.new()
 
 	local function showMatchmakingFrame()
 		spr.target(matchmakingFrame, 0.3, 8, {
 			Position = UDim2.fromScale(0.5, 0.1),
 		})
+
 		state:Set(true)
 
 		clock:Start()
 		-- every 0.33_ seconds
-		clock:interval(clock, 1 / 3, function()
-			local totalSeconds = clock:GetTime()
+		clock:interval(1 / 3, function()
+			local total_seconds = clock:GetTime()
 
-			local minutes = math.floor(totalSeconds / 60)
+			local minutes = math.floor(total_seconds / 60)
 
-			local seconds = totalSeconds % 60
+			local seconds = total_seconds % 60
 			statusText.Text = string.format(
 				'Searching...<br/><font transparency="0.5"><font size="14">%02d:%02d</font></font>',
 				minutes,
@@ -235,29 +228,16 @@ local function initializeMatchmaking()
 		clock:Reset()
 		clock:Stop()
 
-		hud:toggle("Matchmaking")
+		hud:Toggle("Matchmaking")
 	end
 
-	state:Watch(function(newValue: boolean)
-		if newValue == true then
-			matchmakingCanvas.Visible = true
-
-			print("Starting matchmaking")
-
-			Packet.CreateMatch.send({}, player)
-		else
-			matchmakingCanvas.Visible = false
-			--notify.info("Matchmaking", "You have left the queue.", 5, "info")
-
-			print("Stopped matchmaking")
-
-			Packet.CancelMatch.send({ matchInstance = player }, player)
-		end
+	state:Watch(function(newValue)
+		matchmakingCanvas.Visible = newValue :: boolean
 	end)
 
 	local swipeDetector = swipe.new(matchmakingFrame)
 	swipeDetector.OnSwipe:Connect(function(direction: swipe.direction, delta: Vector3)
-		if state:Get() == false then
+		if not state:Get() then
 			-- how sir
 
 			return
@@ -273,7 +253,7 @@ local function initializeMatchmaking()
 		end
 	end)
 
-	hud:create("Matchmaking", showMatchmakingFrame, lucide.GetAsset("play-circle"))
+	hud.new("Matchmaking", showMatchmakingFrame, lucide.GetAsset("play-circle"))
 end
 local function initializeBadges()
 	print("init badges")
@@ -291,12 +271,12 @@ local function initializeBadges()
 	displayorder.new(badgesCanvas)
 
 	local function callback()
-		displayorder:toggle(badgesCanvas)
+		displayorder:Toggle(badgesCanvas)
 		achievement:DisplayTotal(expectProfile())
 		achievement:Load(expectProfile())
 	end
 
-	hud:create("Badges", callback, lucide.GetAsset("trophy", 48))
+	hud.new("Badges", callback, lucide.GetAsset("trophy", 48))
 end
 local function initializeNotifiers()
 	print("init notifiers")
@@ -328,91 +308,52 @@ local function initializeMusic()
 	}
 
 	for i, track in ipairs(tracks) do
-		music.newBiome(track.biome, {
+		music.new(track.biome, {
 			track,
 		}, track.coordinates.position, track.coordinates.size)
 
 		print("added biome track: " .. i .. ` {tracks[i]}`)
 	end
 
-	music.startTracking()
+	music:Start()
 
 	local musicGui = PlayerGui:WaitForChild("Music") :: ScreenGui & {
-		CanvasGroup: CanvasGroup & {
+		CanvasGroup: any & CanvasGroup & {
 			Disc: ImageLabel,
 			Note: ImageLabel,
 			SongName: TextLabel,
 			Artist: TextLabel,
 		},
-	}
+	} & any
 	local musicCanvas = musicGui.CanvasGroup
-	local disc = musicCanvas.Disc
+	local disc = musicCanvas.Disc :: ImageLabel
 	local note_image = musicCanvas.Note
 
-	local songNameDisplay = musicCanvas.SongName
-	local artistDisplay = musicCanvas.Artist
-
-	music.playing:Watch(function()
-		local currentlyPlaying = music.playing:Get()
-		if not currentlyPlaying then
-			return
-		end
-
-		songNameDisplay.Text = currentlyPlaying.name
-		artistDisplay.Text = currentlyPlaying.artist
-	end)
-
-	sway:on(note_image)
-	sway:on(disc)
+	local song_name = musicCanvas.SongName
+	local artist_display = musicCanvas.Artist
 
 	glare:Watch(disc, {
 		once = false,
 		corner_radius = UDim.new(1, 0),
 	})
 
-	-- rotate effect on disc
-	local rotation_tween = TweenPlus(
-		disc,
-		{ Rotation = 360 },
-		{ Time = 7, RepeatCount = -1, EasingStyle = "Linear" }
-	)
-	rotation_tween:Start()
-
-	retryer.infdelay(3, function()
-		print("getting analyzer for beat detection")
-		-- pulse effect using BPM
-		local analyzer = music.analyzer
-		if not analyzer then
-			return false
+	music.Playing.Changed:Connect(function(track: music.Track)
+		if not track then
+			return
 		end
 
-		local detector = beats.new({
-			analyzer = analyzer,
-			minimum_gap = 0.3,
-			window_size = 10,
-			threshold_multiplier = 1.2,
-		})
-		analyzer.Parent = musicGui
-		detector:Start()
+		song_name.Text = track.name
+		artist_display.Text = track.artist or "none"
+	end)
 
-		local lastCheck: number = 0.0
-		local checkInterval = 1 / 1.5
+	local average_framerate = frame_rate:GetFrameRate(math.pow(10, 2))
 
-		detector.Beat:Connect(function(deltaTime: number)
-			lastCheck += deltaTime
-			if lastCheck < checkInterval then
-				return
-			end
-
-			lastCheck = 0
-
-			pop(disc, 1.4)
-			-- Add any additional effects or animations here
-		end)
-
-		return true
+	-- rotate effect on disc
+	local rotation_thread = task.spawn(retryer.infdelay, average_framerate, function()
+		disc.Rotation += RunService.PreRender:Wait()
 	end)
 end
+
 local function initializeLoadouts()
 	print("init loadouts")
 	local loadoutsGui = PlayerGui:FindFirstChild("Loadout") :: ScreenGui
@@ -428,13 +369,13 @@ local function initializeObjectives()
 	local completed_value = observer.new(0)
 	local uncompleted_value = observer.new(0)
 
-	local rank = observer.new("")
+	local rank = observer.new("") :: observer.Observer<string>
 
-	future.new(function(profile: { read Data: unknown })
+	future.new(function(profile: typemarshaller.Profile)
 		-- we're not typechecking ts
 
 		if profile and profile.Data then
-			rank:Set(profile.Data.Level)
+			rank:Set(profile.Data.level)
 		else
 			rank:Set("Bronze I")
 
@@ -442,51 +383,18 @@ local function initializeObjectives()
 		end
 	end, expectProfile())
 
-	local create_quests = future.new(function(...)
-		local rank_number = compute_level:rankNameToNumber(rank:Get())
-		rank_number = rank_number or 1 -- DEBUG
-
-		local rank_str: string = rank:Get()
-
-		if not rank_number then
-			return "no rank number for some reason. invalid rank?: " .. rank_str
-		end
-
-		local availiable_objectives = quest_ranking:getObjectivesFromRank(rank_str)
-		if not availiable_objectives then
-			return "no availiable_objectives??"
-		end
-
-		for i, objective_name in ipairs(availiable_objectives) do
-			print(objective_name)
-
-			quest.new(player, objective_name)
-		end
-
-		return true
-	end)
-
-	local result: concat<string, boolean> = create_quests:Unwrap()
-
-	print("creating new quests info: ", result)
-
-	local quest_list = quest:Get(player):expect()
-	if not quest_list then
-		print("no quest list")
-		return
-	end
-
-	for i, data in ipairs(quest_list :: { quest.quest }) do
-		future.new(objective.new, data):Await()
-	end
-
-	quest:Track(player)
-
 	local function toggleUI()
-		displayorder:toggle(objectiveGui.CanvasGroup)
+		displayorder:Toggle(objectiveGui.CanvasGroup)
 	end
 
-	hud:create("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
+	hydration(objectiveGui.CanvasGroup.Frame.Completed.Value) {
+		Text = completed_value,
+	}
+	hydration(objectiveGui.CanvasGroup.Frame.Uncompleted.Value) {
+		Text = uncompleted_value,
+	}
+
+	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
 end
 
 initializeCommands()
@@ -498,7 +406,7 @@ initializeNotifiers()
 initializeMusic()
 initializeLoadouts()
 initializeObjectives()
-hud:render()
+hud:Render()
 displayorder:Watch()
 
 print("client almost done")
@@ -535,7 +443,7 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 	end
 
 	local attack_types = {}
-	for i, value in pairs(profile.Data.combatBindings) do
+	for i, value in pairs(profile.Data.keybinds) do
 		attack_types[i] = Enum.KeyCode:FromValue(value)
 	end
 
@@ -556,7 +464,7 @@ end))
 
 orion.registerPlayer(player, expectProfile())
 
-Packet.ReplicateAnimation.listen(function(data: { identification: string })
+Packet.ReplicateAnimation.listen(function(data)
 	animate.loadAnimation(data.identification, {
 		Id = "rbxassetid://" .. data.identification,
 		Weight = 1,
@@ -566,9 +474,9 @@ end)
 
 Packet.CleanupCharacter.listen(function()
 	animate.cleanup()
-	music.cleanup()
-	Options:destroy()
-	hud:clear()
+	music:Destroy()
+	options:Clear()
+	hud:Clear()
 	dropper._trove:Clean()
 end)
 

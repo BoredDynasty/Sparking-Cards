@@ -9,6 +9,7 @@ local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local orion = require(ReplicatedStorage.Combat.orion)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
@@ -47,6 +48,13 @@ function module.new(player: Player, sword_name: string)
 	assert(sword_model, "Couldn't fetch sword model: " .. sword_name)
 
 	local self = setmetatable({}, module)
+
+	local player_data = orion:GetPlayerData(self.player)
+	assert(player_data, "no player data???????")
+
+	if player_data.element_active then
+		error("element already active")
+	end
 
 	self.model = sword_model
 	self.player = player
@@ -196,12 +204,14 @@ function module:CreateTrail()
 	end
 
 	local trail = Instance.new("Trail")
-	trail.Attachment0 = a0 :: Attachment
-	trail.Attachment1 = a1 :: Attachment
-	trail.Lifetime = 0.25
-	trail.Transparency = NumberSequence.new(0, 1)
-	trail.Color = ColorSequence.new(Color3.fromRGB(255, 255, 255))
-	trail.Parent = self.model
+	hydration(trail) {
+		Attachment0 = a0,
+		Attachment1 = a1,
+		Lifetime = 0.25,
+		Transparency = NumberSequence.new(0, 1),
+		Color = ColorSequence.new(Color3.new(0.658824, 0.658824, 0.658824), Color3.new(1, 1, 1)),
+		Parent = self.model,
+	}
 
 	self._trail = trail
 end
@@ -214,8 +224,6 @@ function module:RemoveTrail()
 	if self._trail.Parent then
 		self._trail:Destroy()
 	end
-
-	(self._trail) = nil
 end
 
 function module:Destroy()

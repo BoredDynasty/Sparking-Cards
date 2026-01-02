@@ -24,11 +24,7 @@ local character = {}
 -- this function exists so u dont have to do
 -- local character = (player.Character :: any) :: character.Character?
 local function getCharacter(player: Player): typemarshaller.Character
-	local char = player.Character
-
-	character.added(player, function(c)
-		char = c
-	end)
+	local char = player.CharacterAdded:Wait()
 
 	return char :: any
 end

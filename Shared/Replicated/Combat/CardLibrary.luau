@@ -45,7 +45,7 @@ local CardLibrary = {
 		},
 	},
 	PyroKatana = {
-		DisplayName = "Fiery Katana",
+		DisplayName = "Pyro Katana",
 		WeaponType = "Sword",
 		MovesetName = "Conflagration of the Blazing Heart",
 		FlavorText = [[
@@ -61,7 +61,7 @@ local CardLibrary = {
 
 		Moveset = {
 			M1 = "PyroKatana_M1_1",
-			Skill = "PyroKatana_BurningBlade_Skill",
+			Skill = "PyroKatana_Slash_Skill",
 			Ultimate = "PyroKatana_InfernalSlash_Ultimate",
 			Support = "PyroKatana_HeatAura_Support",
 		},

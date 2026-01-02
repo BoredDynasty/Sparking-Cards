@@ -19,6 +19,7 @@ local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- market.luau
 
@@ -207,7 +208,7 @@ local function createTemplate(ancestor: Instance?): template
 	return Instances.ItemTemplate :: any
 end
 
-function market:unload()
+function market:Unload()
 	for _, item in ipairs(itemHolder:GetChildren()) do
 		if item and item:IsA("Frame") then
 			item:Destroy()
@@ -221,17 +222,15 @@ function market:unload()
 	end
 end
 
-function market:display_spendings(profile: {
-	Data: profilestructure.profile,
-})
+function market:DisplaySpendings(profile: typemarshaller.Profile)
 	local moneyFrame = spendings:FindFirstChild("Money") :: Frame
 	local money_label = moneyFrame:WaitForChild("Amount") :: TextLabel
 
-	local prisms = tonumber(profile and profile.Data.Prisms)
+	local prisms = tonumber(profile and profile.Data.prisms)
 
 	if prisms then
 		local counter = markdown.text_counter.new({
-			to = tonumber(profile and profile.Data.Prisms) or 0,
+			to = tonumber(profile and profile.Data.prisms) or 0,
 			from = 0,
 			direction = "up",
 			delay = 0,
@@ -249,7 +248,7 @@ function market:display_spendings(profile: {
 	end
 end
 
-function market:load_items(items: Items.dataType?)
+function market:LoadItems(items: Items.dataType?)
 	market:unload()
 
 	items = items or Items
@@ -344,9 +343,7 @@ function market:load_items(items: Items.dataType?)
 	print("done")
 end
 
-function market:load_inventory(profile: {
-	Data: profilestructure.profile,
-})
+function market:LoadInventory(profile: typemarshaller.Profile)
 	market:unload()
 
 	if not profile then
@@ -354,7 +351,7 @@ function market:load_inventory(profile: {
 		return
 	end
 
-	local items = profile.Data.Cards
+	local items = profile.Data.cards
 
 	for i, item in pairs(items :: { [string]: number }) do
 		local template = market.template:Clone()
