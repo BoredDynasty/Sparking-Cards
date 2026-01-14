@@ -10,12 +10,17 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CameraController = require("../Camera/CameraController")
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local module = {}
 
+local player = playerMarshaller.get()
+local character = characterMarshaller.get(player)
+
 local controller = CameraController.new()
 
-module.updated = controller._update
+module.Updated = controller._update
 module.camera = workspace.CurrentCamera
 
 workspace.CurrentCamera.Changed:Connect(function()
@@ -48,6 +53,20 @@ end
 
 function module:GetCamera()
 	return module.camera
+end
+
+function module:GetZoomLevel()
+	local root_part = character:FindFirstChild("HumanoidRootPart") :: BasePart
+
+	if not root_part then
+		return 0
+	end
+
+	local camera = module:GetCamera()
+
+	local zoom_distance = (camera.CFrame.Position - root_part.Position + Vector3.yAxis * 1.5).Magnitude
+
+	return math.round(zoom_distance)
 end
 
 function module:Destroy()

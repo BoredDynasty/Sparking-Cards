@@ -6,6 +6,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require("../Interface/pop")
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require("../Interface/shadow")
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- options.luau
@@ -18,15 +19,17 @@ export type option_callbacks = {
 	on: (...unknown) -> ...unknown,
 	off: (...unknown) -> ...unknown,
 }
+
+type Icons = {
+	[string]: typemarshaller.LucideIcon,
+}
+
 export type Option = {
 	name: string,
 	details: string?,
 	callbacks: option_callbacks,
-	icons: {
-		on: typemarshaller.LucideIcon,
-		off: typemarshaller.LucideIcon,
-	}?,
-	state: observer.Observer<boolean>,
+	icons: Icons?,
+	value: observer.Observer<any>,
 }
 
 function module.new(data: Option)
@@ -152,14 +155,24 @@ local function booleanToString(boolean: boolean): "on" | "off"
 	end
 end
 
-local function updateIcon(btn_icon: ImageLabel, boolean_state: boolean, icon_data: any)
-	local current_icon = icon_data[booleanToString(boolean_state)]
-	if not current_icon then
-		return false
-	end
+local function updateIcon(btn_icon: ImageLabel, boolean_state: boolean, icon_data: Icons)
+	assert(typeof(boolean_state) == "boolean", "State is not a boolean: " .. typeof(boolean_state))
+
+	local current_icon = select(
+		2,
+		future
+			.Try(function()
+				local str = booleanToString(boolean_state)
+
+				return icon_data[str]
+			end)
+			:Unwrap()
+	)
+
+	assert(current_icon, "Could not fetch icon from data table: " .. tablekit.ToString(icon_data :: any))
 
 	task.spawn(function()
-		btn_icon.ImageContent = Content.fromAssetId(current_icon.Id)
+		btn_icon.ImageContent = select(2, future.Try(Content.fromAssetId, current_icon.Id):Await())
 		btn_icon.ImageRectOffset = current_icon.ImageRectOffset
 		btn_icon.ImageRectSize = current_icon.ImageRectSize
 	end)
@@ -197,9 +210,13 @@ function module:Render(holder: Instance)
 
 		local callbacks = option.callbacks :: { [string]: (...unknown) -> () }
 		local icon_data = option.icons
-		local state = option.state
+		local value = option.value
 
-		future.new(updateIcon, btn_icon, state:Get(), icon_data):After(print)
+		assert(icon_data, "Where is the icon data?: " .. tablekit.ToString(option :: any))
+
+		if type(value:Get()) == "boolean" then
+			future.new(updateIcon, btn_icon, value:Get(), icon_data)
+		end
 
 		local fancy = [[
 		<b>%s</b></br>%s
@@ -214,25 +231,27 @@ function module:Render(holder: Instance)
 
 			pop(toggle_btn)
 
-			state:Map(function(current: boolean)
+			value:Map(function(current)
 				return not current
 			end)
 
-			local boolean_state = state:Get()
+			local boolean_state = value:Get()
 			local str_state = booleanToString(boolean_state)
 
 			local next_callback = callbacks[str_state]
 			if next_callback then
 				task.spawn(future.new, next_callback)
 
-				future.new(updateIcon, btn_icon, boolean_state, icon_data):After(print)
+				if type(value:Get()) == "boolean" then
+					future.new(updateIcon, btn_icon, value:Get(), icon_data)
+				end
 			end
 		end)
 	end
 end
 
 function module:Clear()
-	return future.new(table.clear, module.tracked):Await()
+	return future.new(table.clear, module.tracked)
 end
 
 return module

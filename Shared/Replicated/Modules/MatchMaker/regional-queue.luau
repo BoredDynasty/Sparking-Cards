@@ -52,13 +52,7 @@ export type RegionalQueue = {
 
 	GetSortedMap: (self: RegionalQueue, mode: string, region_code: string) -> MemoryStoreSortedMap,
 	TeleportPartyAsync: (self: RegionalQueue, party: Party, match_id: string) -> (),
-	CheckIfPartyFoundMatch: (
-		self: RegionalQueue,
-		party: Party,
-		leave_queue: boolean
-	) -> typeof(future.Try(function()
-		return 0 :: any
-	end)),
+	CheckIfPartyFoundMatch: (self: RegionalQueue, party: Party, leave_queue: boolean) -> any,
 	AddPartyAsync: (self: RegionalQueue, party_member_ids: { number }, party_data: { [string]: any }?) -> (),
 	RemovePartyAsync: (self: RegionalQueue, party_id: string, force: boolean?) -> (),
 	RemovePartyTable: (self: RegionalQueue, party_id: string, match: any) -> (),
@@ -116,11 +110,8 @@ function module:TeleportPartyAsync(self: RegionalQueue, party: Party, match_id: 
 	end)
 end
 
-function module:CheckIfPartyFoundMatch(
-	self: RegionalQueue,
-	party: Party,
-	leave_queue: boolean
-): future.Future<any>
+function module:CheckIfPartyFoundMatch(self: RegionalQueue, party: Party, leave_queue: boolean)
+	local ok = nil
 	local match_id: number? = nil
 
 	local fut = future.Try(function(...)
@@ -145,15 +136,13 @@ function module:CheckIfPartyFoundMatch(
 		end, PARTY_TIMEOUT)
 	end)
 
-	fut:After(function(ok: boolean, ...: any)
-		if not ok then
-			warn(tostring(...))
-		else
-			return match_id
-		end
-	end)
+	ok, match_id = fut:Await()
 
-	return fut
+	if not ok then
+		return nil
+	else
+		return match_id
+	end
 end
 
 function module:AddPartyAsync(
@@ -197,7 +186,7 @@ function module:AddPartyAsync(
 			return
 		end
 
-		cache_table.connections.refresh_thread = task.spawn(function()
+		cache_table.connections:Add(task.spawn(function()
 			retryer.infdelay(PARTY_REFRESH, function()
 				local time_elasped = os.time() - join_time
 
@@ -207,7 +196,7 @@ function module:AddPartyAsync(
 					self:CheckIfPartyFoundMatch(party, false)
 				end
 			end)
-		end)
+		end))
 	end)
 end
 

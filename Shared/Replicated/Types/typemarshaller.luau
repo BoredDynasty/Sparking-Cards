@@ -170,7 +170,7 @@ export type Quest = {
 }
 
 export type LucideIcon = {
-	Iconame: string,
+	IconName: string,
 	Id: number,
 	Url: string,
 	ImageRectSize: Vector2,

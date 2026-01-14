@@ -214,6 +214,10 @@ local solo_matchmaking = MatchMaker.new({
 	end,
 })
 
+solo_matchmaking.party_added:Connect(function(party, match)
+	--
+end)
+
 -- TODO) add the products
 
 local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model

@@ -6,11 +6,13 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local future = require(ReplicatedStorage.Packages.future)
 local private_server = require(script["private-server"])
+local regional_queue = require(script["regional-queue"])
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- matchmaker.luau
 
 local module = {}
+module.__index = module
 
 type MatchmakingMode = "Solo" | "Duo"
 
@@ -28,13 +30,14 @@ type MatchmakingParams = {
 	matchmaking: ({ Party }) -> { { place_id: number, parties: { Party } } },
 }
 
-type MatchMaker = typeof(setmetatable({
-	active = true,
-	_trove = trove.new(),
-	party_added = SignalPlus(),
-	party_removed = SignalPlus(),
-	regional_queues = {},
-}, module))
+type MatchMaker = setmetatable<{
+	active: boolean,
+	_trove: typeof(trove.new()),
+	party_added: SignalPlus.Signal<>,
+	party_removed: SignalPlus.Signal<>,
+
+	regional_queues: {},
+}, typeof(module)>
 
 local active_matchmakers = {} :: { [string]: MatchMaker }
 
@@ -92,9 +95,9 @@ function module:AddPartyAsync(member_ids: { number }, data, region_code)
 		end
 		if player then
 			local fut =
-				future.new(LocalizationService.GetCountryRegionForPlayerAsync, LocalizationService, player)
+				future.Try(LocalizationService.GetCountryRegionForPlayerAsync, LocalizationService, player)
 
-			country_code = fut:Await() or "DEFAULT"
+			country_code = select(2, fut:Await()) or "DEFAULT"
 		end
 	end
 
@@ -126,22 +129,17 @@ function module:GetParty(party_id)
 	end
 end
 
-function module:GetPartyMatchAsync(party_id, mode: string, region_code)
+function module:GetPartyMatchAsync(party_id, mode: string, region_code): string?
 	local fut = future.Try(function(...)
-		return self.regional_queue:GetSortedMap(mode, region_code):GetAsync(party_id)
+		return self.regional_queue:GetSortedMap(mode, region_code):GetAsync(party_id) :: { match_id: string }
 	end)
 
-	fut:Await()
+	local ok, result = fut:Await()
+	if not ok or not result then
+		return nil
+	end
 
-	fut:After(function(ok, result)
-		if not result or (result and not result.match_id) then
-			return
-		end
-
-		return private_server:GetPrivateServerDataAsnyc(result.match_id)
-	end)
-
-	return fut
+	return result.match_id
 end
 
 function module:Destroy()

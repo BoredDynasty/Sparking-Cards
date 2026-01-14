@@ -25,6 +25,8 @@ local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local future = require(ReplicatedStorage.Packages.future)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
+local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health-pulse"])
+local hint = require(ReplicatedStorage.ClientModules.hint)
 local hud = require(script.Parent.Parent.Components.hud)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
@@ -63,6 +65,7 @@ local throbber = require("../Components/throbber")
 local timer = require(ReplicatedStorage.Modules.timer)
 local trove = require(ReplicatedStorage.Packages.trove)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
@@ -81,6 +84,7 @@ local profile = nil
 local _trove = trove.new()
 
 local character = characterMarshaller.get(player)
+local humanoid = character.Humanoid
 
 -- // Functions -- //
 local function expectProfile()
@@ -122,12 +126,17 @@ local function initializeMarket()
 	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
 	local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
 
+	local spendings_icon = spendings:FindFirstChild("SpendingsIcon", true) :: ImageLabel
+
 	print("got market gui")
 
 	local function callback()
 		market:DisplaySpendings(expectProfile())
 		market:LoadItems()
 		displayorder:Toggle(shopCanvas)
+		wiggle(spendings_icon, function()
+			print("completed wiggle animation.")
+		end)
 	end
 
 	hud.new("Market", callback, lucide.GetAsset("shopping-cart"))
@@ -280,16 +289,13 @@ local function initializeBadges()
 end
 local function initializeNotifiers()
 	print("init notifiers")
-	--[[
+
 	Packet.SendNotification.listen(function(data)
-		notify[data.type or "info"](
-			data.title or "Notification",
-			data.message or "",
-			data.duration or 5,
-			data.type
-		)
+		local hint_ = hint.new()
+		hint_:SetText(data.message)
+		hint_:SetExpiry(data.duration)
+		hint_:SetCanClick(false)
 	end)
-	--]]
 end
 local function initializeMusic()
 	print("init music")
@@ -462,7 +468,17 @@ _trove:Add(mouse.LeftDown:Connect(function()
 	orion:execute(player, attack_type)
 end))
 
-orion.registerPlayer(player, expectProfile())
+humanoid.HealthChanged:Connect(function(health)
+	local minimum_health = 20
+
+	if health <= minimum_health then
+		health_pulse:On()
+	else
+		health_pulse:Off()
+	end
+end)
+
+orion.new(player, expectProfile())
 
 Packet.ReplicateAnimation.listen(function(data)
 	animate.loadAnimation(data.identification, {
