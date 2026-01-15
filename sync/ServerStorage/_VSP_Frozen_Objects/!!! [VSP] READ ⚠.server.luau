@@ -1,0 +1,3 @@
+--// This folder contains all the original objects from the VFX Scripter Pro plugin.
+--// It's recommended to not change anything from this folder.
+--// The plugin should automatically restore any objects upon opening a Studio file.

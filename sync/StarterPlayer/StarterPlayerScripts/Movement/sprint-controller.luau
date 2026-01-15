@@ -1,0 +1,137 @@
+--!strict
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
+
+local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
+local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
+local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
+local input = require(ReplicatedStorage.Packages.input)
+local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
+local trove = require(ReplicatedStorage.Packages.trove)
+
+-- sprint-controller.luau
+
+local _trove = trove.new()
+
+local controller = {}
+controller._trove = _trove
+
+local keyboard = input.Keyboard.new()
+
+_trove:Add(keyboard :: any)
+
+local player = playerMarshaller.get()
+local character = characterMarshaller.get(player)
+
+local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+
+local rate_limit = ratelimit(1, 0.5)
+
+animate.loadAnimation("sprint", MovementConfig.Animations.Run :: any)
+
+local function onBegan()
+	if not rate_limit(player.UserId) then
+		return
+	end
+
+	if humanoid:GetState() == Enum.HumanoidStateType.Running then
+		return
+	end
+
+	local stamina = character:GetAttribute("Stamina") :: number or 0
+
+	if stamina <= 0 then
+		return
+	end
+
+	if humanoid.MoveDirection.Magnitude == 0 then
+		return
+	end
+
+	local base_speed = MovementConfig.Character.BaseSpeed
+	local speed_increase = MovementConfig.Sprint.SpeedIncrease
+
+	local new_speed = base_speed + speed_increase
+
+	local tween = TweenPlus(humanoid, {
+		WalkSpeed = new_speed,
+	}, {
+		Time = 0.3,
+	})
+
+	character:SetAttribute("AntiRegenerate", true)
+	animate.play("sprint")
+
+	local lines = fetchAsset("speed_lines") :: speed_lines.lines
+
+	speed_lines:On(gamecamera.camera, lines)
+
+	tween:Start()
+end
+
+local function onEnded()
+	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
+		return
+	end
+
+	local new_speed = MovementConfig.Character.BaseSpeed
+
+	local tween = TweenPlus(humanoid, {
+		WalkSpeed = new_speed,
+	}, {
+		Time = 0.3,
+	})
+
+	character:SetAttribute("AntiRegenerate", false)
+
+	animate.stop("sprint")
+
+	speed_lines:Off()
+
+	tween:Start()
+end
+
+function controller:Update(deltaTime: number)
+	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
+		return
+	end
+
+	local current_stamina = character:GetAttribute("Stamina") :: number or 0
+
+	if current_stamina >= 100 then
+		return
+	end
+
+	local drain_rate = MovementConfig.Sprint.StaminaDrainRate
+
+	local new_stamina = current_stamina - (drain_rate * deltaTime)
+
+	character:SetAttribute("Stamina", new_stamina)
+
+	if new_stamina <= 0 or humanoid.MoveDirection.Magnitude == 0 then
+		onEnded()
+	end
+end
+
+(keyboard.KeyDown :: RBXScriptSignal<Enum.KeyCode, boolean>):Connect(function(key)
+	if key ~= MovementConfig.Keybinds.Sprint then
+		return
+	end
+
+	onBegan()
+end);
+
+(keyboard.KeyUp :: RBXScriptSignal<Enum.KeyCode, boolean>):Connect(function(key)
+	if key ~= MovementConfig.Keybinds.Sprint then
+		return
+	end
+
+	onEnded()
+end)
+
+return controller
