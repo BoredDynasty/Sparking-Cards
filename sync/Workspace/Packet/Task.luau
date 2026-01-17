@@ -47,5 +47,5 @@ return {
 			threads[length] = nil -- Remove from free threads list.
 			return task.delay(delay, thread, callback, thread, ...)
 		end
-	end,
+	end
 }

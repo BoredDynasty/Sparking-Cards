@@ -2,13 +2,16 @@
 
 local LocalizationService = game:GetService("LocalizationService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local future = require(ReplicatedStorage.Packages.future)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local spr = require(ReplicatedStorage.Modules.spr)
+local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 
 -- hint.luau
 
@@ -28,6 +31,7 @@ local character = characterMarshaller.get(player)
 local hint_gui = playerGui:WaitForChild("Dialog") :: HintGui
 
 local module = {}
+module.__index = module
 
 local disallowed_whitespace = { "\n", "\r", "\t", "\v", "\f" }
 
@@ -36,6 +40,8 @@ type Hint = setmetatable<{
 	Clicked: SignalPlus.Signal<>,
 	CanClick: observer.Observer<boolean>,
 	expiry: number,
+	dismissable: boolean,
+	swipe_detector: swipe.SwipeDetector,
 }, typeof(module.new())>
 
 local function createHint(ancestor: Instance?)
@@ -114,6 +120,8 @@ function module.new()
 	self.Clicked = SignalPlus()
 	self.CanClick = observer.new(false)
 	self.expiry = 12
+	self.dismissable = true
+	self.swipe_detector = swipe.new(self.hint)
 
 	self.CanClick:Watch(function(new)
 		self.hint.Interactable = new
@@ -121,9 +129,25 @@ function module.new()
 
 	self.hint.MouseButton1Click:Connect(function()
 		self.Clicked:Fire()
+		pop(self.hint, 1 / 8)
 	end)
 
 	task.defer(module.Render, self, self)
+
+	self.swipe_detector.OnSwipe:Connect(function(direction, delta)
+		spr.target(self.hint, 0.5, 0.9, {
+			Position = UDim2.fromOffset(delta.X, delta.Y),
+		})
+		if direction == "up" then
+			if self.dismissable then
+				self:Destroy(self)
+			end
+		else
+			spr.target(self.hint, 0.5, 0.9, {
+				Position = UDim2.new(0.5, 0, 1, -85),
+			})
+		end
+	end)
 
 	return self
 end
@@ -162,6 +186,8 @@ function module:SetCanClick(self: Hint, enabled: boolean)
 end
 
 function module:Destroy(self: Hint)
+	spr.stop(self.hint)
+
 	self.CanClick:Destroy()
 	self.Clicked:Destroy()
 	self.hint:Destroy()

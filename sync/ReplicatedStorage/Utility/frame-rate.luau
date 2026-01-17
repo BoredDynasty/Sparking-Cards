@@ -41,4 +41,22 @@ function module:GetDevicePower(iterations: number?)
 	return power
 end
 
+function module:GetPercentileFramesPerSecond(
+	percentile: number,
+	sorted_frame_buffer: { number },
+	total_frames: number?
+)
+	total_frames = total_frames or 40000
+
+	local target_count = math.ceil(total_frames * percentile)
+
+	local total_frame_time = 0
+
+	for i = 1, target_count do
+		total_frame_time += sorted_frame_buffer[i]
+	end
+
+	return 1 / (total_frame_time / target_count)
+end
+
 return module

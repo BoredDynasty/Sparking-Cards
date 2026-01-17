@@ -7365,48 +7365,6 @@
           ]
         },
         {
-          "name": "Terrain",
-          "className": "Terrain",
-          "children": [
-            {
-              "name": "Attachment1",
-              "className": "Attachment"
-            },
-            {
-              "name": "Clouds",
-              "className": "Clouds"
-            },
-            {
-              "name": "Dynablox1005_googly_base_left",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "googly_spotlight",
-                  "className": "SpotLight"
-                }
-              ]
-            },
-            {
-              "name": "Dynablox1005_googly_pupil_left",
-              "className": "Part"
-            },
-            {
-              "name": "Dynablox1005_googly_base_right",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "googly_spotlight",
-                  "className": "SpotLight"
-                }
-              ]
-            },
-            {
-              "name": "Dynablox1005_googly_pupil_right",
-              "className": "Part"
-            }
-          ]
-        },
-        {
           "name": "testingAreaSpawn",
           "className": "Part",
           "children": [
@@ -7535,6 +7493,48 @@
                   ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "Terrain",
+          "className": "Terrain",
+          "children": [
+            {
+              "name": "Attachment1",
+              "className": "Attachment"
+            },
+            {
+              "name": "Clouds",
+              "className": "Clouds"
+            },
+            {
+              "name": "Dynablox1005_googly_base_left",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_left",
+              "className": "Part"
+            },
+            {
+              "name": "Dynablox1005_googly_base_right",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_right",
+              "className": "Part"
             }
           ]
         },
@@ -7754,6 +7754,67 @@
                       "name": "Sphere2",
                       "className": "Attachment"
                     }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Packet",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "PackageLink",
+              "className": "PackageLink"
+            },
+            {
+              "name": "Task",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/Workspace/Packet/Task.luau"
+              ]
+            },
+            {
+              "name": "Types",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/Workspace/Packet/Types.luau"
+              ],
+              "children": [
+                {
+                  "name": "Characters",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/Workspace/Packet/Types/Characters.luau"
+                  ]
+                },
+                {
+                  "name": "Static2",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/Workspace/Packet/Types/Static2.luau"
+                  ]
+                },
+                {
+                  "name": "Static3",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/Workspace/Packet/Types/Static3.luau"
+                  ]
+                },
+                {
+                  "name": "Static1",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/Workspace/Packet/Types/Static1.luau"
+                  ]
+                },
+                {
+                  "name": "Enums",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/Workspace/Packet/Types/Enums.luau"
                   ]
                 }
               ]
@@ -8087,40 +8148,6 @@
               ]
             },
             {
-              "name": "Utilities",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "lerp",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/lerp.luau"
-                  ]
-                },
-                {
-                  "name": "animate",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/animate.luau"
-                  ]
-                },
-                {
-                  "name": "bounds",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/bounds.luau"
-                  ]
-                },
-                {
-                  "name": "temporary-layer-collector",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/temporary-layer-collector.luau"
-                  ]
-                }
-              ]
-            },
-            {
               "name": "Gameplay",
               "className": "Folder",
               "children": [
@@ -8272,6 +8299,305 @@
               ]
             },
             {
+              "name": "Camera",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "CameraController",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/CameraController.luau"
+                  ]
+                },
+                {
+                  "name": "DynamicFOV",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/DynamicFOV.luau"
+                  ]
+                },
+                {
+                  "name": "Follow",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Follow.luau"
+                  ]
+                },
+                {
+                  "name": "Shake",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Shake.luau"
+                  ]
+                },
+                {
+                  "name": "Sway",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Sway.luau"
+                  ]
+                },
+                {
+                  "name": "Trail",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Trail.luau"
+                  ]
+                },
+                {
+                  "name": "Orient",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Orient.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Graphics",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "sunflare",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/sunflare.luau"
+                  ]
+                },
+                {
+                  "name": "motion-blur",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/motion-blur.luau"
+                  ]
+                },
+                {
+                  "name": "posterize",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/posterize.luau"
+                  ]
+                },
+                {
+                  "name": "pixelation",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/pixelation.luau"
+                  ]
+                },
+                {
+                  "name": "film-grain",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/film-grain.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Remotes",
+              "className": "Folder"
+            },
+            {
+              "name": "Animation",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "animate",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Animation/animate.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "World",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "terrain-deformation",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/World/terrain-deformation.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Interface",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "swipe",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/swipe.luau"
+                  ]
+                },
+                {
+                  "name": "parallax",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/parallax.luau"
+                  ]
+                },
+                {
+                  "name": "shadow",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/shadow.luau"
+                  ]
+                },
+                {
+                  "name": "displayorder",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/displayorder.luau"
+                  ]
+                },
+                {
+                  "name": "confetti",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/confetti.luau"
+                  ]
+                },
+                {
+                  "name": "pop",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/pop.luau"
+                  ]
+                },
+                {
+                  "name": "sway",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/sway.luau"
+                  ]
+                },
+                {
+                  "name": "sparkle",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/sparkle.luau"
+                  ]
+                },
+                {
+                  "name": "spring",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/spring.luau"
+                  ]
+                },
+                {
+                  "name": "glare",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/glare.luau"
+                  ]
+                },
+                {
+                  "name": "ripple",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/ripple.luau"
+                  ]
+                },
+                {
+                  "name": "hover",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/hover.luau"
+                  ]
+                },
+                {
+                  "name": "transition",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/transition.luau"
+                  ]
+                },
+                {
+                  "name": "glow",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/glow.luau"
+                  ]
+                },
+                {
+                  "name": "ui-scaler",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/ui-scaler.luau"
+                  ]
+                },
+                {
+                  "name": "input-icons",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/input-icons.luau"
+                  ]
+                },
+                {
+                  "name": "ui-blur",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/ui-blur.luau"
+                  ]
+                },
+                {
+                  "name": "wiggle",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/wiggle.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Utilities",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "lerp",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/lerp.luau"
+                  ]
+                },
+                {
+                  "name": "animate",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/animate.luau"
+                  ]
+                },
+                {
+                  "name": "bounds",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/bounds.luau"
+                  ]
+                },
+                {
+                  "name": "temporary-layer-collector",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/temporary-layer-collector.luau"
+                  ]
+                },
+                {
+                  "name": "ring-buffer",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/ring-buffer.luau"
+                  ]
+                }
+              ]
+            },
+            {
               "name": "Components",
               "className": "Folder",
               "children": [
@@ -8395,6 +8721,20 @@
                   ]
                 },
                 {
+                  "name": "metrics",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/metrics.luau"
+                  ]
+                },
+                {
+                  "name": "hint",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/hint.luau"
+                  ]
+                },
+                {
                   "name": "Sequences",
                   "className": "Folder",
                   "children": [
@@ -8405,271 +8745,6 @@
                         "sync/StarterPlayer/StarterPlayerScripts/Components/Sequences/advance-level.luau"
                       ]
                     }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Interface",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "swipe",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/swipe.luau"
-                  ]
-                },
-                {
-                  "name": "parallax",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/parallax.luau"
-                  ]
-                },
-                {
-                  "name": "drag",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/drag.luau"
-                  ]
-                },
-                {
-                  "name": "shadow",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/shadow.luau"
-                  ]
-                },
-                {
-                  "name": "displayorder",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/displayorder.luau"
-                  ]
-                },
-                {
-                  "name": "confetti",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/confetti.luau"
-                  ]
-                },
-                {
-                  "name": "pop",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/pop.luau"
-                  ]
-                },
-                {
-                  "name": "sway",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/sway.luau"
-                  ]
-                },
-                {
-                  "name": "sparkle",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/sparkle.luau"
-                  ]
-                },
-                {
-                  "name": "spring",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/spring.luau"
-                  ]
-                },
-                {
-                  "name": "glare",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/glare.luau"
-                  ]
-                },
-                {
-                  "name": "ripple",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/ripple.luau"
-                  ]
-                },
-                {
-                  "name": "hover",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/hover.luau"
-                  ]
-                },
-                {
-                  "name": "transition",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/transition.luau"
-                  ]
-                },
-                {
-                  "name": "glow",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/glow.luau"
-                  ]
-                },
-                {
-                  "name": "ui-scaler",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/ui-scaler.luau"
-                  ]
-                },
-                {
-                  "name": "input-icons",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/input-icons.luau"
-                  ]
-                },
-                {
-                  "name": "ui-blur",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/ui-blur.luau"
-                  ]
-                },
-                {
-                  "name": "wiggle",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Interface/wiggle.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Camera",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "CameraController",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/CameraController.luau"
-                  ]
-                },
-                {
-                  "name": "DynamicFOV",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/DynamicFOV.luau"
-                  ]
-                },
-                {
-                  "name": "Follow",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Follow.luau"
-                  ]
-                },
-                {
-                  "name": "Shake",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Shake.luau"
-                  ]
-                },
-                {
-                  "name": "Sway",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Sway.luau"
-                  ]
-                },
-                {
-                  "name": "Trail",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Trail.luau"
-                  ]
-                },
-                {
-                  "name": "Orient",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Orient.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Graphics",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "sunflare",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/sunflare.luau"
-                  ]
-                },
-                {
-                  "name": "motion-blur",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/motion-blur.luau"
-                  ]
-                },
-                {
-                  "name": "posterize",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/posterize.luau"
-                  ]
-                },
-                {
-                  "name": "pixelation",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/pixelation.luau"
-                  ]
-                },
-                {
-                  "name": "film-grain",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Graphics/film-grain.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Remotes",
-              "className": "Folder"
-            },
-            {
-              "name": "Animation",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "animate",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Animation/animate.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "World",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "terrain-deformation",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/World/terrain-deformation.luau"
                   ]
                 }
               ]
@@ -10629,13 +10704,6 @@
       "className": "ReplicatedStorage",
       "children": [
         {
-          "name": "Packet",
-          "className": "ModuleScript",
-          "filePaths": [
-            "sync/ReplicatedStorage/Packet.luau"
-          ]
-        },
-        {
           "name": "Classes",
           "className": "Folder",
           "children": [
@@ -12374,17 +12442,64 @@
               ],
               "children": [
                 {
-                  "name": "DataTypes",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Modules/TweenPlus/DataTypes.luau"
+                  "name": "Utilities",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "EasingFunctions",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Modules/TweenPlus/Utilities/EasingFunctions.luau"
+                      ]
+                    },
+                    {
+                      "name": "UpdateFunctions",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Modules/TweenPlus/Utilities/UpdateFunctions.luau"
+                      ]
+                    },
+                    {
+                      "name": "ValueFunctions",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Modules/TweenPlus/Utilities/ValueFunctions.luau"
+                      ]
+                    }
                   ]
                 },
                 {
-                  "name": "EasingFunctions",
+                  "name": "Data",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "Defaults",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Modules/TweenPlus/Data/Defaults.luau"
+                      ]
+                    },
+                    {
+                      "name": "Types",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Modules/TweenPlus/Data/Types.luau"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Client",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/ReplicatedStorage/Modules/TweenPlus/EasingFunctions.luau"
+                    "sync/ReplicatedStorage/Modules/TweenPlus/Client.luau"
+                  ]
+                },
+                {
+                  "name": "Server",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/Modules/TweenPlus/Server.luau"
                   ]
                 }
               ]
@@ -12630,202 +12745,6 @@
                   "className": "ModuleScript",
                   "filePaths": [
                     "sync/ReplicatedStorage/Modules/Animation/spin.luau"
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "ClientModules",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "characterIteration",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/characterIteration.luau"
-              ]
-            },
-            {
-              "name": "markdown",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/markdown.luau"
-              ],
-              "children": [
-                {
-                  "name": "configuration",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/markdown/configuration.luau"
-                  ]
-                },
-                {
-                  "name": "escapeforms",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/markdown/escapeforms.luau"
-                  ]
-                },
-                {
-                  "name": "gradients",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/markdown/gradients.luau"
-                  ]
-                },
-                {
-                  "name": "typeformatter",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/markdown/typeformatter.luau"
-                  ]
-                },
-                {
-                  "name": "typewriter",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/markdown/typewriter.luau"
-                  ]
-                },
-                {
-                  "name": "text-counter",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/markdown/text-counter.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "custom-lighting",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/custom-lighting.luau"
-              ]
-            },
-            {
-              "name": "quest",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/quest.luau"
-              ],
-              "children": [
-                {
-                  "name": "take-a-hike",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/quest/take-a-hike.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "dropper",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/dropper.luau"
-              ]
-            },
-            {
-              "name": "compute-level",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/compute-level.luau"
-              ]
-            },
-            {
-              "name": "quest-ranking",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/quest-ranking.luau"
-              ]
-            },
-            {
-              "name": "collector",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/collector.luau"
-              ]
-            },
-            {
-              "name": "logger",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/logger.luau"
-              ]
-            },
-            {
-              "name": "hint",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/hint.luau"
-              ]
-            },
-            {
-              "name": "Note",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "note",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/Note/note.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "camera-feel",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "pan",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/camera-feel/pan.luau"
-                  ]
-                },
-                {
-                  "name": "zoom",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/camera-feel/zoom.luau"
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "layouts",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "connection-render",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/layouts/connection-render.luau"
-                  ]
-                },
-                {
-                  "name": "force-directed-layout",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/layouts/force-directed-layout.luau"
-                  ]
-                },
-                {
-                  "name": "radial-branching",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/layouts/radial-branching.luau"
-                  ]
-                },
-                {
-                  "name": "tile-generator",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/layouts/tile-generator.luau"
                   ]
                 }
               ]
@@ -13432,16 +13351,7 @@
         },
         {
           "name": "Datastore",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "stores",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Datastore/stores.luau"
-              ]
-            }
-          ]
+          "className": "Folder"
         },
         {
           "name": "Events",
@@ -17099,29 +17009,6 @@
               ]
             },
             {
-              "name": "PacketPlus",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Dependencies/PacketPlus.luau"
-              ],
-              "children": [
-                {
-                  "name": "Types",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Dependencies/PacketPlus/Types.luau"
-                  ]
-                },
-                {
-                  "name": "Task",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Dependencies/PacketPlus/Task.luau"
-                  ]
-                }
-              ]
-            },
-            {
               "name": "SignalPlus",
               "className": "ModuleScript",
               "filePaths": [
@@ -17198,6 +17085,13 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Dependencies/PlayersPlus.luau"
+              ]
+            },
+            {
+              "name": "PacketPlus",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Dependencies/PacketPlus.luau"
               ]
             }
           ]
@@ -17299,6 +17193,199 @@
               ]
             }
           ]
+        },
+        {
+          "name": "ClientModules",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "characterIteration",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/characterIteration.luau"
+              ]
+            },
+            {
+              "name": "markdown",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/markdown.luau"
+              ],
+              "children": [
+                {
+                  "name": "configuration",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/markdown/configuration.luau"
+                  ]
+                },
+                {
+                  "name": "escapeforms",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/markdown/escapeforms.luau"
+                  ]
+                },
+                {
+                  "name": "gradients",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/markdown/gradients.luau"
+                  ]
+                },
+                {
+                  "name": "typeformatter",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/markdown/typeformatter.luau"
+                  ]
+                },
+                {
+                  "name": "typewriter",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/markdown/typewriter.luau"
+                  ]
+                },
+                {
+                  "name": "text-counter",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/markdown/text-counter.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "custom-lighting",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/custom-lighting.luau"
+              ]
+            },
+            {
+              "name": "quest",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/quest.luau"
+              ],
+              "children": [
+                {
+                  "name": "take-a-hike",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/quest/take-a-hike.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "dropper",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/dropper.luau"
+              ]
+            },
+            {
+              "name": "compute-level",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/compute-level.luau"
+              ]
+            },
+            {
+              "name": "quest-ranking",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/quest-ranking.luau"
+              ]
+            },
+            {
+              "name": "collector",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/collector.luau"
+              ]
+            },
+            {
+              "name": "logger",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/ClientModules/logger.luau"
+              ]
+            },
+            {
+              "name": "Note",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "note",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/Note/note.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "camera-feel",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "pan",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/camera-feel/pan.luau"
+                  ]
+                },
+                {
+                  "name": "zoom",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/camera-feel/zoom.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "layouts",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "connection-render",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/layouts/connection-render.luau"
+                  ]
+                },
+                {
+                  "name": "force-directed-layout",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/layouts/force-directed-layout.luau"
+                  ]
+                },
+                {
+                  "name": "radial-branching",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/layouts/radial-branching.luau"
+                  ]
+                },
+                {
+                  "name": "tile-generator",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/layouts/tile-generator.luau"
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Characters",
+          "className": "Folder"
         }
       ]
     },
@@ -17306,13 +17393,6 @@
       "name": "ServerScriptService",
       "className": "ServerScriptService",
       "children": [
-        {
-          "name": "Any2Lua @ 01/13/26 18:28:13",
-          "className": "LocalScript",
-          "filePaths": [
-            "sync/ServerScriptService/Any2Lua @ 01/13/26 18_28_13.client.luau"
-          ]
-        },
         {
           "name": "Handlers",
           "className": "Folder"

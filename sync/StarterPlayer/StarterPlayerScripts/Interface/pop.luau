@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local TweenService = game:GetService("TweenService")
 
 local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
-local spr = require(ReplicatedStorage.Modules.spr)
 
 return function(object: GuiObject | { GuiObject }, ratio: number?)
 	-- Default ratio if not specified

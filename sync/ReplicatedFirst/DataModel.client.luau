@@ -52,12 +52,7 @@ end
 
 local function preload()
 	if RunService:IsStudio() then
-		loadingUI:Destroy()
-
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, true)
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
-		StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
+		skipPreloading()
 
 		return
 	end

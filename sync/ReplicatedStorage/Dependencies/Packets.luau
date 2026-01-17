@@ -1,7 +1,8 @@
---!strict
+--!nocheck
 
 -- Packets.luau
 -- for TweenPlus
+-- during runtime, this SHOULD work.
 
 local Packet = require("./PacketPlus")
 

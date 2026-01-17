@@ -19,14 +19,14 @@ local achievement = require(StarterPlayer.StarterPlayerScripts.Components.achiev
 local animate = require("../Utilities/animate")
 local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
-local displayorder = require(script.Parent.Parent.Interface.displayorder)
+local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displayorder)
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local future = require(ReplicatedStorage.Packages.future)
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health-pulse"])
-local hint = require(ReplicatedStorage.ClientModules.hint)
+local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(script.Parent.Parent.Components.hud)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
@@ -73,8 +73,8 @@ local mouse = input.Mouse.new()
 print("Client Requirements")
 
 -- // Events -- //
-local events = ReplicatedStorage:WaitForChild("Events")
-local get_profile = events:WaitForChild("GetProfile") :: RemoteFunction
+local events = ReplicatedStorage.Events
+local get_profile = events.GetProfile
 
 -- // Variables -- //
 
@@ -88,11 +88,14 @@ local humanoid = character.Humanoid
 
 -- // Functions -- //
 local function expectProfile()
-	local fut = future.new(function()
-		return get_profile:InvokeServer()
+	local fut = future.Try(function()
+		return get_profile:InvokeServer() :: typemarshaller.Profile
 	end)
 
-	return fut:Await() :: typemarshaller.Profile
+	local ok, result = fut:Await()
+	assert(ok, "Couldn't fetch profile from Server: " .. result)
+
+	return result
 end
 
 ---------------------------------- Client --------------------------------
@@ -116,7 +119,7 @@ end
 
 local function initializeMarket()
 	print("init market")
-	local shopGui = PlayerGui:WaitForChild("Shop") :: ScreenGui
+	local shopGui = PlayerGui.Shop
 	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
 	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
 
@@ -177,9 +180,9 @@ local function initializeMarket()
 end
 local function initializeOptions()
 	print("init options")
-	local optionsGui = PlayerGui:WaitForChild("Options") :: ScreenGui
-	local optionsCanvas = optionsGui:WaitForChild("CanvasGroup") :: CanvasGroup
-	local optionsFrame = optionsCanvas:WaitForChild("Frame") :: Frame
+	local optionsGui = PlayerGui.Options
+	local optionsCanvas = optionsGui.CanvasGroup
+	local optionsFrame = optionsCanvas.Frame
 
 	displayorder.new(optionsCanvas)
 
@@ -187,12 +190,12 @@ local function initializeOptions()
 end
 local function initializeMatchmaking()
 	print("init matchmaking")
-	local matchmakingGui = PlayerGui:WaitForChild("NewMatch") :: ScreenGui
-	local matchmakingCanvas = matchmakingGui:WaitForChild("CanvasGroup") :: CanvasGroup
-	local matchmakingFrame = matchmakingCanvas:WaitForChild("Frame") :: Frame
+	local matchmakingGui = PlayerGui.NewMatch
+	local matchmakingCanvas = matchmakingGui.CanvasGroup
+	local matchmakingFrame = matchmakingCanvas.Frame
 
-	local statusText = matchmakingFrame:WaitForChild("Time") :: TextLabel
-	local pulseImage = matchmakingFrame:WaitForChild("Pulse") :: ImageLabel
+	local statusText = matchmakingFrame.Time
+	local pulseImage = matchmakingFrame.Pulse
 
 	--displayorder:add(matchmakingCanvas)
 
@@ -267,13 +270,12 @@ end
 local function initializeBadges()
 	print("init badges")
 
-	local badgesGui = PlayerGui:FindFirstChild("Badges") :: ScreenGui
-	local badgesCanvas = badgesGui:FindFirstChild("CanvasGroup") :: CanvasGroup
-	local badgeFrame = badgesCanvas:FindFirstChild("Frame") :: Frame
+	local badgesGui = PlayerGui.Badges
+	local badgesCanvas = badgesGui.CanvasGroup
+	local badgeFrame = badgesCanvas.Frame
 
-	local itemHolder = badgeFrame:WaitForChild("Holder") :: Frame
-	local totalBadges = badgeFrame:FindFirstChild("Total") :: Frame
-
+	local itemHolder = badgeFrame.Holder
+	local totalBadges = badgeFrame.Total
 	shadow(badgeFrame)
 	shadow(totalBadges)
 
@@ -332,16 +334,11 @@ local function initializeMusic()
 		},
 	} & any
 	local musicCanvas = musicGui.CanvasGroup
-	local disc = musicCanvas.Disc :: ImageLabel
+	local disc = musicCanvas.Disc
 	local note_image = musicCanvas.Note
 
 	local song_name = musicCanvas.SongName
 	local artist_display = musicCanvas.Artist
-
-	glare:Watch(disc, {
-		once = false,
-		corner_radius = UDim.new(1, 0),
-	})
 
 	music.Playing.Changed:Connect(function(track: music.Track)
 		if not track then
@@ -362,14 +359,14 @@ end
 
 local function initializeLoadouts()
 	print("init loadouts")
-	local loadoutsGui = PlayerGui:FindFirstChild("Loadout") :: ScreenGui
-	local loadoutCanvas = loadoutsGui:FindFirstChild("CanvasGroup") :: CanvasGroup
+	local loadoutsGui = PlayerGui.Loadout
+	local loadoutCanvas = loadoutsGui.CanvasGroup
 end
 
 local function initializeObjectives()
 	print("init objectives")
 
-	local objectiveGui = PlayerGui:WaitForChild("Objective") :: objective.objectiveGui
+	local objectiveGui = PlayerGui.Objective
 	displayorder.new(objectiveGui.CanvasGroup)
 
 	local completed_value = observer.new(0)
@@ -378,14 +375,13 @@ local function initializeObjectives()
 	local rank = observer.new("") :: observer.Observer<string>
 
 	future.new(function(profile: typemarshaller.Profile)
-		-- we're not typechecking ts
-
 		if profile and profile.Data then
 			rank:Set(profile.Data.level)
 		else
 			rank:Set("Bronze I")
-
-			--notify.error("Data", "Couldn't get your Rank.", 5, "error")
+			local rank_hint = hint.new()
+			rank_hint:SetText("Couldn't fetch Rank")
+			rank_hint:SetCanClick(false)
 		end
 	end, expectProfile())
 
@@ -434,7 +430,7 @@ print("client movement")
 print("rain controller")
 
 do
-	local char_folder = ReplicatedStorage:FindFirstChild("Characters") or Instance.new("Folder")
+	local char_folder = ReplicatedStorage.Characters
 	char_folder.Name = "Characters"
 	char_folder.Parent = ReplicatedStorage
 end
@@ -456,17 +452,17 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 	return attack_types[key]
 end
 
-_trove:Add(keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
+keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
-		orion:execute(player, attack_type)
+		orion:Execute(player, attack_type)
 	end
-end))
+end)
 
-_trove:Add(mouse.LeftDown:Connect(function()
+mouse.LeftDown:Connect(function()
 	local attack_type = "M1"
-	orion:execute(player, attack_type)
-end))
+	orion:Execute(player, attack_type)
+end)
 
 humanoid.HealthChanged:Connect(function(health)
 	local minimum_health = 20

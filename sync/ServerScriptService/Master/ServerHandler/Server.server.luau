@@ -18,7 +18,6 @@ local Items = require(ReplicatedStorage.Market.Items)
 local MatchMaker = require(ReplicatedStorage.Modules.MatchMaker)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
@@ -43,8 +42,7 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
-local remoteEvents = ReplicatedStorage:WaitForChild("Events") :: Folder
-local assets = ReplicatedStorage:FindFirstChild("Assets") :: Folder
+local assets = ReplicatedStorage.Assets
 
 local profiles = {}
 local profile_key = "playerdata"
@@ -509,9 +507,9 @@ Packet.SellCard.listen(function(data: { card_name: string, playerInstance: Insta
 end)
 Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instance? })
 	setNetworkOwner(data.player, data.object)
-end);
-(remoteEvents.GetProfile :: RemoteFunction).OnServerInvoke = getProfile
+end)
 
+ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
 
 -- TODO) add player saving options
