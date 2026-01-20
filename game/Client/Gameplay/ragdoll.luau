@@ -3,14 +3,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local future = require(ReplicatedStorage.Packages.future)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- ragdoll.luau
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
 local module = {}
 module._states = {}
@@ -51,7 +51,7 @@ function module:On()
 	state.humanoid.AutoRotate = humanoid.AutoRotate
 
 	-- awh, staaaawp~!
-	animate.stopAll()
+	animate.stop_all()
 
 	-- save parts and apply ragdoll-friendly properties
 	for _, desc in ipairs(character:GetDescendants()) do

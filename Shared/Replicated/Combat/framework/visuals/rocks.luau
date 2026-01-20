@@ -3,9 +3,9 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local random = require(ReplicatedStorage.Utility.random)
+local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- rocks.luau
@@ -41,23 +41,10 @@ return function(position: CFrame, size_factor: number, amount: number)
 				rock.Orientation = orientation
 
 				task.delay(1, function()
-					local tween = TweenPlus(rock, {
+					spr.target(rock, 1, 1 / 1, {
 						Transparency = 1,
-						Size = Vector3.one * 0.1,
-					}, {
-						Time = 1,
+						Size = vector.one * 0.1,
 					})
-
-					tween:Start()
-				end)
-				task.delay(2.5, function()
-					local tween = TweenPlus(rock, {
-						Transparency = 1,
-					}, {
-						Time = 1,
-					})
-
-					tween:Start()
 				end)
 
 				angle += 24

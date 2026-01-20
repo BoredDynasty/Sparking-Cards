@@ -1,8 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+local spr = require(ReplicatedStorage.Modules.spr)
+
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local trove = require(ReplicatedStorage.Packages.trove)
@@ -15,7 +15,7 @@ local controller = {}
 controller._trove = _trove
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
 local max_stamina = 100
 local regeneration_delay = 2.5
@@ -92,15 +92,15 @@ local function constructBar(ancestor: Instance?): interface
 end
 
 local bar = constructBar(character)
-bar.Adornee = character.PrimaryPart
+bar.Adornee = character.PrimaryPart :: BasePart
 
-characterMarshaller.added(player, function(new_character)
+player.CharacterAdded:Connect(function(new_character)
 	if new_character:FindFirstChild("SprintBar") then
 		return
 	end
 
 	bar = constructBar(new_character)
-	bar.Adornee = new_character.PrimaryPart
+	bar.Adornee = new_character.PrimaryPart :: BasePart
 end)
 
 _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
@@ -116,14 +116,9 @@ _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
 	local bar_frame = bar:FindFirstChild("Frame") :: Frame
 	local inner_bar = bar_frame:FindFirstChild("Bar") :: Frame
 
-	local tween = TweenPlus(inner_bar, {
+	spr.target(inner_bar, 1, 1 / 0.2, {
 		Size = scale,
-	}, {
-		EasingDirection = "Out",
-		EasingStyle = "Back",
 	})
-
-	tween:Start()
 end)
 
 function controller:Update(deltaTime: number)
@@ -134,11 +129,11 @@ function controller:Update(deltaTime: number)
 		last_drain:Set(0)
 		is_regenerating:Set(true)
 	else
-		last_drain:Map(function(current: number)
-			return current * deltaTime
+		last_drain:Map(function(current)
+			return current :: number * deltaTime
 		end)
 
-		if last_drain:Get() >= regeneration_delay then
+		if last_drain:Get() :: number >= regeneration_delay then
 			is_regenerating:Set(true)
 		end
 	end

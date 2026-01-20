@@ -4,9 +4,8 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -26,14 +25,14 @@ local keyboard = input.Keyboard.new()
 _trove:Add(keyboard :: any)
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 
-animate.loadAnimation("dash", MovementConfig.Animations.Dash :: any)
+animate.load(MovementConfig.Animations.Dash.Id)
 
 local mouse = input.Mouse.new()
-local camera = gamecamera.camera
+local camera = workspace.CurrentCamera
 
 local rate_limit = ratelimit(1, MovementConfig.Dash.Cooldown)
 
@@ -87,7 +86,9 @@ local function onBegan()
 
 	local lines = fetchAsset("Speedlines") :: speed_lines.lines
 
-	speed_lines:On(gamecamera.camera, lines)
+	speed_lines:On(workspace.CurrentCamera, lines)
+
+	animate.play(MovementConfig.Animations.Dash.Id)
 
 	task.delay(MovementConfig.Dash.Duration, function()
 		_trove:Clean()

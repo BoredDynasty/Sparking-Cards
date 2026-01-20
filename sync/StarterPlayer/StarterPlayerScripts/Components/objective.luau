@@ -42,7 +42,7 @@ export type card = Frame & {
 	Details: TextLabel,
 }
 
-local objectiveGui = playerGui:WaitForChild("Objective") :: objectiveGui
+local objectiveGui = playerGui.Objective
 
 local objective_module = {
 	current_timer = timer.new(),

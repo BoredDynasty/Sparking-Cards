@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local damage_indicator = require(ReplicatedStorage.Effects["damage-indicator"])
 local future = require(ReplicatedStorage.Packages.future)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -78,7 +78,10 @@ function module.__call(parameters: Damage)
 		return false
 	end
 
-	local target_character = characterMarshaller.get(target_player)
+	local target_character = target_player.Character
+	if not target_character then
+		return false
+	end
 
 	-- do a nice lil visual effect for the damage
 	local target_root = target_character:FindFirstChild("HumanoidRootPart") :: BasePart

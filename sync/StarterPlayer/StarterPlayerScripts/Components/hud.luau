@@ -60,8 +60,9 @@ local function getOppositeReactorValue(reactor: observer.Observer<boolean>): boo
 end
 
 function module:Render()
-	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
-	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
+	local hudContainer = player.PlayerGui.Hud
+	local hudBackground = hudContainer.Background
+
 	for _, button in ipairs(hudContainer:GetChildren()) do
 		local attribute = button:GetAttribute("NonDestroyable")
 		if button:IsA("TextButton") and not attribute then
@@ -250,7 +251,7 @@ function module:Clear()
 
 	table.clear(module.buttons) -- just to make sure we don't keep any references
 
-	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
+	local hudContainer = player.PlayerGui.Hud
 
 	for _, button in ipairs(hudContainer:GetChildren()) do
 		if button:IsA("TextButton") then
@@ -260,10 +261,10 @@ function module:Clear()
 end
 
 function module:Hide()
-	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
+	local hudContainer = player.PlayerGui.Hud
 	hudContainer.Enabled = false
 
-	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
+	local hudBackground = hudContainer.Background
 	spr.stop(hudBackground)
 	spr.target(hudBackground, 0.5, 8, {
 		BackgroundTransparency = 1,
@@ -271,10 +272,10 @@ function module:Hide()
 end
 
 function module:Show()
-	local hudContainer = player.PlayerGui:WaitForChild("Hud") :: ScreenGui
+	local hudContainer = player.PlayerGui.Hud
 	hudContainer.Enabled = true
 
-	local hudBackground = hudContainer:WaitForChild("Background") :: Frame
+	local hudBackground = hudContainer.Background
 	spr.stop(hudBackground)
 	spr.target(hudBackground, 0.5, 8, {
 		BackgroundTransparency = 0,

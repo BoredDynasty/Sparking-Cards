@@ -3,8 +3,6 @@
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
-
 -- cutscene.luau
 -- a runtime Moon Animator 2 cutscene playback module
 -- we've been needing this lmao
@@ -14,7 +12,7 @@ local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera
 local module = {}
 
 function module:Cinematic(folder: Folder | Instance)
-	local camera = gamecamera:GetCamera()
+	local camera = workspace.CurrentCamera
 
 	local frame_time = 0
 
@@ -45,7 +43,7 @@ function module:Cinematic(folder: Folder | Instance)
 end
 
 function module:GameplayCinematic(folder: Folder | Instance, root_part: BasePart)
-	local camera = gamecamera:GetCamera()
+	local camera = workspace.CurrentCamera
 
 	local frame_time = 0
 

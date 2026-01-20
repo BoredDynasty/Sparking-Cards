@@ -17,8 +17,8 @@ local module = {
 -- note: we are using R6
 
 function module:Get(character: typemarshaller.Character): (MeshPart?, MeshPart?)
-	local leftHand = character:WaitForChild("Left Arm")
-	local rightHand = character:WaitForChild("Right Arm")
+	local leftHand = character:FindFirstChild("Left Arm")
+	local rightHand = character:FindFirstChild("Right Arm")
 
 	if not leftHand or not rightHand then
 		warn("where are the hands vro :skull:", leftHand, rightHand)
@@ -47,8 +47,8 @@ function module:Get(character: typemarshaller.Character): (MeshPart?, MeshPart?)
 end
 
 function module:Apply(character: typemarshaller.Character)
-	local leftHand = character:WaitForChild("Left Arm") :: BasePart
-	local rightHand = character:WaitForChild("Right Arm") :: BasePart
+	local leftHand = character:FindFirstChild("Left Arm") :: BasePart
+	local rightHand = character:FindFirstChild("Right Arm") :: BasePart
 
 	if not leftHand or not rightHand then
 		warn("where are the hands vro :skull: ", leftHand, rightHand)

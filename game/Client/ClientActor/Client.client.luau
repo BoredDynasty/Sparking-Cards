@@ -11,60 +11,109 @@ local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
--- // Requires -- //
+task.wait(5) -- wait for the player to load
 
+-- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
+
 local Packet = require(ReplicatedStorage.Packet)
+
 local achievement = require(StarterPlayer.StarterPlayerScripts.Components.achievement)
+
 local animate = require("../Utilities/animate")
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
+
 local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displayorder)
+
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
+
 local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
+
 local future = require(ReplicatedStorage.Packages.future)
+
 local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
+
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
+
 local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health-pulse"])
+
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
+
 local hud = require(script.Parent.Parent.Components.hud)
+
 local hydration = require(ReplicatedStorage.Utility.hydration)
+
 local input = require(ReplicatedStorage.Packages.input)
+
 local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
+
 local logger = require(ReplicatedStorage.ClientModules.logger)
+
 local lucide = require(ReplicatedStorage.Packages.lucide)
+
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
+
 local market = require("../Components/market")
+
 local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
+
 local movement_controller = require(StarterPlayer.StarterPlayerScripts.Movement["movement-controller"])
+
 local music = require("../Gameplay/music")
+
 local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
+
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
+
 local objective = require("../Components/objective")
+
 local observer = require(ReplicatedStorage.Utility.observer)
+
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
+
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
+
 local parallax = require("../Interface/parallax")
+
 local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
+
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+
 local pop = require(script.Parent.Parent.Interface.pop)
+
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-local promise = require(ReplicatedStorage.Packages.promise)
+
 local quest = require(ReplicatedStorage.ClientModules.quest)
+
 local quest_ranking = require(ReplicatedStorage.ClientModules["quest-ranking"])
+
 local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
+
 local retryer = require(ReplicatedStorage.Utility.retryer)
+
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
+
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
-local shadow = require(script.Parent.Parent.Interface.shadow)
+
+local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+
 local spr = require(ReplicatedStorage.Modules.spr)
+
 local sway = require("../Interface/sway")
+
 local swipe = require("../Interface/swipe")
+
 local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
+
 local throbber = require("../Components/throbber")
+
 local timer = require(ReplicatedStorage.Modules.timer)
+
 local trove = require(ReplicatedStorage.Packages.trove)
+
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 local keyboard = input.Keyboard.new()
@@ -83,7 +132,7 @@ local profile = nil
 
 local _trove = trove.new()
 
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character.Humanoid
 
 -- // Functions -- //
@@ -93,7 +142,7 @@ local function expectProfile()
 	end)
 
 	local ok, result = fut:Await()
-	assert(ok, "Couldn't fetch profile from Server: " .. result)
+	-- assert(ok, "Couldn't fetch profile from Server: " .. result)
 
 	return result
 end
@@ -120,14 +169,14 @@ end
 local function initializeMarket()
 	print("init market")
 	local shopGui = PlayerGui.Shop
-	local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
-	local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
+	local shopCanvas = shopGui.CanvasGroup
+	local shopFrame = shopCanvas.Frame
 
 	displayorder.new(shopCanvas)
 
-	local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
-	local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
-	local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
+	local shopNavigation = shopFrame.Navigation
+	local itemHolder = shopFrame.Holder
+	local spendings = shopFrame.Spendings
 
 	local spendings_icon = spendings:FindFirstChild("SpendingsIcon", true) :: ImageLabel
 
@@ -325,14 +374,7 @@ local function initializeMusic()
 
 	music:Start()
 
-	local musicGui = PlayerGui:WaitForChild("Music") :: ScreenGui & {
-		CanvasGroup: any & CanvasGroup & {
-			Disc: ImageLabel,
-			Note: ImageLabel,
-			SongName: TextLabel,
-			Artist: TextLabel,
-		},
-	} & any
+	local musicGui = PlayerGui.Music
 	local musicCanvas = musicGui.CanvasGroup
 	local disc = musicCanvas.Disc
 	local note_image = musicCanvas.Note
@@ -350,10 +392,13 @@ local function initializeMusic()
 	end)
 
 	local average_framerate = frame_rate:GetFrameRate(math.pow(10, 2))
+	print("avg. framerate: ", average_framerate)
 
 	-- rotate effect on disc
-	local rotation_thread = task.spawn(retryer.infdelay, average_framerate, function()
-		disc.Rotation += RunService.PreRender:Wait()
+	local rotation_thread = task.spawn(function()
+		while true do
+			disc.Rotation += RunService.PreRender:Wait()
+		end
 	end)
 end
 
@@ -477,15 +522,11 @@ end)
 orion.new(player, expectProfile())
 
 Packet.ReplicateAnimation.listen(function(data)
-	animate.loadAnimation(data.identification, {
-		Id = "rbxassetid://" .. data.identification,
-		Weight = 1,
-	})
+	animate.load(tonumber(data.identification))
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
 end)
 
 Packet.CleanupCharacter.listen(function()
-	animate.cleanup()
 	music:Destroy()
 	options:Clear()
 	hud:Clear()

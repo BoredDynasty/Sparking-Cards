@@ -2,7 +2,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- ui-scaler.luau
@@ -14,7 +13,7 @@ module._connections = {} :: { [string]: RBXScriptConnection }
 local player = playerMarshaller.get()
 local player_gui = player.PlayerGui
 
-local camera = gamecamera.camera
+local camera = workspace.CurrentCamera
 
 --[[
    It's prolly best to use this in a task.spawn

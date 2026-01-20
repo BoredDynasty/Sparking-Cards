@@ -4,9 +4,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local hydration = require(ReplicatedStorage.Utility.hydration)
+
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- health-pulse.luau
@@ -14,6 +15,7 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 local module = {}
 
+-- constants
 local pulse_speed = 3
 local max_fov = 73
 local min_fov = 67 -- SIX SEVEN AHHAHAHAHAHA
@@ -25,7 +27,7 @@ local _trove = trove.new()
 
 local tag = "Pulse"
 
-local camera = gamecamera:GetCamera()
+local camera = workspace.CurrentCamera
 
 local player = playerMarshaller.get()
 local player_gui = player.PlayerGui

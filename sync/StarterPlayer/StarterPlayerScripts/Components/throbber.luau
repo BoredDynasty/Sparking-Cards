@@ -10,7 +10,7 @@ local pop = require("../Interface/pop")
 -- throbber.luau
 -- for indicating preloads
 
-local templates = ReplicatedStorage:WaitForChild("Interfaces") :: Folder
+local templates = ReplicatedStorage.Interfaces
 
 local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 	return future.new(function()
@@ -18,8 +18,8 @@ local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 			return false
 		end
 
-		local loaderTemplates = templates:FindFirstChild("Loaders") :: Folder
-		local loader = loaderTemplates:WaitForChild("Basic"):Clone() :: ImageLabel
+		local loaderTemplates = templates.Loaders
+		local loader = loaderTemplates.Basic:Clone()
 
 		loader.Visible = true
 		loader.Parent = element

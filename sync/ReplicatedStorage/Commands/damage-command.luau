@@ -1,7 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 -- Cmdr Command
@@ -31,7 +30,7 @@ return {
 	},
 	ClientRun = function(_, target: Player, amount: number)
 		local player = playerMarshaller.getByName(target.Name)
-		local character = characterMarshaller.get(player)
+		local character = player.Character or player.CharacterAdded:Wait()
 
 		if character then
 			-- local humanoid = character.Humanoid

@@ -1,7 +1,6 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 
@@ -28,7 +27,7 @@ end
 
 function module:Activate(portal: PortalData, player: Player)
 	-- Teleport the player to the destination
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 	local root_part = character:FindFirstChild("HumanoidRootPart") :: BasePart
 
 	if character and root_part then

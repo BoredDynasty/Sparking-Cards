@@ -2,7 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Fireworks = require(ReplicatedStorage.Modules.Fireworks)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
@@ -11,7 +11,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local prism_awarder = {}
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
 --[[
    Awards the player with the specified amount of prisms.

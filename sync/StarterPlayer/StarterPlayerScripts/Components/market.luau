@@ -20,6 +20,7 @@ local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 -- market.luau
 
@@ -32,19 +33,21 @@ export type template = Frame & {
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
 
-local templates = ReplicatedStorage:FindFirstChild("Interfaces") :: Folder
+local templates = ReplicatedStorage.Interfaces
 
-local shopGui = playerGui:WaitForChild("Shop") :: ScreenGui
-local shopCanvas = shopGui:WaitForChild("CanvasGroup") :: CanvasGroup
-local shopFrame = shopCanvas:WaitForChild("Frame") :: Frame
+local shopGui = playerGui.Shop
+local shopCanvas = shopGui.CanvasGroup
+local shopFrame = shopCanvas.Frame
 
-local shopNavigation = shopFrame:WaitForChild("Navigation") :: Frame
-local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
-local shopFolder = templates:FindFirstChild("Shop") :: Folder
-local spendings = shopFrame:FindFirstChild("Spendings") :: Frame
+local shopNavigation = shopFrame.Navigation
+local itemHolder = shopFrame.Holder
+local shopFolder = templates.Shop
+local spendings = shopFrame.Spendings
+
+local money_label = spendings.Amount
 
 local market = {
-	template = shopFolder:FindFirstChild("ItemTemplate") :: template,
+	template = shopFolder.ItemTemplate :: template,
 	limit = ratelimit(1, 0.5),
 }
 
@@ -223,9 +226,6 @@ function market:Unload()
 end
 
 function market:DisplaySpendings(profile: typemarshaller.Profile)
-	local moneyFrame = spendings:FindFirstChild("Money") :: Frame
-	local money_label = moneyFrame:WaitForChild("Amount") :: TextLabel
-
 	local prisms = tonumber(profile and profile.Data.prisms)
 
 	if prisms then
@@ -249,7 +249,7 @@ function market:DisplaySpendings(profile: typemarshaller.Profile)
 end
 
 function market:LoadItems(items: Items.dataType?)
-	market:unload()
+	market:Unload()
 
 	items = items or Items
 
@@ -259,10 +259,10 @@ function market:LoadItems(items: Items.dataType?)
 
 		shadow(template)
 
-		local title = template:WaitForChild("Title", true) :: TextLabel
+		local title = template.Title
 
-		local purchaseButton = template:WaitForChild("Buy", true) :: TextButton
-		local experimentButton = template:WaitForChild("Test", true) :: TextButton
+		local purchaseButton = template.Buy
+		local experimentButton = template.Test
 
 		title.Text = item.Name
 			.. [[<br/>
@@ -306,6 +306,7 @@ function market:LoadItems(items: Items.dataType?)
 		local icon = purchaseButton:FindFirstChildOfClass("ImageLabel")
 		if icon then
 			icon.ImageContent = Content.fromAssetId(10734924532)
+			wiggle(icon)
 		end
 
 		purchaseButton.MouseEnter:Connect(function()
@@ -360,10 +361,10 @@ function market:LoadInventory(profile: typemarshaller.Profile)
 
 		shadow(template)
 
-		local title = template:WaitForChild("Title", true) :: TextLabel
+		local title = template.Title
 
-		local sell_btn = template:WaitForChild("Buy", true) :: TextButton
-		local experimentButton = template:WaitForChild("Test", true) :: TextButton
+		local sell_btn = template.Buy
+		local experimentButton = template.Test
 
 		title.Text = i
 			.. [[<br/>

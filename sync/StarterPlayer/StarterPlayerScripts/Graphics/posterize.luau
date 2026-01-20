@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local trove = require(ReplicatedStorage.Packages.trove)
@@ -13,7 +12,7 @@ local module = {}
 
 local tag = "PosterizeEffect"
 
-local camera = gamecamera.camera
+local camera = workspace.CurrentCamera
 
 local _trove = trove.new()
 

@@ -26,12 +26,12 @@ module.limit = ratelimit(1, 0.5)
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
 
-local badgesGui = playerGui:WaitForChild("Badges") :: ScreenGui
-local badgesCanvas = badgesGui:WaitForChild("CanvasGroup") :: CanvasGroup
-local shopFrame = badgesCanvas:WaitForChild("Frame") :: Frame
+local badgesGui = playerGui:WaitForChild("Badges")
+local badgesCanvas = badgesGui.CanvasGroup
+local shopFrame = badgesCanvas.Frame
 
-local itemHolder = shopFrame:WaitForChild("Holder") :: Frame
-local total = shopFrame:FindFirstChild("Total") :: Frame
+local itemHolder = shopFrame.Holder
+local total = shopFrame.Total
 
 local function createTemplate(ancestor: Instance?): template
 	local Instances = {
@@ -207,7 +207,7 @@ function module:Unload()
 end
 
 function module:DisplayTotal(profile: typemarshaller.Profile)
-	local total_label = total:WaitForChild("Amount") :: TextLabel
+	local total_label = total.Amount
 
 	local prisms = tonumber(profile and #profile.Data.achievements)
 
@@ -247,11 +247,11 @@ function module:Load(profile: typemarshaller.Profile)
 
 		shadow(template)
 
-		local details_btn = template:WaitForChild("Details") :: TextButton
-		local share_btn = template:WaitForChild("Share") :: TextButton
+		local details_btn = template.Details :: TextButton
+		local share_btn = template.Share :: TextButton
 
 		-- load title
-		local title = template:WaitForChild("Title") :: TextLabel
+		local title = template.Title :: TextLabel
 
 		local date_achieved = DateTime.fromUnixTimestampMillis(item.date_acquired)
 		local universal_time = date_achieved:FormatUniversalTime("LL", "en-us")

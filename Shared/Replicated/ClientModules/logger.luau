@@ -32,8 +32,8 @@ type local_time = {
 local LogService = game:GetService("LogService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local player_marshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local player = player_marshaller.get()
 local player_gui = player.PlayerGui
@@ -101,9 +101,9 @@ UELog.new = function()
 	self.log.Parent = player_gui
 
 	-- Cache UI elements for quick access
-	self.list = self.log:WaitForChild("List")
-	self.layout = self.list:WaitForChild("Layout")
-	self.template = self.log:WaitForChild("UELogTemplate")
+	self.list = self.log:FindFirstChild("List")
+	self.layout = self.list:FindFirstChild("Layout")
+	self.template = self.log:FindFirstChild("UELogTemplate")
 
 	-- Configuration
 	self.colors = default_colors
@@ -158,11 +158,9 @@ function UELog:create_message(msg: string, message_type: Enum.MessageType?)
 
 	task.delay(self.life_time, function()
 		if new_message then
-			TweenPlus(new_message, {
+			spr.target(new_message, 1, 1 / self.fade_time :: number, {
 				TextTransparency = 1,
-			}, {
-				Time = self.fade_time,
-			}):Start()
+			})
 
 			task.wait(self.fade_time)
 

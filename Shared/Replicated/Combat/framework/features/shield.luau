@@ -2,7 +2,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local damage_indicator = require(ReplicatedStorage.Effects["damage-indicator"])
 local future = require(ReplicatedStorage.Packages.future)
@@ -34,7 +33,7 @@ function module.new(player: Player, duration: number, health: number)
 		initialized = os.time(),
 		duration = duration,
 		health = health,
-		holder = characterMarshaller.get(player),
+		holder = player.Character or player.CharacterAdded:Wait(),
 		active = observer.new(false),
 	} :: ShieldData
 end
@@ -92,9 +91,9 @@ function module:Render(data: ShieldData, model: ShieldModel): thread?
 	model.Parent = character
 	model.CFrame = character.PrimaryPart.CFrame
 
-	local main_attachment = model:WaitForChild("Main") :: Attachment
-	local force_field = main_attachment:WaitForChild("ForceField") :: ParticleEmitter
-	local outer_rings = main_attachment:WaitForChild("OuterRings") :: ParticleEmitter
+	local main_attachment = model:FindFirstChild("Main") :: Attachment
+	local force_field = main_attachment:FindFirstChild("ForceField") :: ParticleEmitter
+	local outer_rings = main_attachment:FindFirstChild("OuterRings") :: ParticleEmitter
 
 	force_field.Enabled = true
 	outer_rings.Enabled = true

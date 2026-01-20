@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 local Packet = require(ReplicatedStorage.Packet)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
@@ -43,7 +43,7 @@ function pyro.moveset:M1(player: Player, ...: any?): any?
 	print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 
 	local sword_asset = character:FindFirstDescendant("Katana_Asset")
 

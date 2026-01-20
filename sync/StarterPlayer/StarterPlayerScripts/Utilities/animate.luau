@@ -1,148 +1,136 @@
 --!strict
 
--- animate.luau
-
---[[
-    Animation utility module for playing animations on characters
-    Provides a clean API for loading and playing animations
-]]
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local trove = require(ReplicatedStorage.Packages.trove)
 
-export type AnimationObject = {
-	Animation: Animation,
-	Track: AnimationTrack?,
-	Weight: number?,
-	Speed: number?,
-	IsLoaded: boolean,
-}
+-- animate.luau
 
-export type AnimationData = {
-	Id: string,
-	Weight: number?,
-	Speed: number?,
-}
+--[=[
+    @within animate
+    @function play
+    @param character Model -- The character model to play the animation on
+    @param animationId string -- The asset id of the animation
+    @return AnimationTrack? -- The AnimationTrack if loaded and played, otherwise nil
+    Plays the animation on the given character.
+]=]
 
--- Store animations in a global table
-local animations: { [string]: AnimationObject } = {}
+--[=[
+    @within animate
+    @function stop
+    @param character Model -- The character model to stop the animation on
+    @param animationId string -- The asset id of the animation
+    Stops the animation on the given character.
+]=]
+
+--[=[
+    @within animate
+    @function load
+    @param character Model -- The character model to load the animation on
+    @param animationId string -- The asset id of the animation
+    @return AnimationTrack? -- The AnimationTrack if loaded, otherwise nil
+    Loads the animation on the given character.
+]=]
+
+--[=[
+    @within animate
+    @function getTrack
+    @param character Model -- The character model to get the animation track from
+    @param animationId string -- The asset id of the animation
+    @return AnimationTrack? -- The AnimationTrack if found, otherwise nil
+    Gets the AnimationTrack for the given animationId on the character.
+]=]
+
+local module = {}
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
-local humanoid = character.Humanoid
-local animator = humanoid:WaitForChild("Animator") :: Animator
-
-humanoid.Died:Connect(function()
-	task.defer(function()
-		character = characterMarshaller.get(player)
-	end)
-end)
-
-local _trove = trove.new()
-
-local function loadAnimation(name: string, data: AnimationData): AnimationObject
-	if animations[name] then
-		return animations[name]
+local function getAnimator(): Animator?
+	-- Try to get the Animator from the Humanoid
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid then
+		local animator = humanoid:FindFirstChildOfClass("Animator")
+		if animator then
+			return animator
+		end
 	end
-
-	local animation = Instance.new("Animation")
-	animation.AnimationId = data.Id
-	animation.Parent = character
-
-	_trove:Add(animation)
-
-	local track = animator:LoadAnimation(animation)
-
-	local animObject: AnimationObject = {
-		Animation = animation,
-		Track = track,
-		Weight = data.Weight or 1,
-		Speed = data.Speed or 1,
-		IsLoaded = true,
-	}
-
-	animations[name] = animObject
-
-	animation.Destroying:Connect(function()
-		pcall(_trove.Remove, _trove, animation)
-		animations[name] = nil
-	end)
-
-	return animObject
-end
-
-local function playAnimation(name: string, fadeTime: number?): AnimationTrack?
-	--assert(animator, "Animator not initialized. Call initialize() first.")
-
-	local animObject: AnimationObject = animations[name]
-	if not animObject then
-		warn(`No animation found with name: {name}`)
-		return nil
-	end
-
-	fadeTime = fadeTime or 0.25
-
-	local track = animObject.Track
-	if track == nil then
-		warn("no anim-track")
-		return nil
-	end
-
-	track:Play()
-	track:AdjustWeight(animObject.Weight or 1)
-	track:AdjustSpeed(animObject.Speed or 1)
 
 	return nil
 end
 
-local function stopAnimation(name: string, fadeTime: number?)
-	local animObject: AnimationObject = animations[name]
-
-	fadeTime = fadeTime or 0.25
-
-	if animObject and animObject.Track then
-		animObject.Track:Stop(fadeTime)
-		animObject.Track.TimePosition = 0
+function module.load(animationId: string): AnimationTrack?
+	local animator = getAnimator(character)
+	if not animator then
+		return nil
 	end
+
+	-- Check if already loaded
+	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+		if track.Animation and track.Animation.AnimationId == animationId then
+			return track
+		end
+	end
+
+	local animation = Instance.new("Animation")
+	animation.AnimationId = animationId
+	local track = animator:LoadAnimation(animation)
+	return track
 end
 
-local function stopAllAnimations(fadeTime: number?)
-	fadeTime = fadeTime or 0.25
+function module.play(animationId: string, ...: any): AnimationTrack?
+	local animator = getAnimator(character)
+	if not animator then
+		return nil
+	end
 
-	for _, animObject in pairs(animations) do
-		if animObject.Track then
-			animObject.Track:Stop(fadeTime)
-			animObject.Track.TimePosition = 0
+	local track = module.load(animationId)
+	if not track then
+		return nil
+	end
+
+	-- Optionally pass arguments to Play (fadeTime, weight, speed)
+	track:Play(...)
+	return track
+end
+
+function module.stop(animationId: string): ()
+	local animator = getAnimator(character)
+	if not animator then
+		return
+	end
+
+	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+		if track.Animation and track.Animation.AnimationId == animationId then
+			track:Stop()
 		end
 	end
 end
 
-local function getTrack(name: string): AnimationTrack?
-	local animObject: AnimationObject = animations[name]
-	if animObject and animObject.Track then
-		return animObject.Track
+function module.stop_all()
+	local animator = getAnimator(character)
+
+	if not animator then
+		return
 	end
 
+	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+		track:Stop()
+	end
+end
+
+function module.getTrack(animationId: string): AnimationTrack?
+	local animator = getAnimator(character)
+	if not animator then
+		return nil
+	end
+
+	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
+		if track.Animation and track.Animation.AnimationId == animationId then
+			return track
+		end
+	end
 	return nil
 end
 
-local function cleanup()
-	stopAllAnimations(0.25)
-	-- the animation instances are still there however.
-	-- lets presume the character is detroyed.
-	table.clear(animations)
-	_trove:Clean()
-end
-
-return {
-	loadAnimation = loadAnimation,
-	play = playAnimation,
-	stop = stopAnimation,
-	stopAll = stopAllAnimations,
-	cleanup = cleanup,
-	getTrack = getTrack,
-}
+return module

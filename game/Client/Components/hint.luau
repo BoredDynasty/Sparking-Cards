@@ -5,30 +5,25 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local future = require(ReplicatedStorage.Packages.future)
+
 local observer = require(ReplicatedStorage.Utility.observer)
+
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+
 local spr = require(ReplicatedStorage.Modules.spr)
+
 local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 
 -- hint.luau
 
-type HintGui = ScreenGui & {
-	CanvasGroup: CanvasGroup & {
-		Frame: Frame & {
-			TextLabel: TextLabel,
-		},
-	},
-}
-
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
 
-local character = characterMarshaller.get(player)
-
-local hint_gui = playerGui:WaitForChild("Dialog") :: HintGui
+local hint_gui = playerGui.Dialog
 
 local module = {}
 module.__index = module
@@ -158,20 +153,8 @@ function module:SetText(self: Hint, text: string, translate_text: boolean?)
 
 	for key, value in ipairs(disallowed_whitespace) do
 		if string.find(text, value) then
-			warn("whitespaces are not supported")
+			warn("whitespaces are not supported: ", disallowed_whitespace[key])
 		end
-	end
-
-	if translate_text then
-		local get_translator =
-			future.Try(LocalizationService.GetTranslatorForPlayerAsync(LocalizationService, player))
-
-		local translator = select(2, get_translator:Await()) :: Translator
-
-		assert(translator, "Couldn't fetch translator from the cloud.")
-
-		local translated = translator:Translate(self.hint, text)
-		self.hint.Text = translated
 	end
 
 	self.hint.Text = text

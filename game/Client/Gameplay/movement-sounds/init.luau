@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -13,7 +13,7 @@ local url = require(ReplicatedStorage.Modules.Serialization.url)
 -- movement-sounds.luau
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
 local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 local root_part = character:FindFirstChild("HumanoidRootPart") :: BasePart

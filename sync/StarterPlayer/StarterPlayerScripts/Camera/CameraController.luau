@@ -11,6 +11,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local future = require(ReplicatedStorage.Packages.future)
 local promise = require(ReplicatedStorage.Packages.promise)
 local trove = require(ReplicatedStorage.Packages.trove)
 
@@ -91,8 +92,8 @@ function CameraController:Bind(name: string, f: (any) -> ...any?, ...)
 	}
 end
 
-function CameraController:UnBind(name: string)
-	return promise.new(function()
+function CameraController:Unbind(name: string)
+	return future.Try(function()
 		self._other[name] = nil
 	end)
 end

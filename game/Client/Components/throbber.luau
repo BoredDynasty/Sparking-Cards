@@ -3,14 +3,14 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local future = require(ReplicatedStorage.Packages.future)
 local pop = require("../Interface/pop")
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- throbber.luau
 -- for indicating preloads
 
-local templates = ReplicatedStorage:WaitForChild("Interfaces") :: Folder
+local templates = ReplicatedStorage.Interfaces
 
 local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 	return future.new(function()
@@ -18,8 +18,8 @@ local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 			return false
 		end
 
-		local loaderTemplates = templates:FindFirstChild("Loaders") :: Folder
-		local loader = loaderTemplates:WaitForChild("Basic"):Clone() :: ImageLabel
+		local loaderTemplates = templates.Loaders
+		local loader = loaderTemplates.Basic:Clone()
 
 		loader.Visible = true
 		loader.Parent = element
@@ -28,8 +28,9 @@ local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 
 		local circle = 360
 
-		local tween = TweenPlus(loader, { Rotation = circle }, { RepeatCount = math.huge, Time = 1 })
-		tween:Start()
+		spr.target(loader, 0, 1 / 1, {
+			Rotation = circle,
+		})
 
 		signal:Once(function()
 			pop(loader)
@@ -37,7 +38,7 @@ local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
 			task.delay(5, function()
 				loader:Destroy()
 				signal:Destroy()
-				tween:Destroy()
+				spr.stop(loader, "Rotation")
 			end)
 		end)
 

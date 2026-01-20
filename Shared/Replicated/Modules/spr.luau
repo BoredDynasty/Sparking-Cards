@@ -641,8 +641,8 @@ local typeMetadata = {
 
 		fromIntermediate = function(value: {})
 			return ColorSequence.new(
-				luvToRgb({ value[1], value[2], value[3] }),
-				luvToRgb({ value[4], value[5], value[6] })
+				luvToRgb { value[1], value[2], value[3] },
+				luvToRgb { value[4], value[5], value[6] }
 			)
 		end,
 	},

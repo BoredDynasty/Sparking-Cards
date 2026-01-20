@@ -2,7 +2,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- object-zoom.luau
@@ -10,7 +9,7 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
 local module = {}
 
-local camera = gamecamera:GetCamera()
+local camera = workspace.CurrentCamera
 
 function module:Zoom(part: BasePart)
 	camera.CameraType = Enum.CameraType.Scriptable

@@ -8,7 +8,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
 local _damage = require(ReplicatedStorage.Combat.Strike.damage)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local beam_module = {}
@@ -94,7 +94,7 @@ local function getHumanoidFromPart(part: BasePart): (Humanoid?, Model?)
 	local player = playerMarshaller.getFromCharacter(part:FindFirstAncestorOfClass("Model") :: Model)
 
 	if player then
-		local character = characterMarshaller.get(player)
+		local character = player.Character or player.CharacterAdded:Wait()
 		local humanoid = character.Humanoid
 
 		return humanoid, character

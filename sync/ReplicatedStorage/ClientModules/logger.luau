@@ -101,9 +101,9 @@ UELog.new = function()
 	self.log.Parent = player_gui
 
 	-- Cache UI elements for quick access
-	self.list = self.log:WaitForChild("List")
-	self.layout = self.list:WaitForChild("Layout")
-	self.template = self.log:WaitForChild("UELogTemplate")
+	self.list = self.log:FindFirstChild("List")
+	self.layout = self.list:FindFirstChild("Layout")
+	self.template = self.log:FindFirstChild("UELogTemplate")
 
 	-- Configuration
 	self.colors = default_colors

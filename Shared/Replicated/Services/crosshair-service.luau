@@ -3,10 +3,10 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local input = require(ReplicatedStorage.Packages.input)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- crosshair-service.luau
 
@@ -24,6 +24,8 @@ type crosshair_lines = "Bottom" | "Center" | "Left" | "Right" | "Top"
 
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
+
+-- TODO) make the actual crosshair ui
 
 --[[
    Creates a new cross-hair
@@ -77,12 +79,9 @@ function crosshair_module:SetRadius(radii: number)
 
 	for i, position in pairs(self.line_positions) do
 		if self.can_animate:Get() then
-			local tween = TweenPlus(self.interface[i], { Position = position }, {
-				Time = 0.5,
-				EasingDirection = "Out",
-				EasingStyle = "Back",
+			spr.target(self.interface[i], 1, 1 / 0.5, {
+				Position = position,
 			})
-			tween:Start()
 		else
 			self.interface[i].Position = position
 		end
@@ -121,12 +120,9 @@ function crosshair_module:Shove(radii: number)
 
 	for i, position in pairs(self.line_positions) do
 		if self.can_animate:Get() then
-			local tween = TweenPlus(self.interface[i], { Position = position }, {
-				Time = 0.5,
-				EasingDirection = "Out",
-				EasingStyle = "Back",
+			spr.target(self.interface[i], 1, 1 / 0.5, {
+				Position = position,
 			})
-			tween:Start()
 		else
 			self.interface[i].Position = position
 		end

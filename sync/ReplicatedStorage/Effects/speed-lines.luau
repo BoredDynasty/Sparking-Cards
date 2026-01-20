@@ -3,7 +3,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local future = require(ReplicatedStorage.Packages.future)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -27,8 +26,8 @@ export type lines = BasePart & {
 }
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 
 function module:On(camera: Camera, lines: lines)
 	camera = camera or workspace.CurrentCamera

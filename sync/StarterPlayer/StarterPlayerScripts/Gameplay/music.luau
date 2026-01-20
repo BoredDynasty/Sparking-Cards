@@ -5,7 +5,7 @@ local _SoundService = game:GetService("SoundService")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -89,8 +89,8 @@ end
 
 function module:Start()
 	local player = playerMarshaller.get()
-	local character = characterMarshaller.get(player)
-	local hrp = character:WaitForChild("HumanoidRootPart") :: BasePart
+	local character = player.Character or player.CharacterAdded:Wait()
+	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
 
 	-- Track position and check biomes less frequently
 	local last_check: number = 0.0

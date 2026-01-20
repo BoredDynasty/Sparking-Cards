@@ -1,7 +1,6 @@
 --!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 
@@ -27,7 +26,7 @@ local constants = {
 return function(data: quest, player: Player)
 	return promise
 		.new(function(resolve: (quest?) -> ...unknown)
-			local character = characterMarshaller.get(player)
+			local character = player.Character or player.CharacterAdded:Wait()
 			local rootPart = character:FindFirstChild("HumanodiRootPart") :: BasePart
 			if not rootPart then
 				resolve(nil)

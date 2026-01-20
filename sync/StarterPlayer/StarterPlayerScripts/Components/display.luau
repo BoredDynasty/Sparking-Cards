@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
 local hover = require(StarterPlayer.StarterPlayerScripts.Interface.hover)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
@@ -24,15 +24,9 @@ local display = {
 local player = playerMarshaller.get()
 local playerGui = player.PlayerGui
 
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
-local displayGui = playerGui:WaitForChild("Display") :: ScreenGui & {
-	CanvasGroup: CanvasGroup & {
-		Frame: Frame & {
-			TextLabel: TextLabel,
-		},
-	},
-}
+local displayGui = playerGui.Display
 
 shadow(displayGui.CanvasGroup.Frame)
 
@@ -58,7 +52,11 @@ function display.showText(str: string, duration: number?)
 	})
 
 	custom_lighting.blur()
-	characterMarshaller.halt(character)
+	local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
+
+	if humanoid then
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+	end
 
 	local typewriter = markdown.typewriter.new()
 	typewriter:Play(textLabel, str)
@@ -68,7 +66,9 @@ function display.showText(str: string, duration: number?)
 
 		typewriter:Skip(typewriter)
 		custom_lighting.unblur()
-		characterMarshaller.continue(character)
+		if humanoid then
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+		end
 
 		task.defer(typewriter.Destroy)
 	end

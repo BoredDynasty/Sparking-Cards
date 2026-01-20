@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local spr = require(ReplicatedStorage.Modules.spr)
 local temporary_layer_collector = require(script.Parent.Parent.Utilities["temporary-layer-collector"])
 
@@ -17,7 +16,7 @@ module._connection = nil
 
 local expiry_time = 5
 
-local camera = gamecamera:GetCamera()
+local camera = workspace.CurrentCamera
 
 local function createIndicator(ancestor: Instance?)
 	local Instances = {

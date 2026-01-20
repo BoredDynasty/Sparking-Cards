@@ -6,7 +6,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 -- letterbox.luau
 
-local self = {
+local module = {
 	-- letterbox images
 	--[[
       https://create.roblox.com/store/asset/110246564937802/3
@@ -31,7 +31,7 @@ export type letterbox_gui = ScreenGui & {
 
 export type version = "letterbox_1" | "letterbox_2"
 
-function self:On(version: version?)
+function module:On(version: version?)
 	-- implementation
 	version = version or "letterbox_1"
 
@@ -58,14 +58,14 @@ function self:On(version: version?)
 		tween:Start()
 	end
 
-	local content = self[string.lower(version)] :: Content?
+	local content = module[string.lower(version)] :: Content?
 
 	if content then
 		letterbox_gui.CanvasGroup.ImageLabel.ImageContent = content
 	end
 end
 
-function self:Off()
+function module:Off()
 	-- implementation
 
 	local tweens = table.create(2) :: { TweenPlus.Tween }
@@ -94,4 +94,4 @@ function self:Off()
 	letterbox_gui.CanvasGroup.ImageLabel.ImageContent = Content.none
 end
 
-return self
+return module

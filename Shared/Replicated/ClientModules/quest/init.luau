@@ -9,6 +9,7 @@ local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- quest.luau
 -- should be ran on the client
@@ -52,14 +53,14 @@ function quest_module._getFromName(name: string)
 	end)
 end
 
-local getProfileRF = ReplicatedStorage.Events:WaitForChild("GetProfile") :: RemoteFunction
+local getProfileRF = ReplicatedStorage.Events.GetProfile
 
 local function expectProfile()
 	local fut = future.new(function()
 		return getProfileRF:InvokeServer()
 	end)
 
-	return fut:Await()
+	return fut:Await() :: typemarshaller.Profile
 end
 
 --[[

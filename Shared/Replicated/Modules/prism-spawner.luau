@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local TweenPlus = require(script.Parent.TweenPlus)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local url = require(ReplicatedStorage.Modules.Serialization.url)

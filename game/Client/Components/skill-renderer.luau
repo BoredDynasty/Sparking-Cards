@@ -2,13 +2,13 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local connection_render = require(ReplicatedStorage.ClientModules.layouts["connection-render"])
 local force_directed_layout = require(ReplicatedStorage.ClientModules.layouts["force-directed-layout"])
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local skill_tree = require(ReplicatedStorage.Combat.framework["skill-tree"])
+local spr = require(ReplicatedStorage.Modules.spr)
 local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transition)
 
 -- skill-tree-renderer.luau
@@ -36,15 +36,9 @@ local minor_size_factor = 0.4
 local function setNodeSizeFactor(node: node_frame, factor: number)
 	local ui_scale = node:FindFirstChildOfClass("UIScale")
 	if ui_scale then
-		local tween = TweenPlus(ui_scale, {
+		spr.target(ui_scale, 1, 1 / 0.5, {
 			Scale = factor,
-		}, {
-			Time = 0.5,
-			EasingDirection = "Out",
-			EasingStyle = "Back",
 		})
-
-		tween:Start()
 	else
 		ui_scale = Instance.new("UIScale")
 		hydration(ui_scale) {
@@ -53,15 +47,9 @@ local function setNodeSizeFactor(node: node_frame, factor: number)
 			Parent = node,
 		}
 
-		local tween = TweenPlus(ui_scale, {
+		spr.target(ui_scale, 1, 1 / 0.5, {
 			Scale = factor,
-		}, {
-			Time = 0.5,
-			EasingDirection = "Out",
-			EasingStyle = "Back",
 		})
-
-		tween:Start()
 	end
 end
 

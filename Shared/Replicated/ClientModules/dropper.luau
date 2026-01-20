@@ -4,7 +4,6 @@ local drop_manager = {}
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -42,7 +41,7 @@ function drop_manager:Drop(player: Player, amount: number, object: string?)
 
 	_trove:Add(obj)
 
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 	local rootPart = character.HumanoidRootPart
 
 	for i = 1, amount do

@@ -3,16 +3,17 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+
 local trove = require(ReplicatedStorage.Packages.trove).new()
 
--- Joint.luau
+-- joint-controller.luau
 -- a module for making the character animation (lag)
 -- just like Spider-Man into the spider-verse.
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+
+local character = player.Character or player.CharacterAdded:Wait()
 
 local joints = {} :: { [number]: Motor6D }
 
@@ -42,7 +43,7 @@ end
 
 updateJoints()
 
-characterMarshaller.added(player, updateJoints)
+player.CharacterAdded:Connect(updateJoints)
 
 trove:Connect(RunService.Stepped, function(_, deltaTime: number)
 	local frame_rate = math.clamp(frameRate, 0, 60)

@@ -21,7 +21,7 @@ local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
@@ -54,7 +54,7 @@ if RunService:IsStudio() then
 end
 
 local function loadProfile(player: Player)
-	local profile = retryer.infdelay(random.integer(0, 5), function(...)
+	local profile = retryer.infdelay(1, function(...)
 		return player_related:StartSessionAsync(`player_{player.UserId}`, {
 			Cancel = function()
 				return player.Parent ~= Players
@@ -69,11 +69,15 @@ local function loadProfile(player: Player)
 			profiles[player] = nil
 			player:Kick("Session Locked, rejoin")
 		end)
+
+		print("Created profile")
 		if player:FindFirstAncestorOfClass("Players") then
 			profiles[player] = profile
 			profile.Data.last_login = DateTime.now().UnixTimestampMillis
 			profile:Reconcile()
 			profile:Save()
+
+			print("Created, reconciled and saved profile!")
 		else
 			profile:EndSession()
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
@@ -212,13 +216,9 @@ local solo_matchmaking = MatchMaker.new({
 	end,
 })
 
-solo_matchmaking.party_added:Connect(function(party, match)
-	--
-end)
-
 -- TODO) add the products
 
-local ServerAsset = assets:WaitForChild("Server"):Clone() :: Model
+local ServerAsset = assets.Server:Clone()
 ServerAsset.Parent = game.Workspace
 
 local function enterMatch(player: Player)
@@ -252,7 +252,7 @@ local function onPlayerAdded(player: Player)
 	future.new(GameAnalytics.PlayerJoined, GameAnalytics, player)
 	--orion.registerPlayer(player)
 
-	local function addHighlight(character: typemarshaller.Character)
+	local function addHighlight(character: Model)
 		return future.new(function()
 			if character:FindFirstChildOfClass("Highlight") then
 				return "already has highlight"
@@ -271,7 +271,7 @@ local function onPlayerAdded(player: Player)
 		end)
 	end
 
-	characterMarshaller.added(player, function(character: typemarshaller.Character)
+	player.CharacterAdded:Connect(function(character)
 		character:SetAttribute("Stamina", 100)
 		character:SetAttribute("MaxStamina", 100)
 
@@ -416,12 +416,16 @@ local function setNetworkOwner(player: Player?, object: BasePart)
 	future.new(object.SetNetworkOwner, object, player or nil)
 end
 
-local function getProfile(player: Player): typemarshaller.Profile
+local function getProfile(player: Player): typemarshaller.Profile?
 	local ok, profile = retryer.delay(1, 10, function()
 		return profiles[player]
 	end)
 
-	assert(ok, "Failed to index table for a profile.")
+	if not ok or not profile then
+		warn("failed to index table for profile.", player)
+
+		return nil
+	end
 
 	return {
 		Data = profile.Data,

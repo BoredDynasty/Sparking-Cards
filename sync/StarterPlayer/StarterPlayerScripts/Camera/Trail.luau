@@ -21,7 +21,7 @@ function Trail.new(cameraController)
 	self._cameraController = cameraController
 	self._config = CameraConfig.Trail
 	self._character = playerMarshaller.get().Character
-	self._humanoid = self._character:WaitForChild("Humanoid")
+	self._humanoid = self._character:FindFirstChild("Humanoid")
 	self._rootPart = self._humanoid.RootPart
 
 	return self

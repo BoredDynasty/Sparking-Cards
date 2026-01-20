@@ -1,35 +1,32 @@
 --!strict
 
+-- pop.luau
+
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local TweenService = game:GetService("TweenService")
 
-local Emphasis = require(ReplicatedStorage.Utility.Emphasis)
+local spr = require(ReplicatedStorage.Modules.spr)
 
-return function(object: GuiObject | { GuiObject }, ratio: number?)
-	-- Default ratio if not specified
+return function(object: Instance | { Instance }, ratio: number?)
 	ratio = ratio or 0.8
 
-	-- Handle both single objects and tables
 	local objects = (typeof(object) == "table") and object or { object }
-	local TInfo: TweenInfo
 
-	for _, gui in objects do
+	for _, gui in ipairs(objects) do
 		-- Create or get existing UIScale
-		local uiScale = Instance.new("UIScale")
-		uiScale.Name = "PopScale"
-		uiScale.Parent = gui
+		local uiScale = gui:FindFirstChild("PopScale") :: UIScale
+		if not uiScale then
+			uiScale = Instance.new("UIScale")
+			uiScale.Name = "PopScale"
+			uiScale.Parent = gui
+		end
 
-		-- Create pop effect sequence
+		-- Instantly set to 1 before animating
+		uiScale.Scale = 1
 
-		TInfo = TweenInfo.new(Emphasis.standard * 0.5, Enum.EasingStyle.Quad, Enum.EasingDirection.In)
-		local squeeze = TweenService:Create(uiScale, TInfo, { Scale = ratio })
-		TInfo = TweenInfo.new(Emphasis.standard * 0.7, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
-		local pop = TweenService:Create(uiScale, TInfo, { Scale = 1 })
-
-		-- Play the sequence
-		squeeze:Play()
-		squeeze.Completed:Once(function()
-			pop:Play()
+		-- Animate to ratio (squeeze), then back to 1 (pop)
+		spr.target(uiScale, 1, 20, { Scale = ratio })
+		spr.completed(uiScale, function()
+			spr.target(uiScale, 1, 12, { Scale = 1 })
 		end)
 	end
 end

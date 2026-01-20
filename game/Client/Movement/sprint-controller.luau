@@ -3,15 +3,14 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local input = require(ReplicatedStorage.Packages.input)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
+local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- sprint-controller.luau
@@ -26,13 +25,13 @@ local keyboard = input.Keyboard.new()
 _trove:Add(keyboard :: any)
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 
 local rate_limit = ratelimit(1, 0.5)
 
-animate.loadAnimation("sprint", MovementConfig.Animations.Run :: any)
+animate.load(MovementConfig.Animations.Run.Id)
 
 local function onBegan()
 	if not rate_limit(player.UserId) then
@@ -58,20 +57,16 @@ local function onBegan()
 
 	local new_speed = base_speed + speed_increase
 
-	local tween = TweenPlus(humanoid, {
+	spr.target(humanoid, 1, 1 / 0.3, {
 		WalkSpeed = new_speed,
-	}, {
-		Time = 0.3,
 	})
 
 	character:SetAttribute("AntiRegenerate", true)
-	animate.play("sprint")
+	animate.play(MovementConfig.Animations.Run.Id)
 
 	local lines = fetchAsset("speed_lines") :: speed_lines.lines
 
-	speed_lines:On(gamecamera.camera, lines)
-
-	tween:Start()
+	speed_lines:On(workspace.CurrentCamera, lines)
 end
 
 local function onEnded()
@@ -81,19 +76,15 @@ local function onEnded()
 
 	local new_speed = MovementConfig.Character.BaseSpeed
 
-	local tween = TweenPlus(humanoid, {
+	spr.target(humanoid, 1, 1 / 0.3, {
 		WalkSpeed = new_speed,
-	}, {
-		Time = 0.3,
 	})
 
 	character:SetAttribute("AntiRegenerate", false)
 
-	animate.stop("sprint")
+	animate.stop(MovementConfig.Animations.Run.Id)
 
 	speed_lines:Off()
-
-	tween:Start()
 end
 
 function controller:Update(deltaTime: number)
@@ -125,7 +116,6 @@ end
 
 	onBegan()
 end);
-
 (keyboard.KeyUp :: RBXScriptSignal<Enum.KeyCode, boolean>):Connect(function(key)
 	if key ~= MovementConfig.Keybinds.Sprint then
 		return

@@ -4,7 +4,7 @@ local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local random = require(ReplicatedStorage.Utility.random)
@@ -30,7 +30,7 @@ export type props = {
 }
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
 function module:Fire(position: Vector3, props: props)
 	props = props or {}

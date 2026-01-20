@@ -4,7 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Packet = require(ReplicatedStorage.Packet)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -37,7 +37,7 @@ function module:Toggle(player: Player, config: typemarshaller.GlidingConfig)
 		return
 	end
 
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 
 	local humanoid = character.Humanoid
 	local root_part = character:FindFirstChild("HumanoidRootPart") :: BasePart

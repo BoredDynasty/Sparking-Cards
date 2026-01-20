@@ -2,7 +2,6 @@
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local random = require(ReplicatedStorage.Utility.random)
 local trove = require(ReplicatedStorage.Packages.trove)
@@ -12,7 +11,7 @@ local trove = require(ReplicatedStorage.Packages.trove)
 local _trove = trove.new()
 
 return function(player: Player, direction: Vector3)
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 	local root_part = character.PrimaryPart
 	local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 

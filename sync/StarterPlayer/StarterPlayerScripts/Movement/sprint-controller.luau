@@ -5,9 +5,8 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
-local gamecamera = require(StarterPlayer.StarterPlayerScripts.Modules.gamecamera)
 local input = require(ReplicatedStorage.Packages.input)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -26,13 +25,13 @@ local keyboard = input.Keyboard.new()
 _trove:Add(keyboard :: any)
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 
 local rate_limit = ratelimit(1, 0.5)
 
-animate.loadAnimation("sprint", MovementConfig.Animations.Run :: any)
+animate.load(MovementConfig.Animations.Run.Id)
 
 local function onBegan()
 	if not rate_limit(player.UserId) then
@@ -65,11 +64,11 @@ local function onBegan()
 	})
 
 	character:SetAttribute("AntiRegenerate", true)
-	animate.play("sprint")
+	animate.play(MovementConfig.Animations.Run.Id)
 
 	local lines = fetchAsset("speed_lines") :: speed_lines.lines
 
-	speed_lines:On(gamecamera.camera, lines)
+	speed_lines:On(workspace.CurrentCamera, lines)
 
 	tween:Start()
 end
@@ -89,7 +88,7 @@ local function onEnded()
 
 	character:SetAttribute("AntiRegenerate", false)
 
-	animate.stop("sprint")
+	animate.stop(MovementConfig.Animations.Run.Id)
 
 	speed_lines:Off()
 
@@ -125,7 +124,6 @@ end
 
 	onBegan()
 end);
-
 (keyboard.KeyUp :: RBXScriptSignal<Enum.KeyCode, boolean>):Connect(function(key)
 	if key ~= MovementConfig.Keybinds.Sprint then
 		return

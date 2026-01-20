@@ -27,7 +27,7 @@ local player_data = {}
 
 local attack_modules = {}
 
-local events = ReplicatedStorage:WaitForChild("Events") :: Folder
+local events = ReplicatedStorage.Events
 
 -- Type definitons
 export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
@@ -52,7 +52,7 @@ type PlayerData = {
 
 grip.auto_update()
 
-local get_profile = events:WaitForChild("GetProfile") :: RemoteFunction
+local get_profile = events.GetProfile
 
 local function expectProfile()
 	local fut = future.new(function()
@@ -68,7 +68,12 @@ end
 function orion.new(player: Player, profile: typemarshaller.Profile)
 	profile = profile or expectProfile()
 
-	local equippedCard = if profile then profile.Data.equipped_card else "Cryo"
+	local equippedCard = "Cryo"
+	if profile and profile.Data then
+		equippedCard = profile.Data.equipped_card
+	else
+		equippedCard = "Cryo"
+	end
 	-- if the profile exists, use the current existing card, else use the "Cryo" placeholder
 
 	local attack_module = orion:GetAttackModule(equippedCard)

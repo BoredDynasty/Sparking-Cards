@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local trove = require(ReplicatedStorage.Packages.trove)
@@ -13,9 +13,9 @@ local trove = require(ReplicatedStorage.Packages.trove)
 local controller = {}
 
 local player = playerMarshaller.get()
-local character = characterMarshaller.get(player)
+local character = player.Character or player.CharacterAdded:Wait()
 
-local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
 
 local _trove = trove.new()
 controller._trove = _trove

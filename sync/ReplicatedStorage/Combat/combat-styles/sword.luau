@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local Packet = require(ReplicatedStorage.Packet)
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
+
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local damage = require(ReplicatedStorage.Combat.Strike.damage)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
@@ -59,7 +59,7 @@ function module.new(player: Player, sword_name: string)
 	self.model = sword_model
 	self.player = player
 
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 
 	local grip_info = grip.createGrip(character, self.model, "Right", CFrame.new(0, 0, 2))
 

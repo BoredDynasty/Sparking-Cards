@@ -2,7 +2,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local characterMarshaller = require(ReplicatedStorage.Utility.characterMarshaller)
 local explosion = require(ReplicatedStorage.Combat.framework.effects.explosion)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -28,7 +27,7 @@ type active_projectiles = {
 -- TODO) add hit detection
 
 function projectile_module:Fire(player: Player, config: typemarshaller.ProjectileConfig)
-	local character = characterMarshaller.get(player)
+	local character = player.Character or player.CharacterAdded:Wait()
 
 	local root_part = character.HumanoidRootPart
 

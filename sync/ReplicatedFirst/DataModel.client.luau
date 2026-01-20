@@ -22,13 +22,13 @@ game.Loaded:Wait()
 
 local player = Players.LocalPlayer :: Player
 
-local loadingUI = ReplicatedFirst:WaitForChild("Loading"):Clone() :: ScreenGui
+local loadingUI = ReplicatedFirst.Loading:Clone() :: ScreenGui
 loadingUI.Parent = player.PlayerGui :: PlayerGui
 
-local loadingCanvas = loadingUI:WaitForChild("CanvasGroup") :: CanvasGroup
-local background = loadingCanvas:WaitForChild("Background") :: Frame
+local loadingCanvas = loadingUI:FindFirstChild("CanvasGroup") :: CanvasGroup
+local background = loadingCanvas:FindFirstChild("Background") :: Frame
 
-local statusBar = background:WaitForChild("Status")
+local statusBar = background:FindFirstChild("Status") :: Frame
 local textIndicator = statusBar:FindFirstChild("StatusText") :: TextLabel
 local status = statusBar:FindFirstChildOfClass("TextButton") :: TextButton
 local skipButton = statusBar:FindFirstChild("Skip") :: TextButton

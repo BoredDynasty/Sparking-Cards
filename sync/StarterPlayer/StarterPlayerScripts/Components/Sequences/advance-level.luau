@@ -9,8 +9,8 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- a level up sequence.
 
-local events = ReplicatedStorage:WaitForChild("Events") :: Folder
-local get_profile = events:WaitForChild("GetProfile") :: RemoteFunction
+local events = ReplicatedStorage.Events
+local get_profile = events.GetProfile
 
 local function expectProfile()
 	local fut = future.new(function()

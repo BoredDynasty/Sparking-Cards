@@ -3,12 +3,11 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
-local gamecamera = require("../Modules/gamecamera")
 
 -- motion-blur.luau
 -- we're not gonna use the camera controller for ts.
 
-local camera = gamecamera.camera
+local camera = workspace.CurrentCamera
 
 -- track it less frequently
 local lastCheck: number = 0.0
@@ -18,9 +17,9 @@ local last_position = camera.CFrame.Position
 
 local conn = nil :: RBXScriptConnection?
 
-local self = {}
+local module = {}
 
-function self:On(default_size: number?, max_size: number?, intensity: number?)
+function module:On(default_size: number?, max_size: number?, intensity: number?)
 	default_size = default_size or 0
 	max_size = max_size or 10
 	intensity = intensity or 10
@@ -51,11 +50,11 @@ function self:On(default_size: number?, max_size: number?, intensity: number?)
 	end)
 end
 
-function self:Off()
+function module:Off()
 	if conn ~= nil then
 		conn:Disconnect()
 		conn = nil
 	end
 end
 
-return self
+return module

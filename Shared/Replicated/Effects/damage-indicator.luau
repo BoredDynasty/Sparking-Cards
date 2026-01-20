@@ -1,11 +1,11 @@
 --!nonstrict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local random = require(ReplicatedStorage.Utility.random)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- damage-indicator.luau
 
@@ -71,32 +71,15 @@ return function(damage: number, text_color: Color3?, ancestor: BasePart)
 		task.defer(counter.Destroy, counter)
 	end)
 
-	-- transparency effect
-	local transparency_tween = TweenPlus(label, {
+	spr.target(label, 1, 1 / 0.6, {
 		TextTransparency = 1,
-	}, {
-		Time = 0.6,
 	})
-	-- rotation effect
-	local rotation_tween = TweenPlus(label, {
+	spr.target(label, 1, 1 / 0.3, {
 		Rotation = math.rad(15),
-	}, {
-		Time = 0.3,
-		EasingDirection = "In",
-		EasingStyle = "Sine",
 	})
-	-- size effect
-	local size_tween = TweenPlus(background, {
+	spr.target(background, 1, 1 / 0.3, {
 		Size = UDim2.new(),
-	}, {
-		Time = 0.3,
-		EasingDirection = "In",
-		EasingStyle = "Sine",
 	})
-
-	transparency_tween:Start()
-	rotation_tween:Start()
-	size_tween:Start()
 
 	task.delay(0.5, function()
 		linearVelocity:Destroy()
