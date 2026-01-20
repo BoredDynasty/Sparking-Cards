@@ -158,7 +158,7 @@ function UELog:create_message(msg: string, message_type: Enum.MessageType?)
 
 	task.delay(self.life_time, function()
 		if new_message then
-			spr.target(new_message, 1, 1 / self.fade_time :: number, {
+			spr.target(new_message, 1, 2, {
 				TextTransparency = 1,
 			})
 

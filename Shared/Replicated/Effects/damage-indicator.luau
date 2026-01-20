@@ -71,13 +71,13 @@ return function(damage: number, text_color: Color3?, ancestor: BasePart)
 		task.defer(counter.Destroy, counter)
 	end)
 
-	spr.target(label, 1, 1 / 0.6, {
+	spr.target(label, 1, 2, {
 		TextTransparency = 1,
 	})
-	spr.target(label, 1, 1 / 0.3, {
+	spr.target(label, 0.6, 6, {
 		Rotation = math.rad(15),
 	})
-	spr.target(background, 1, 1 / 0.3, {
+	spr.target(background, 0.7, 8, {
 		Size = UDim2.new(),
 	})
 

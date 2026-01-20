@@ -116,7 +116,7 @@ _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
 	local bar_frame = bar:FindFirstChild("Frame") :: Frame
 	local inner_bar = bar_frame:FindFirstChild("Bar") :: Frame
 
-	spr.target(inner_bar, 1, 1 / 0.2, {
+	spr.target(inner_bar, 0.8, 8, {
 		Size = scale,
 	})
 end)

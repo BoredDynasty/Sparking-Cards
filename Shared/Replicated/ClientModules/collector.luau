@@ -65,7 +65,7 @@ function module:Fire(position: Vector3, props: props)
 
 		local mid_point = position + Vector3.new(x_y, random.float(5, 8), x_y)
 
-		spr.target(part, 1, 1 / 0.5, {
+		spr.target(part, 0.6, 6, {
 			Position = mid_point,
 		})
 
@@ -93,7 +93,7 @@ function module:Fire(position: Vector3, props: props)
 						conn:Disconnect()
 					end
 
-					spr.target(part, 1, 1 / 0.3, {
+					spr.target(part, 1, 4, {
 						Transparency = 1,
 					})
 

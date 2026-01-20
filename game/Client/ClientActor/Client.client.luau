@@ -280,7 +280,7 @@ local function initializeMatchmaking()
 
 	local function hideMatchmakingFrame()
 		spr.stop(matchmakingFrame)
-		spr.target(matchmakingFrame, 1, 2, {
+		spr.target(matchmakingFrame, 0.7, 4, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
 

@@ -64,10 +64,10 @@ local function ripple(ancestor: GuiObject, duration: number?)
 
 		local max_size = math.max(abs_x, abs_y) * 3
 
-		spr.target(effect, 1, 1 / duration, {
+		spr.target(effect, 1, 8, {
 			Size = UDim2.fromOffset(max_size, max_size),
 		})
-		spr.target(effect, 1, 1 / duration, {
+		spr.target(effect, 1, 8, {
 			BackgroundTransparency = 1,
 		})
 

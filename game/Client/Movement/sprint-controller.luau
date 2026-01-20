@@ -57,7 +57,7 @@ local function onBegan()
 
 	local new_speed = base_speed + speed_increase
 
-	spr.target(humanoid, 1, 1 / 0.3, {
+	spr.target(humanoid, 0.8, 5, {
 		WalkSpeed = new_speed,
 	})
 
@@ -76,7 +76,7 @@ local function onEnded()
 
 	local new_speed = MovementConfig.Character.BaseSpeed
 
-	spr.target(humanoid, 1, 1 / 0.3, {
+	spr.target(humanoid, 0.8, 5, {
 		WalkSpeed = new_speed,
 	})
 

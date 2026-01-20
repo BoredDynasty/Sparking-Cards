@@ -79,7 +79,7 @@ function crosshair_module:SetRadius(radii: number)
 
 	for i, position in pairs(self.line_positions) do
 		if self.can_animate:Get() then
-			spr.target(self.interface[i], 1, 1 / 0.5, {
+			spr.target(self.interface[i], 0.7, 8, {
 				Position = position,
 			})
 		else
@@ -120,7 +120,7 @@ function crosshair_module:Shove(radii: number)
 
 	for i, position in pairs(self.line_positions) do
 		if self.can_animate:Get() then
-			spr.target(self.interface[i], 1, 1 / 0.5, {
+			spr.target(self.interface[i], 0.7, 8, {
 				Position = position,
 			})
 		else
