@@ -10,8 +10,8 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
 local lighting_module = {
 	-- constants
-	damping_ratio = 0.8,
-	frequency = 1.5,
+	damping_ratio = 0.7,
+	frequency = 2.5,
 	default_color = Color3.fromRGB(255, 255, 255),
 	default_decay = Color3.fromRGB(124, 124, 124),
 	presets = {

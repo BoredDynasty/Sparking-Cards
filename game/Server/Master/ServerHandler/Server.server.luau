@@ -435,7 +435,7 @@ end
 local function setClock(number: number)
 	spr.stop(Lighting, "ClockTime")
 
-	spr.target(Lighting, 1, 1, {
+	spr.target(Lighting, 1, 4, {
 		ClockTime = number,
 	})
 end
