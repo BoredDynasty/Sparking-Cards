@@ -88,6 +88,8 @@ function module:Apply(character: typemarshaller.Character)
 		gloveL.CFrame = leftHand.CFrame * CFrame.new(0, 1, 0) * CFrame.Angles(0, math.rad(180), math.rad(90))
 		gloveR.CFrame = rightHand.CFrame * CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, math.rad(90))
 	end
+
+	character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
 end
 
 return module

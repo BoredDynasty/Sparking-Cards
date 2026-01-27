@@ -1,24 +1,18 @@
---!nonstrict
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local badges = require(ReplicatedStorage.Structures.badges)
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
+local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
-local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- achievement.luau
-
-export type template = Frame & {
-	Title: TextLabel,
-	Details: TextButton,
-	Share: TextButton,
-}
 
 local module = {}
 module.limit = ratelimit(1, 0.5)
@@ -33,7 +27,7 @@ local shopFrame = badgesCanvas.Frame
 local itemHolder = shopFrame.Holder
 local total = shopFrame.Total
 
-local function createTemplate(ancestor: Instance?): template
+local function createTemplate(ancestor: Instance?)
 	local Instances = {
 		ItemTemplate = Instance.new("Frame"),
 		UICorner = Instance.new("UICorner"),
@@ -209,23 +203,12 @@ end
 function module:DisplayTotal(profile: typemarshaller.Profile)
 	local total_label = total.Amount
 
-	local prisms = tonumber(profile and #profile.Data.achievements)
+	local total = tonumber(profile and #profile.Data.achievements)
 
-	if prisms then
-		local counter = markdown.text_counter.new({
-			to = tonumber(profile and profile.Data.prisms) or 0,
-			from = 0,
-			direction = "up",
-			delay = 0,
-			duration = 2,
-			label = total_label,
-			separator = " ",
-		})
-		counter:Start()
+	if total then
+		local counter = text_counter.new(total_label, total, 3)
 
-		counter.completed:Wait()
-
-		task.defer(counter.Destroy, counter)
+		counter:Start(counter)
 	else
 		total_label.Text = "?"
 	end
@@ -234,6 +217,8 @@ end
 function module:Load(profile: typemarshaller.Profile)
 	if not profile then
 		print("no profile to load badges")
+
+		hint.new():SetText("Error loading achievements. Please try again later."):SetCanClick(false)
 
 		return
 	end

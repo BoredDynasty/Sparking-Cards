@@ -1,10 +1,10 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- transition.luau
 -- ui transitions
@@ -66,32 +66,21 @@ function module:Circle(config: config)
 		Thickness = 4,
 	}
 
-	local goal = {
+	spr.target(ui_stroke, 1, 1 / (config.duration or 1), {
 		Thickness = 2000,
-	}
-
-	local tween = TweenPlus(ui_stroke, goal, {
-		Time = config.duration or 1,
-		EasingStyle = "Quad",
-		EasingDirection = "InOut",
 	})
 
-	tween:Start()
-	tween.Completed:Wait()
+	spr.completed(ui_stroke, function()
+		spr.target(ui_stroke, 1, 1 / (config.duration or 1), {
+			Thickness = 4,
+		})
+	end)
 
-	local tween2 = TweenPlus(ui_stroke, {
-		Thickness = 0,
-	}, {
-		Time = config.duration or 1,
-		EasingStyle = "Quad",
-		EasingDirection = "InOut",
-	})
-
-	tween2:Start()
-	tween2.Completed:Wait()
-
-	layer_colletor:Destroy()
-	state:Set(false)
+	spr.completed(ui_stroke, function()
+		circle:Destroy()
+		layer_colletor:Destroy()
+		state:Set(false)
+	end)
 end
 
 return module

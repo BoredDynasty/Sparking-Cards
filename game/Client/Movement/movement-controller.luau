@@ -15,10 +15,10 @@ export type MovementController = {
 	_trove: typeof(trove.new())?,
 }
 
-local movement_controllers = table.create(10) :: { MovementController }
+local movement_controllers = {} :: { MovementController }
 
 function controller:Add(module: ModuleScript)
-	local ok, result = pcall(require, module)
+	local ok, result: MovementController = pcall(require, module)
 
 	if ok then
 		table.insert(movement_controllers, result)

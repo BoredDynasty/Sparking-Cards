@@ -39,8 +39,7 @@ local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health-pulse"])
 
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
-
-local hud = require(script.Parent.Parent.Components.hud)
+local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
 
@@ -71,6 +70,7 @@ local objective = require("../Components/objective")
 local observer = require(ReplicatedStorage.Utility.observer)
 
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
+local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
@@ -132,7 +132,7 @@ local profile = nil
 
 local _trove = trove.new()
 
-local character = player.Character or player.CharacterAdded:Wait()
+local character = player.Character or player.CharacterAdded:Wait() :: typemarshaller.Character
 local humanoid = character.Humanoid
 
 -- // Functions -- //
@@ -141,7 +141,12 @@ local function expectProfile()
 		return get_profile:InvokeServer() :: typemarshaller.Profile
 	end)
 
-	local ok, result = fut:Await()
+	repeat
+		task.wait(1)
+		print("pending profile fetch")
+	until not fut:IsPending()
+
+	local ok, result = fut:UnwrapOr(nil)
 	-- assert(ok, "Couldn't fetch profile from Server: " .. result)
 
 	return result
@@ -168,6 +173,7 @@ end
 
 local function initializeMarket()
 	print("init market")
+
 	local shopGui = PlayerGui.Shop
 	local shopCanvas = shopGui.CanvasGroup
 	local shopFrame = shopCanvas.Frame
@@ -178,16 +184,23 @@ local function initializeMarket()
 	local itemHolder = shopFrame.Holder
 	local spendings = shopFrame.Spendings
 
-	local spendings_icon = spendings:FindFirstChild("SpendingsIcon", true) :: ImageLabel
+	local spendings_icon = spendings.SpendingsIcon
 
 	print("got market gui")
 
 	local function callback()
 		market:DisplaySpendings(expectProfile())
-		market:LoadItems()
+
+		local new_hint = hint.new()
+		new_hint:SetText("Loading Market...")
+		new_hint:SetExpiry(1.5)
+
+		task.spawn(market.LoadItems, market)
+
 		displayorder:Toggle(shopCanvas)
+
 		wiggle(spendings_icon, function()
-			print("completed wiggle animation.")
+			print("completed wiggle")
 		end)
 	end
 
@@ -198,10 +211,9 @@ local function initializeMarket()
 		local navi_btns = {
 			{
 				name = "Home",
-				icon = Content.fromAssetId(73790023098856),
+				icon = Content.fromAssetId(10723407389),
 				callback = function()
-					market:Unload()
-					market:LoadItems()
+					task.spawn(market.LoadItems, market)
 				end,
 				holder = shopNavigation,
 			},
@@ -209,7 +221,6 @@ local function initializeMarket()
 				name = "Inventory",
 				icon = Content.fromAssetId(10709769841),
 				callback = function()
-					market:Unload()
 					market:LoadInventory(expectProfile())
 				end,
 				holder = shopNavigation,
@@ -246,23 +257,36 @@ local function initializeMatchmaking()
 	local statusText = matchmakingFrame.Time
 	local pulseImage = matchmakingFrame.Pulse
 
-	--displayorder:add(matchmakingCanvas)
-
 	shadow(matchmakingFrame)
 
 	local state = observer.new(false) :: observer.Observer<boolean>
 	local clock = timer.new()
 
+	local interval_thread
+	local performed_hint = 0
+
 	local function showMatchmakingFrame()
-		spr.target(matchmakingFrame, 0.3, 8, {
+		if interval_thread then
+			task.cancel(interval_thread)
+		end
+
+		spr.target(matchmakingFrame, 0.6, 8, {
 			Position = UDim2.fromScale(0.5, 0.1),
 		})
+
+		if performed_hint <= 2 then
+			local new_hint = hint.new()
+			new_hint:SetText("Swipe up on the screen to cancel matchmaking. [" .. performed_hint .. "/3]")
+			new_hint:SetExpiry(5)
+
+			performed_hint += 1
+		end
 
 		state:Set(true)
 
 		clock:Start()
 		-- every 0.33_ seconds
-		clock:interval(1 / 3, function()
+		interval_thread = clock:interval(1 / 3, function()
 			local total_seconds = clock:GetTime()
 
 			local minutes = math.floor(total_seconds / 60)
@@ -280,7 +304,10 @@ local function initializeMatchmaking()
 
 	local function hideMatchmakingFrame()
 		spr.stop(matchmakingFrame)
-		spr.target(matchmakingFrame, 0.7, 4, {
+
+		task.wait(1 / 8)
+
+		spr.target(matchmakingFrame, 1, 2.5, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
 
@@ -289,7 +316,9 @@ local function initializeMatchmaking()
 		clock:Reset()
 		clock:Stop()
 
-		hud:Toggle("Matchmaking")
+		if interval_thread then
+			task.cancel(interval_thread)
+		end
 	end
 
 	state:Watch(function(newValue)
@@ -305,16 +334,13 @@ local function initializeMatchmaking()
 		end
 
 		if direction == "up" then
-			state:Set(false)
-			-- audio:SFX("leave")
-
-			future.new(hideMatchmakingFrame)
+			future.Try(hideMatchmakingFrame)
 		else
 			return
 		end
 	end)
 
-	hud.new("Matchmaking", showMatchmakingFrame, lucide.GetAsset("play-circle"))
+	hud.new("Play", showMatchmakingFrame, lucide.GetAsset("play-circle"))
 end
 local function initializeBadges()
 	print("init badges")
@@ -336,7 +362,7 @@ local function initializeBadges()
 		achievement:Load(expectProfile())
 	end
 
-	hud.new("Badges", callback, lucide.GetAsset("trophy", 48))
+	hud.new("Badges", callback, lucide.GetAsset("trophy", 48), true)
 end
 local function initializeNotifiers()
 	print("init notifiers")
@@ -354,9 +380,9 @@ local function initializeMusic()
 	local tracks = {
 		{
 			biome = "Baseplate",
-			id = "106260784933266",
-			name = "Gentle Groove",
-			artist = "Distrokid",
+			id = 85255924043591,
+			name = "Maui",
+			artist = "Hazelwood",
 			coordinates = {
 				position = vector.create(-1845, 228, 139),
 				size = vector.create(2048, 64, 2048),
@@ -365,7 +391,7 @@ local function initializeMusic()
 	}
 
 	for i, track in ipairs(tracks) do
-		music.new(track.biome, {
+		task.spawn(music.new, track.biome, {
 			track,
 		}, track.coordinates.position, track.coordinates.size)
 
@@ -391,13 +417,12 @@ local function initializeMusic()
 		artist_display.Text = track.artist or "none"
 	end)
 
-	local average_framerate = frame_rate:GetFrameRate(math.pow(10, 2))
-	print("avg. framerate: ", average_framerate)
-
 	-- rotate effect on disc
 	local rotation_thread = task.spawn(function()
 		while true do
-			disc.Rotation += RunService.PreRender:Wait()
+			local frame = RunService.RenderStepped:Wait()
+
+			disc.Rotation += math.deg(frame)
 		end
 	end)
 end
@@ -419,7 +444,9 @@ local function initializeObjectives()
 
 	local rank = observer.new("") :: observer.Observer<string>
 
-	future.new(function(profile: typemarshaller.Profile)
+	task.spawn(future.Try, function()
+		profile = expectProfile()
+
 		if profile and profile.Data then
 			rank:Set(profile.Data.level)
 		else
@@ -428,7 +455,7 @@ local function initializeObjectives()
 			rank_hint:SetText("Couldn't fetch Rank")
 			rank_hint:SetCanClick(false)
 		end
-	end, expectProfile())
+	end)
 
 	local function toggleUI()
 		displayorder:Toggle(objectiveGui.CanvasGroup)
@@ -441,7 +468,23 @@ local function initializeObjectives()
 		Text = uncompleted_value,
 	}
 
-	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
+	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"), true)
+end
+
+local function initializeParties()
+	print("init parties")
+
+	local party_gui = PlayerGui.Party
+	local party_canvas = party_gui.CanvasGroup
+	local party_frame = party_canvas.Frame
+
+	displayorder.new(party_canvas)
+
+	local function toggleUI()
+		displayorder:Toggle(party_canvas)
+	end
+
+	hud.new("Party", toggleUI, lucide.GetAsset("party-popper"))
 end
 
 initializeCommands()
@@ -453,8 +496,8 @@ initializeNotifiers()
 initializeMusic()
 initializeLoadouts()
 initializeObjectives()
+initializeParties()
 hud:Render()
-displayorder:Watch()
 
 print("client almost done")
 
@@ -464,7 +507,6 @@ movement_controller:Add(script.Parent.Parent.Movement["jump-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["stamina-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["walk-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["joint-controller"])
-
 movement_controller:Start()
 
 print("client movement")
@@ -473,12 +515,6 @@ print("client movement")
 -- rain_controller:Start(rain_controller)
 
 print("rain controller")
-
-do
-	local char_folder = ReplicatedStorage.Characters
-	char_folder.Name = "Characters"
-	char_folder.Parent = ReplicatedStorage
-end
 
 -- control
 
@@ -497,14 +533,22 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 	return attack_types[key]
 end
 
-keyboard.KeyDown:Connect(function(key: Enum.KeyCode)
+keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
+	if not processed then
+		return
+	end
+
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
 		orion:Execute(player, attack_type)
 	end
 end)
 
-mouse.LeftDown:Connect(function()
+mouse.LeftDown:Connect(function(processed: boolean)
+	if not processed then
+		return
+	end
+
 	local attack_type = "M1"
 	orion:Execute(player, attack_type)
 end)
@@ -532,7 +576,5 @@ Packet.CleanupCharacter.listen(function()
 	hud:Clear()
 	dropper._trove:Clean()
 end)
-
--- This results in four decimal places.
 
 print("Client has finished")

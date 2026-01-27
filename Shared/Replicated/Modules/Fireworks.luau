@@ -3,7 +3,6 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")
 
-local audio = require(script.Parent.audio)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local random = require(ReplicatedStorage.Utility.random)
@@ -64,9 +63,11 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 		ExplosionParticle.Parent = firework
 		ExplosionParticle:Emit(25)
 
+		--[[
 		for i = 1, 4 do
-			task.defer(audio.SFX, audio, "boom")
+			--task.defer(audio.SFX, audio, "boom")
 		end
+		-]]
 
 		task.delay(4, firework.Destroy, firework)
 	end)

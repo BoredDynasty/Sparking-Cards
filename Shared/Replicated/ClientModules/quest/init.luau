@@ -101,7 +101,7 @@ function quest_module.new(player: Player, name: string)
 
 	return Packet.AddQuest.send({
 		player,
-		questData = serialized,
+		quest_data = serialized,
 	})
 end
 

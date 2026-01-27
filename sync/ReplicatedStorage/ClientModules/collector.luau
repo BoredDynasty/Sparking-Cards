@@ -3,7 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -65,17 +65,11 @@ function module:Fire(position: Vector3, props: props)
 
 		local mid_point = position + Vector3.new(x_y, random.float(5, 8), x_y)
 
-		local interpolation = TweenPlus(part, {
+		spr.target(part, 0.6, 6, {
 			Position = mid_point,
-		}, {
-			EasingDirection = "Out",
-			EasingStyle = "Quad",
-			Time = 0.5,
 		})
 
-		interpolation:Start()
-
-		interpolation.Completed:Once(function()
+		spr.completed(part, function()
 			local speed = math.max(props.speed, 1)
 
 			local conn = nil
@@ -99,14 +93,11 @@ function module:Fire(position: Vector3, props: props)
 						conn:Disconnect()
 					end
 
-					local interpolation2 = TweenPlus(part, {
-						Transparency = threshold, -- why not
-					}, {
-						Time = 0.3,
+					spr.target(part, 1, 4, {
+						Transparency = 1,
 					})
-					interpolation2:Start()
 
-					interpolation2.Completed:Wait()
+					task.wait(0.3)
 
 					part:Destroy()
 				end

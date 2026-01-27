@@ -3,8 +3,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local random = require(ReplicatedStorage.Utility.random)
+local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- sparkle.luau
@@ -73,29 +73,17 @@ local function createSparkle(ancestor: GuiObject, config: config)
 	spark.Position = UDim2.fromScale(x, y)
 	spark.Parent = ancestor
 
-	local tweenIn = TweenPlus(spark, {
+	spr.target(spark, 1, 1 / config.lifetime, {
 		Size = config.maximumSize,
-	}, {
-		Time = config.lifetime,
-		EasingStyle = config.easing,
-		EasingDirection = "InOut",
 	})
 
-	local tweenOut = TweenPlus(spark, {
-		Size = config.minimumSize,
-	}, {
-		Time = config.lifetime,
-		EasingStyle = config.easing,
-		EasingDirection = "InOut",
-	})
-
-	tweenIn:Start()
-
-	tweenIn.Completed:Once(function()
-		tweenOut:Start()
+	spr.completed(spark, function()
+		spr.target(spark, 1, 1 / config.lifetime, {
+			Size = config.minimumSize,
+		})
 	end)
 
-	tweenOut.Completed:Connect(function()
+	spr.completed(spark, function()
 		cleanupSparkle(spark)
 		sparkle.sparkleCount[ancestor] -= 1
 	end)

@@ -80,7 +80,7 @@ local function onLanded()
 		end
 
 		local dust = _dust:Clone() :: BasePart
-		dust.CFrame = primary_part.CFrame * CFrame.new(0, -humanoid.HipHeight - 2, 0)
+		dust.CFrame = primary_part.CFrame * CFrame.new(0, -humanoid.HipHeight - 4, 0)
 		dust.CanCollide = false
 		dust.CanQuery = false
 		dust.CanTouch = false

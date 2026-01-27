@@ -1,6 +1,5 @@
 --!nonstrict
 
-local LocalizationService = game:GetService("LocalizationService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
@@ -55,7 +54,7 @@ local function createHint(ancestor: Instance?)
 	Instances.Hint.Size = UDim2.new(0, 0, 0, 30)
 	Instances.Hint.BorderColor3 = Color3.fromRGB(27, 42, 53)
 	Instances.Hint.Selectable = false
-	Instances.Hint.BackgroundTransparency = 1
+	Instances.Hint.BackgroundTransparency = 0.5
 	Instances.Hint.Position = UDim2.new(0.5, 0, 1, -85)
 	Instances.Hint.BorderSizePixel = 0
 	Instances.Hint.BackgroundColor3 = Color3.fromRGB(25, 27, 29)
@@ -63,7 +62,7 @@ local function createHint(ancestor: Instance?)
 		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
 	Instances.Hint.TextTransparency = 1
 	Instances.Hint.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Instances.Hint.Text = ""
+	Instances.Hint.Text = "hint loading"
 	Instances.Hint.Parent = ancestor
 
 	Instances.TextStroke.Name = "TextStroke"
@@ -103,6 +102,7 @@ end
 
 	-- it auto renders and cleans up by itself.
 	-- pretty neat, huh?
+	-- is also chainable
 
 	print("new hint!")
 
@@ -119,29 +119,38 @@ function module.new()
 	self.swipe_detector = swipe.new(self.hint)
 
 	self.CanClick:Watch(function(new)
-		self.hint.Interactable = new
+		future.Try(function()
+			self.hint.Interactable = new
+		end)
 	end)
 
 	self.hint.MouseButton1Click:Connect(function()
-		self.Clicked:Fire()
-		pop(self.hint, 1 / 8)
+		future.Try(function()
+			self.Clicked:Fire()
+
+			pop(self.hint, 1 / 8)
+		end)
 	end)
 
-	task.defer(module.Render, self, self)
+	future.Try(function()
+		task.defer(module.Render, self, self)
+	end)
 
 	self.swipe_detector.OnSwipe:Connect(function(direction, delta)
-		spr.target(self.hint, 0.5, 0.9, {
-			Position = UDim2.fromOffset(delta.X, delta.Y),
-		})
-		if direction == "up" then
-			if self.dismissable then
-				self:Destroy(self)
-			end
-		else
+		future.Try(function()
 			spr.target(self.hint, 0.5, 0.9, {
-				Position = UDim2.new(0.5, 0, 1, -85),
+				Position = UDim2.fromOffset(delta.X, delta.Y),
 			})
-		end
+			if direction == "up" then
+				if self.dismissable then
+					self:Destroy(self)
+				end
+			else
+				spr.target(self.hint, 0.5, 0.9, {
+					Position = UDim2.new(0.5, 0, 1, -85),
+				})
+			end
+		end)
 	end)
 
 	return self
@@ -157,15 +166,29 @@ function module:SetText(self: Hint, text: string, translate_text: boolean?)
 		end
 	end
 
-	self.hint.Text = text
+	future.Try(function()
+		self.hint.Text = text
+	end)
+
+	return self
 end
 
 function module:SetExpiry(self: Hint, expiry: number)
-	self.expiry = expiry
+	future.Try(function()
+		self.expiry = expiry
+	end)
+
+	return self
 end
 
 function module:SetCanClick(self: Hint, enabled: boolean)
-	self.CanClick:Set(enabled)
+	-- note: dont put this into one line :sob:
+
+	future.Try(function()
+		self.CanClick:Set(enabled)
+	end)
+
+	return self
 end
 
 function module:Destroy(self: Hint)
@@ -184,13 +207,19 @@ function module:Render(self: Hint)
 
 	self.hint.Parent = hint_gui.CanvasGroup
 
+	spr.target(self.hint, 1, 3, {
+		TextTransparency = 0,
+	})
+
 	task.delay(self.expiry, function()
-		spr.target(self.hint, 1, 0.9, {
-			BackgroundTransparency = 1,
-			TextTransparency = 1,
-		})
-		spr.completed(self.hint, function()
-			self:Destroy(self)
+		future.Try(function()
+			spr.target(self.hint, 1, 0.9, {
+				BackgroundTransparency = 1,
+				TextTransparency = 1,
+			})
+			spr.completed(self.hint, function()
+				self:Destroy(self)
+			end)
 		end)
 	end)
 end

@@ -25,7 +25,7 @@ local module = {
 }
 
 export type Track = {
-	id: string,
+	id: number,
 	name: string,
 	length: number?,
 	artist: string?,

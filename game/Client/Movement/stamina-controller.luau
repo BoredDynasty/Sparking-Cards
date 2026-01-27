@@ -125,9 +125,11 @@ function controller:Update(deltaTime: number)
 	local anti_regenerate = character:GetAttribute("AntiRegenerate") :: boolean
 	local current_stamina = character:GetAttribute("Stamina") :: number or max_stamina
 
+	-- TODO) fix this
+
 	if anti_regenerate then
 		last_drain:Set(0)
-		is_regenerating:Set(true)
+		is_regenerating:Set(false)
 	else
 		last_drain:Map(function(current)
 			return current :: number * deltaTime

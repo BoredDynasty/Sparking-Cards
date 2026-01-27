@@ -177,4 +177,12 @@ export type LucideIcon = {
 	ImageRectOffset: Vector2,
 }
 
+export type Party = {
+	party_id: string,
+	leader_id: number,
+	members: { number },
+	settings: Settings,
+	state: "idle" | "searching" | "in_match",
+}
+
 return nil

@@ -39,6 +39,10 @@ function module:On(camera: Camera, lines: lines)
 			module:Off(lines)
 		end
 
+		if not lines or not lines:FindFirstChild("Attachment") then
+			return
+		end
+
 		local viewport_size = camera.ViewportSize
 		local aspect_ratio = viewport_size.X / viewport_size.Y
 
@@ -68,7 +72,10 @@ function module:On(camera: Camera, lines: lines)
 		module:Off(camera:FindFirstChild("Speed_Lines") :: any)
 	end
 
-	RunService:BindToRenderStep(module.tag, module.render_priority, compute)
+	future.Try(function(...)
+		RunService:BindToRenderStep(module.tag, module.render_priority, compute)
+	end)
+
 	module.is_bound:Set(true)
 
 	return lines
@@ -77,7 +84,7 @@ end
 function module:Off(lines: lines?)
 	RunService:UnbindFromRenderStep(module.tag)
 
-	return future.new(function()
+	return future.Try(function()
 		if lines then
 			lines:Destroy()
 		else

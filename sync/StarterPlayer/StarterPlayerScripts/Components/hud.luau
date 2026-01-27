@@ -1,20 +1,16 @@
---!nonstrict
+--!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
-local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 local lucide = require(ReplicatedStorage.Packages.lucide)
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-local promise = require(ReplicatedStorage.Packages.promise)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
-local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
+local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 -- hud.luau
 
@@ -26,7 +22,7 @@ module.buttons = {}
 export type button = {
 	name: string,
 	callback: () -> (),
-	icon: icon?,
+	icon: icon,
 	reactor: observer.Observer<boolean>,
 	limit: ratelimit.Ratelimit<string>,
 	hover_limit: ratelimit.Ratelimit<string>,
@@ -46,17 +42,13 @@ function module.new(name: string, callback: () -> (), icon: icon, icon_only: boo
 		name = name,
 		callback = callback,
 		icon = icon,
-		reactor = observer.new(false),
-		limit = ratelimit(1, 0.5),
-		hover_limit = ratelimit(1, 0.9),
+		reactor = observer.new(false) :: observer.Observer<boolean>,
+		limit = ratelimit(1, 0.5) :: ratelimit.Ratelimit<string>,
+		hover_limit = ratelimit(1, 0.9) :: ratelimit.Ratelimit<string>,
 		icon_only = icon_only or false,
 	}
 
 	table.insert(module.buttons, button)
-end
-
-local function getOppositeReactorValue(reactor: observer.Observer<boolean>): boolean
-	return not reactor:Get()
 end
 
 function module:Render()
@@ -103,36 +95,30 @@ function module:Render()
 		Icon.BackgroundTransparency = 1
 		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
 		Icon.Size = UDim2.fromScale(0.40, 0.40)
+
 		task.spawn(function()
 			if button.icon_only then
 				-- make the TextButton width smaller.
 				TextButton.Size = UDim2.fromScale(0.2, 0.7)
+				TextButton.Text = ""
+				Icon.Position = UDim2.fromScale(1 / 2, 1 / 2)
 			else
 				TextButton.RichText = true
 
 				-- set icon adjacent to text
-				local typewriter = markdown.typewriter.new({
-					instantFinishKey = Enum.KeyCode.Unknown,
-				})
-				typewriter:Play(TextButton, button.name)
 
-				-- yield till done
-				repeat
-					task.wait(1)
-				until typewriter:IsPlaying() == false
+				TextButton.Text = button.name
 
 				local text_bounds = TextButton.TextBounds
 				local offset = 10
 
 				Icon.Position = UDim2.new(0.5, (-text_bounds.X / 2) - offset, 0.5, 0)
-
-				typewriter:Destroy()
 			end
 		end)
 
-		local default_icon = future.new(lucide.GetAsset, icon, 256 * 2):Await()
+		local ok, default_icon = future.Try(lucide.GetAsset, icon, 256 * 2):Await()
 
-		if default_icon then
+		if ok then
 			Icon.ImageRectOffset = default_icon.ImageRectOffset
 			Icon.ImageRectSize = default_icon.ImageRectSize
 			Icon.Image = default_icon.Url
@@ -148,9 +134,9 @@ function module:Render()
 				return
 			end
 
-			local value = getOppositeReactorValue(button.reactor)
-
-			button.reactor:Set(value)
+			button.reactor:Map(function(current)
+				return not current
+			end)
 
 			--audio:SFX("click")
 		end)
@@ -161,6 +147,9 @@ function module:Render()
 			if not button.hover_limit(button.name) then
 				return
 			end
+
+			wiggle(Icon)
+
 			-- mouse hover effect
 			spr.stop(TextButton, "Size")
 			spr.target(TextButton, 0.8, 8, {
@@ -182,13 +171,10 @@ function module:Render()
 		end)
 
 		button.reactor:Watch(function(newValue: boolean)
-			local oppositeValue = getOppositeReactorValue(button.reactor)
-			print("Button state changed:", oppositeValue, "->", newValue)
-
 			if button.callback then
-				future.new(button.callback)
+				task.spawn(future.Try, button.callback)
 			else
-				warn("No callback defined for button:", button.name)
+				warn("No callback defined for button: ", button.name)
 			end
 
 			-- tilt the icon
@@ -206,12 +192,7 @@ function module:Render()
 			end
 		end)
 
-		ripple:Watch(TextButton, 0.37)
-		glare:Watch(TextButton, {
-			corner_radius = UDim.new(1),
-		})
-
-		shadow(TextButton, Color3.new(), 0.5, 14)
+		shadow(TextButton)
 	end
 end
 
@@ -230,7 +211,9 @@ function module:Toggle(buttonName: string)
 	end
 
 	if button then
-		button.reactor:Set(getOppositeReactorValue(button.reactor))
+		button.reactor:Map(function(current)
+			return not current
+		end)
 	end
 end
 

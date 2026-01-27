@@ -1,8 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- glare.luau
 
@@ -99,16 +99,11 @@ function glare_module:Watch(object: GuiObject, props: glare?)
 	local function inner()
 		glare.Visible = true
 
-		local tween = TweenPlus(glare, {
+		spr.target(glare, 1, 1 / ((props.duration or 1000) / 1000), {
 			Position = UDim2.new(1),
-		}, {
-			Time = (props.duration or 1000) / 1000,
-			EasingStyle = "Linear",
 		})
 
-		tween:Start()
-
-		tween.Completed:Once(function()
+		spr.completed(glare, function()
 			task.defer(function()
 				glare.Position = UDim2.new(-0.4)
 			end)

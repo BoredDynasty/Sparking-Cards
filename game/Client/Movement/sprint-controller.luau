@@ -38,7 +38,7 @@ local function onBegan()
 		return
 	end
 
-	if humanoid:GetState() == Enum.HumanoidStateType.Running then
+	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
 		return
 	end
 
@@ -61,7 +61,13 @@ local function onBegan()
 		WalkSpeed = new_speed,
 	})
 
+	spr.completed(humanoid, function()
+		humanoid.WalkSpeed = new_speed
+	end)
+
 	character:SetAttribute("AntiRegenerate", true)
+
+	animate.stop(MovementConfig.Animations.Walk.Id)
 	animate.play(MovementConfig.Animations.Run.Id)
 
 	local lines = fetchAsset("speed_lines") :: speed_lines.lines
@@ -76,9 +82,14 @@ local function onEnded()
 
 	local new_speed = MovementConfig.Character.BaseSpeed
 
+	spr.stop(humanoid, "WalkSpeed")
 	spr.target(humanoid, 0.8, 5, {
 		WalkSpeed = new_speed,
 	})
+
+	spr.completed(humanoid, function()
+		humanoid.WalkSpeed = new_speed
+	end)
 
 	character:SetAttribute("AntiRegenerate", false)
 
@@ -95,6 +106,8 @@ function controller:Update(deltaTime: number)
 	local current_stamina = character:GetAttribute("Stamina") :: number or 0
 
 	if current_stamina >= 100 then
+		-- insuffient stamina to remove
+
 		return
 	end
 

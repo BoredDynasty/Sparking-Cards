@@ -125,7 +125,11 @@ function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
 	local attack_module = nil
 
 	local data = orion:GetPlayerData(player)
-	assert(data, "Failed to fetch player data.")
+	if not data then
+		warn("Failed to fetch player data.")
+
+		return
+	end
 
 	attack_module = orion:GetAttackModule(data.current_card)
 

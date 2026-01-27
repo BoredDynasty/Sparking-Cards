@@ -1,7 +1,7 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local observer = require(ReplicatedStorage.Utility.observer)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
@@ -116,14 +116,9 @@ _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
 	local bar_frame = bar:FindFirstChild("Frame") :: Frame
 	local inner_bar = bar_frame:FindFirstChild("Bar") :: Frame
 
-	local tween = TweenPlus(inner_bar, {
+	spr.target(inner_bar, 0.8, 8, {
 		Size = scale,
-	}, {
-		EasingDirection = "Out",
-		EasingStyle = "Back",
 	})
-
-	tween:Start()
 end)
 
 function controller:Update(deltaTime: number)
@@ -132,10 +127,10 @@ function controller:Update(deltaTime: number)
 
 	if anti_regenerate then
 		last_drain:Set(0)
-		is_regenerating:Set(true)
+		is_regenerating:Set(false)
 	else
-		last_drain:Map(function(current: number)
-			return current * deltaTime
+		last_drain:Map(function(current)
+			return current :: number * deltaTime
 		end)
 
 		if last_drain:Get() :: number >= regeneration_delay then

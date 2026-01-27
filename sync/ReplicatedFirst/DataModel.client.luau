@@ -8,13 +8,13 @@ local ReplicatedFirst = game:GetService("ReplicatedFirst")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterGui = game:GetService("StarterGui")
-
+--[[
 if RunService:IsStudio() then
 	-- peace of mind for me :)
 	script.Disabled = true
 	script:Destroy()
 end
-
+--]]
 ReplicatedFirst:RemoveDefaultLoadingScreen()
 StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.All, false)
 

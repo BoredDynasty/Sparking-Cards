@@ -1,145 +1,174 @@
 --!strict
-
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-local custom_lighting = require(ReplicatedStorage.ClientModules["custom-lighting"])
-local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local spr = require(ReplicatedStorage.Modules.spr)
-local trove = require(ReplicatedStorage.Packages.trove)
 
 -- displayorder.luau
 
 local module = {}
 
-export type CanvasData = {
+type CanvasData = {
 	canvas: CanvasGroup,
-	state: observer.observer_mt<boolean>,
-	connections: { SignalPlus.Connection },
+	state: observer.Observer<boolean>,
 }
 
-local _trove = trove.new()
-local tracked = {} :: { [string]: CanvasData }
+local tracked = {} :: { CanvasData }
 
-local limit = ratelimit(1, 2)
+local debounce = ratelimit(1, 2)
 
-function createScale(ancestor: Instance)
-	local scale = _trove:Construct(Instance, "UIScale", ancestor) :: UIScale
+local function createScale(ancestor: Instance)
+	local scale = Instance.new("UIScale")
 	hydration(scale) {
 		Scale = 1,
 		Name = "ui_scale",
+		Parent = ancestor,
 	}
 
 	return scale
 end
 
-function getScale(ancestor: Instance)
-	return ancestor:FindFirstChild("ui_scale", true) :: UIScale?
+local function getScale(ancestor: Instance)
+	return ancestor:FindFirstChild("ui_scale", true) :: UIScale
 end
 
-function module.new(canvas: CanvasGroup, position: Vector2?, size: Vector2?)
-	local identifier = canvas:GetFullName()
+local function indexCanvasData(canvas: CanvasGroup): CanvasData?
+	-- find the canvas data
 
-	local data = {
-		canvas = canvas,
-		state = observer.new(canvas.Visible),
-		connections = {} :: { SignalPlus.Connection },
-	}
-
-	tracked[identifier] = data
-
-	canvas.Destroying:Once(function()
-		local data = tracked[identifier]
-
-		for i, conn in ipairs(data.connections :: { SignalPlus.Connection }) do
-			conn:Disconnect()
+	for _, data in ipairs(tracked) do
+		if data.canvas == canvas then
+			return data
 		end
+	end
 
-		table.clear(tracked[identifier])
+	return nil
+end
 
-		tracked[identifier] = nil
+local function openCanvas(canvas_data: CanvasData)
+	local scale = getScale(canvas_data.canvas)
+
+	if not scale then
+		warn("couldn't find scale")
+
+		return
+	end
+
+	spr.stop(scale)
+
+	spr.target(scale, 0.8, 1.5, {
+		Scale = 1,
+	})
+
+	canvas_data.canvas.Visible = true
+
+	canvas_data.state:Set(true)
+end
+
+local function closeCanvas(canvas_data: CanvasData)
+	local scale = getScale(canvas_data.canvas)
+
+	if not scale then
+		warn("couldn't find scale")
+
+		return
+	end
+
+	spr.stop(scale)
+
+	spr.target(scale, 0.9, 1, {
+		Scale = 0,
+	})
+
+	spr.completed(scale, function()
+		canvas_data.canvas.Visible = false
 	end)
 
-	return data
+	canvas_data.state:Set(false)
+end
+
+function module.new(canvas: CanvasGroup)
+	local data = {
+		canvas = canvas,
+		state = observer.new(false),
+	} :: CanvasData
+
+	canvas.Destroying:Connect(function()
+		local i = table.find(tracked, data)
+
+		if i then
+			local new_data = table.remove(tracked, i)
+
+			assert(new_data, "no return value from 'table.remove'?")
+
+			new_data.state:Destroy()
+		end
+	end)
+
+	createScale(data.canvas)
+
+	table.insert(tracked, data)
 end
 
 function module:Toggle(canvas: CanvasGroup)
-	local identifier = canvas:GetFullName()
+	-- open the new gui
 
-	local ok, data = future
-		.Try(function()
-			return tracked[identifier]
-		end)
-		:Unwrap()
-
-	if not ok or not data then
+	local data = indexCanvasData(canvas)
+	if not data then
+		warn("canvas not indexed")
 		return
 	end
 
-	if limit(identifier) then
-		return
+	if data.state:Get() then
+		task.spawn(closeCanvas, data)
+	else
+		task.spawn(openCanvas, data)
 	end
 
-	local state = data.state
-
-	state:Map(function(current: boolean)
-		return not current
-	end)
-
-	-- hide every other one
-	for i, interface_data in pairs(tracked) do
-		if data == interface_data then
-			continue
+	-- close every other gui
+	for _, other_data in ipairs(tracked) do
+		if other_data ~= data and other_data.state:Get() then
+			task.spawn(closeCanvas, other_data)
 		end
-
-		interface_data.state:Set(false)
 	end
 end
 
-function module:Watch()
-	for i, interface_data in pairs(tracked) do
-		local conn = nil
+function module:Open(canvas: CanvasGroup)
+	local data = indexCanvasData(canvas)
+	if not data then
+		warn("canvas not indexed")
+		return
+	end
 
-		conn = interface_data.state:Watch(function(newValue: boolean)
-			local canvas = interface_data.canvas
+	if not data.state:Get() then
+		openCanvas(data)
 
-			if newValue then
-				-- visible
-
-				local scale = createScale(canvas)
-				scale.Scale = 0
-
-				canvas.Visible = true
-				canvas.BackgroundTransparency = 1
-
-				spr.target(scale, 0.8, 1.5, {
-					Scale = 1,
-				})
-			else
-				local scale = getScale(canvas)
-				if not scale then
-					return
-				end
-
-				spr.target(scale, 0.9, 1, {
-					Scale = 0,
-				})
-
-				spr.completed(scale, function()
-					future.Try(_trove.Remove, _trove, scale :: any)
-
-					canvas.Visible = false
-				end)
-
-				custom_lighting.unblur()
+		-- close every other gui
+		for _, other_data in ipairs(tracked) do
+			if other_data ~= data and other_data.state:Get() then
+				task.spawn(closeCanvas, other_data)
 			end
-		end)
+		end
+	end
+end
 
-		if conn then
-			table.insert(interface_data.connections, conn)
+function module:Close(canvas: CanvasGroup)
+	local data = indexCanvasData(canvas)
+	if not data then
+		warn("canvas not indexed")
+		return
+	end
+
+	if data.state:Get() then
+		task.spawn(closeCanvas, data)
+	end
+end
+
+function module:CloseAll()
+	for _, data in ipairs(tracked) do
+		if data.state:Get() then
+			task.spawn(closeCanvas, data)
 		end
 	end
 end

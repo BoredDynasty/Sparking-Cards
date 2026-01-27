@@ -32,8 +32,8 @@ type local_time = {
 local LogService = game:GetService("LogService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local player_marshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local player = player_marshaller.get()
 local player_gui = player.PlayerGui
@@ -158,11 +158,9 @@ function UELog:create_message(msg: string, message_type: Enum.MessageType?)
 
 	task.delay(self.life_time, function()
 		if new_message then
-			TweenPlus(new_message, {
+			spr.target(new_message, 1, 2, {
 				TextTransparency = 1,
-			}, {
-				Time = self.fade_time,
-			}):Start()
+			})
 
 			task.wait(self.fade_time)
 

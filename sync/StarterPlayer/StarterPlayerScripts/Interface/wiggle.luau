@@ -13,14 +13,12 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
    local wiggle = require(path.to.wiggle)
 
-   local completed = wiggle(path.to.ui)
-
-   completed(path.to.ui, function()
+   wiggle(path.to.ui, function()
       print("completed wiggle animation!"
    end)
    ```
 ]]
-return function(object: GuiObject)
+return function(object: GuiObject, fn: () -> ())
 	spr.target(object, (1 / 8), (1 / 2), {
 		Rotation = math.rad(35),
 	})
@@ -33,5 +31,7 @@ return function(object: GuiObject)
 		Rotation = math.rad(0),
 	})
 
-	return spr.completed
+	task.spawn(spr.completed, object, fn or function()
+		return
+	end)
 end

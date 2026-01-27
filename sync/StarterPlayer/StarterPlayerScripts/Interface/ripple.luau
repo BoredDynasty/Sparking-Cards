@@ -3,10 +3,11 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
+local future = require(ReplicatedStorage.Packages.future)
 local input = require(ReplicatedStorage.Packages.input)
 local promise = require(ReplicatedStorage.Packages.promise)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- ripple.luau
 
@@ -37,60 +38,43 @@ end
       @return void
 ]]
 local function ripple(ancestor: GuiObject, duration: number?)
-	return promise
-		.new(function(resolve: () -> ...unknown, reject)
-			if not ancestor.ClipsDescendants then
-				ancestor.ClipsDescendants = true
-			end
+	return future.Try(function()
+		if not ancestor.ClipsDescendants then
+			ancestor.ClipsDescendants = true
+		end
 
-			duration = duration or 0.4
+		duration = duration or 0.4
 
-			local mouse_position = mouse:GetPosition()
-			if not mouse_position or not mouse_position.X or not mouse_position.Y then
-				reject("no mouse pos?")
+		local mouse_position = mouse:GetPosition()
+		assert(mouse_position and mouse_position.X and mouse_position.Y, "Invalid mouse position")
 
-				return
-			end
+		local mouse_x, mouse_y = mouse_position.X, mouse_position.Y
+		assert(
+			ancestor.AbsoluteSize and ancestor.AbsoluteSize.X and ancestor.AbsoluteSize.Y,
+			"Invalid ancestor absolute size"
+		)
 
-			local mouse_x, mouse_y = mouse_position.X, mouse_position.Y
+		local abs_x, abs_y = ancestor.AbsoluteSize.X, ancestor.AbsoluteSize.Y
 
-			if not ancestor.AbsoluteSize or not ancestor.AbsoluteSize.X or not ancestor.AbsoluteSize.Y then
-				reject("no abs size?")
+		local x_scale = (-abs_x + mouse_x) / abs_x
+		local y_scale = ((-abs_y + mouse_y) / abs_y) - 3
 
-				return
-			end
+		local effect = createRippleEffect(ancestor)
+		effect.Position = UDim2.fromScale(x_scale, y_scale)
 
-			local abs_x, abs_y = ancestor.AbsoluteSize.X, ancestor.AbsoluteSize.Y
+		local max_size = math.max(abs_x, abs_y) * 3
 
-			local x_scale = (-abs_x + mouse_x) / abs_x
-			local y_scale = ((-abs_y + mouse_y) / abs_y) - 3
+		spr.target(effect, 1, 8, {
+			Size = UDim2.fromOffset(max_size, max_size),
+		})
+		spr.target(effect, 1, 8, {
+			BackgroundTransparency = 1,
+		})
 
-			local effect = createRippleEffect(ancestor)
-			effect.Position = UDim2.fromScale(x_scale, y_scale)
-
-			local max_size = math.max(abs_x, abs_y) * 3
-
-			local tween_1 = TweenPlus(effect, {
-				Size = UDim2.fromOffset(max_size, max_size),
-			}, {
-				EasingDirection = "Out",
-				EasingStyle = "Sine",
-				Time = duration,
-			})
-			local tween_2 = TweenPlus(effect, {
-				BackgroundTransparency = 1,
-			}, {
-				Time = duration,
-			})
-			tween_1:Start()
-			tween_2:Start()
-
-			tween_2.Completed:Wait()
+		task.delay(duration, function()
 			effect:Destroy()
-
-			resolve()
 		end)
-		:catch(print)
+	end)
 end
 
 --[[
@@ -111,19 +95,13 @@ local function watch(ancestor: GuiObject, duration: number?)
 
 	local conn = nil
 
-	promise
-		.new(function(resolve)
-			ancestor.Destroying:Connect(function()
-				if conn then
-					conn:Disconnect()
-				end
-
-				resolve()
-			end)
+	future.Try(function()
+		ancestor.Destroying:Connect(function()
+			if conn then
+				conn:Disconnect()
+			end
 		end)
-		:catch(function()
-			return -- damnit
-		end)
+	end)
 
 	local abs_size = ancestor.AbsoluteSize
 	local abs_position = ancestor.AbsolutePosition

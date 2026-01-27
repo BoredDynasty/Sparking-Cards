@@ -13,20 +13,19 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
+local Fireworks = require(ReplicatedStorage.Modules.Fireworks)
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
-local MatchMaker = require(ReplicatedStorage.Modules.MatchMaker)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
-local aurora = require(ReplicatedStorage.Environment.aurora)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
-
 local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion)
+local party = require(ReplicatedStorage.Modules.party)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
@@ -94,8 +93,6 @@ local function FetchProfileData(player: Player): typemarshaller.ProfileData?
 	if not profile and profile == nil then
 		Packet.SendNotification.sendTo({
 			message = "Couldn't get data",
-			title = "Profile not found",
-			type = "error",
 		}, player)
 
 		local list = tablekit.Values(profiles :: any)
@@ -120,30 +117,42 @@ end
 
 local function GetPrisms(player: Player)
 	local profile = FetchProfileData(player)
-	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+	if not profile then
+		print("no profile found to perform action.")
+		return 0
+	end
 
 	return profile.prisms
 end
 
 local function AddPrisms(player: Player, amount: number)
 	local profile = FetchProfileData(player)
-	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+	if not profile then
+		print("no profile found to perform action.")
+		return
+	end
 
 	profile.prisms += amount
 end
 
 local function DeductPrisms(player: Player, amount: number)
 	local profile = FetchProfileData(player)
-	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+	if not profile then
+		print("no profile found to perform action.")
+		return
+	end
 
 	profile.prisms -= amount
 end
 
 local function AddCards(player: Player, name: string, amount: number)
 	local profile = FetchProfileData(player)
-	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+	if not profile then
+		print("no profile found to perform action.")
+		return
+	end
 
-	future.new(function(...)
+	future.Try(function(...)
 		if profile.cards[name] then
 			profile.cards[name] += amount
 		else
@@ -154,9 +163,12 @@ end
 
 local function DeductCards(player: Player, name: string, amount: number)
 	local profile = FetchProfileData(player)
-	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+	if not profile then
+		print("no profile found to perform action.")
+		return
+	end
 
-	future.new(function(...)
+	future.Try(function(...)
 		if profile.cards[name] then
 			profile.cards[name] -= math.clamp(amount, 0, profile.cards[name])
 		end
@@ -165,9 +177,12 @@ end
 
 local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 	local profile = FetchProfileData(player)
-	assert(profile, "Couldn't fetch profile to perform action: " .. debug.traceback())
+	if not profile then
+		print("no profile found to perform action.")
+		return
+	end
 
-	future.new(table.insert, profile.quests, quest)
+	future.Try(table.insert, profile.quests, quest)
 end
 
 print("GameAnalytics is enabled.")
@@ -200,22 +215,6 @@ GameAnalytics:initialize(gameAnalyticsConfig)
 GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
 -- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 
-local solo_matchmaking = MatchMaker.new({
-	name = "Solo",
-	matchmaking = function(parties: { MatchMaker.Party })
-		local matches = {}
-
-		for _, party in ipairs(parties) do
-			table.insert(matches, {
-				place_id = game.PlaceId,
-				parties = { party },
-			})
-		end
-
-		return matches
-	end,
-})
-
 -- TODO) add the products
 
 local ServerAsset = assets.Server:Clone()
@@ -228,10 +227,7 @@ local function enterMatch(player: Player)
 		return
 	end
 
-	Packet.SendNotification.sendTo(
-		{ message = "Joined matchmaking queue", title = "Matchmaking", type = "info", duration = 5 },
-		player
-	)
+	Packet.SendNotification.sendTo({ message = "Joined matchmaking queue", duration = 5 }, player)
 end
 
 local function cancelMatch(player: Player)
@@ -241,10 +237,7 @@ local function cancelMatch(player: Player)
 		return
 	end
 
-	Packet.SendNotification.sendTo(
-		{ message = "Left matchmaking queue", title = "Matchmaking", type = "info", duration = 5 },
-		player
-	)
+	Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
 end
 
 local function onPlayerAdded(player: Player)
@@ -312,6 +305,11 @@ local function onPlayerRemoving(player: Player)
 end
 
 local function purchaseCard(player: Player, card_name: string)
+	if not card_name then
+		print("no card name provided to buy: ", card_name)
+		return
+	end
+
 	local event_parameters = {
 		flowType = GameAnalytics.EGAResourceFlowType.Sink,
 		currency = "Prisms",
@@ -337,14 +335,10 @@ local function purchaseCard(player: Player, card_name: string)
 
 		Packet.SendNotification.sendTo({
 			message = `You purchased a {card_name} Card.`,
-			title = `Card purchased`,
-			type = "success",
 		}, player)
 	else
 		Packet.SendNotification.sendTo({
 			message = `Could not buy {card_name}`,
-			title = "Not enough Prisms.",
-			type = "error",
 		}, player)
 	end
 end
@@ -354,13 +348,15 @@ local function streamArea(player: Player, area: Vector3)
 		return
 	end
 
+	area = area or Vector3.one
+
 	task.spawn(function()
 		player:RequestStreamAroundAsync(area)
 	end)
 end
 
 local function payPrisms(amount: number, username: string)
-	local player = playerMarshaller.getByName(username)
+	local player = Players:FindFirstChild(username) :: Player
 	assert(player, "Couldn't fetch player by name: " .. username)
 
 	AddPrisms(player, amount)
@@ -379,6 +375,11 @@ local function payPrisms(amount: number, username: string)
 end
 
 local function sellCards(player: Player, card_name: string)
+	if not card_name then
+		print("no card name provided to sell: ", card_name)
+		return
+	end
+
 	local profile = FetchProfileData(player)
 
 	if not profile.cards[card_name] or profile.cards[card_name] <= 0 then
@@ -410,6 +411,7 @@ end
 
 local function setNetworkOwner(player: Player?, object: BasePart)
 	if not object then
+		print("no object provided to set network owner to: ", object)
 		return
 	end
 
@@ -435,7 +437,9 @@ end
 local function setClock(number: number)
 	spr.stop(Lighting, "ClockTime")
 
-	spr.target(Lighting, 1, 1, {
+	number = math.clamp(number, 0, 24) or 12
+
+	spr.target(Lighting, 1, 4, {
 		ClockTime = number,
 	})
 end
@@ -484,37 +488,104 @@ end
 --("SetPlayerExperience", setPlayerExperience)
 --("GetStats", getStats)
 
-Packet.AddQuest.listen(function(data: { player: Instance, questData: string }, player: Player?)
-	addQuest(data.player, data.questData)
+Packet.AddQuest.listen(function(data, player: Player?)
+	addQuest(data.player, data.quest_data)
 end)
-Packet.SetTime.listen(function(data: { clock_time: number }, player: Player?)
+Packet.SetTime.listen(function(data, player: Player?)
 	setClock(data.clock_time)
 end)
-Packet.StreamArea.listen(function(data: { areaCenter: Vector3 }, player: Player)
-	streamArea(player, data.areaCenter)
+Packet.StreamArea.listen(function(data, player: Player)
+	streamArea(player, data.area_center)
 end)
 Packet.CreateMatch.listen(function(_, player: Player)
 	enterMatch(player)
 end)
-Packet.BuyCard.listen(function(data: { card_name: string }, player: Player)
+Packet.BuyCard.listen(function(data, player: Player)
 	purchaseCard(player, data.card_name)
 end)
-Packet.PayPrisms.listen(function(data: { amount: number, recipientUsername: string })
-	payPrisms(data.amount, data.recipientUsername)
+Packet.PayPrisms.listen(function(data)
+	payPrisms(data.amount, data.recipient_username)
 end)
 Packet.CancelMatch.listen(function(_, player: Player)
 	cancelMatch(player)
 end)
-Packet.SellCard.listen(function(data: { card_name: string, playerInstance: Instance }, player: Player)
+Packet.SellCard.listen(function(data, player: Player)
 	local card_name = data.card_name
 	sellCards(player, card_name)
 end)
 Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instance? })
 	setNetworkOwner(data.player, data.object)
 end)
+Packet.CreateParty.listen(function(data: { settings: { [string]: any } }, player: Player)
+	-- TODO) create party
+	party.new(player.UserId)
+end)
+Packet.DeleteParty.listen(function(data: { party_id: string }, player: Player)
+	-- TODO) delete party
+	local party_obj = party:GetPartyById(data.party_id)
+	if party_obj then
+		for i, member_id in ipairs(party_obj.members) do
+			if member_id == player.UserId then
+				-- only the leader can delete the party
+				if party_obj.leader_id == player.UserId then
+					party_obj:Destroy()
+				end
+				break
+			end
+		end
+	end
+end)
+Packet.JoinParty.listen(function(data: { party_id: string }, player: Player)
+	-- TODO) join party
+	local party_obj = party:GetPartyById(data.party_id)
+	if party_obj then
+		local success = party_obj:AddMember(player.UserId)
+		if success then
+			-- joined party successfully
+			Packet.SendNotification.sendTo({
+				message = "Joined party successfully!",
+			}, player)
+		else
+			-- failed to join Party
+			Packet.SendNotification.sendTo({
+				message = "Failed to join party.",
+			}, player)
+		end
+	end
+end)
+Packet.LeaveParty.listen(function(data: { party_id: string }, player: Player)
+	-- TODO) leave party
+	local party_obj = party:GetPartyById(data.party_id)
+	if party_obj then
+		for i, member_id in ipairs(party_obj.members) do
+			if member_id == player.UserId then
+				party_obj:RemoveMember(player.UserId)
+				break
+			end
+		end
+	end
+end)
+Packet.BlowFirework.listen(function(data: { amount: number, position: Vector3 }, player: Player)
+	local WhenToStop = 0
+
+	local fut = future.Try(function()
+		while WhenToStop < data.amount do
+			Fireworks.create(
+				data.position + Vector3.new(random.float(-4, 4), -2, random.float(-4, 4)),
+				data.amount
+			)
+
+			WhenToStop += 1
+		end
+	end)
+
+	local ok, result = fut:Await()
+	print("is ok: ", ok, result)
+
+	print(`Player {player.Name} blew {data.amount} fireworks at position {tostring(data.position)}`)
+end)
 
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
-local borealis = aurora.new():setPosition(Vector3.new(0, 50, 0)):adjust(1.1, 1.1)
 
 -- TODO) add player saving options
 playerMarshaller.added(onPlayerAdded)

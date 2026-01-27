@@ -46,9 +46,10 @@ function Timer:Start()
 	return self
 end
 
-function Timer:interval<T...>(self: Timer, duration: number, f: (T...) -> (), ...: T...)
+function Timer:interval<T...>(duration: number, f: (T...) -> (), ...: T...)
 	local function inner(duration: number, f: (T...) -> (), ...: T...)
 		local nextTick = os.clock() + duration
+
 		while true do
 			task.wait(nextTick - os.clock())
 			task.spawn(f, ...)
@@ -58,14 +59,7 @@ function Timer:interval<T...>(self: Timer, duration: number, f: (T...) -> (), ..
 
 	local thread = task.spawn(inner, duration, f, ...)
 
-	local cancelSignal = SignalPlus()
-	cancelSignal:Connect(function()
-		task.cancel(thread)
-	end)
-
-	self.cancel_interval = cancelSignal
-
-	return cancelSignal
+	return thread
 end
 
 function Timer:Stop()

@@ -1,11 +1,11 @@
---!nonstrict
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local random = require(ReplicatedStorage.Utility.random)
+local spr = require(ReplicatedStorage.Modules.spr)
+local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 
 -- damage-indicator.luau
 
@@ -23,7 +23,7 @@ type Indicator = BasePart & {
 local pseudorandom = random.create()
 
 return function(damage: number, text_color: Color3?, ancestor: BasePart)
-	local indicator: Indicator = fetchAsset("DamageIndict") :: Indicator
+	local indicator: any = fetchAsset("DamageIndict") :: Indicator
 	hydration(indicator) {
 		Anchored = false,
 		Parent = ancestor,
@@ -60,43 +60,19 @@ return function(damage: number, text_color: Color3?, ancestor: BasePart)
 	end
 
 	-- count up effect
-	local counter = markdown.text_counter.new({
-		to = damage,
-		from = 1,
-		duration = 0.8,
-		label = label,
-	})
-	counter:Start()
-	counter.completed:Once(function()
-		task.defer(counter.Destroy, counter)
-	end)
 
-	-- transparency effect
-	local transparency_tween = TweenPlus(label, {
+	local counter = text_counter.new(label, damage, 0.8)
+	counter:Start(counter)
+
+	spr.target(label, 1, 2, {
 		TextTransparency = 1,
-	}, {
-		Time = 0.6,
 	})
-	-- rotation effect
-	local rotation_tween = TweenPlus(label, {
+	spr.target(label, 0.6, 6, {
 		Rotation = math.rad(15),
-	}, {
-		Time = 0.3,
-		EasingDirection = "In",
-		EasingStyle = "Sine",
 	})
-	-- size effect
-	local size_tween = TweenPlus(background, {
+	spr.target(background, 0.7, 8, {
 		Size = UDim2.new(),
-	}, {
-		Time = 0.3,
-		EasingDirection = "In",
-		EasingStyle = "Sine",
 	})
-
-	transparency_tween:Start()
-	rotation_tween:Start()
-	size_tween:Start()
 
 	task.delay(0.5, function()
 		linearVelocity:Destroy()

@@ -1,11 +1,11 @@
---!nonstrict
+--!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local hydration = require(ReplicatedStorage.Utility.hydration)
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
 local random = require(ReplicatedStorage.Utility.random)
 local spr = require(ReplicatedStorage.Modules.spr)
+local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 
 -- damage-indicator.luau
 
@@ -23,7 +23,7 @@ type Indicator = BasePart & {
 local pseudorandom = random.create()
 
 return function(damage: number, text_color: Color3?, ancestor: BasePart)
-	local indicator: Indicator = fetchAsset("DamageIndict") :: Indicator
+	local indicator: any = fetchAsset("DamageIndict") :: Indicator
 	hydration(indicator) {
 		Anchored = false,
 		Parent = ancestor,
@@ -60,16 +60,9 @@ return function(damage: number, text_color: Color3?, ancestor: BasePart)
 	end
 
 	-- count up effect
-	local counter = markdown.text_counter.new({
-		to = damage,
-		from = 1,
-		duration = 0.8,
-		label = label,
-	})
-	counter:Start()
-	counter.completed:Once(function()
-		task.defer(counter.Destroy, counter)
-	end)
+
+	local counter = text_counter.new(label, damage, 0.8)
+	counter:Start(counter)
 
 	spr.target(label, 1, 2, {
 		TextTransparency = 1,

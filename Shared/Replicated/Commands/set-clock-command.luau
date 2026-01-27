@@ -7,7 +7,7 @@ local Packet = require(ReplicatedStorage.Packet)
 -- set-clock-command.luau
 
 return {
-	Name = "Set)Time",
+	Name = "SetTime",
 	Aliases = { "Time", "Lighting", "Clock", "Set", "Sun", "Moon" },
 	Description = "Set the clock time",
 	Group = "Utility",

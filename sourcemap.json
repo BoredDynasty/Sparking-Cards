@@ -7,6 +7,19 @@
       "className": "Workspace",
       "children": [
         {
+          "name": "Party",
+          "className": "ModuleScript",
+          "filePaths": [
+            "sync/Workspace/Party.luau"
+          ],
+          "children": [
+            {
+              "name": "PackageLink",
+              "className": "PackageLink"
+            }
+          ]
+        },
+        {
           "name": "Folder",
           "className": "Folder"
         },
@@ -7365,20 +7378,6 @@
           ]
         },
         {
-          "name": "Terrain",
-          "className": "Terrain",
-          "children": [
-            {
-              "name": "Attachment1",
-              "className": "Attachment"
-            },
-            {
-              "name": "Clouds",
-              "className": "Clouds"
-            }
-          ]
-        },
-        {
           "name": "testingAreaSpawn",
           "className": "Part",
           "children": [
@@ -7507,6 +7506,48 @@
                   ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "Terrain",
+          "className": "Terrain",
+          "children": [
+            {
+              "name": "Attachment1",
+              "className": "Attachment"
+            },
+            {
+              "name": "Clouds",
+              "className": "Clouds"
+            },
+            {
+              "name": "Dynablox1005_googly_base_left",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_left",
+              "className": "Part"
+            },
+            {
+              "name": "Dynablox1005_googly_base_right",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_right",
+              "className": "Part"
             }
           ]
         },
@@ -8260,13 +8301,6 @@
                   ]
                 },
                 {
-                  "name": "display",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/display.luau"
-                  ]
-                },
-                {
                   "name": "market",
                   "className": "ModuleScript",
                   "filePaths": [
@@ -8355,6 +8389,20 @@
                   "className": "ModuleScript",
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Components/hint.luau"
+                  ]
+                },
+                {
+                  "name": "party-frontend",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/party-frontend.luau"
+                  ]
+                },
+                {
+                  "name": "switch",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/switch.luau"
                   ]
                 },
                 {
@@ -8581,6 +8629,10 @@
             },
             {
               "name": "Remotes",
+              "className": "Folder"
+            },
+            {
+              "name": "Animation",
               "className": "Folder"
             },
             {
@@ -8897,10 +8949,6 @@
                   "className": "Frame",
                   "children": [
                     {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
                       "name": "Navigation",
                       "className": "Frame",
                       "children": [
@@ -8919,32 +8967,12 @@
                         {
                           "name": "ignore",
                           "className": "Folder"
-                        },
-                        {
-                          "name": "ButtonTemplate",
-                          "className": "TextButton",
-                          "children": [
-                            {
-                              "name": "UICorner",
-                              "className": "UICorner"
-                            },
-                            {
-                              "name": "Icon",
-                              "className": "ImageLabel",
-                              "children": [
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
                         }
                       ]
+                    },
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
                     },
                     {
                       "name": "Loader",
@@ -10427,98 +10455,274 @@
           "className": "ScreenGui"
         },
         {
-          "name": "Hints",
+          "name": "Party",
           "className": "ScreenGui",
           "children": [
             {
-              "name": "HintsFrame",
-              "className": "Frame",
+              "name": "CanvasGroup",
+              "className": "CanvasGroup",
               "children": [
                 {
-                  "name": "CenterFrame",
+                  "name": "Frame",
                   "className": "Frame",
                   "children": [
                     {
-                      "name": "Layout",
-                      "className": "UIListLayout"
+                      "name": "UICorner",
+                      "className": "UICorner"
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
+                      "name": "Navigation",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        },
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "ignore",
+                          "className": "Folder"
+                        },
+                        {
+                          "name": "ButtonTemplate",
+                          "className": "TextButton",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            },
+                            {
+                              "name": "Icon",
+                              "className": "ImageLabel",
+                              "children": [
+                                {
+                                  "name": "AspectRatio",
+                                  "className": "UIAspectRatioConstraint"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
-                      "name": "HotbarSpacer",
-                      "className": "TextLabel"
-                    }
-                  ]
-                },
-                {
-                  "name": "RightFrame",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "Layout",
-                      "className": "UIListLayout"
+                      "name": "Loader",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
-                    }
-                  ]
-                },
-                {
-                  "name": "LeftTopFrame",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "Layout",
-                      "className": "UIListLayout"
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
-                    }
-                  ]
-                },
-                {
-                  "name": "CenterTopFrame",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "Layout",
-                      "className": "UIListLayout"
+                      "name": "Invites",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "Padding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "UIAspectRatioConstraint",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
-                    }
-                  ]
-                },
-                {
-                  "name": "LeftFrame",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "Layout",
-                      "className": "UIListLayout"
+                      "name": "Create",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "UIAspectRatioConstraint",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
-                    }
-                  ]
-                },
-                {
-                  "name": "RightTopFrame",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "Layout",
-                      "className": "UIListLayout"
+                      "name": "InviteFriend",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "UIAspectRatioConstraint",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        }
+                      ]
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
+                      "name": "Pattern",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UIGradient",
+                          "className": "UIGradient"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UIAspectRatioConstraint",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "TextLabel",
+                          "className": "TextLabel"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Holder",
+                      "className": "ScrollingFrame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Creation",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "PartyName",
+                          "className": "TextLabel",
+                          "children": [
+                            {
+                              "name": "ImageLabel",
+                              "className": "ImageLabel",
+                              "children": [
+                                {
+                                  "name": "UIAspectRatioConstraint",
+                                  "className": "UIAspectRatioConstraint"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "ModifierSelection",
+                          "className": "ScrollingFrame",
+                          "children": [
+                            {
+                              "name": "UIPadding",
+                              "className": "UIPadding"
+                            },
+                            {
+                              "name": "UIListLayout",
+                              "className": "UIListLayout"
+                            },
+                            {
+                              "name": "TextButton",
+                              "className": "TextButton",
+                              "children": [
+                                {
+                                  "name": "UICorner",
+                                  "className": "UICorner"
+                                },
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "UIStroke",
+                                  "className": "UIStroke"
+                                },
+                                {
+                                  "name": "ImageLabel",
+                                  "className": "ImageLabel",
+                                  "children": [
+                                    {
+                                      "name": "UIAspectRatioConstraint",
+                                      "className": "UIAspectRatioConstraint"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "ModeSelection",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "UIPadding",
+                              "className": "UIPadding"
+                            },
+                            {
+                              "name": "UIListLayout",
+                              "className": "UIListLayout"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Element",
+                          "className": "Frame"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -12227,36 +12431,6 @@
               ]
             },
             {
-              "name": "MatchMaker",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Modules/MatchMaker.luau"
-              ],
-              "children": [
-                {
-                  "name": "regional-queue",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Modules/MatchMaker/regional-queue.luau"
-                  ]
-                },
-                {
-                  "name": "private-server",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Modules/MatchMaker/private-server.luau"
-                  ]
-                },
-                {
-                  "name": "region-codes",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Modules/MatchMaker/region-codes.luau"
-                  ]
-                }
-              ]
-            },
-            {
               "name": "beats",
               "className": "ModuleScript",
               "filePaths": [
@@ -12345,6 +12519,13 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Modules/prism-spawner.luau"
+              ]
+            },
+            {
+              "name": "party",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/party.luau"
               ]
             },
             {
@@ -12591,13 +12772,6 @@
           "name": "ClientModules",
           "className": "Folder",
           "children": [
-            {
-              "name": "characterIteration",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/characterIteration.luau"
-              ]
-            },
             {
               "name": "markdown",
               "className": "ModuleScript",
@@ -12974,6 +13148,13 @@
               "filePaths": [
                 "sync/ReplicatedStorage/Utility/frame-rate.luau"
               ]
+            },
+            {
+              "name": "rbx-deeplink",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Utility/rbx-deeplink.luau"
+              ]
             }
           ]
         },
@@ -13320,33 +13501,6 @@
           ]
         },
         {
-          "name": "Commands",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "set-clock-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/set-clock-command.luau"
-              ]
-            },
-            {
-              "name": "payout-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/payout-command.luau"
-              ]
-            },
-            {
-              "name": "damage-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/damage-command.luau"
-              ]
-            }
-          ]
-        },
-        {
           "name": "Datastore",
           "className": "Folder"
         },
@@ -13365,6 +13519,10 @@
             {
               "name": "GetAllProfiles",
               "className": "RemoteFunction"
+            },
+            {
+              "name": "UpdatePartyList",
+              "className": "RemoteEvent"
             }
           ]
         },
@@ -16615,6 +16773,10 @@
                         {
                           "name": "AspectRatio",
                           "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "UITextSizeConstraint",
+                          "className": "UITextSizeConstraint"
                         }
                       ]
                     },
@@ -16991,6 +17153,235 @@
                   ]
                 }
               ]
+            },
+            {
+              "name": "Party",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "ItemTemplate",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "UIStroke",
+                      "className": "UIStroke"
+                    },
+                    {
+                      "name": "Enter",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Leave",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Image",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Title",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "UITextSizeConstraint",
+                          "className": "UITextSizeConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Pattern",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "RadioButtonLabel",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                },
+                {
+                  "name": "Label",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "RadioContainer",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    },
+                    {
+                      "name": "RadioButton",
+                      "className": "ImageButton",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "Circle",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Outline",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Switch",
+              "className": "ImageButton",
+              "children": [
+                {
+                  "name": "LocalScript",
+                  "className": "LocalScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/Interfaces/Switch/LocalScript.client.luau"
+                  ]
+                },
+                {
+                  "name": "Knob",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "StateImage",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Fill",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                },
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel"
+                }
+              ]
             }
           ]
         },
@@ -17119,13 +17510,6 @@
           "className": "Folder",
           "children": [
             {
-              "name": "aurora",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Environment/aurora.luau"
-              ]
-            },
-            {
               "name": "star",
               "className": "ModuleScript",
               "filePaths": [
@@ -17180,6 +17564,40 @@
         {
           "name": "Characters",
           "className": "Folder"
+        },
+        {
+          "name": "Commands",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "set-clock-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/set-clock-command.luau"
+              ]
+            },
+            {
+              "name": "payout-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/payout-command.luau"
+              ]
+            },
+            {
+              "name": "damage-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/damage-command.luau"
+              ]
+            },
+            {
+              "name": "blow-firework-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/blow-firework-command.luau"
+              ]
+            }
+          ]
         }
       ]
     },

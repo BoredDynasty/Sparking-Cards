@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local TweenPlus = require(ReplicatedStorage.Modules.TweenPlus)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
@@ -11,6 +10,7 @@ local input = require(ReplicatedStorage.Packages.input)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
+local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- sprint-controller.luau
@@ -38,7 +38,7 @@ local function onBegan()
 		return
 	end
 
-	if humanoid:GetState() == Enum.HumanoidStateType.Running then
+	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
 		return
 	end
 
@@ -57,20 +57,22 @@ local function onBegan()
 
 	local new_speed = base_speed + speed_increase
 
-	local tween = TweenPlus(humanoid, {
+	spr.target(humanoid, 0.8, 5, {
 		WalkSpeed = new_speed,
-	}, {
-		Time = 0.3,
 	})
 
+	spr.completed(humanoid, function()
+		humanoid.WalkSpeed = new_speed
+	end)
+
 	character:SetAttribute("AntiRegenerate", true)
+
+	animate.stop(MovementConfig.Animations.Walk.Id)
 	animate.play(MovementConfig.Animations.Run.Id)
 
 	local lines = fetchAsset("speed_lines") :: speed_lines.lines
 
 	speed_lines:On(workspace.CurrentCamera, lines)
-
-	tween:Start()
 end
 
 local function onEnded()
@@ -80,19 +82,20 @@ local function onEnded()
 
 	local new_speed = MovementConfig.Character.BaseSpeed
 
-	local tween = TweenPlus(humanoid, {
+	spr.stop(humanoid, "WalkSpeed")
+	spr.target(humanoid, 0.8, 5, {
 		WalkSpeed = new_speed,
-	}, {
-		Time = 0.3,
 	})
+
+	spr.completed(humanoid, function()
+		humanoid.WalkSpeed = new_speed
+	end)
 
 	character:SetAttribute("AntiRegenerate", false)
 
 	animate.stop(MovementConfig.Animations.Run.Id)
 
 	speed_lines:Off()
-
-	tween:Start()
 end
 
 function controller:Update(deltaTime: number)
@@ -103,6 +106,8 @@ function controller:Update(deltaTime: number)
 	local current_stamina = character:GetAttribute("Stamina") :: number or 0
 
 	if current_stamina >= 100 then
+		-- insuffient stamina to remove
+
 		return
 	end
 

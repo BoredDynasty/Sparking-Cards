@@ -29,7 +29,7 @@ return {
 		},
 	},
 	ClientRun = function(_, amount: number, player: Player)
-		Packet.PayPrisms.send({ amount = amount, recipientUsername = player.Name })
+		Packet.PayPrisms.send({ amount = amount, recipient_username = player.Name })
 
 		return "Payout executed"
 	end,

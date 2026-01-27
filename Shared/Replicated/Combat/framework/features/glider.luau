@@ -13,6 +13,8 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 -- glider.luau
 -- unlockable
 
+-- TODO) add animations for gliding
+
 local module = {
 	active_gliders = {} :: active_gliders,
 	ratelimit = ratelimit(2, 1),
