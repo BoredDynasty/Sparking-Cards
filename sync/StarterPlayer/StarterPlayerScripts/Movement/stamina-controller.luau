@@ -1,10 +1,12 @@
 --!strict
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local spr = require(ReplicatedStorage.Modules.spr)
+local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 
 local observer = require(ReplicatedStorage.Utility.observer)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- stamina-controller.luau
@@ -14,7 +16,7 @@ local _trove = trove.new()
 local controller = {}
 controller._trove = _trove
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
 local max_stamina = 100
@@ -28,14 +30,7 @@ local bar_size = UDim2.fromScale(0.5, 0.97)
 character:SetAttribute("Stamina", max_stamina)
 character:SetAttribute("AntiRegenerate", false)
 
-type interface = BillboardGui & {
-	Frame: CanvasGroup & {
-		Bar: Frame,
-		TextLabel: TextLabel,
-	},
-}
-
-local function constructBar(ancestor: Instance?): interface
+local function constructBar(ancestor: Instance?)
 	local Instances = {
 		SprintBar = Instance.new("BillboardGui"),
 		Frame = Instance.new("CanvasGroup"),
@@ -91,7 +86,7 @@ local function constructBar(ancestor: Instance?): interface
 	return Instances.SprintBar :: any
 end
 
-local bar = constructBar(character)
+local bar = constructBar(character) :: BillboardGui
 bar.Adornee = character.PrimaryPart :: BasePart
 
 player.CharacterAdded:Connect(function(new_character)
@@ -99,7 +94,7 @@ player.CharacterAdded:Connect(function(new_character)
 		return
 	end
 
-	bar = constructBar(new_character)
+	bar = constructBar(new_character) :: BillboardGui
 	bar.Adornee = new_character.PrimaryPart :: BasePart
 end)
 
@@ -125,6 +120,8 @@ function controller:Update(deltaTime: number)
 	local anti_regenerate = character:GetAttribute("AntiRegenerate") :: boolean
 	local current_stamina = character:GetAttribute("Stamina") :: number or max_stamina
 
+	-- TODO) fix this
+
 	if anti_regenerate then
 		last_drain:Set(0)
 		is_regenerating:Set(false)
@@ -146,5 +143,7 @@ function controller:Update(deltaTime: number)
 		character:SetAttribute("Stamina", current_stamina)
 	end
 end
+
+sway.register(bar:FindFirstChild("Frame") :: Frame, 6 or 7, 2) -- 67 AHAHAHAHAHABSADBHBAQHB
 
 return controller

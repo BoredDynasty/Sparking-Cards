@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
-local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- displayorder.luau
@@ -16,8 +15,6 @@ type CanvasData = {
 }
 
 local tracked = {} :: { CanvasData }
-
-local debounce = ratelimit(1, 2)
 
 local function createScale(ancestor: Instance)
 	local scale = Instance.new("UIScale")
@@ -55,10 +52,28 @@ local function openCanvas(canvas_data: CanvasData)
 		return
 	end
 
-	spr.stop(scale)
+	-- here we are replicating the:
+	-- “pop-up from the bottom, too big,
+	-- then chills out” animation.
+	-- it's both overused and effective~!
 
-	spr.target(scale, 0.8, 1.5, {
+	-- add .25 to the scale for initializing the effect
+	scale.Scale = 1.25
+
+	-- rest below the screen
+	canvas_data.canvas.Position = UDim2.fromScale(0.5, 2)
+
+	spr.stop(scale)
+	spr.stop(canvas_data.canvas, "Position")
+
+	spr.target(scale, 0.5, 1.5, {
 		Scale = 1,
+	})
+
+	-- attuned values, using desmos calculator
+	-- https://www.desmos.com/calculator/rzvw27ljh9
+	spr.target(canvas_data.canvas, 0.8, 3.5, {
+		Position = UDim2.fromScale(1 / 2, 1 / 2),
 	})
 
 	canvas_data.canvas.Visible = true
@@ -76,12 +91,17 @@ local function closeCanvas(canvas_data: CanvasData)
 	end
 
 	spr.stop(scale)
+	spr.stop(canvas_data.canvas, "Position")
 
-	spr.target(scale, 0.9, 1, {
-		Scale = 0,
+	spr.target(scale, 0.4, 1.5, {
+		Scale = 1.25,
 	})
 
-	spr.completed(scale, function()
+	spr.target(canvas_data.canvas, 0.5, 0.8, {
+		Position = UDim2.fromScale(0.5, 1.5),
+	})
+
+	spr.completed(canvas_data.canvas, function()
 		canvas_data.canvas.Visible = false
 	end)
 

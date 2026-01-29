@@ -1,43 +1,38 @@
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 -- hud.luau
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 
 local module = {}
-module.buttons = {}
+module.buttons = {} :: { Button }
 
-export type button = {
+local global_ratelimit = ratelimit(1, 2.5)
+
+export type Button = {
 	name: string,
 	callback: () -> (),
-	icon: icon,
+	icon: typemarshaller.LucideIcon,
 	reactor: observer.Observer<boolean>,
 	limit: ratelimit.Ratelimit<string>,
 	hover_limit: ratelimit.Ratelimit<string>,
 	icon_only: boolean,
 }
 
-export type icon = {
-	IconName: string, -- "icon-name"
-	Id: number, -- 123456789
-	Url: string, -- "rbxassetid://123456789"
-	ImageRectSize: Vector2, -- Vector2.new(48, 48)
-	ImageRectOffset: Vector2, -- Vector2.new(648, 266)
-}
-
-function module.new(name: string, callback: () -> (), icon: icon, icon_only: boolean?)
+function module.new(name: string, callback: () -> (), icon: typemarshaller.LucideIcon, icon_only: boolean?)
 	local button = {
 		name = name,
 		callback = callback,
@@ -62,7 +57,7 @@ function module:Render()
 		end
 	end
 
-	for _, button: button in ipairs(module.buttons) do
+	for _, button: Button in ipairs(module.buttons) do
 		print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
@@ -101,7 +96,7 @@ function module:Render()
 				-- make the TextButton width smaller.
 				TextButton.Size = UDim2.fromScale(0.2, 0.7)
 				TextButton.Text = ""
-				Icon.Position = UDim2.fromScale(1 / 2, 1 / 2)
+				Icon.Position = UDim2.fromScale(0.5, 0.5)
 			else
 				TextButton.RichText = true
 
@@ -116,21 +111,23 @@ function module:Render()
 			end
 		end)
 
-		local ok, default_icon = future.Try(lucide.GetAsset, icon, 256 * 2):Await()
+		task.spawn(function()
+			local ok, default_icon = future.Try(lucide.GetAsset, icon, 256 * 2):Await()
 
-		if ok then
-			Icon.ImageRectOffset = default_icon.ImageRectOffset
-			Icon.ImageRectSize = default_icon.ImageRectSize
-			Icon.Image = default_icon.Url
-			Icon.ImageColor3 = Color3.fromHex("ffb5a0")
+			if ok then
+				Icon.ImageRectOffset = default_icon.ImageRectOffset
+				Icon.ImageRectSize = default_icon.ImageRectSize
+				Icon.Image = default_icon.Url
+				Icon.ImageColor3 = Color3.fromHex("ffb5a0")
 
-			UIAspectRatioConstraint.Parent = Icon
-		else
-			warn("Failed to fetch asset!")
-		end
+				UIAspectRatioConstraint.Parent = Icon
+			else
+				warn("Failed to fetch asset!")
+			end
+		end)
 
 		TextButton.MouseButton1Click:Connect(function()
-			if not button.limit(button.name) then
+			if not button.limit(button.name) or not global_ratelimit() then
 				return
 			end
 
@@ -141,7 +138,7 @@ function module:Render()
 			--audio:SFX("click")
 		end)
 
-		local default_size = TextButton.Size
+		local default_size = TextButton.Size or UDim2.fromScale(0.35, 0.7)
 
 		TextButton.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
@@ -152,18 +149,20 @@ function module:Render()
 
 			-- mouse hover effect
 			spr.stop(TextButton, "Size")
+			spr.stop(TextButton, "BackgroundColor3")
 			spr.target(TextButton, 0.8, 8, {
 				BackgroundColor3 = Color3.fromHex("#342522"),
-				Size = UDim2.fromScale(default_size.X.Scale * 1.1, default_size.Y.Scale * 1.1),
+				Size = UDim2.fromScale(0.385, 0.77),
 			})
 			--audio:SFX("hover")
 		end)
 
 		TextButton.MouseLeave:Connect(function()
 			spr.stop(TextButton, "Size")
+			spr.stop(TextButton, "BackgroundColor3")
 			spr.target(TextButton, 0.8, 8, {
 				BackgroundColor3 = Color3.fromHex("#1a110f"),
-				Size = UDim2.fromScale(default_size.X.Scale / 1.1, default_size.Y.Scale / 1.1),
+				Size = default_size,
 			})
 			--audio:SFX("hover", {
 			--pitch = 0.8,
@@ -197,13 +196,13 @@ function module:Render()
 end
 
 function module:Toggle(buttonName: string)
-	local button: button? = nil
+	local button: Button? = nil
 
 	if not module.buttons then
 		return
 	end
 
-	for _, b in ipairs(module.buttons :: { button }) do
+	for _, b in ipairs(module.buttons :: { Button }) do
 		if b.name == buttonName then
 			button = b
 			break
@@ -231,8 +230,6 @@ function module:Clear()
 
 		module.buttons[i] = nil
 	end
-
-	table.clear(module.buttons) -- just to make sure we don't keep any references
 
 	local hudContainer = player.PlayerGui.Hud
 

@@ -36,12 +36,16 @@ end
 --[[
    Uses UI strokes
 ]]
-function module:Circle(config: config)
+function module:Circle(config: config?)
 	if state:Get() then
 		print("transition cooldown")
 
 		return
 	end
+
+	config = config or {
+		duration = 5,
+	}
 
 	state:Set(true)
 

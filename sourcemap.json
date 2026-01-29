@@ -7378,6 +7378,20 @@
           ]
         },
         {
+          "name": "Terrain",
+          "className": "Terrain",
+          "children": [
+            {
+              "name": "Attachment1",
+              "className": "Attachment"
+            },
+            {
+              "name": "Clouds",
+              "className": "Clouds"
+            }
+          ]
+        },
+        {
           "name": "testingAreaSpawn",
           "className": "Part",
           "children": [
@@ -7506,48 +7520,6 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "name": "Terrain",
-          "className": "Terrain",
-          "children": [
-            {
-              "name": "Attachment1",
-              "className": "Attachment"
-            },
-            {
-              "name": "Clouds",
-              "className": "Clouds"
-            },
-            {
-              "name": "Dynablox1005_googly_base_left",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "googly_spotlight",
-                  "className": "SpotLight"
-                }
-              ]
-            },
-            {
-              "name": "Dynablox1005_googly_pupil_left",
-              "className": "Part"
-            },
-            {
-              "name": "Dynablox1005_googly_base_right",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "googly_spotlight",
-                  "className": "SpotLight"
-                }
-              ]
-            },
-            {
-              "name": "Dynablox1005_googly_pupil_right",
-              "className": "Part"
             }
           ]
         },
@@ -8406,6 +8378,13 @@
                   ]
                 },
                 {
+                  "name": "spectate",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/spectate.luau"
+                  ]
+                },
+                {
                   "name": "Sequences",
                   "className": "Folder",
                   "children": [
@@ -8949,6 +8928,10 @@
                   "className": "Frame",
                   "children": [
                     {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
                       "name": "Navigation",
                       "className": "Frame",
                       "children": [
@@ -8969,10 +8952,6 @@
                           "className": "Folder"
                         }
                       ]
-                    },
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
                     },
                     {
                       "name": "Loader",
@@ -10725,6 +10704,112 @@
                       ]
                     }
                   ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Spectate",
+          "className": "ScreenGui",
+          "children": [
+            {
+              "name": "Container",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UIListLayout",
+                  "className": "UIListLayout"
+                },
+                {
+                  "name": "Back",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "TextLabel",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "Padding",
+                          "className": "UIPadding"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Next",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "TextLabel",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "Padding",
+                          "className": "UIPadding"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
                 }
               ]
             }
@@ -13496,6 +13581,40 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Products/productMarshaller.luau"
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Commands",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "set-clock-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/set-clock-command.luau"
+              ]
+            },
+            {
+              "name": "payout-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/payout-command.luau"
+              ]
+            },
+            {
+              "name": "damage-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/damage-command.luau"
+              ]
+            },
+            {
+              "name": "blow-firework-command",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Commands/blow-firework-command.luau"
               ]
             }
           ]
@@ -17564,40 +17683,6 @@
         {
           "name": "Characters",
           "className": "Folder"
-        },
-        {
-          "name": "Commands",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "set-clock-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/set-clock-command.luau"
-              ]
-            },
-            {
-              "name": "payout-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/payout-command.luau"
-              ]
-            },
-            {
-              "name": "damage-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/damage-command.luau"
-              ]
-            },
-            {
-              "name": "blow-firework-command",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Commands/blow-firework-command.luau"
-              ]
-            }
-          ]
         }
       ]
     },

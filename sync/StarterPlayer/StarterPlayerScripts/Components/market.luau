@@ -1,5 +1,6 @@
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
@@ -8,7 +9,6 @@ local Items = require(ReplicatedStorage.Market.Items)
 local Packet = require(ReplicatedStorage.Packet)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -20,7 +20,7 @@ local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 -- market.luau
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
 local templates = ReplicatedStorage.Interfaces

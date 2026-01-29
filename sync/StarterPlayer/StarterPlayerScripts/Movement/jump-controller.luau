@@ -54,14 +54,14 @@ local function onJumpRequest()
 		local new_stamina = current_stamina - MovementConfig.Jump.StaminaCost
 
 		character:SetAttribute("Stamina", new_stamina)
-		character:SetAttribute("AntiRegenerate", true)
+		character:SetAttribute("AntiRegenerate", false)
 
 		task.delay(0.5, function()
 			if not character then
 				return
 			end
 
-			character:SetAttribute("AntiRegenerate", false)
+			character:SetAttribute("AntiRegenerate", true)
 		end)
 	end)
 end

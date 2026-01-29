@@ -1,5 +1,6 @@
---!nonstrict
+--!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
@@ -9,8 +10,6 @@ local future = require(ReplicatedStorage.Packages.future)
 
 local observer = require(ReplicatedStorage.Utility.observer)
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -19,7 +18,7 @@ local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 
 -- hint.luau
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
 local hint_gui = playerGui.Dialog
@@ -28,6 +27,11 @@ local module = {}
 module.__index = module
 
 local disallowed_whitespace = { "\n", "\r", "\t", "\v", "\f" }
+
+-- Stack manager to track and position hints
+local hint_stack = {
+	hints = {} :: { Hint },
+}
 
 type Hint = setmetatable<{
 	hint: TextButton,
@@ -55,7 +59,6 @@ local function createHint(ancestor: Instance?)
 	Instances.Hint.BorderColor3 = Color3.fromRGB(27, 42, 53)
 	Instances.Hint.Selectable = false
 	Instances.Hint.BackgroundTransparency = 0.5
-	Instances.Hint.Position = UDim2.new(0.5, 0, 1, -85)
 	Instances.Hint.BorderSizePixel = 0
 	Instances.Hint.BackgroundColor3 = Color3.fromRGB(25, 27, 29)
 	Instances.Hint.FontFace =
@@ -64,6 +67,8 @@ local function createHint(ancestor: Instance?)
 	Instances.Hint.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Instances.Hint.Text = "hint loading"
 	Instances.Hint.Parent = ancestor
+	Instances.Hint.TextSize = 17
+	Instances.Hint.Position = UDim2.fromScale(0.5, 1.5)
 
 	Instances.TextStroke.Name = "TextStroke"
 	Instances.TextStroke.Thickness = 0
@@ -86,6 +91,32 @@ local function createHint(ancestor: Instance?)
 	Instances.TextPadding.Parent = Instances.Hint
 
 	return Instances.Hint
+end
+
+local function update_stack_positions()
+	local base_y = -85
+	local spacing = 45
+
+	for i, hint_obj in ipairs(hint_stack.hints) do
+		local target_y = base_y - (i - 1) * spacing
+		spr.target(hint_obj.hint, 0.9, 0.9, {
+			Position = UDim2.new(0.5, 0, 1, target_y),
+		})
+	end
+end
+
+local function register_hint(hint_obj: Hint)
+	table.insert(hint_stack.hints, hint_obj)
+	update_stack_positions()
+end
+
+local function unregister_hint(hint_obj: Hint)
+	local i = table.find(hint_stack.hints, hint_obj)
+
+	if i then
+		table.remove(hint_stack.hints, i)
+		update_stack_positions()
+	end
 end
 
 --[[
@@ -114,7 +145,7 @@ function module.new()
 	self.hint = createHint(hint_gui.CanvasGroup)
 	self.Clicked = SignalPlus()
 	self.CanClick = observer.new(false)
-	self.expiry = 12
+	self.expiry = 4
 	self.dismissable = true
 	self.swipe_detector = swipe.new(self.hint)
 
@@ -133,7 +164,7 @@ function module.new()
 	end)
 
 	future.Try(function()
-		task.defer(module.Render, self, self)
+		self:Render()
 	end)
 
 	self.swipe_detector.OnSwipe:Connect(function(direction, delta)
@@ -143,20 +174,28 @@ function module.new()
 			})
 			if direction == "up" then
 				if self.dismissable then
-					self:Destroy(self)
+					self:Destroy()
 				end
 			else
-				spr.target(self.hint, 0.5, 0.9, {
-					Position = UDim2.new(0.5, 0, 1, -85),
-				})
+				update_stack_positions()
 			end
+		end)
+	end)
+
+	task.delay(self.expiry, function()
+		spr.target(self.hint, 1, 0.9, {
+			BackgroundTransparency = 1,
+			TextTransparency = 1,
+		})
+		spr.completed(self.hint, function()
+			self:Destroy()
 		end)
 	end)
 
 	return self
 end
 
-function module:SetText(self: Hint, text: string, translate_text: boolean?)
+function module.SetText(self: Hint, text: string, translate_text: boolean?)
 	text = text or ""
 	translate_text = translate_text or true
 
@@ -173,7 +212,7 @@ function module:SetText(self: Hint, text: string, translate_text: boolean?)
 	return self
 end
 
-function module:SetExpiry(self: Hint, expiry: number)
+function module.SetExpiry(self: Hint, expiry: number)
 	future.Try(function()
 		self.expiry = expiry
 	end)
@@ -181,7 +220,7 @@ function module:SetExpiry(self: Hint, expiry: number)
 	return self
 end
 
-function module:SetCanClick(self: Hint, enabled: boolean)
+function module.SetCanClick(self: Hint, enabled: boolean)
 	-- note: dont put this into one line :sob:
 
 	future.Try(function()
@@ -191,37 +230,29 @@ function module:SetCanClick(self: Hint, enabled: boolean)
 	return self
 end
 
-function module:Destroy(self: Hint)
+function module.Destroy(self: Hint)
 	spr.stop(self.hint)
 
 	self.CanClick:Destroy()
 	self.Clicked:Destroy()
 	self.hint:Destroy()
 
+	unregister_hint(self)
+
 	table.clear(self)
 	setmetatable(self, nil)
 end
 
-function module:Render(self: Hint)
+function module.Render(self: Hint)
 	-- auto-renders
 
 	self.hint.Parent = hint_gui.CanvasGroup
 
-	spr.target(self.hint, 1, 3, {
+	register_hint(self)
+
+	spr.target(self.hint, 1, 1.5, {
 		TextTransparency = 0,
 	})
-
-	task.delay(self.expiry, function()
-		future.Try(function()
-			spr.target(self.hint, 1, 0.9, {
-				BackgroundTransparency = 1,
-				TextTransparency = 1,
-			})
-			spr.completed(self.hint, function()
-				self:Destroy(self)
-			end)
-		end)
-	end)
 end
 
 return module

@@ -1,4 +1,5 @@
 --!strict
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
@@ -7,7 +8,6 @@ local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 
 local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local input = require(ReplicatedStorage.Packages.input)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -24,7 +24,7 @@ local keyboard = input.Keyboard.new()
 
 _trove:Add(keyboard :: any)
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
 local humanoid = character:FindFirstChild("Humanoid") :: Humanoid

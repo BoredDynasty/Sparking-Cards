@@ -1,5 +1,6 @@
---!nonstrict
+--!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
@@ -9,8 +10,6 @@ local future = require(ReplicatedStorage.Packages.future)
 
 local observer = require(ReplicatedStorage.Utility.observer)
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -19,7 +18,7 @@ local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 
 -- hint.luau
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
 local hint_gui = playerGui.Dialog
@@ -64,6 +63,7 @@ local function createHint(ancestor: Instance?)
 	Instances.Hint.TextColor3 = Color3.fromRGB(255, 255, 255)
 	Instances.Hint.Text = "hint loading"
 	Instances.Hint.Parent = ancestor
+	Instances.Hint.TextSize = 17
 
 	Instances.TextStroke.Name = "TextStroke"
 	Instances.TextStroke.Thickness = 0
@@ -133,7 +133,7 @@ function module.new()
 	end)
 
 	future.Try(function()
-		task.defer(module.Render, self, self)
+		self:Render()
 	end)
 
 	self.swipe_detector.OnSwipe:Connect(function(direction, delta)
@@ -156,7 +156,7 @@ function module.new()
 	return self
 end
 
-function module:SetText(self: Hint, text: string, translate_text: boolean?)
+function module.SetText(self: Hint, text: string, translate_text: boolean?)
 	text = text or ""
 	translate_text = translate_text or true
 
@@ -173,7 +173,7 @@ function module:SetText(self: Hint, text: string, translate_text: boolean?)
 	return self
 end
 
-function module:SetExpiry(self: Hint, expiry: number)
+function module.SetExpiry(self: Hint, expiry: number)
 	future.Try(function()
 		self.expiry = expiry
 	end)
@@ -181,7 +181,7 @@ function module:SetExpiry(self: Hint, expiry: number)
 	return self
 end
 
-function module:SetCanClick(self: Hint, enabled: boolean)
+function module.SetCanClick(self: Hint, enabled: boolean)
 	-- note: dont put this into one line :sob:
 
 	future.Try(function()
@@ -191,7 +191,7 @@ function module:SetCanClick(self: Hint, enabled: boolean)
 	return self
 end
 
-function module:Destroy(self: Hint)
+function module.Destroy(self: Hint)
 	spr.stop(self.hint)
 
 	self.CanClick:Destroy()
@@ -202,7 +202,7 @@ function module:Destroy(self: Hint)
 	setmetatable(self, nil)
 end
 
-function module:Render(self: Hint)
+function module.Render(self: Hint)
 	-- auto-renders
 
 	self.hint.Parent = hint_gui.CanvasGroup
@@ -218,7 +218,7 @@ function module:Render(self: Hint)
 				TextTransparency = 1,
 			})
 			spr.completed(self.hint, function()
-				self:Destroy(self)
+				self:Destroy()
 			end)
 		end)
 	end)

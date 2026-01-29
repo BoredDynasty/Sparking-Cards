@@ -18,20 +18,26 @@ local spr = require(ReplicatedStorage.Modules.spr)
    end)
    ```
 ]]
-return function(object: GuiObject, fn: () -> ())
-	spr.target(object, (1 / 8), (1 / 2), {
-		Rotation = math.rad(35),
+return function(object: GuiObject, fn: () -> ()?)
+	spr.target(object, 0.3, 4, {
+		Rotation = 10,
 	})
 
-	task.wait(1)
+	task.delay(0.3, function()
+		spr.target(object, 0.3, 4, {
+			Rotation = -10,
+		})
 
-	spr.stop(object, "Rotation")
+		task.delay(0.3, function()
+			spr.target(object, 0.2, 6, {
+				Rotation = 0,
+			})
 
-	spr.target(object, 1, 2, {
-		Rotation = math.rad(0),
-	})
-
-	task.spawn(spr.completed, object, fn or function()
-		return
+			task.delay(0.2, function()
+				if fn then
+					fn()
+				end
+			end)
+		end)
 	end)
 end

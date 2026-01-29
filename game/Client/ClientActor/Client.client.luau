@@ -6,6 +6,7 @@
 print(script.Name)
 
 -- // Services -- //
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
@@ -78,8 +79,6 @@ local parallax = require("../Interface/parallax")
 
 local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
 local pop = require(script.Parent.Parent.Interface.pop)
 
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
@@ -127,7 +126,7 @@ local get_profile = events.GetProfile
 
 -- // Variables -- //
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local profile = nil
 
 local _trove = trove.new()
@@ -322,7 +321,7 @@ local function initializeMatchmaking()
 	end
 
 	state:Watch(function(newValue)
-		matchmakingCanvas.Visible = newValue :: boolean
+		matchmakingCanvas.Visible = newValue
 	end)
 
 	local swipeDetector = swipe.new(matchmakingFrame)
@@ -417,13 +416,39 @@ local function initializeMusic()
 		artist_display.Text = track.artist or "none"
 	end)
 
-	-- rotate effect on disc
-	local rotation_thread = task.spawn(function()
+	local function rotate()
 		while true do
 			local frame = RunService.RenderStepped:Wait()
-
 			disc.Rotation += math.deg(frame)
 		end
+	end
+
+	-- rotate effect on disc
+	local rotation_coroutine = coroutine.create(rotate)
+	coroutine.resume(rotation_coroutine)
+
+	local swipe_controller = swipe.new(disc)
+	swipe_controller.OnSwipe:Connect(function(direction, delta)
+		future.Try(function()
+			if coroutine.status(rotation_coroutine) == "running" then
+				coroutine.close(rotation_coroutine)
+			elseif
+				coroutine.status(rotation_coroutine) == "suspended"
+				or coroutine.status(rotation_coroutine) == "dead"
+			then
+				return
+			end
+
+			-- a fun little effect:
+			-- spin the disc based on the swipe delta
+			spr.target(disc, 0.5, 5, {
+				Rotation = disc.Rotation + delta.X * 5,
+			})
+
+			-- restart rotation after the player is done interacting
+			rotation_coroutine = coroutine.create(rotate)
+			coroutine.resume(rotation_coroutine)
+		end)
 	end)
 end
 

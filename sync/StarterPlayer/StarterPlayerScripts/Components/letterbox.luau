@@ -1,7 +1,7 @@
 --!nonstrict
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- letterbox.luau
@@ -18,7 +18,7 @@ local module = {
 	letterbox_2 = Content.fromAssetId(81501465181307),
 }
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
 local letterbox_gui = playerGui.Letterbox
