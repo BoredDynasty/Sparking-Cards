@@ -5,6 +5,7 @@ local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
@@ -65,16 +66,24 @@ function module:On()
 		local background_transparency = 1 - math.clamp((0.3 + 0.2 * sine), 0, max_transparency)
 
 		-- set the properties
-		blur.Size = blur_size
-		camera.FieldOfView = field_of_view
-		background.BackgroundTransparency = background_transparency
+		spr.target(blur, 0.4, pulse_speed, {
+			Size = blur_size,
+		})
+		spr.target(camera, 0.4, pulse_speed, {
+			FieldOfView = field_of_view,
+		})
+		spr.target(background, 0.4, pulse_speed, {
+			BackgroundTransparency = background_transparency,
+		})
 	end)
 end
 
 function module:Off()
 	_trove:Clean()
 
-	camera.FieldOfView = 70
+	spr.target(camera, 0.4, pulse_speed, {
+		FieldOfView = 70,
+	})
 end
 
 return module

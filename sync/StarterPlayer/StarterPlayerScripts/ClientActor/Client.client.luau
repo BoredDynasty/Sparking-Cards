@@ -107,6 +107,7 @@ local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
 
 local throbber = require("../Components/throbber")
 
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
 
 local trove = require(ReplicatedStorage.Packages.trove)
@@ -235,7 +236,7 @@ local function initializeMarket()
 		shopNavigation.Visible = true
 	end
 
-	populateNavigation()
+	task.spawn(populateNavigation)
 end
 local function initializeOptions()
 	print("init options")
@@ -249,6 +250,13 @@ local function initializeOptions()
 end
 local function initializeMatchmaking()
 	print("init matchmaking")
+
+	local queue_updated = events.Matchmaking.QueueUpdated
+
+	queue_updated.OnClientEvent:Connect(function(info)
+		print("Matchmaking.QueueUpdated:", tablekit.ToString(info))
+	end)
+
 	local matchmakingGui = PlayerGui.NewMatch
 	local matchmakingCanvas = matchmakingGui.CanvasGroup
 	local matchmakingFrame = matchmakingCanvas.Frame
@@ -269,14 +277,28 @@ local function initializeMatchmaking()
 			task.cancel(interval_thread)
 		end
 
+		-- send request to server to join matchmaking
+		local join_res = events.Matchmaking.JoinQueue:InvokeServer()
+		if join_res and not join_res.success then
+			local hint_ = hint.new()
+			hint_:SetText(join_res.message or "Failed to join matchmaking.")
+			hint_:SetCanClick(false)
+
+			return
+		end
+
+		-- request a snapshot of the queue for the frontend
+		local info = events.Matchmaking.RequestQueueInfo:InvokeServer()
+		print(tablekit.ToString(info))
+
 		spr.target(matchmakingFrame, 0.6, 8, {
 			Position = UDim2.fromScale(0.5, 0.1),
 		})
 
 		if performed_hint <= 2 then
 			local new_hint = hint.new()
-			new_hint:SetText("Swipe up on the screen to cancel matchmaking. [" .. performed_hint .. "/3]")
-			new_hint:SetExpiry(5)
+			new_hint:SetText("Swipe up on the bar to cancel matchmaking. [" .. performed_hint .. "/3]")
+			new_hint:SetExpiry(3)
 
 			performed_hint += 1
 		end
@@ -289,10 +311,13 @@ local function initializeMatchmaking()
 			local total_seconds = clock:GetTime()
 
 			local minutes = math.floor(total_seconds / 60)
+			local hours = math.floor(minutes / 60) -- its very unlikely we will reach this
+			minutes = minutes % 60
 
 			local seconds = total_seconds % 60
 			statusText.Text = string.format(
-				'Searching...<br/><font transparency="0.5"><font size="14">%02d:%02d</font></font>',
+				'Searching...<br/><font transparency="0.5"><font size="14">%02d:%02d:%02d</font></font>',
+				hours,
 				minutes,
 				seconds
 			)
@@ -302,8 +327,15 @@ local function initializeMatchmaking()
 	end
 
 	local function hideMatchmakingFrame()
-		spr.stop(matchmakingFrame)
+		-- notify server to cancel matchmaking
+		local leave_res = events.Matchmaking.LeaveQueue:InvokeServer()
+		if leave_res and not leave_res.success then
+			local hint_ = hint.new()
+			hint_:SetText("Failed to leave matchmaking.")
+			hint_:SetCanClick(false)
 
+			return
+		end
 		task.wait(1 / 8)
 
 		spr.target(matchmakingFrame, 1, 2.5, {
@@ -369,7 +401,7 @@ local function initializeNotifiers()
 	Packet.SendNotification.listen(function(data)
 		local hint_ = hint.new()
 		hint_:SetText(data.message)
-		hint_:SetExpiry(data.duration)
+		hint_:SetExpiry(data.duration or 4)
 		hint_:SetCanClick(false)
 	end)
 end
@@ -430,7 +462,14 @@ local function initializeMusic()
 	local swipe_controller = swipe.new(disc)
 	swipe_controller.OnSwipe:Connect(function(direction, delta)
 		future.Try(function()
-			coroutine.close(rotation_coroutine)
+			if coroutine.status(rotation_coroutine) == "running" then
+				coroutine.close(rotation_coroutine)
+			elseif
+				coroutine.status(rotation_coroutine) == "suspended"
+				or coroutine.status(rotation_coroutine) == "dead"
+			then
+				return
+			end
 
 			-- a fun little effect:
 			-- spin the disc based on the swipe delta
@@ -438,8 +477,7 @@ local function initializeMusic()
 				Rotation = disc.Rotation + delta.X * 5,
 			})
 
-			-- restart rotation after a short delay
-			task.wait(3)
+			-- restart rotation after the player is done interacting
 			rotation_coroutine = coroutine.create(rotate)
 			coroutine.resume(rotation_coroutine)
 		end)
@@ -575,11 +613,13 @@ end)
 humanoid.HealthChanged:Connect(function(health)
 	local minimum_health = 20
 
-	if health <= minimum_health then
-		health_pulse:On()
-	else
-		health_pulse:Off()
-	end
+	future.Try(function()
+		if health <= minimum_health then
+			health_pulse:On()
+		else
+			health_pulse:Off()
+		end
+	end)
 end)
 
 orion.new(player, expectProfile())

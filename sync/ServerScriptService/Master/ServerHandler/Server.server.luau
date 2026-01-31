@@ -22,6 +22,7 @@ local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
+local matchmaker = require(ReplicatedStorage.Modules.matchmaker)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion)
@@ -42,6 +43,17 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
 local assets = ReplicatedStorage.Assets
+
+local Events = ReplicatedStorage:WaitForChild("Events")
+local MatchmakingRemotes = Events:WaitForChild("Matchmaking")
+local PartyRemotes = Events:WaitForChild("Party")
+
+-- ensure QueueUpdated RemoteEvent exists so matchmaker can broadcast safely
+if not MatchmakingRemotes:FindFirstChild("QueueUpdated") then
+	local ev = Instance.new("RemoteEvent")
+	ev.Name = "QueueUpdated"
+	ev.Parent = MatchmakingRemotes
+end
 
 local profiles = {}
 local profile_key = "playerdata"
@@ -224,20 +236,77 @@ local function enterMatch(player: Player)
 	print("player entered match")
 
 	if not player then
-		return
+		return { success = false, message = "Invalid player" }
 	end
 
-	Packet.SendNotification.sendTo({ message = "Joined matchmaking queue", duration = 5 }, player)
+	-- Determine if player is part of a party
+	local pty = party:GetPartyForPlayer(player.UserId)
+
+	if pty then
+		-- only leader can start matchmaking for a party
+		if pty.leader_id ~= player.UserId then
+			local msg = "Only the party leader can start matchmaking."
+
+			Packet.SendNotification.sendTo({ message = msg }, player)
+
+			return { success = false, message = msg }
+		end
+
+		-- TODO: Implement or use the correct party method to set searching state
+		-- done!
+		matchmaker:JoinQueueForParty(pty)
+
+		Packet.SendNotification.sendTo({ message = "Party joined matchmaking queue", duration = 5 }, player)
+		return { success = true, message = "Party queued" }
+	else
+		-- solo player
+		local ok = matchmaker:JoinQueueForPlayer(player)
+
+		if ok then
+			Packet.SendNotification.sendTo({ message = "Joined matchmaking queue", duration = 5 }, player)
+
+			return { success = true, message = "Player queued" }
+		else
+			return { success = false, message = "Failed to join matchmaking queue." }
+		end
+	end
 end
 
 local function cancelMatch(player: Player)
 	print("cancel match")
 
 	if not player then
-		return
+		return { success = false, message = "Invalid player" }
 	end
 
-	Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
+	local pty = party:GetPartyForPlayer(player.UserId)
+
+	if pty then
+		if pty.leader_id ~= player.UserId then
+			local msg = "Only the party leader can cancel matchmaking for the party."
+
+			Packet.SendNotification.sendTo({ message = msg }, player)
+
+			return { success = false, message = msg }
+		end
+
+		-- TODO: Implement or use the correct party method to stop searching state
+		matchmaker:LeaveQueueForParty(pty)
+
+		Packet.SendNotification.sendTo({ message = "Party left matchmaking queue", duration = 5 }, player)
+
+		return { success = true, message = "Party left queue" }
+	else
+		local ok = matchmaker:LeaveQueueForPlayer(player)
+
+		if ok then
+			Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
+
+			return { success = true, message = "Player left queue" }
+		else
+			return { success = false, message = "Failed to leave player queue." }
+		end
+	end
 end
 
 local function onPlayerAdded(player: Player)
@@ -509,62 +578,124 @@ end)
 Packet.CancelMatch.listen(function(_, player: Player)
 	cancelMatch(player)
 end)
+
+-- Matchmaking remotes
+MatchmakingRemotes.JoinQueue.OnServerInvoke = function(player: Player, data: {}?)
+	-- data can contain details in the future
+	local result = enterMatch(player)
+	-- normalize return
+	return result or { success = true }
+end
+
+MatchmakingRemotes.LeaveQueue.OnServerInvoke = function(player: Player, data: {}?)
+	local result = cancelMatch(player)
+
+	return result or { success = true }
+end
+
+MatchmakingRemotes.RequestQueueInfo.OnServerInvoke = function(player: Player)
+	return matchmaker:GetQueueInfo()
+end
+
+MatchmakingRemotes.GetMyQueueStatus.OnServerInvoke = function(player: Player)
+	local info = matchmaker:GetQueueInfo()
+
+	for _, p in ipairs(info.players) do
+		if p.userId == player.UserId then
+			return { queued = true, kind = "player" }
+		end
+	end
+
+	for _, pr in ipairs(info.parties) do
+		if pr.leader == player.UserId then
+			return { queued = true, kind = "party", party_id = pr.party_id }
+		end
+	end
+
+	return { queued = false }
+end
 Packet.SellCard.listen(function(data, player: Player)
 	local card_name = data.card_name
+
 	sellCards(player, card_name)
 end)
 Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instance? })
 	setNetworkOwner(data.player, data.object)
 end)
-Packet.CreateParty.listen(function(data: { settings: { [string]: any } }, player: Player)
-	-- TODO) create party
-	party.new(player.UserId)
-end)
-Packet.DeleteParty.listen(function(data: { party_id: string }, player: Player)
-	-- TODO) delete party
-	local party_obj = party:GetPartyById(data.party_id)
+PartyRemotes.Create.OnServerInvoke = function(player: Player, settings: { [string]: any }?)
+	local pty = party.new(player.UserId)
+
+	if pty and settings then
+		local new_settings = {}
+
+		new_settings.mode = settings.mode or pty.settings.mode
+		new_settings.modifiers = settings.modifiers or pty.settings.modifiers
+		new_settings.allow_spectators = if settings.allow_spectators ~= nil
+			then settings.allow_spectators
+			else pty.settings.allow_spectators
+		new_settings.friends_only = if settings.friends_only ~= nil
+			then settings.friends_only
+			else pty.settings.friends_only
+
+		pty:SetSettings(new_settings)
+	end
+
+	Packet.SendNotification.sendTo({ message = "Party created." }, player)
+	return { success = true, party_id = pty and pty.party_id or nil }
+end
+PartyRemotes.Delete.OnServerInvoke = function(player: Player, data: { party_id: string })
+	local party_obj = party:GetPartyById(data and data.party_id or "")
+
 	if party_obj then
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
-				-- only the leader can delete the party
 				if party_obj.leader_id == player.UserId then
-					party_obj:Destroy()
+					party:RemovePartyById(party_obj.party_id)
+					-- we added this function because `party_obj:Destroy()` throws an error
+
+					Packet.SendNotification.sendTo({ message = "Party disbanded." }, player)
+
+					return true
 				end
 				break
 			end
 		end
 	end
-end)
-Packet.JoinParty.listen(function(data: { party_id: string }, player: Player)
-	-- TODO) join party
-	local party_obj = party:GetPartyById(data.party_id)
+
+	return false
+end
+PartyRemotes.Join.OnServerInvoke = function(player: Player, data: { party_id: string })
+	local party_obj = party:GetPartyById(data and data.party_id or "")
+
 	if party_obj then
 		local success = party_obj:AddMember(player.UserId)
+
 		if success then
-			-- joined party successfully
-			Packet.SendNotification.sendTo({
-				message = "Joined party successfully!",
-			}, player)
+			Packet.SendNotification.sendTo({ message = "Joined party successfully!" }, player)
 		else
-			-- failed to join Party
-			Packet.SendNotification.sendTo({
-				message = "Failed to join party.",
-			}, player)
+			Packet.SendNotification.sendTo({ message = "Failed to join party." }, player)
 		end
+
+		return success
 	end
-end)
-Packet.LeaveParty.listen(function(data: { party_id: string }, player: Player)
-	-- TODO) leave party
-	local party_obj = party:GetPartyById(data.party_id)
+
+	return false
+end
+PartyRemotes.Leave.OnServerInvoke = function(player: Player, data: { party_id: string })
+	local party_obj = party:GetPartyById(data and data.party_id or "")
+
 	if party_obj then
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
 				party_obj:RemoveMember(player.UserId)
-				break
+
+				return true
 			end
 		end
 	end
-end)
+
+	return false
+end
 Packet.BlowFirework.listen(function(data: { amount: number, position: Vector3 }, player: Player)
 	local WhenToStop = 0
 

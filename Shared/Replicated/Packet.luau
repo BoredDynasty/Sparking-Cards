@@ -200,6 +200,24 @@ return bytenet.defineNamespace("MainNet", function()
 		party_id = bytenet.string,
 	})
 
+	local request_queue_struct = bytenet.struct({
+		[1] = bytenet.nothing,
+	})
+
+	local queue_info_struct = bytenet.struct({
+		-- {userId: number, start: number}
+		players = bytenet.array(bytenet.map(bytenet.string, bytenet.int32)),
+		parties = bytenet.array(
+			--[[{
+				party_id: string,
+				leader: number
+				size: number,
+				start: number
+			}]]
+			bytenet.map(bytenet.string, bytenet.unknown)
+		),
+	})
+
 	local blow_fireworks_struct = bytenet.struct({
 		amount = bytenet.int8,
 		position = bytenet.vec3,
@@ -234,5 +252,8 @@ return bytenet.defineNamespace("MainNet", function()
 		JoinParty = bytenet.definePacket({ value = join_party_struct }),
 		LeaveParty = bytenet.definePacket({ value = leave_party_struct }),
 		BlowFirework = bytenet.definePacket({ value = blow_fireworks_struct }),
+		-- matchmaking packets
+		RequestQueueInfo = bytenet.definePacket({ value = request_queue_struct }),
+		QueueInfo = bytenet.definePacket({ value = queue_info_struct }),
 	}
 end)

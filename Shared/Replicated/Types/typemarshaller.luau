@@ -181,8 +181,80 @@ export type Party = {
 	party_id: string,
 	leader_id: number,
 	members: { number },
-	settings: Settings,
+	settings: PartySettings,
 	state: "idle" | "searching" | "in_match",
+
+	-- instance methods
+	AddMember: (self: Party, player_id: number) -> boolean,
+	RemoveMember: (self: Party, player_id: number) -> boolean,
+	SetSettings: (self: Party, settings: PartySettings) -> (),
+	StartSearching: (self: Party) -> boolean,
+	StopSearching: (self: Party) -> boolean,
+	SetPartyState: (self: Party, state: "idle" | "searching" | "in_match") -> (),
+	GenerateJoinCode: (self: Party) -> string,
+	GenerateSpectateCode: (self: Party) -> string,
+	Destroy: (self: Party) -> (),
+}
+
+-- matchmaking types
+export type QueuePlayerInfo = {
+	userId: number,
+	start: number, -- unix timestamp
+}
+
+export type QueuePartyInfo = {
+	party_id: string,
+	leader: number,
+	size: number,
+	start: number,
+}
+
+export type QueueInfo = {
+	players: { QueuePlayerInfo },
+	parties: { QueuePartyInfo },
+}
+
+export type MatchInfo = {
+	match_id: string,
+	place_id: number,
+	private_server_id: string?,
+	access_code: string?,
+	players: { number },
+}
+
+export type MatchmakingJoinResult = {
+	success: boolean,
+	message: string?,
+}
+
+-- party types & module signatures
+export type PartySettings = {
+	mode: "Solo" | "Duo" | "Squad",
+	modifiers: { string },
+	allow_spectators: boolean,
+	friends_only: boolean,
+}
+
+export type PartyModule = {
+	new: (leader_id: number) -> Party?,
+	GetParties: () -> { Party },
+	GetPartyForPlayer: (player_id: number) -> Party?,
+	GetPartyById: (party_id: string) -> Party?,
+	AddMember: (self: Party, player_id: number) -> boolean,
+	RemoveMember: (self: Party, player_id: number) -> boolean,
+	SetSettings: (self: Party, settings: PartySettings) -> (),
+	StartSearching: (self: Party) -> boolean,
+	StopSearching: (self: Party) -> boolean,
+	Destroy: (self: Party) -> (),
+	SetPartyState: (self: Party, state: "idle" | "searching" | "in_match") -> (),
+}
+
+export type MatchmakerModule = {
+	JoinQueueForPlayer: (self: any, player: Player) -> boolean,
+	LeaveQueueForPlayer: (self: any, player: Player) -> boolean,
+	JoinQueueForParty: (self: any, party: Party) -> boolean,
+	LeaveQueueForParty: (self: any, party: Party | string) -> boolean,
+	GetQueueInfo: (self: any) -> QueueInfo,
 }
 
 return nil

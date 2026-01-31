@@ -182,13 +182,27 @@ function module.new()
 		end)
 	end)
 
+	self.Clicked:Connect(function()
+		future.Try(function()
+			spr.target(self.hint, 1, 0.9, {
+				BackgroundTransparency = 1,
+				TextTransparency = 1,
+			})
+			spr.completed(self.hint, function()
+				self:Destroy()
+			end)
+		end)
+	end)
+
 	task.delay(self.expiry, function()
-		spr.target(self.hint, 1, 0.9, {
-			BackgroundTransparency = 1,
-			TextTransparency = 1,
-		})
-		spr.completed(self.hint, function()
-			self:Destroy()
+		future.Try(function()
+			spr.target(self.hint, 1, 0.9, {
+				BackgroundTransparency = 1,
+				TextTransparency = 1,
+			})
+			spr.completed(self.hint, function()
+				self:Destroy()
+			end)
 		end)
 	end)
 

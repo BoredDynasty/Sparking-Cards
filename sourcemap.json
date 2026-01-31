@@ -20,6 +20,13 @@
           ]
         },
         {
+          "name": "DistanceFade",
+          "className": "ModuleScript",
+          "filePaths": [
+            "sync/Workspace/DistanceFade.luau"
+          ]
+        },
+        {
           "name": "Folder",
           "className": "Folder"
         },
@@ -7388,6 +7395,34 @@
             {
               "name": "Clouds",
               "className": "Clouds"
+            },
+            {
+              "name": "Dynablox1005_googly_base_left",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_left",
+              "className": "Part"
+            },
+            {
+              "name": "Dynablox1005_googly_base_right",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_right",
+              "className": "Part"
             }
           ]
         },
@@ -12614,6 +12649,13 @@
               ]
             },
             {
+              "name": "matchmaker",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/matchmaker.luau"
+              ]
+            },
+            {
               "name": "Serialization",
               "className": "Folder",
               "children": [
@@ -13638,6 +13680,70 @@
             {
               "name": "GetAllProfiles",
               "className": "RemoteFunction"
+            },
+            {
+              "name": "Matchmaking",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "JoinQueue",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "LeaveQueue",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "RequestQueueInfo",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "GetMyQueueStatus",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "QueueUpdated",
+                  "className": "RemoteEvent"
+                }
+              ]
+            },
+            {
+              "name": "Party",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Leave",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "Join",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "Delete",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "Create",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "UpdatePartyList",
+                  "className": "RemoteEvent"
+                },
+                {
+                  "name": "GetForPlayer",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "GenerateJoinCode",
+                  "className": "RemoteFunction"
+                },
+                {
+                  "name": "GenerateSpectateCode",
+                  "className": "RemoteFunction"
+                }
+              ]
             },
             {
               "name": "UpdatePartyList",
@@ -20457,10 +20563,6 @@
               "className": "StringValue"
             }
           ]
-        },
-        {
-          "name": "__Rojo_SessionLock",
-          "className": "ObjectValue"
         }
       ]
     },

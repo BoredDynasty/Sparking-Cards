@@ -55,11 +55,19 @@ grip.auto_update()
 local get_profile = events.GetProfile
 
 local function expectProfile()
-	local fut = future.new(function()
-		return get_profile:InvokeServer()
+	local fut = future.Try(function()
+		return get_profile:InvokeServer() :: typemarshaller.Profile
 	end)
 
-	return fut:Await() :: typemarshaller.Profile
+	repeat
+		task.wait(1)
+		print("pending profile fetch")
+	until not fut:IsPending()
+
+	local ok, result = fut:UnwrapOr(nil)
+	-- assert(ok, "Couldn't fetch profile from Server: " .. result)
+
+	return result
 end
 
 --[[

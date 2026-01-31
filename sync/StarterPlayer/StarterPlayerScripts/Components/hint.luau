@@ -28,6 +28,11 @@ module.__index = module
 
 local disallowed_whitespace = { "\n", "\r", "\t", "\v", "\f" }
 
+-- Stack manager to track and position hints
+local hint_stack = {
+	hints = {} :: { Hint },
+}
+
 type Hint = setmetatable<{
 	hint: TextButton,
 	Clicked: SignalPlus.Signal<>,
@@ -54,7 +59,6 @@ local function createHint(ancestor: Instance?)
 	Instances.Hint.BorderColor3 = Color3.fromRGB(27, 42, 53)
 	Instances.Hint.Selectable = false
 	Instances.Hint.BackgroundTransparency = 0.5
-	Instances.Hint.Position = UDim2.new(0.5, 0, 1, -85)
 	Instances.Hint.BorderSizePixel = 0
 	Instances.Hint.BackgroundColor3 = Color3.fromRGB(25, 27, 29)
 	Instances.Hint.FontFace =
@@ -64,6 +68,7 @@ local function createHint(ancestor: Instance?)
 	Instances.Hint.Text = "hint loading"
 	Instances.Hint.Parent = ancestor
 	Instances.Hint.TextSize = 17
+	Instances.Hint.Position = UDim2.fromScale(0.5, 1.5)
 
 	Instances.TextStroke.Name = "TextStroke"
 	Instances.TextStroke.Thickness = 0
@@ -86,6 +91,32 @@ local function createHint(ancestor: Instance?)
 	Instances.TextPadding.Parent = Instances.Hint
 
 	return Instances.Hint
+end
+
+local function update_stack_positions()
+	local base_y = -85
+	local spacing = 45
+
+	for i, hint_obj in ipairs(hint_stack.hints) do
+		local target_y = base_y - (i - 1) * spacing
+		spr.target(hint_obj.hint, 0.9, 0.9, {
+			Position = UDim2.new(0.5, 0, 1, target_y),
+		})
+	end
+end
+
+local function register_hint(hint_obj: Hint)
+	table.insert(hint_stack.hints, hint_obj)
+	update_stack_positions()
+end
+
+local function unregister_hint(hint_obj: Hint)
+	local i = table.find(hint_stack.hints, hint_obj)
+
+	if i then
+		table.remove(hint_stack.hints, i)
+		update_stack_positions()
+	end
 end
 
 --[[
@@ -114,7 +145,7 @@ function module.new()
 	self.hint = createHint(hint_gui.CanvasGroup)
 	self.Clicked = SignalPlus()
 	self.CanClick = observer.new(false)
-	self.expiry = 12
+	self.expiry = 4
 	self.dismissable = true
 	self.swipe_detector = swipe.new(self.hint)
 
@@ -143,13 +174,35 @@ function module.new()
 			})
 			if direction == "up" then
 				if self.dismissable then
-					self:Destroy(self)
+					self:Destroy()
 				end
 			else
-				spr.target(self.hint, 0.5, 0.9, {
-					Position = UDim2.new(0.5, 0, 1, -85),
-				})
+				update_stack_positions()
 			end
+		end)
+	end)
+
+	self.Clicked:Connect(function()
+		future.Try(function()
+			spr.target(self.hint, 1, 0.9, {
+				BackgroundTransparency = 1,
+				TextTransparency = 1,
+			})
+			spr.completed(self.hint, function()
+				self:Destroy()
+			end)
+		end)
+	end)
+
+	task.delay(self.expiry, function()
+		future.Try(function()
+			spr.target(self.hint, 1, 0.9, {
+				BackgroundTransparency = 1,
+				TextTransparency = 1,
+			})
+			spr.completed(self.hint, function()
+				self:Destroy()
+			end)
 		end)
 	end)
 
@@ -198,6 +251,8 @@ function module.Destroy(self: Hint)
 	self.Clicked:Destroy()
 	self.hint:Destroy()
 
+	unregister_hint(self)
+
 	table.clear(self)
 	setmetatable(self, nil)
 end
@@ -207,21 +262,11 @@ function module.Render(self: Hint)
 
 	self.hint.Parent = hint_gui.CanvasGroup
 
-	spr.target(self.hint, 1, 3, {
+	register_hint(self)
+
+	spr.target(self.hint, 1, 1.5, {
 		TextTransparency = 0,
 	})
-
-	task.delay(self.expiry, function()
-		future.Try(function()
-			spr.target(self.hint, 1, 0.9, {
-				BackgroundTransparency = 1,
-				TextTransparency = 1,
-			})
-			spr.completed(self.hint, function()
-				self:Destroy()
-			end)
-		end)
-	end)
 end
 
 return module

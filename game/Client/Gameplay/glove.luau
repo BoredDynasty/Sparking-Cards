@@ -85,8 +85,10 @@ function module:Apply(character: typemarshaller.Character)
 		-- set the positioning
 		-- and orientation
 
-		gloveL.CFrame = leftHand.CFrame * CFrame.new(0, 1, 0) * CFrame.Angles(0, math.rad(180), math.rad(90))
-		gloveR.CFrame = rightHand.CFrame * CFrame.new(0, 1, 0) * CFrame.Angles(0, 0, math.rad(90))
+		gloveL.CFrame = leftHand.CFrame * CFrame.Angles(math.rad(-90), 0, 0) * CFrame.new(0, 0.1, 0)
+		gloveR.CFrame = rightHand.CFrame * CFrame.Angles(math.rad(-90), 0, 0) * CFrame.new(0, 0.1, 0)
+	else
+		warn("could not apply gloves, missing hands")
 	end
 
 	character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
