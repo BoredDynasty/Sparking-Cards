@@ -104,6 +104,8 @@ export type ProfileData = {
 		string: number,
 	},
 	prisms: number,
+	affinity: number, -- skill points
+	skills: { string: boolean },
 	level: string,
 	experience: number,
 	last_login: number,

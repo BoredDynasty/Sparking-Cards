@@ -35,6 +35,7 @@ local promise = require(ReplicatedStorage.Packages.promise)
 local random = require(ReplicatedStorage.Utility.random)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local skill_tree = require(ReplicatedStorage.Combat.framework["skill-tree"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
 local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
@@ -203,7 +204,7 @@ local gameAnalyticsConfig = {
 	enableInfoLog = false,
 	enableVerboseLog = false,
 	availableResourceCurrencies = { "Prisms" },
-	build = "0.2.0",
+	build = "0.3.0",
 	availableGamepasses = { "Extra Cards" },
 	automaticSendBusinessEvents = true,
 	reportErrors = true,
@@ -218,9 +219,9 @@ local resourceItemTypes = {
 	"Gameplay",
 }
 
-Cmdr.Registry:RegisterDefaultCommands()
-Cmdr.Registry:RegisterCommandsIn(ReplicatedStorage.Commands)
-Cmdr.Registry:RegisterHooksIn(ReplicatedStorage.Hooks)
+Cmdr:RegisterDefaultCommands()
+Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
+Cmdr:RegisterHooksIn(ReplicatedStorage.Hooks)
 
 -- selene:allow(mixed_table)
 GameAnalytics:initialize(gameAnalyticsConfig)
@@ -569,6 +570,57 @@ end)
 Packet.CreateMatch.listen(function(_, player: Player)
 	enterMatch(player)
 end)
+
+-- Skill purchases
+Packet.BuySkill.listen(function(data, player: Player)
+	local skill_name = data.skill_name
+	local profile = FetchProfileData(player)
+	if not profile then
+		Packet.SendNotification.sendTo({ message = "Profile not found" }, player)
+		return
+	end
+
+	local skill_info
+	for _, s in ipairs(skill_tree) do
+		if s.name == skill_name then
+			skill_info = s
+			break
+		end
+	end
+
+	if not skill_info then
+		Packet.SendNotification.sendTo({ message = "Skill not found" }, player)
+		return
+	end
+
+	profile.skills = profile.skills or {}
+	if profile.skills[skill_name] then
+		Packet.SendNotification.sendTo({ message = "Skill already unlocked" }, player)
+		return
+	end
+
+	-- requirements
+	for _, req in ipairs(skill_info.requirements or {}) do
+		if not profile.skills[req] then
+			Packet.SendNotification.sendTo({ message = "Requirements not met" }, player)
+			return
+		end
+	end
+
+	if profile.affinity < skill_info.cost then
+		Packet.SendNotification.sendTo({ message = "Not enough Affinity" }, player)
+		return
+	end
+
+	profile.affinity -= skill_info.cost
+	profile.skills[skill_name] = true
+
+	SaveProfileData(player)
+
+	Packet.SkillPurchased.sendTo({ skill_name = skill_name, remaining_affinity = profile.affinity }, player)
+	Packet.SendNotification.sendTo({ message = "Skill unlocked: " .. skill_name }, player)
+end)
+
 Packet.BuyCard.listen(function(data, player: Player)
 	purchaseCard(player, data.card_name)
 end)

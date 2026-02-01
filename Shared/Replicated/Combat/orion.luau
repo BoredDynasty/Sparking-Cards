@@ -50,6 +50,18 @@ type PlayerData = {
 	element_singleton: any,
 }
 
+type StyleModule = {
+	model: Model,
+	player: Player,
+
+	grip_info: grip.GripInfo,
+	character: Model,
+	_connections: { RBXScriptConnection },
+	_hit_cache: { [Player]: number },
+	_trail: Trail?,
+	_can_hit: boolean,
+}
+
 grip.auto_update()
 
 local get_profile = events.GetProfile
@@ -110,6 +122,7 @@ function orion.new(player: Player, profile: typemarshaller.Profile)
 		current_card = equippedCard,
 		combo_info = combo.new(max_combo),
 		element_active = false,
+		element_singleton = nil,
 	})
 end
 
@@ -192,6 +205,21 @@ end
 ]]
 function orion:GetAttackModule(card_name: string): ModuleScript
 	return attack_modules[card_name]
+end
+
+function orion:ReconcileElement(player: Player, style: StyleModule, ...): StyleModule
+	local player_data = orion:GetPlayerData(player)
+	assert(player_data, "no player data???????")
+
+	if not player_data.element_active or not player_data.element_singleton then
+		style:Equip()
+		player_data.element_active = true
+		player_data.element_singleton = style.new(player, ...)
+
+		return player_data.element_singleton
+	else
+		return player_data.element_singleton
+	end
 end
 
 function orion:RequireAttackModule(module: ModuleScript)

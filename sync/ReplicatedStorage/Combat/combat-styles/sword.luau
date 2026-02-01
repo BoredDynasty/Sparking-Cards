@@ -43,6 +43,18 @@ function module:GetMaxCombo()
 	return 3
 end
 
+export type Sword = setmetatable<{
+	model: BaseSword,
+	player: Player,
+
+	grip_info: grip.GripInfo,
+	character: Model,
+	_connections: { RBXScriptConnection },
+	_hit_cache: { [Player]: number },
+	_trail: Trail?,
+	_can_hit: boolean,
+}, typeof(module)>
+
 function module.new(player: Player, sword_name: string)
 	local sword_model = fetchAsset(sword_name) :: BaseSword
 	assert(sword_model, "Couldn't fetch sword model: " .. sword_name)

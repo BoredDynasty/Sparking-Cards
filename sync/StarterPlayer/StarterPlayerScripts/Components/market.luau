@@ -167,7 +167,7 @@ function market:LoadInventory(profile: typemarshaller.Profile)
 
 	for i, item in pairs(items :: { [string]: number }) do
 		local template = createTemplate()
-		template:SetAttribute("name: ", i)
+		template:SetAttribute("name_", i)
 		template.Parent = itemHolder
 
 		shadow(template)

@@ -73,6 +73,8 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 
+local skill_renderer = require(StarterPlayer.StarterPlayerScripts.Components["skill-renderer"])
+
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
 local parallax = require("../Interface/parallax")
@@ -336,6 +338,7 @@ local function initializeMatchmaking()
 
 			return
 		end
+
 		task.wait(1 / 8)
 
 		spr.target(matchmakingFrame, 1, 2.5, {
@@ -554,6 +557,17 @@ initializeMusic()
 initializeLoadouts()
 initializeObjectives()
 initializeParties()
+
+local function initializeSkills()
+	local skill_ui = skill_renderer.new()
+	local function toggle()
+		skill_ui.toggle()
+	end
+	hud.new("Skills", toggle, lucide.GetAsset("star"))
+end
+
+initializeSkills()
+
 hud:Render()
 
 print("client almost done")
@@ -591,7 +605,7 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 end
 
 keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
-	if not processed then
+	if processed then
 		return
 	end
 
@@ -602,7 +616,7 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 end)
 
 mouse.LeftDown:Connect(function(processed: boolean)
-	if not processed then
+	if processed then
 		return
 	end
 

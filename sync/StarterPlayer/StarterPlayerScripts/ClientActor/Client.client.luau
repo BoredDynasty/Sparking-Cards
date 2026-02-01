@@ -336,6 +336,7 @@ local function initializeMatchmaking()
 
 			return
 		end
+
 		task.wait(1 / 8)
 
 		spr.target(matchmakingFrame, 1, 2.5, {
@@ -591,7 +592,7 @@ local function getAttackTypeFromKey(key: Enum.KeyCode)
 end
 
 keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
-	if not processed then
+	if processed then
 		return
 	end
 
@@ -602,7 +603,7 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 end)
 
 mouse.LeftDown:Connect(function(processed: boolean)
-	if not processed then
+	if processed then
 		return
 	end
 

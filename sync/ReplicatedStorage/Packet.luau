@@ -52,6 +52,23 @@ return bytenet.defineNamespace("MainNet", function()
 	})
 
 	--[=[
+		@struct buy_skill_struct
+		@desc Structure for buying a skill in the skill tree.
+	]=]
+	local buy_skill_struct = bytenet.struct({
+		skill_name = bytenet.string,
+	})
+
+	--[=[
+		@struct skill_purchased_struct
+		@desc Structure sent to the client when a skill is purchased.
+	]=]
+	local skill_purchased_struct = bytenet.struct({
+		skill_name = bytenet.string,
+		remaining_affinity = bytenet.int16,
+	})
+
+	--[=[
 		@struct give_experience_struct
 		@desc Structure for rewarding experience.
 	]=]
@@ -236,10 +253,12 @@ return bytenet.defineNamespace("MainNet", function()
 		AscendRank = bytenet.definePacket({ value = rank_up_struct }),
 		SellCard = bytenet.definePacket({ value = sell_card_struct }),
 		PayPrisms = bytenet.definePacket({ value = pay_prisms_struct }),
-		SprintRemote = bytenet.definePacket({ value = sprint_struct }),
 		ReplicateAnimation = bytenet.definePacket({ value = replicate_animation_struct }),
 		CancelAnimation = bytenet.definePacket({ value = cancel_animation_struct }),
 		StopAllAnimations = bytenet.definePacket({ value = stop_all_animations_struct }),
+		-- Skill Tree
+		BuySkill = bytenet.definePacket({ value = buy_skill_struct }),
+		SkillPurchased = bytenet.definePacket({ value = skill_purchased_struct }),
 		DeductStamina = bytenet.definePacket({ value = deduct_stamina_struct }),
 		AddStamina = bytenet.definePacket({ value = add_stamina_struct }),
 		CleanupCharacter = bytenet.definePacket({ value = cleanup_character_struct }),
@@ -252,8 +271,5 @@ return bytenet.defineNamespace("MainNet", function()
 		JoinParty = bytenet.definePacket({ value = join_party_struct }),
 		LeaveParty = bytenet.definePacket({ value = leave_party_struct }),
 		BlowFirework = bytenet.definePacket({ value = blow_fireworks_struct }),
-		-- matchmaking packets
-		RequestQueueInfo = bytenet.definePacket({ value = request_queue_struct }),
-		QueueInfo = bytenet.definePacket({ value = queue_info_struct }),
 	}
 end)

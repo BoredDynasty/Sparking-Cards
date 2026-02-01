@@ -7395,34 +7395,6 @@
             {
               "name": "Clouds",
               "className": "Clouds"
-            },
-            {
-              "name": "Dynablox1005_googly_base_left",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "googly_spotlight",
-                  "className": "SpotLight"
-                }
-              ]
-            },
-            {
-              "name": "Dynablox1005_googly_pupil_left",
-              "className": "Part"
-            },
-            {
-              "name": "Dynablox1005_googly_base_right",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "googly_spotlight",
-                  "className": "SpotLight"
-                }
-              ]
-            },
-            {
-              "name": "Dynablox1005_googly_pupil_right",
-              "className": "Part"
             }
           ]
         },
@@ -8082,7 +8054,16 @@
             },
             {
               "name": "Modules",
-              "className": "Folder"
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "camera-drag",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Modules/camera-drag.luau"
+                  ]
+                }
+              ]
             },
             {
               "name": "ClientActor",
@@ -8564,45 +8545,17 @@
               "className": "Folder",
               "children": [
                 {
-                  "name": "CameraController",
+                  "name": "camera-controller",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/CameraController.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/camera-controller.luau"
                   ]
                 },
                 {
-                  "name": "DynamicFOV",
+                  "name": "camera-controller",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/DynamicFOV.luau"
-                  ]
-                },
-                {
-                  "name": "Follow",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Follow.luau"
-                  ]
-                },
-                {
-                  "name": "Shake",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Shake.luau"
-                  ]
-                },
-                {
-                  "name": "Sway",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Sway.luau"
-                  ]
-                },
-                {
-                  "name": "Trail",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Camera/Trail.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/camera-controller__451759.luau"
                   ]
                 }
               ]
@@ -9065,96 +9018,6 @@
                               "className": "UIAspectRatioConstraint"
                             }
                           ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "Confirm",
-          "className": "ScreenGui",
-          "children": [
-            {
-              "name": "Frame",
-              "className": "Frame",
-              "children": [
-                {
-                  "name": "UICorner",
-                  "className": "UICorner"
-                },
-                {
-                  "name": "Title",
-                  "className": "TextLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Description",
-                  "className": "TextLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "ImageLabel",
-                  "className": "ImageLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "AspectRatio",
-                  "className": "UIAspectRatioConstraint"
-                },
-                {
-                  "name": "Confirm",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    },
-                    {
-                      "name": "TextHolder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Cancel",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    },
-                    {
-                      "name": "TextHolder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
                         }
                       ]
                     }
@@ -10413,52 +10276,6 @@
                 {
                   "name": "UIListLayout",
                   "className": "UIListLayout"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "SkillTree",
-          "className": "ScreenGui",
-          "children": [
-            {
-              "name": "CanvasGroup",
-              "className": "CanvasGroup",
-              "children": [
-                {
-                  "name": "TreeCanvas",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UIScale",
-                      "className": "UIScale"
-                    },
-                    {
-                      "name": "Texture",
-                      "className": "ImageLabel"
-                    },
-                    {
-                      "name": "Frame",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel",
-                          "children": [
-                            {
-                              "name": "UIAspectRatioConstraint",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
                 }
               ]
             }
@@ -13682,6 +13499,10 @@
               "className": "RemoteFunction"
             },
             {
+              "name": "UpdatePartyList",
+              "className": "RemoteEvent"
+            },
+            {
               "name": "Matchmaking",
               "className": "Folder",
               "children": [
@@ -13746,7 +13567,7 @@
               ]
             },
             {
-              "name": "UpdatePartyList",
+              "name": "RepositionCamera",
               "className": "RemoteEvent"
             }
           ]

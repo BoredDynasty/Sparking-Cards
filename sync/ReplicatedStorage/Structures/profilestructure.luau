@@ -15,6 +15,8 @@ return {
 	},
 	prisms = 5,
 	affinity = 5, -- skill points
+	skills = {}, -- unlocked skills
+	affinity = 5, -- skill points
 	level = "Bronze I",
 	experience = 0,
 	last_login = 0,

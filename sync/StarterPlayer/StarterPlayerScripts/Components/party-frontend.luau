@@ -113,6 +113,7 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 			print(avatar_headshot.Uri, avatar_headshot.Object, avatar_headshot.SourceType)
 
 			display.Image.ImageContent = avatar_headshot
+			display.Image.Image = avatar_headshot.Uri :: string
 		end)
 
 		pop(display)

@@ -45,18 +45,10 @@ function pyro.moveset:M1(player: Player, ...: any?): any?
 
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local sword_asset = character:FindFirstDescendant("Katana_Asset")
-
 	local player_data = orion:GetPlayerData(player)
 	assert(player_data, "no player data???????")
 
-	local singleton = player_data.element_singleton :: typeof(sword.new(player, ""))
-	if not singleton then
-		player_data.element_singleton = sword.new(player, "Katana")
-
-		singleton = player_data.element_singleton :: typeof(sword.new(player, ""))
-		singleton:Equip()
-	end
+	local singleton = orion:ReconcileElement(player, sword, "Katana") :: sword.Sword
 
 	singleton:Activate()
 

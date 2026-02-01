@@ -11,7 +11,6 @@ export type Card = {
 	MovesetName: string?,
 	FlavorText: string?,
 	TextColor: Color3?,
-	HighlightedFlavorTextTags: { string }?,
 	Moveset: {
 		M1: string, -- AttackName for the first M1 attack (e.g., "CryoGauntlet_M1_1")
 		Skill: string, -- AttackName for the E skill (e.g., "CryoGauntlet_IceShard_Skill")
@@ -51,10 +50,6 @@ local CardLibrary = {
 		FlavorText = [[
 		A single spark, given the will to burn the world.
 		]],
-		HighlightedFlavorTextTags = {
-			"spark",
-			"burn",
-		},
 		TextColor = Color3.fromRGB(255, 88, 88),
 		BaseDamageMultiplier = 1.3,
 		MaxCombo = 3,
