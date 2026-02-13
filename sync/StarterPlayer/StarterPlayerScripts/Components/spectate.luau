@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local audio = require(ReplicatedStorage.Modules.audio)
 local letterbox = require(StarterPlayer.StarterPlayerScripts.Components.letterbox)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
@@ -118,10 +119,14 @@ shadow(back_button)
 next_button.Activated:Connect(function()
 	pop(next_button, 1.8)
 
+	audio:PlaySFX("click")
+
 	module:Next()
 end)
 back_button.Activated:Connect(function()
 	pop(back_button, 1.8)
+
+	audio:PlaySFX("click")
 
 	module:Back()
 end)

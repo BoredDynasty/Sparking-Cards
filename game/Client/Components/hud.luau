@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
@@ -58,7 +59,7 @@ function module:Render()
 	end
 
 	for _, button: Button in ipairs(module.buttons) do
-		print("Rendering button:", button.name)
+		--print("Rendering button:", button.name)
 		-- Here you would create the actual button UI element and connect the callback
 		-- Instances:
 
@@ -79,7 +80,7 @@ function module:Render()
 		TextButton.Size = UDim2.fromScale(0.35, 0.7)
 		TextButton.Font = Enum.Font.Gotham
 		TextButton.TextColor3 = Color3.fromHex("ffb5a0")
-		TextButton.TextSize = 14.000
+		TextButton.TextSize = 14
 
 		UICorner.CornerRadius = UDim.new(1, 0)
 		UICorner.Parent = TextButton
@@ -134,8 +135,6 @@ function module:Render()
 			button.reactor:Map(function(current)
 				return not current
 			end)
-
-			--audio:SFX("click")
 		end)
 
 		local default_size = TextButton.Size or UDim2.fromScale(0.35, 0.7)
@@ -154,7 +153,7 @@ function module:Render()
 				BackgroundColor3 = Color3.fromHex("#342522"),
 				Size = UDim2.fromScale(0.385, 0.77),
 			})
-			--audio:SFX("hover")
+			audio:PlaySFX("hover")
 		end)
 
 		TextButton.MouseLeave:Connect(function()
@@ -164,9 +163,7 @@ function module:Render()
 				BackgroundColor3 = Color3.fromHex("#1a110f"),
 				Size = default_size,
 			})
-			--audio:SFX("hover", {
-			--pitch = 0.8,
-			--})
+			audio:PlaySFX("leave")
 		end)
 
 		button.reactor:Watch(function(newValue: boolean)
@@ -175,6 +172,8 @@ function module:Render()
 			else
 				warn("No callback defined for button: ", button.name)
 			end
+
+			audio:PlaySFX("click")
 
 			-- tilt the icon
 			-- button size

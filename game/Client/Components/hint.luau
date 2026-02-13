@@ -155,7 +155,7 @@ function module.new()
 		end)
 	end)
 
-	self.hint.MouseButton1Click:Connect(function()
+	self.hint.Activated:Connect(function()
 		future.Try(function()
 			self.Clicked:Fire()
 
@@ -184,6 +184,8 @@ function module.new()
 
 	self.Clicked:Connect(function()
 		future.Try(function()
+			self.hint.Parent = hint_gui
+
 			spr.target(self.hint, 1, 0.9, {
 				BackgroundTransparency = 1,
 				TextTransparency = 1,
@@ -196,6 +198,8 @@ function module.new()
 
 	task.delay(self.expiry, function()
 		future.Try(function()
+			self.hint.Parent = hint_gui -- i wont explain
+
 			spr.target(self.hint, 1, 0.9, {
 				BackgroundTransparency = 1,
 				TextTransparency = 1,

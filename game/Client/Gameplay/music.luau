@@ -1,4 +1,5 @@
 --!strict
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local _SoundService = game:GetService("SoundService")
@@ -9,7 +10,6 @@ local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local random = require(ReplicatedStorage.Utility.random)
 local trove = require(ReplicatedStorage.Packages.trove)
 
@@ -88,7 +88,7 @@ function module:GetTracks(biomeName: string): { Track }?
 end
 
 function module:Start()
-	local player = playerMarshaller.get()
+	local player = Players.LocalPlayer
 	local character = player.Character or player.CharacterAdded:Wait()
 	local hrp = character:FindFirstChild("HumanoidRootPart") :: BasePart
 
@@ -186,8 +186,8 @@ function module:PlayRandomTrack(biomeName: string)
 	-- Add the new track to the audio system if not already present (track locally)
 	local trackName = tostring(track.id)
 	if not module.added_music[trackName] then
-		audio:AddMusic(trackName, trackName, {
-			volume = 1,
+		audio:AddMusic(trackName, track.id, {
+			volume = 1 / 8,
 			looped = true,
 		})
 		module.added_music[trackName] = true

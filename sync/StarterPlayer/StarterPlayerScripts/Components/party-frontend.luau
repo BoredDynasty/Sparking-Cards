@@ -5,6 +5,7 @@ local SocialService = game:GetService("SocialService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local Packet = require(ReplicatedStorage.Packet)
+local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
@@ -48,7 +49,7 @@ local function inviteFriend()
 	if ok and can_send then
 		SocialService:PromptGameInvite(player)
 
-		print("prompting game invite")
+		--print("prompting game invite")
 	else
 		print("cannot prompt game invite: ", can_send)
 	end
@@ -110,7 +111,7 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 
 			local avatar_headshot = rbx_thumb.avatar_headshot(leader.UserId)
 
-			print(avatar_headshot.Uri, avatar_headshot.Object, avatar_headshot.SourceType)
+			--print(avatar_headshot.Uri, avatar_headshot.Object, avatar_headshot.SourceType)
 
 			display.Image.ImageContent = avatar_headshot
 			display.Image.Image = avatar_headshot.Uri :: string
@@ -134,8 +135,12 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 					local hint_ = hint.new()
 					hint_:SetText("Failed to join party.")
 					hint_:SetCanClick(false)
+
+					audio:PlaySFX("error")
 				else
 					pop(display.Enter)
+
+					audio:PlaySFX("success")
 				end
 			end
 		end)
@@ -164,6 +169,8 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 
 				-- we can no longer use any interface effects
 				-- because the gui has been destroyed
+
+				audio:PlaySFX("success")
 			end
 		end)
 	end
@@ -192,7 +199,7 @@ task.spawn(function()
 
 		if party_canvas.Visible then
 			wiggle(party_frame.InviteFriend.ImageLabel, function()
-				print("completed wiggle wiggle!")
+				--print("completed wiggle wiggle!")
 			end)
 		end
 	end
@@ -203,6 +210,8 @@ party_frame.InviteFriend.MouseButton1Click:Connect(function()
 		inviteFriend()
 
 		pop(party_frame.InviteFriend)
+
+		audio:PlaySFX("click")
 	end
 end)
 
@@ -214,10 +223,16 @@ party_frame.Create.MouseButton1Click:Connect(function()
 			local hint_ = hint.new()
 			hint_:SetText(res.message or "Failed to create party.")
 			hint_:SetCanClick(false)
+
+			audio:PlaySFX("error")
+
+			return
 		else
 			party_frame.Create.Interactable = false
 
 			pop(party_frame.Create)
+
+			audio:PlaySFX("click")
 		end
 	end
 end)

@@ -2,6 +2,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
@@ -84,23 +85,17 @@ function module:Render()
 
 		local image_label = button:FindFirstChildOfClass("ImageLabel")
 		if image_label then
-			future
-				.new(function()
-					image_label.ImageContent = data.icon
-
-					return "set navi button image content!"
-				end)
-				:After(function(str: string)
-					print(str)
-				end)
+			image_label.ImageContent = data.icon
 		end
 
 		button.Activated:Connect(function()
 			local is_active = data.active:Get()
 
-			future.new(data.callback, is_active):Await()
+			task.spawn(future.new, data.callback, is_active)
 
 			pop(button)
+
+			audio:PlaySFX("click")
 		end)
 
 		shadow(button)

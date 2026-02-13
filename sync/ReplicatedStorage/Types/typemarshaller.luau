@@ -106,11 +106,14 @@ export type ProfileData = {
 	prisms: number,
 	affinity: number, -- skill points
 	skills: { string: boolean },
-	level: string,
+	level: Rank,
 	experience: number,
 	last_login: number,
 	equipped_card: string,
 	victories: number,
+	options: {
+		[string]: any,
+	},
 	emotes: {
 		{
 			name: string,
@@ -122,7 +125,7 @@ export type ProfileData = {
 		}
 	},
 	equipped_emotes: {
-		string: any,
+		[string]: any,
 	},
 	achievements: {
 		{
@@ -178,6 +181,18 @@ export type LucideIcon = {
 	ImageRectSize: Vector2,
 	ImageRectOffset: Vector2,
 }
+
+export type Rank =
+	"Bronze I"
+	| "Iron II"
+	| "Gold III"
+	| "Platinum IV"
+	| "Emerald V"
+	| "Master VI"
+	| "Elite VII"
+	| "Ruby VIII"
+	| "Prismatic IX"
+	| "Sparking X"
 
 export type Party = {
 	party_id: string,

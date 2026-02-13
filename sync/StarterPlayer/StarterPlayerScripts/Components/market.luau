@@ -7,7 +7,10 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local Items = require(ReplicatedStorage.Market.Items)
 local Packet = require(ReplicatedStorage.Packet)
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
+local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
+local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
@@ -42,22 +45,24 @@ local limit = ratelimit(1, 0.5)
 
 local market = {}
 
-local function createTemplate()
+shadow(template)
+
+local pool = PoolerPlus:CreatePool("MarketPool", function()
 	return template:Clone()
-end
+end, function(object: Frame)
+	object.Visible = false
+
+	if limit.count_map[object] then
+		limit.count_map[object] = nil
+	end
+end, function(object: Frame)
+	future.Try(object.Destroy, object)
+end)
+
+pool:AdaptivePreload()
 
 function market:Unload()
-	for _, item in ipairs(itemHolder:GetChildren()) do
-		if item and item:IsA("Frame") then
-			task.spawn(function()
-				item:Destroy()
-
-				if limit.count_map[item] then
-					limit.count_map[item] = nil
-				end
-			end)
-		end
-	end
+	pool:ReturnAll()
 end
 
 function market:DisplaySpendings(profile: typemarshaller.Profile)
@@ -66,6 +71,7 @@ function market:DisplaySpendings(profile: typemarshaller.Profile)
 	if prisms then
 		task.spawn(function()
 			local counter = text_counter.new(money_label, prisms, 3)
+
 			counter:Start(counter)
 		end)
 	else
@@ -73,19 +79,18 @@ function market:DisplaySpendings(profile: typemarshaller.Profile)
 	end
 end
 
-function market:LoadItems(items: Items.dataType?)
-	market:Unload()
+function market:LoadItems(items)
+	pool:ReturnAll()
 
 	items = items or Items
 
 	-- hint.new():SetText("Loading Shop Items..."):SetCanClick(false)
 
 	for i, item in pairs(items) do
-		local template = createTemplate(itemHolder)
+		local template = pool:Get()
 		template.Parent = itemHolder
+		template.Visible = true
 		template:SetAttribute("name_", item.Name)
-
-		task.spawn(shadow, template)
 
 		local title = template.Title
 
@@ -105,8 +110,8 @@ function market:LoadItems(items: Items.dataType?)
 		if item.ExperimentsEnabled then
 			experimentButton.Visible = true
 
-			experimentButton.MouseButton1Click:Connect(function()
-				print("Testing card: " .. item.Name)
+			experimentButton.Activated:Connect(function()
+				--print("Testing card: " .. item.Name)
 				-- ts dont work yet lmao
 				-- but lets add a function
 				if not player then
@@ -117,7 +122,7 @@ function market:LoadItems(items: Items.dataType?)
 			experimentButton.Visible = false
 		end
 
-		print("setting up buttons")
+		--print("setting up buttons")
 
 		task.spawn(function()
 			local icon = purchaseButton:FindFirstChildOfClass("ImageLabel")
@@ -129,48 +134,51 @@ function market:LoadItems(items: Items.dataType?)
 		end)
 
 		purchaseButton.MouseEnter:Connect(function()
-			--audio:SFX("hover")
+			audio:PlaySFX("hover")
 		end)
 		purchaseButton.MouseLeave:Connect(function()
-			--audio:SFX("leave")
+			audio:PlaySFX("leave")
 		end)
-		purchaseButton.MouseButton1Click:Connect(function()
+		purchaseButton.Activated:Connect(function()
 			if not limit(template) then
-				print("cooldown")
+				--print("cooldown")
 
 				return
 			end
 
-			print("Purchasing card: " .. item.Name)
+			--print("Purchasing card: " .. item.Name)
 
 			Packet.BuyCard.send({ card_name = item.Name })
 
 			pop(purchaseButton)
 
-			--audio:SFX("success")
+			audio:PlaySFX("click")
 		end)
 	end
 
-	print("done")
+	--print("done")
 end
 
 function market:LoadInventory(profile: typemarshaller.Profile)
-	market:Unload()
+	pool:ReturnAll()
 
 	if not profile then
-		print("no profile to load inventory")
+		--print("no profile to load inventory")
 
 		return
 	end
 
 	local items = profile.Data.cards
 
-	for i, item in pairs(items :: { [string]: number }) do
-		local template = createTemplate()
+	for i, item in pairs(items) do
+		if item <= 0 then
+			continue
+		end
+
+		local template = pool:Get()
 		template:SetAttribute("name_", i)
 		template.Parent = itemHolder
-
-		shadow(template)
+		template.Visible = true
 
 		local title = template.Title
 
@@ -187,7 +195,7 @@ function market:LoadInventory(profile: typemarshaller.Profile)
 		template.Visible = true
 		experimentButton.Visible = false
 
-		print("setting up buttons")
+		--print("setting up buttons")
 
 		task.spawn(function()
 			local icon = sell_btn:FindFirstChildOfClass("ImageLabel")
@@ -196,9 +204,9 @@ function market:LoadInventory(profile: typemarshaller.Profile)
 			end
 		end)
 
-		sell_btn.MouseButton1Click:Connect(function()
+		sell_btn.Activated:Connect(function()
 			if not limit(template) then
-				print("sell cooldown")
+				--print("sell cooldown")
 
 				return
 			end
@@ -206,7 +214,7 @@ function market:LoadInventory(profile: typemarshaller.Profile)
 			Packet.SellCard.send({ card_name = i })
 			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 
-			local value = Items[i].Price or 1
+			local value = Items[i].Price
 			local floor = math.floor(value / 10)
 
 			prism_awarder.award(floor, true)

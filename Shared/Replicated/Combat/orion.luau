@@ -1,11 +1,15 @@
 --!nonstrict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local RunService = game:GetService("RunService")
 
-local CardLibrary = require(script.Parent.CardLibrary)
+local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
+local Cryo = require(ReplicatedStorage.Combat.framework.attacks.Cryo)
+local Pyro = require(ReplicatedStorage.Combat.framework.attacks.Pyro)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
+local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
@@ -25,59 +29,36 @@ local orion = {
 
 local player_data = {}
 
-local attack_modules = {}
+local attack_modules = {
+	["Cryo"] = Cryo,
+	["Pyro"] = Pyro,
+}
 
 local events = ReplicatedStorage.Events
 
 -- Type definitons
-export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
-
-type AttackFunction = (Player, ...any) -> unknown
-export type AttackModule = {
-	GetMaxCombo: () -> number,
-	moveset: {
-		AttackType: AttackFunction,
-	},
-}
-
-type PlayerData = {
-	player: Player,
-	profile: typemarshaller.Profile,
-	current_card: string,
-	combo_info: combo.ComboData,
-	shield_info: unknown,
-	element_active: boolean, -- if we initialized the attack stuff
-	element_singleton: any,
-}
-
-type StyleModule = {
-	model: Model,
-	player: Player,
-
-	grip_info: grip.GripInfo,
-	character: Model,
-	_connections: { RBXScriptConnection },
-	_hit_cache: { [Player]: number },
-	_trail: Trail?,
-	_can_hit: boolean,
-}
 
 grip.auto_update()
 
 local get_profile = events.GetProfile
 
-local function expectProfile()
-	local fut = future.Try(function()
+local function expectProfile(): typemarshaller.Profile
+	local fut = future.new(function()
 		return get_profile:InvokeServer() :: typemarshaller.Profile
 	end)
 
 	repeat
 		task.wait(1)
-		print("pending profile fetch")
+	--print("pending profile fetch")
 	until not fut:IsPending()
 
-	local ok, result = fut:UnwrapOr(nil)
-	-- assert(ok, "Couldn't fetch profile from Server: " .. result)
+	local result = fut:Unwrap()
+
+	--[[
+	if not result and RunService:IsStudio() then
+		result = { Data = profilestructure }
+	end
+	--]]
 
 	return result
 end
@@ -88,29 +69,23 @@ end
 function orion.new(player: Player, profile: typemarshaller.Profile)
 	profile = profile or expectProfile()
 
-	local equippedCard = "Cryo"
+	local equipped_card = "Pyro"
 	if profile and profile.Data then
-		equippedCard = profile.Data.equipped_card
+		equipped_card = profile.Data.equipped_card
 	else
-		equippedCard = "Cryo"
+		equipped_card = "Pyro"
 	end
-	-- if the profile exists, use the current existing card, else use the "Cryo" placeholder
+	-- if the profile exists, use the current existing card, else use the "Pyro" placeholder
 
-	local attack_module = orion:GetAttackModule(equippedCard)
+	local attack_module = orion:GetAttackModule(equipped_card)
 
-	local max_combo: number
-	if attack_module then
-		local ok, fut = orion:RequireAttackModule(attack_module)
-		if not ok then
-			warn("Couldn't require attack module: ", ok)
+	if not attack_module then
+		warn("Couldn't fetch attack module: ", equipped_card)
 
-			return
-		end
-
-		local _, singleton: AttackModule = fut:Expect("Couldn't :Expect() singleton")
-
-		max_combo = singleton:GetMaxCombo()
+		return
 	end
+
+	local max_combo = attack_module:GetMaxCombo()
 
 	if not max_combo then
 		max_combo = 3
@@ -119,7 +94,7 @@ function orion.new(player: Player, profile: typemarshaller.Profile)
 	table.insert(player_data, {
 		player = player,
 		profile = profile,
-		current_card = equippedCard,
+		current_card = equipped_card,
 		combo_info = combo.new(max_combo),
 		element_active = false,
 		element_singleton = nil,
@@ -142,7 +117,11 @@ end
 	-- do whatever else with your info and data ig
 	```
 ]]
-function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
+function orion:Execute(
+	player: Player,
+	attack_type: typemarshaller.AttackType,
+	parameters: typemarshaller.OrionParameters
+)
 	local attack_module = nil
 
 	local data = orion:GetPlayerData(player)
@@ -160,17 +139,7 @@ function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
 		return
 	end
 
-	local ok, fut = orion:RequireAttackModule(attack_module)
-
-	if not ok then
-		warn("Couldn't require attack module: ", ok)
-
-		return
-	end
-
-	local _, singleton: AttackModule = fut:Expect("Couldn't :Expect() singleton")
-
-	local attack_function = singleton.moveset[attack_type] :: AttackFunction
+	local attack_function = attack_module.moveset[attack_type] :: typemarshaller.AttackFunction
 
 	if not attack_function and type(attack_function) ~= "function" then
 		warn("attack function not found")
@@ -178,7 +147,11 @@ function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
 		return
 	end
 
-	return attack_function(player, ...)
+	-- TODO) instead of a variadic,
+	-- use a table, containing any necassary data
+	-- e.g: {mouse_pos, camera_pos, ...}
+
+	return attack_function(player, parameters)
 end
 
 --[[
@@ -197,17 +170,29 @@ function orion:GetPlayerData(player: Player): PlayerData?
 	return nil
 end
 
+function orion:IncrementCombo(player: Player, current_time)
+	for i, data in ipairs(player_data :: { PlayerData }) do
+		if data.player == player then
+			combo:increment(data.combo_info, current_time)
+		end
+	end
+end
+
 --[[
 	Get attack module by card name
 
 	@param `card_name` The name of the card to retrieve the module for
 	@return The attack module, or nil if not found
 ]]
-function orion:GetAttackModule(card_name: string): ModuleScript
+function orion:GetAttackModule(card_name: string): typemarshaller.AttackModule
 	return attack_modules[card_name]
 end
 
-function orion:ReconcileElement(player: Player, style: StyleModule, ...): StyleModule
+function orion:ReconcileElement(
+	player: Player,
+	style: typemarshaller.StyleModule,
+	...
+): typemarshaller.StyleModule
 	local player_data = orion:GetPlayerData(player)
 	assert(player_data, "no player data???????")
 
@@ -222,10 +207,16 @@ function orion:ReconcileElement(player: Player, style: StyleModule, ...): StyleM
 	end
 end
 
-function orion:RequireAttackModule(module: ModuleScript)
-	return retryer.delay(0.01, 10, function()
-		return future.Try(require, module)
-	end)
+-- events
+
+events.Orion.ReconcileElement.OnInvoke = function(player, style, ...)
+	return orion:ReconcileElement(player, style, ...)
+end
+events.Orion.GetPlayerData.OnInvoke = function(player)
+	return orion:GetPlayerData(player)
+end
+events.Orion.IncrementCombo.OnInvoke = function(player, combo_info, current_time)
+	return orion:IncrementCombo(player, current_time)
 end
 
 return orion

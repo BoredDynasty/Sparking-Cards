@@ -1,3 +1,11 @@
+--!strict
+
+export type Rank = {
+	Name: string,
+	Experience: number,
+	Reward: number,
+}
+
 return {
 	["Bronze I"] = {
 		["Name"] = "Bronze I",

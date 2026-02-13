@@ -13,10 +13,10 @@ local music_tracks = {} :: { [string]: Sound }
 local sound_effects = {} :: { [string]: Sound }
 
 -- utility
-local function create_sound(sound_id: string, parent: Instance, config)
+local function create_sound(sound_id: number, parent: Instance, config)
 	local sound = Instance.new("Sound")
 	hydration(sound) {
-		SoundId = sound_id,
+		AudioContent = Content.fromAssetId(sound_id),
 		Volume = config.volume or 1,
 		PlaybackSpeed = config.pitch or 1,
 		Looped = config.looped or false,
@@ -26,7 +26,7 @@ local function create_sound(sound_id: string, parent: Instance, config)
 	return sound
 end
 
-function module:AddMusic(name: string, sound_id: string, config)
+function module:AddMusic(name: string, sound_id: number, config)
 	assert(not music_tracks[name], "Music already exists: " .. name)
 
 	music_tracks[name] = create_sound(sound_id, SoundService, config or {})
@@ -34,6 +34,13 @@ end
 
 function module:PlayMusic(name: string)
 	local track = music_tracks[name]
+	if track then
+		track:Play()
+	end
+end
+
+function module:PlayVariation(prefix: string, variation: number)
+	local track = music_tracks[`{prefix}-{variation}`]
 	if track then
 		track:Play()
 	end
@@ -61,7 +68,7 @@ function module:ConfigureMusic(name: string, config)
 	end
 end
 
-function module:AddSFX(name: string, sound_id: string, config)
+function module:AddSFX(name: string, sound_id: number, config)
 	assert(not sound_effects[name], "Sound effect already exists: " .. name)
 
 	sound_effects[name] = create_sound(sound_id, SoundService, config or {})

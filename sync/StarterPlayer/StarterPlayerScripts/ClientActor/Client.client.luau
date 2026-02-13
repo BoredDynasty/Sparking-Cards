@@ -16,6 +16,7 @@ task.wait(5) -- wait for the player to load
 
 -- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
+local over_shoulder = require(StarterPlayer.StarterPlayerScripts.Camera["over-shoulder"])
 
 local Packet = require(ReplicatedStorage.Packet)
 
@@ -52,7 +53,7 @@ local logger = require(ReplicatedStorage.ClientModules.logger)
 
 local lucide = require(ReplicatedStorage.Packages.lucide)
 
-local markdown = require(ReplicatedStorage.ClientModules.markdown)
+-- local markdown = require(ReplicatedStorage.ClientModules.markdown)
 
 local market = require("../Components/market")
 
@@ -72,14 +73,13 @@ local observer = require(ReplicatedStorage.Utility.observer)
 
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
+local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
 local parallax = require("../Interface/parallax")
 
 local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
-
-local pop = require(script.Parent.Parent.Interface.pop)
 
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 
@@ -103,6 +103,7 @@ local sway = require("../Interface/sway")
 
 local swipe = require("../Interface/swipe")
 
+local audio = require(ReplicatedStorage.Modules.audio)
 local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
 
 local throbber = require("../Components/throbber")
@@ -110,6 +111,7 @@ local throbber = require("../Components/throbber")
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
 
+local RankStructure = require(ReplicatedStorage.Structures.RankStructure)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
@@ -136,18 +138,23 @@ local character = player.Character or player.CharacterAdded:Wait() :: typemarsha
 local humanoid = character.Humanoid
 
 -- // Functions -- //
-local function expectProfile()
-	local fut = future.Try(function()
+local function expectProfile(): typemarshaller.Profile
+	local fut = future.new(function()
 		return get_profile:InvokeServer() :: typemarshaller.Profile
 	end)
 
 	repeat
 		task.wait(1)
-		print("pending profile fetch")
+	--print("pending profile fetch")
 	until not fut:IsPending()
 
-	local ok, result = fut:UnwrapOr(nil)
-	-- assert(ok, "Couldn't fetch profile from Server: " .. result)
+	local result = fut:Unwrap()
+
+	--[[
+	if not result and RunService:IsStudio() then
+		result = { Data = profilestructure }
+	end
+	--]]
 
 	return result
 end
@@ -162,7 +169,7 @@ glove:Apply(character)
 print("client starting")
 
 local function initializeCommands()
-	print("init commands")
+	--print("init commands")
 
 	Cmdr:SetActivationKeys({ Enum.KeyCode.Equals })
 	Cmdr:SetActivationUnlocksMouse(true)
@@ -171,8 +178,27 @@ local function initializeCommands()
 	Cmdr:SetHideOnLostFocus(false)
 end
 
+local function initializeAudio()
+	--print("init audio")
+
+	task.spawn(function()
+		audio:AddSFX("wood-block-1", 9120917813)
+		audio:AddSFX("wood-block-2", 9120917604)
+		audio:AddSFX("wood-block-3", 9120917605)
+		audio:AddSFX("wood-block-4", 9120917794)
+		audio:AddSFX("wood-block-5", 9120917978)
+
+		audio:AddSFX("continue", 92647604633081)
+
+		audio:AddSFX("click", 90092163763441)
+		audio:AddSFX("hover", 119879668444252)
+		audio:AddSFX("leave", 85897203168160)
+		audio:AddSFX("success", 76288726968959)
+	end)
+end
+
 local function initializeMarket()
-	print("init market")
+	--print("init market")
 
 	local shopGui = PlayerGui.Shop
 	local shopCanvas = shopGui.CanvasGroup
@@ -186,8 +212,6 @@ local function initializeMarket()
 
 	local spendings_icon = spendings.SpendingsIcon
 
-	print("got market gui")
-
 	local function callback()
 		market:DisplaySpendings(expectProfile())
 
@@ -195,12 +219,12 @@ local function initializeMarket()
 		new_hint:SetText("Loading Market...")
 		new_hint:SetExpiry(1.5)
 
-		task.spawn(market.LoadItems, market)
-
 		displayorder:Toggle(shopCanvas)
 
+		task.spawn(market.LoadItems, market)
+
 		wiggle(spendings_icon, function()
-			print("completed wiggle")
+			--print("completed wiggle")
 		end)
 	end
 
@@ -239,7 +263,7 @@ local function initializeMarket()
 	task.spawn(populateNavigation)
 end
 local function initializeOptions()
-	print("init options")
+	--print("init options")
 	local optionsGui = PlayerGui.Options
 	local optionsCanvas = optionsGui.CanvasGroup
 	local optionsFrame = optionsCanvas.Frame
@@ -247,6 +271,13 @@ local function initializeOptions()
 	displayorder.new(optionsCanvas)
 
 	shadow(optionsFrame)
+
+	local function toggleUI()
+		displayorder:Toggle(optionsCanvas)
+		options:Render()
+	end
+
+	hud.new("Options", toggleUI, lucide.GetAsset("cog"))
 end
 local function initializeMatchmaking()
 	print("init matchmaking")
@@ -324,6 +355,8 @@ local function initializeMatchmaking()
 
 			pop(pulseImage, 1.8)
 		end)
+
+		audio:PlaySFX("success")
 	end
 
 	local function hideMatchmakingFrame()
@@ -351,6 +384,8 @@ local function initializeMatchmaking()
 		if interval_thread then
 			task.cancel(interval_thread)
 		end
+
+		audio:PlaySFX("leave")
 	end
 
 	state:Watch(function(newValue)
@@ -375,7 +410,7 @@ local function initializeMatchmaking()
 	hud.new("Play", showMatchmakingFrame, lucide.GetAsset("play-circle"))
 end
 local function initializeBadges()
-	print("init badges")
+	--print("init badges")
 
 	local badgesGui = PlayerGui.Badges
 	local badgesCanvas = badgesGui.CanvasGroup
@@ -397,7 +432,7 @@ local function initializeBadges()
 	hud.new("Badges", callback, lucide.GetAsset("trophy", 48), true)
 end
 local function initializeNotifiers()
-	print("init notifiers")
+	--print("init notifiers")
 
 	Packet.SendNotification.listen(function(data)
 		local hint_ = hint.new()
@@ -407,7 +442,7 @@ local function initializeNotifiers()
 	end)
 end
 local function initializeMusic()
-	print("init music")
+	--print("init music")
 
 	local tracks = {
 		{
@@ -427,7 +462,7 @@ local function initializeMusic()
 			track,
 		}, track.coordinates.position, track.coordinates.size)
 
-		print("added biome track: " .. i .. ` {tracks[i]}`)
+		--print("added biome track: " .. i .. ` {tracks[i]}`)
 	end
 
 	music:Start()
@@ -486,13 +521,18 @@ local function initializeMusic()
 end
 
 local function initializeLoadouts()
-	print("init loadouts")
+	--print("init loadouts")
 	local loadoutsGui = PlayerGui.Loadout
 	local loadoutCanvas = loadoutsGui.CanvasGroup
+
+	local sample_card = loadoutCanvas.Card
+
+	local arc = 60
+	local radius = 80
 end
 
 local function initializeObjectives()
-	print("init objectives")
+	--print("init objectives")
 
 	local objectiveGui = PlayerGui.Objective
 	displayorder.new(objectiveGui.CanvasGroup)
@@ -530,7 +570,7 @@ local function initializeObjectives()
 end
 
 local function initializeParties()
-	print("init parties")
+	--print("init parties")
 
 	local party_gui = PlayerGui.Party
 	local party_canvas = party_gui.CanvasGroup
@@ -545,7 +585,73 @@ local function initializeParties()
 	hud.new("Party", toggleUI, lucide.GetAsset("party-popper"))
 end
 
+local function initializeStatistics()
+	--print("init stats")
+
+	local stat_gui = PlayerGui.Stats
+	local stat_canvas = stat_gui.CanvasGroup
+	local holder = stat_canvas.Frame.Holder
+
+	displayorder.new(stat_canvas)
+
+	local rank_order = {
+		["Bronze I"] = "AncientTotem",
+		["Iron II"] = "StoneEgg",
+		["Gold III"] = "OrangeDrop",
+		["Platinum IV"] = "PurpleCrown",
+		["Emerald V"] = "SmallEmerald",
+		["Master VI"] = "GlowingAmulet",
+		["Elite VII"] = "BlueDiamond",
+		["Ruby VIII"] = "RunicCircle",
+		["Prismatic IX"] = "IceShard",
+		["Sparking X"] = "LargeAmethyst",
+	}
+
+	-- https://create.roblox.com/store/asset/18460365353/
+	local rank_image = future
+		.new(function()
+			return Content.fromAssetId(18460365353)
+		end)
+		:Await()
+
+	local fancy_str = "%s<br/><font size='13'><font transparency='0.4'>%s</font></font>"
+
+	-- local typewriter = markdown.typewriter.new()
+
+	local function updateStats()
+		profile = expectProfile()
+
+		if profile then
+			-- proceed
+
+			holder.Affinity.Text = string.format(fancy_str, "Affinity", profile.Data.affinity)
+			holder.Prisms.Text = string.format(fancy_str, "Prisms", profile.Data.prisms)
+			holder.Victories.Text = string.format(fancy_str, "Victories", profile.Data.victories)
+			holder.Rank.Text = string.format(fancy_str, "Rank", profile.Data.level)
+			holder.LastLogin.Text =
+				string.format(fancy_str, "Last Login", os.date("%Y-%m-%d %H:%M:%S", profile.Data.last_login))
+		end
+	end
+
+	task.spawn(function()
+		while true do
+			task.wait(5)
+
+			updateStats()
+		end
+	end)
+
+	local function toggleUI()
+		displayorder:Toggle(stat_canvas)
+
+		updateStats()
+	end
+
+	hud.new("Stats", toggleUI, lucide.GetAsset("database"))
+end
+
 initializeCommands()
+initializeAudio()
 initializeMarket()
 initializeOptions()
 initializeMatchmaking()
@@ -555,9 +661,9 @@ initializeMusic()
 initializeLoadouts()
 initializeObjectives()
 initializeParties()
-hud:Render()
+initializeStatistics()
 
-print("client almost done")
+hud:Render()
 
 movement_controller:Add(script.Parent.Parent.Movement["dash-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
@@ -567,12 +673,8 @@ movement_controller:Add(script.Parent.Parent.Movement["walk-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["joint-controller"])
 movement_controller:Start()
 
-print("client movement")
-
 -- local rain_controller = rain.new()
 -- rain_controller:Start(rain_controller)
-
-print("rain controller")
 
 -- control
 
@@ -622,6 +724,8 @@ humanoid.HealthChanged:Connect(function(health)
 		end
 	end)
 end)
+
+-- ver_shoulder:Enable()
 
 orion.new(player, expectProfile())
 

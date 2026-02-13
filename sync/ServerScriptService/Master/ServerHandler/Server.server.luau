@@ -17,7 +17,7 @@ local Fireworks = require(ReplicatedStorage.Modules.Fireworks)
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
 local Packet = require(ReplicatedStorage.Packet)
-local ProfileStore = require(ReplicatedStorage.Packages.profilestore) -- keep existing line
+local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local future = require(ReplicatedStorage.Packages.future)
@@ -27,7 +27,6 @@ local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
 local orion = require(ReplicatedStorage.Combat.orion)
 local party = require(ReplicatedStorage.Modules.party)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
@@ -77,21 +76,28 @@ local function loadProfile(player: Player)
 	if profile then
 		profile:AddUserId(player.UserId)
 		profile:Reconcile()
+
 		profile.OnSessionEnd:Connect(function()
 			profiles[player] = nil
+
 			player:Kick("Session Locked, rejoin")
 		end)
 
 		print("Created profile")
+
 		if player:FindFirstAncestorOfClass("Players") then
 			profiles[player] = profile
+
 			profile.Data.last_login = DateTime.now().UnixTimestampMillis
+			profile.Data.name = player.Name
+
 			profile:Reconcile()
 			profile:Save()
 
 			print("Created, reconciled and saved profile!")
 		else
 			profile:EndSession()
+
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
 	elseif not profile then
@@ -103,6 +109,7 @@ end
 
 local function FetchProfileData(player: Player): typemarshaller.ProfileData?
 	local profile = profiles[player] :: typemarshaller.Profile?
+
 	if not profile and profile == nil then
 		Packet.SendNotification.sendTo({
 			message = "Couldn't get data",
@@ -131,7 +138,7 @@ end
 local function GetPrisms(player: Player)
 	local profile = FetchProfileData(player)
 	if not profile then
-		print("no profile found to perform action.")
+		--print("no profile found to perform action.")
 		return 0
 	end
 
@@ -141,7 +148,7 @@ end
 local function AddPrisms(player: Player, amount: number)
 	local profile = FetchProfileData(player)
 	if not profile then
-		print("no profile found to perform action.")
+		--print("no profile found to perform action.")
 		return
 	end
 
@@ -151,7 +158,7 @@ end
 local function DeductPrisms(player: Player, amount: number)
 	local profile = FetchProfileData(player)
 	if not profile then
-		print("no profile found to perform action.")
+		--print("no profile found to perform action.")
 		return
 	end
 
@@ -161,7 +168,7 @@ end
 local function AddCards(player: Player, name: string, amount: number)
 	local profile = FetchProfileData(player)
 	if not profile then
-		print("no profile found to perform action.")
+		--print("no profile found to perform action.")
 		return
 	end
 
@@ -177,7 +184,7 @@ end
 local function DeductCards(player: Player, name: string, amount: number)
 	local profile = FetchProfileData(player)
 	if not profile then
-		print("no profile found to perform action.")
+		--print("no profile found to perform action.")
 		return
 	end
 
@@ -191,7 +198,7 @@ end
 local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 	local profile = FetchProfileData(player)
 	if not profile then
-		print("no profile found to perform action.")
+		--print("no profile found to perform action.")
 		return
 	end
 
@@ -234,7 +241,7 @@ local ServerAsset = assets.Server:Clone()
 ServerAsset.Parent = game.Workspace
 
 local function enterMatch(player: Player)
-	print("player entered match")
+	--print("player entered match")
 
 	if not player then
 		return { success = false, message = "Invalid player" }
@@ -274,7 +281,7 @@ local function enterMatch(player: Player)
 end
 
 local function cancelMatch(player: Player)
-	print("cancel match")
+	--print("cancel match")
 
 	if not player then
 		return { success = false, message = "Invalid player" }
@@ -347,7 +354,7 @@ local function onPlayerAdded(player: Player)
 end
 
 -- just in case the players have joined the server before the script loaded
-for i, player in ipairs(playerMarshaller.all()) do
+for i, player in ipairs(Players:GetPlayers()) do
 	if player.Parent == Players then
 		task.spawn(onPlayerAdded, player)
 	end
@@ -368,15 +375,18 @@ local function onPlayerRemoving(player: Player)
 
 		print("ended session for " .. player.Name)
 	else
-		print("couldn't save in time for " .. player.Name)
+		warn("couldn't save in time for " .. player.Name)
 	end
 
 	task.defer(player.Destroy, player)
 end
 
 local function purchaseCard(player: Player, card_name: string)
+	-- TODO)  attempt to index nil with 'Price'
+
 	if not card_name then
-		print("no card name provided to buy: ", card_name)
+		warn("no card name provided to buy: ", card_name)
+
 		return
 	end
 
@@ -390,7 +400,21 @@ local function purchaseCard(player: Player, card_name: string)
 
 	GameAnalytics:addResourceEvent(player.UserId, event_parameters)
 
-	local price = Items[card_name].Price
+	-- get the Item in the registered Items module
+	local i = nil
+	for j, item in ipairs(Items) do
+		if item.Name == card_name then
+			i = j
+		end
+	end
+
+	if not i then
+		warn("couldnt index Items table for [card_name]: ", card_name)
+
+		return
+	end
+
+	local price = Items[i].Price
 
 	local prisms = GetPrisms(player)
 
@@ -446,21 +470,46 @@ end
 
 local function sellCards(player: Player, card_name: string)
 	if not card_name then
-		print("no card name provided to sell: ", card_name)
+		warn("no card name provided to sell: ", card_name)
+
 		return
 	end
 
 	local profile = FetchProfileData(player)
 
-	if not profile.cards[card_name] or profile.cards[card_name] <= 0 then
+	if not profile then
+		return
+	end
+
+	local ok, card = future
+		.Try(function()
+			return profile.cards[card_name] :: number
+		end)
+		:Unwrap()
+
+	if not ok or card <= 0 then
 		-- you ain't got nun to sell boi.
 
 		warn("No cards to sell for player: " .. player.Name)
 		return
 	end
 
+	-- get the Item in the registered Items module
+	local i = nil
+	for j, item in ipairs(Items) do
+		if item.Name == card_name then
+			i = j
+		end
+	end
+
+	if not i then
+		warn("couldnt index Items table for [card_name]: ", card_name)
+
+		return
+	end
+
 	-- calculate sell price (usually half of buy price)
-	local sellPrice = math.floor(Items[card_name].Price * 0.5)
+	local sellPrice = math.floor(Items[i].Price * 0.5)
 
 	-- update profile
 	AddPrisms(player, sellPrice)
@@ -494,7 +543,7 @@ local function getProfile(player: Player): typemarshaller.Profile?
 	end)
 
 	if not ok or not profile then
-		warn("failed to index table for profile.", player)
+		--warn("failed to index table for profile.", player)
 
 		return nil
 	end
@@ -512,6 +561,34 @@ local function setClock(number: number)
 	spr.target(Lighting, 1, 4, {
 		ClockTime = number,
 	})
+end
+
+local function startLightingCycle()
+	-- how long, in minutes, a day ingame lasts
+	local day_length = 24
+
+	local cycle_time = day_length * 60
+	local minutes_in_a_day = 24 * 60
+
+	local start_time = tick() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
+	local end_time = start_time + cycle_time
+
+	local time_ratio = minutes_in_a_day / cycle_time
+
+	if day_length <= 0 then
+		day_length = 1
+	end
+
+	RunService.Heartbeat:Connect(function()
+		local current_time = tick()
+
+		if current_time > end_time then
+			start_time = end_time
+			end_time = start_time + cycle_time
+		end
+
+		Lighting:SetMinutesAfterMidnight((current_time - start_time) * time_ratio)
+	end)
 end
 
 local function addQuest(player: Player, quest_data: string)
@@ -621,6 +698,9 @@ Packet.BuySkill.listen(function(data, player: Player)
 	Packet.SendNotification.sendTo({ message = "Skill unlocked: " .. skill_name }, player)
 end)
 
+Packet.BuyCard.listen(function(data, player: Player)
+	purchaseCard(player, data.card_name)
+end)
 Packet.PayPrisms.listen(function(data)
 	payPrisms(data.amount, data.recipient_username)
 end)
@@ -760,17 +840,18 @@ Packet.BlowFirework.listen(function(data: { amount: number, position: Vector3 },
 	end)
 
 	local ok, result = fut:Await()
-	print("is ok: ", ok, result)
+	--print("is ok: ", ok, result)
 
-	print(`Player {player.Name} blew {data.amount} fireworks at position {tostring(data.position)}`)
+	--print(`Player {player.Name} blew {data.amount} fireworks at position {tostring(data.position)}`)
 end)
 
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 
--- TODO) add player saving options
-playerMarshaller.added(onPlayerAdded)
-playerMarshaller.removing(onPlayerRemoving)
+startLightingCycle()
 
+-- TODO) add player saving options
+Players.PlayerAdded:Connect(onPlayerAdded)
+Players.PlayerRemoving:Connect(onPlayerRemoving)
 windshake:Init({
 	MatchWorkspaceWind = true,
 })

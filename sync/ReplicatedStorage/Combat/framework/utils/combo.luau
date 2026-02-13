@@ -5,10 +5,6 @@ local RunService = game:GetService("RunService")
 -- combo.luau
 -- a module for keeping track of combos
 
--- using ./data.luau
-
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
 export type ComboData = {
 	CurrentCombo: number,
 	LastHitTime: number,
@@ -42,6 +38,8 @@ function combo_module:increment(combo_data: ComboData, current_time: number): ()
 
 	combo_data.LastHitTime = current_time
 	combo_data.MaxCombo = math.max(combo_data.MaxCombo, combo_data.CurrentCombo)
+
+	return combo_data
 end
 
 --- Resets the combo counter
@@ -49,6 +47,8 @@ end
 function combo_module:reset(combo_data: ComboData): ()
 	combo_data.CurrentCombo = 0
 	combo_data.LastHitTime = 0
+
+	return combo_data
 end
 
 --- Checks if combo is still active based on reset time

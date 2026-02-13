@@ -10,7 +10,6 @@ local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
 local hydration = require(ReplicatedStorage.Utility.hydration)
-local orion = require(ReplicatedStorage.Combat.orion)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
 -- sword.luau
@@ -19,6 +18,8 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
 local module = {}
 module.__index = module
+
+local events = ReplicatedStorage.Events
 
 export type BaseSword = Model & {
 	Handle: BasePart,
@@ -61,7 +62,7 @@ function module.new(player: Player, sword_name: string)
 
 	local self = setmetatable({}, module)
 
-	local player_data = orion:GetPlayerData(self.player)
+	local player_data = events.Orion.GetPlayerData:Invoke(player)
 	assert(player_data, "no player data???????")
 
 	if player_data.element_active then
@@ -95,12 +96,14 @@ function module:Activate()
 	-- swing the sword (client animation + server hit window)
 	print(string.format("%s swings the sword!", tostring(self.player and self.player.Name)))
 
-	local player_data = orion:GetPlayerData(self.player)
+	local player_data = events.Orion.GetPlayerData:Invoke(self.player)
 	assert(player_data, "no player data???????")
 
 	local combo_info = player_data.combo_info
 
-	combo:increment(combo_info, os.clock())
+	-- combo:increment(combo_info, os.clock())
+
+	events.Orion.IncrementCombo:Invoke(self.player, combo_info, os.clock())
 
 	-- get the corresponding animation from this weapon's animation set
 	local animations = self:GetAnimations()

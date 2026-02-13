@@ -3,30 +3,28 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 -- Items.luau
 
-export type dataType = {
-	[string]: {
-		Name: string,
-		Description: string,
-		Price: number,
-		ExperimentsEnabled: boolean,
-		Icon: string?,
-		Color: string,
-		NewRelease: boolean?,
-		Tags: { string }?,
-	},
+export type Item = {
+	Name: string,
+	Description: string,
+	Price: number,
+	ExperimentsEnabled: boolean,
+	Icon: string?,
+	Color: string,
+	NewRelease: boolean?,
+	Tags: { string }?,
 }
 
 return {
-	Fire = {
-		Name = "Fire",
-		Description = "Fire damage",
+	{
+		Name = "Pyro",
+		Description = "Pyro damage",
 		Price = 9.99,
 		ExperimentsEnabled = false,
 		NewRelease = true,
 		Availability = true,
-		Details = CardLibrary.FireSword,
+		Details = CardLibrary.PyroKatana,
 	},
-	Cryo = {
+	{
 		Name = "Cryo",
 		Description = "Cryo damage",
 		Price = 13.99,
@@ -35,30 +33,29 @@ return {
 		Availability = true,
 		Details = CardLibrary.CryoGauntlet,
 	},
-	Hydro = {
+	{
 		Name = "Hydro",
 		Description = "Hydro damage",
 		Price = 40.99,
 		ExperimentsEnabled = true,
-		Icon = "rbxassetid://1234567890",
 		NewRelease = true,
 		Availability = true,
-		Details = nil,
+		Details = CardLibrary.HydroCatalyst,
 	},
-	Shadow = {
+	{
 		Name = "Shadow",
 		Description = "Shadow Damage",
 		Price = 199.99,
 		NewRelease = true,
 		Availability = false,
-		Details = CardLibrary.ShadowPolearm,
+		Details = CardLibrary.ShadowScythe,
 	},
-	Stone = {
-		Name = "Stone",
-		Description = "Stone Damage",
+	{
+		Name = "Geo",
+		Description = "Geo Damage",
 		Price = 139.99,
 		NewRelease = true,
 		Availability = false,
-		Details = CardLibrary.StoneClaymore,
+		Details = CardLibrary.GeoClaymore,
 	},
-} :: dataType
+}

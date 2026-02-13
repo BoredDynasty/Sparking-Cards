@@ -12,7 +12,6 @@ local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
 local impact = require(ReplicatedStorage.Combat.framework.effects.impact)
 local knockback = require(ReplicatedStorage.Combat.Strike.knockback)
 local nearest = require(ReplicatedStorage.Combat.hitbox.nearest)
-local orion = require(ReplicatedStorage.Combat.orion)
 local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local promise = require(ReplicatedStorage.Packages.promise)
 local rocks = require(ReplicatedStorage.Combat.framework.visuals.rocks)
@@ -39,9 +38,11 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset:M1(player: Player, ...: any?): any?
-	print("Pyro M1_1 executed for player:", player.Name)
+function pyro.moveset:M1(player: Player, ...: any?)
+	--print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
+
+	local orion = require(ReplicatedStorage.Combat.orion)
 
 	local character = player.Character or player.CharacterAdded:Wait()
 
@@ -60,13 +61,17 @@ function pyro.moveset:M1(player: Player, ...: any?): any?
 	return true
 end
 
-function pyro.moveset:Skill(player: Player, ...: any?): any?
-	print("Pyro Skill executed for player:", player.Name)
+function pyro.moveset:Skill(player: Player, ...: any?)
+	--print("Pyro Skill executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
 	-- a slash
 
 	return true
+end
+
+function pyro:GetMaxCombo()
+	return 3
 end
 
 return pyro

@@ -15,3 +15,6 @@ local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transiti
 local module = {}
 
 local player = Players.LocalPlayer
+
+local Events = ReplicatedStorage.Events
+local get_profile = Events.GetProfile

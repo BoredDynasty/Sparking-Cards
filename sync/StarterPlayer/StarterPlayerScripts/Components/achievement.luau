@@ -1,11 +1,12 @@
 --!strict
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local audio = require(ReplicatedStorage.Modules.audio)
 local badges = require(ReplicatedStorage.Structures.badges)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
@@ -17,7 +18,7 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local module = {}
 module.limit = ratelimit(1, 0.5)
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
 local badgesGui = playerGui:WaitForChild("Badges")
@@ -216,7 +217,7 @@ end
 
 function module:Load(profile: typemarshaller.Profile)
 	if not profile then
-		print("no profile to load badges")
+		--print("no profile to load badges")
 
 		hint.new():SetText("Error loading achievements. Please try again later."):SetCanClick(false)
 
@@ -255,6 +256,8 @@ function module:Load(profile: typemarshaller.Profile)
 				return
 			end
 
+			audio:PlaySFX("click")
+
 			pop(details_btn)
 		end)
 
@@ -262,6 +265,8 @@ function module:Load(profile: typemarshaller.Profile)
 			if not module.limit(share_btn) then
 				return
 			end
+
+			audio:PlaySFX("click")
 
 			pop(share_btn)
 		end)

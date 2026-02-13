@@ -33,7 +33,7 @@ type Counter = setmetatable<{
 function module.new(label: TextLabel | TextButton, number: number, time: number): Counter
 	local self = setmetatable({}, module)
 
-	local t_info = TweenInfo.new(time)
+	local t_info = TweenInfo.new(time, Enum.EasingStyle.Circular, Enum.EasingDirection.Out)
 
 	self.label = label
 	self.value = Instance.new("NumberValue")
@@ -49,9 +49,10 @@ function module:Start(self: Counter)
 	assert(self.label, "no label?")
 
 	self.value.Changed:Connect(function()
-		local number_value = self.value.Value
+		-- round to to hundrenth place to prevent decimal values from showing up
+		local number_value = math.round(self.value.Value * 100) / 100
 
-		self.label.Text = number_value
+		self.label.Text = tostring(number_value)
 	end)
 
 	task.spawn(function()

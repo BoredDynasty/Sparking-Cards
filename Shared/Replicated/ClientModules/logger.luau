@@ -30,12 +30,13 @@ type local_time = {
 }
 
 local LogService = game:GetService("LogService")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local player_marshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local spr = require(ReplicatedStorage.Modules.spr)
 
-local player = player_marshaller.get()
+local player = Players.LocalPlayer
 local player_gui = player.PlayerGui
 
 local function create_ui(): ScreenGui
@@ -53,7 +54,23 @@ local function create_ui(): ScreenGui
 	new_list.Position = default_position
 	new_list.Size = UDim2.fromScale(default_width, 0.0001)
 
-	local new_template = Instance.new("TextLabel", new_screen)
+	local new_layout = Instance.new("UIListLayout", new_list)
+	new_layout.Name = "Layout"
+
+	new_layout.SortOrder = Enum.SortOrder.Name
+	new_layout.Padding = UDim.new(0, default_padding)
+
+	new_layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
+	new_layout.VerticalAlignment = Enum.VerticalAlignment.Top
+
+	return new_screen
+end
+
+local UELog = {}
+UELog.__index = UELog
+
+local pool = PoolerPlus:CreatePool("LoggerPool", function()
+	local new_template = Instance.new("TextLabel")
 	new_template.Name = "UELogTemplate"
 
 	new_template.Visible = false
@@ -72,20 +89,10 @@ local function create_ui(): ScreenGui
 	new_template.RichText = true
 	new_template.TextWrapped = true
 
-	local new_layout = Instance.new("UIListLayout", new_list)
-	new_layout.Name = "Layout"
+	return new_template
+end)
 
-	new_layout.SortOrder = Enum.SortOrder.Name
-	new_layout.Padding = UDim.new(0, default_padding)
-
-	new_layout.HorizontalAlignment = Enum.HorizontalAlignment.Left
-	new_layout.VerticalAlignment = Enum.VerticalAlignment.Top
-
-	return new_screen
-end
-
-local UELog = {}
-UELog.__index = UELog
+pool:AdaptivePreload()
 
 --[=[
 	Creates and returns a new UELog instance.
@@ -103,7 +110,7 @@ UELog.new = function()
 	-- Cache UI elements for quick access
 	self.list = self.log:FindFirstChild("List")
 	self.layout = self.list:FindFirstChild("Layout")
-	self.template = self.log:FindFirstChild("UELogTemplate")
+	-- self.template = self.log:FindFirstChild("UELogTemplate")
 
 	-- Configuration
 	self.colors = default_colors
@@ -126,12 +133,15 @@ end
 	@param message_type Enum.MessageType? -- optional message type to pick color
 ]=]
 function UELog:create_message(msg: string, message_type: Enum.MessageType?)
-	local new_message: TextLabel = self.template:Clone()
+	local new_message = pool:Get()
 	new_message.Parent = self.list
 
 	if not message_type then
 		message_type = Enum.MessageType.MessageInfo
 	end
+
+	new_message.Visible = true
+	new_message.TextTransparency = 0
 
 	if self.show_time then
 		local now = DateTime.now()
@@ -162,11 +172,11 @@ function UELog:create_message(msg: string, message_type: Enum.MessageType?)
 				TextTransparency = 1,
 			})
 
-			task.wait(self.fade_time)
+			new_message.Visible = false
 
-			if new_message then
-				new_message:Destroy()
-			end
+			spr.completed(new_message, function()
+				pool:Return(new_message)
+			end)
 		end
 	end)
 end
@@ -176,11 +186,15 @@ end
 ]=]
 function UELog:clear()
 	if self.list then
+		--[[
 		for _, instance in ipairs(self.list:GetChildren() :: { Instance }) do
 			if instance:IsA("TextLabel") then
 				instance:Destroy()
 			end
 		end
+		--]]
+
+		pool:ReturnAll()
 	end
 end
 
@@ -258,16 +272,7 @@ end
 	@param font Enum.Font
 ]=]
 function UELog:set_font(font: Enum.Font)
-	if self.template then
-		-- Use Font property to set enum font on TextLabels
-		self.template.Font = font
-
-		for _, instance in ipairs(self.list:GetChildren() :: { Instance }) do
-			if instance:IsA("TextLabel") then
-				instance.Font = font
-			end
-		end
-	end
+	default_font = font
 end
 
 --[=[

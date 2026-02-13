@@ -10,29 +10,27 @@ return {
 	cards = {
 		Pyro = 10,
 		Cryo = 1,
-		Plasma = 1,
+		Electro = 1,
 		Hydro = 0,
 	},
 	prisms = 5,
 	affinity = 5, -- skill points
 	skills = {}, -- unlocked skills
-	affinity = 5, -- skill points
 	level = "Bronze I",
 	experience = 0,
 	last_login = 0,
 	equipped_card = "Pyro",
 	victories = 0,
 	-- Other
-	options = {},
+	options = {
+		background_music = true,
+		gui_sound = true,
+	},
 	equipped_emotes = {
 		17782874968,
 	},
 	emotes = {
-		{
-			-- starter
-			name = "Take The L",
-			identification = 17782874968,
-		},
+		17782874968,
 	},
 	achievements = {
 		--

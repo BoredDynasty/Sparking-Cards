@@ -2,35 +2,35 @@
 --!optimize 2
 -- Pooler+
 -- riftkuro '25
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-local Stats = game:GetService("Stats")
 
+local Stats = game:GetService("Stats")
 local Constants = require(script.Parent.Constants)
 local Types = require(script.Parent.Types)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+
 local Utils = {}
+
 local PoolStorage = workspace:FindFirstChild("PoolStorage") or Instance.new("Folder")
 PoolStorage.Name = "PoolStorage"
 PoolStorage.Parent = workspace
-local UIPoolStorage
 
-if RunService:IsServer() then
-	UIPoolStorage = StarterGui:FindFirstChild("UIPoolStorage") or Instance.new("ScreenGui")
+local UIPoolStorage
+if game:GetService("RunService"):IsServer() then
+	UIPoolStorage = game:GetService("StarterGui"):FindFirstChild("UIPoolStorage") or Instance.new("ScreenGui")
 	UIPoolStorage.Name = "UIPoolStorage"
 	UIPoolStorage.Enabled = false
-	UIPoolStorage.Parent = StarterGui
+	UIPoolStorage.Parent = game:GetService("StarterGui")
 else
-	UIPoolStorage = playerMarshaller.get().PlayerGui:FindFirstChild("UIPoolStorage")
+	UIPoolStorage = game.Players.LocalPlayer:WaitForChild("PlayerGui"):FindFirstChild("UIPoolStorage")
 		or Instance.new("ScreenGui")
 	UIPoolStorage.Name = "UIPoolStorage"
 	UIPoolStorage.Enabled = false
-	UIPoolStorage.Parent = playerMarshaller.get().PlayerGui
+	UIPoolStorage.Parent = game.Players.LocalPlayer.PlayerGui
 end
+
 local propertySnapshots: { [Instance]: { [string]: any } } = {}
 local propertySets: { [string]: { [string]: boolean } } = {}
 local weakInstanceTracker = setmetatable({}, { __mode = "k" })
+
 function Utils.createPropertySet(properties: { string }): { [string]: boolean }
 	local set = {}
 	for _, prop in ipairs(properties) do
@@ -38,18 +38,23 @@ function Utils.createPropertySet(properties: { string }): { [string]: boolean }
 	end
 	return set
 end
+
 function Utils.snapshotInstanceOptimized(template: Instance): { [string]: any }
 	if propertySnapshots[template] then
 		return propertySnapshots[template]
 	end
+
 	local snapshot = {}
 	local className = template.ClassName
+
 	local cacheKey = className
 	if not propertySets[cacheKey] then
 		local propertySet = {} :: { [string]: boolean }
+
 		for _, prop in ipairs(Constants.BASE_PROPERTIES) do
 			propertySet[prop] = true
 		end
+
 		for class, props in pairs(Constants.DEFAULT_RESET_PROPERTIES) do
 			if template:IsA(class) then
 				for _, prop in ipairs(props) do
@@ -57,8 +62,10 @@ function Utils.snapshotInstanceOptimized(template: Instance): { [string]: any }
 				end
 			end
 		end
+
 		propertySets[cacheKey] = propertySet
 	end
+
 	for propertyName in pairs(propertySets[cacheKey]) do
 		local success, value = pcall(function()
 			return (template :: any)[propertyName]
@@ -67,11 +74,14 @@ function Utils.snapshotInstanceOptimized(template: Instance): { [string]: any }
 			snapshot[propertyName] = value
 		end
 	end
+
 	propertySnapshots[template] = snapshot
 	return snapshot
 end
+
 function Utils.trackInstance(instance: Instance)
 	weakInstanceTracker[instance] = true
+
 	local connection
 	connection = instance.AncestryChanged:Connect(function()
 		if not instance.Parent then
@@ -81,8 +91,10 @@ function Utils.trackInstance(instance: Instance)
 		end
 	end)
 end
+
 function Utils.resetInstance(instance: Instance, template: Instance)
 	local snapshot = Utils.snapshotInstanceOptimized(template)
+
 	for propertyName, value in pairs(snapshot) do
 		if propertyName ~= "Parent" then
 			local success = pcall(function()
@@ -94,6 +106,7 @@ function Utils.resetInstance(instance: Instance, template: Instance)
 		end
 	end
 end
+
 function Utils.cleanupConnections(instance: Instance)
 	for _, child in ipairs(instance:GetDescendants()) do
 		if child:IsA("Script") or child:IsA("LocalScript") then
@@ -102,10 +115,12 @@ function Utils.cleanupConnections(instance: Instance)
 			(child :: any).Enabled = true
 		end
 	end
+
 	if typeof(instance) == "table" and instance.cleanup then
 		instance:cleanup()
 	end
 end
+
 function Utils.safeParent(instance: Instance, newParent: Instance?)
 	if not newParent then
 		if instance:IsA("GuiObject") then
@@ -114,11 +129,14 @@ function Utils.safeParent(instance: Instance, newParent: Instance?)
 			newParent = PoolStorage
 		end
 	end
+
 	instance.Parent = newParent
 end
+
 function Utils.getMemoryPressure(): Types.MemoryPressure
 	local totalMemory = Stats:GetTotalMemoryUsageMb()
 	print(("DEBUG: Current memory usage: %.1f MB"):format(totalMemory))
+
 	if totalMemory > Constants.MEMORY_PRESSURE_CRITICAL then
 		return "critical"
 	elseif totalMemory > Constants.MEMORY_PRESSURE_MODERATE then
@@ -127,6 +145,7 @@ function Utils.getMemoryPressure(): Types.MemoryPressure
 		return "none"
 	end
 end
+
 function Utils.estimateMemoryUsage(object: any): number
 	if typeof(object) == "Instance" then
 		if object:IsA("Part") then
@@ -142,24 +161,31 @@ function Utils.estimateMemoryUsage(object: any): number
 		return Constants.MEMORY_ESTIMATES.Other
 	end
 end
+
 function Utils.getPriorityValue(priority: Types.PoolPriority): number
 	return Constants.PRIORITY_VALUES[priority] or 2
 end
+
 function Utils.smartGarbageCollection()
 	local memoryBefore = Stats:GetTotalMemoryUsageMb()
+
 	if memoryBefore > Constants.GC_MEMORY_THRESHOLD then
 		local gcBefore = gcinfo()
 		gcinfo()
 		local gcAfter = gcinfo()
+
 		local memoryAfter = Stats:GetTotalMemoryUsageMb()
 		local memoryFreed = memoryBefore - memoryAfter
+
 		if memoryFreed > 50 then
 			print(("[Pooler] GC freed %.1f MB"):format(memoryFreed))
 		end
 	end
 end
+
 local PoolError = {}
 PoolError.__index = PoolError
+
 function Utils.createPoolError(message: string, errorType: string, poolName: string?): Types.PoolError
 	return setmetatable({
 		message = message,
@@ -168,10 +194,13 @@ function Utils.createPoolError(message: string, errorType: string, poolName: str
 		timestamp = tick(),
 	}, PoolError) :: any
 end
+
 function Utils.getPoolStorage(): Folder
 	return PoolStorage
 end
+
 function Utils.getUIPoolStorage(): ScreenGui
 	return UIPoolStorage
 end
+
 return Utils

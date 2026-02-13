@@ -33,3 +33,5 @@ conn = RunService.PreRender:Connect(function(delta_time)
 		debug.profileend()
 	end
 end)
+
+return module
