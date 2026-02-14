@@ -546,6 +546,10 @@ local function initializeObjectives()
 	task.spawn(future.Try, function()
 		profile = expectProfile()
 
+		if profile then
+			orion.new(player, profile)
+		end
+
 		if profile and profile.Data then
 			rank:Set(profile.Data.level)
 		else
