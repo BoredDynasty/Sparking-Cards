@@ -10,7 +10,6 @@ local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
 local hydration = require(ReplicatedStorage.Utility.hydration)
-local orion = require(ReplicatedStorage.Combat.orion)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
 -- sword.luau
@@ -56,12 +55,14 @@ export type Sword = setmetatable<{
 }, typeof(module)>
 
 function module.new(player: Player, sword_name: string)
+	local orion = require(ReplicatedStorage.Combat.orion)
+
 	local sword_model = fetchAsset(sword_name) :: BaseSword
 	assert(sword_model, "Couldn't fetch sword model: " .. sword_name)
 
 	local self = setmetatable({}, module)
 
-	local player_data = orion:GetPlayerData(self.player)
+	local player_data = orion:GetPlayerData(player)
 	assert(player_data, "no player data???????")
 
 	if player_data.element_active then
@@ -92,6 +93,8 @@ function module:GetGripData(): grip.GripInfo
 end
 
 function module:Activate()
+	local orion = require(ReplicatedStorage.Combat.orion)
+
 	-- swing the sword (client animation + server hit window)
 	print(string.format("%s swings the sword!", tostring(self.player and self.player.Name)))
 

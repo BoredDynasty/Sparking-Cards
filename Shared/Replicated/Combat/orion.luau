@@ -4,8 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
-local Cryo = require(ReplicatedStorage.Combat.framework.attacks.Cryo)
-local Pyro = require(ReplicatedStorage.Combat.framework.attacks.Pyro)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
@@ -29,10 +27,7 @@ local orion = {
 
 local player_data = {}
 
-local attack_modules = {
-	["Cryo"] = Cryo,
-	["Pyro"] = Pyro,
-}
+local attack_modules = {}
 
 local events = ReplicatedStorage.Events
 
@@ -185,6 +180,13 @@ end
 	@return The attack module, or nil if not found
 ]]
 function orion:GetAttackModule(card_name: string): typemarshaller.AttackModule
+	if not attack_modules[card_name] then
+		local module_script = orion.framework.attacks:FindFirstChild(card_name)
+		if module_script and module_script:IsA("ModuleScript") then
+			attack_modules[card_name] = require(module_script)
+		end
+	end
+
 	return attack_modules[card_name]
 end
 
