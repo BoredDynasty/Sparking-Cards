@@ -320,7 +320,6 @@ end
 local function onPlayerAdded(player: Player)
 	GameAnalytics:PlayerJoined(player)
 	future.new(GameAnalytics.PlayerJoined, GameAnalytics, player)
-	--orion.registerPlayer(player)
 
 	local function addHighlight(character: Model)
 		return future.new(function()
@@ -350,7 +349,11 @@ local function onPlayerAdded(player: Player)
 
 	addHighlight(player.Character or player.CharacterAdded:Wait() :: any)
 	batch(player:GetDescendants())
-	loadProfile(player)
+	local profile = loadProfile(player)
+
+	if profile then
+		orion.new(player, profile)
+	end
 end
 
 -- just in case the players have joined the server before the script loaded

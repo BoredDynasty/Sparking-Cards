@@ -40,13 +40,13 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset:M1(player: Player, paremeters: typemarshaller.OrionParameters)
+function pyro.moveset:M1(player: Player, parameters: typemarshaller.OrionParameters)
 	--print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local player_data = parameters.player_data or events.Orion.GetPlayerData:Invoke(player)
+	local player_data = parameters and parameters.player_data or events.Orion.GetPlayerData:Invoke(player)
 	assert(player_data, "no player data???????")
 
 	local singleton = events.Orion.ReconcileElement:Invoke(player, sword, "Katana") :: sword.Sword

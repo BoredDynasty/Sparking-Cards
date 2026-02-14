@@ -59,10 +59,13 @@ local function expectProfile(): typemarshaller.Profile
 end
 
 --[[
-	Should be ran on the client side.
+	Initializes orion for a player.
+	Should be ran on both client and server.
 ]]
 function orion.new(player: Player, profile: typemarshaller.Profile)
-	profile = profile or expectProfile()
+	if RunService:IsClient() then
+		profile = profile or expectProfile()
+	end
 
 	local equipped_card = "Pyro"
 	if profile and profile.Data then
@@ -117,6 +120,18 @@ function orion:Execute(
 	attack_type: typemarshaller.AttackType,
 	parameters: typemarshaller.OrionParameters
 )
+	if RunService:IsClient() then
+		if not parameters then
+			parameters = {
+				mouse_position = player:GetMouse().Hit,
+				player_data = orion:GetPlayerData(player),
+			}
+		end
+
+		events.Orion.Execute:FireServer(attack_type, parameters)
+		-- We still execute on client for responsiveness (Visuals etc)
+	end
+
 	local attack_module = nil
 
 	local data = orion:GetPlayerData(player)
@@ -210,6 +225,16 @@ function orion:ReconcileElement(
 end
 
 -- events
+
+if RunService:IsServer() then
+	events.Orion.Execute.OnServerEvent:Connect(function(player, attack_type, parameters)
+		-- Ensure parameters is a table and update with authoritative server data
+		parameters = parameters or {}
+		parameters.player_data = orion:GetPlayerData(player)
+
+		orion:Execute(player, attack_type, parameters)
+	end)
+end
 
 events.Orion.ReconcileElement.OnInvoke = function(player, style, ...)
 	return orion:ReconcileElement(player, style, ...)

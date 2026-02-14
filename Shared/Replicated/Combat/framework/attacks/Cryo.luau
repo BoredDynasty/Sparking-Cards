@@ -23,12 +23,21 @@ local random_position = random.create()
 
 local touch_limit = ratelimit(1, 2)
 
-function module:Skill(player: Player)
+function module:Skill(player: Player, parameters: typemarshaller.OrionParameters)
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local mouse = player:GetMouse()
+	local mouse_coordinate = parameters and parameters.mouse_position
+	if not mouse_coordinate then
+		return
+	end
 
-	local mouse_coordinate = mouse.Hit
+	-- Ensure it's a CFrame for mouse_coordinate.Position to work
+	if typeof(mouse_coordinate) == "Vector3" then
+		mouse_coordinate = CFrame.new(mouse_coordinate)
+	elseif typeof(mouse_coordinate) == "Vector2" then
+		-- This is harder to convert to a world CFrame on the server without more info
+		return
+	end
 
 	local root_part = character.PrimaryPart :: BasePart
 
