@@ -37,37 +37,6 @@ local attack_modules = {
 local events = ReplicatedStorage.Events
 
 -- Type definitons
-export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
-
-type AttackFunction = (Player, ...any) -> unknown
-export type AttackModule = {
-	GetMaxCombo: () -> number,
-	moveset: {
-		AttackType: AttackFunction,
-	},
-}
-
-type PlayerData = {
-	player: Player,
-	profile: typemarshaller.Profile,
-	current_card: string,
-	combo_info: combo.ComboData,
-	shield_info: unknown,
-	element_active: boolean, -- if we initialized the attack stuff
-	element_singleton: any,
-}
-
-type StyleModule = {
-	model: Model,
-	player: Player,
-
-	grip_info: grip.GripInfo,
-	character: Model,
-	_connections: { RBXScriptConnection },
-	_hit_cache: { [Player]: number },
-	_trail: Trail?,
-	_can_hit: boolean,
-}
 
 grip.auto_update()
 
@@ -148,7 +117,11 @@ end
 	-- do whatever else with your info and data ig
 	```
 ]]
-function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
+function orion:Execute(
+	player: Player,
+	attack_type: typemarshaller.AttackType,
+	parameters: typemarshaller.OrionParameters
+)
 	local attack_module = nil
 
 	local data = orion:GetPlayerData(player)
@@ -166,7 +139,7 @@ function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
 		return
 	end
 
-	local attack_function = attack_module.moveset[attack_type] :: AttackFunction
+	local attack_function = attack_module.moveset[attack_type] :: typemarshaller.AttackFunction
 
 	if not attack_function and type(attack_function) ~= "function" then
 		warn("attack function not found")
@@ -178,7 +151,7 @@ function orion:Execute(player: Player, attack_type: AttackType, ...: any?)
 	-- use a table, containing any necassary data
 	-- e.g: {mouse_pos, camera_pos, ...}
 
-	return attack_function(player, ...)
+	return attack_function(player, parameters)
 end
 
 --[[
@@ -197,17 +170,29 @@ function orion:GetPlayerData(player: Player): PlayerData?
 	return nil
 end
 
+function orion:IncrementCombo(player: Player, current_time)
+	for i, data in ipairs(player_data :: { PlayerData }) do
+		if data.player == player then
+			combo:increment(data.combo_info, current_time)
+		end
+	end
+end
+
 --[[
 	Get attack module by card name
 
 	@param `card_name` The name of the card to retrieve the module for
 	@return The attack module, or nil if not found
 ]]
-function orion:GetAttackModule(card_name: string): AttackModule
+function orion:GetAttackModule(card_name: string): typemarshaller.AttackModule
 	return attack_modules[card_name]
 end
 
-function orion:ReconcileElement(player: Player, style: StyleModule, ...): StyleModule
+function orion:ReconcileElement(
+	player: Player,
+	style: typemarshaller.StyleModule,
+	...
+): typemarshaller.StyleModule
 	local player_data = orion:GetPlayerData(player)
 	assert(player_data, "no player data???????")
 
@@ -220,6 +205,18 @@ function orion:ReconcileElement(player: Player, style: StyleModule, ...): StyleM
 	else
 		return player_data.element_singleton
 	end
+end
+
+-- events
+
+events.Orion.ReconcileElement.OnInvoke = function(player, style, ...)
+	return orion:ReconcileElement(player, style, ...)
+end
+events.Orion.GetPlayerData.OnInvoke = function(player)
+	return orion:GetPlayerData(player)
+end
+events.Orion.IncrementCombo.OnInvoke = function(player, combo_info, current_time)
+	return orion:IncrementCombo(player, current_time)
 end
 
 return orion

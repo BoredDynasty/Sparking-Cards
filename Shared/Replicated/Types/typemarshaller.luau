@@ -155,7 +155,7 @@ export type ProfileData = {
 		},
 	},
 	keybinds: {
-		string: number,
+		[string]: number,
 	},
 }
 

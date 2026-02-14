@@ -6395,426 +6395,6 @@
           ]
         },
         {
-          "name": "Animations",
-          "className": "Model",
-          "children": [
-            {
-              "name": "R15LeftPunch",
-              "className": "KeyframeSequence",
-              "children": [
-                {
-                  "name": "Keyframe",
-                  "className": "Keyframe",
-                  "children": [
-                    {
-                      "name": "HumanoidRootPart",
-                      "className": "Pose",
-                      "children": [
-                        {
-                          "name": "LowerTorso",
-                          "className": "Pose",
-                          "children": [
-                            {
-                              "name": "UpperTorso",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "LeftUpperArm",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "LeftLowerArm",
-                                      "className": "Pose",
-                                      "children": [
-                                        {
-                                          "name": "LeftHand",
-                                          "className": "Pose"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "RightUpperArm",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "RightLowerArm",
-                                      "className": "Pose",
-                                      "children": [
-                                        {
-                                          "name": "RightHand",
-                                          "className": "Pose"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Head",
-                                  "className": "Pose"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "RightUpperLeg",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "RightLowerLeg",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "RightFoot",
-                                      "className": "Pose"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "name": "LeftUpperLeg",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "LeftLowerLeg",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "LeftFoot",
-                                      "className": "Pose"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "NpcAnimationRigData",
-                  "className": "AnimationRigData"
-                }
-              ]
-            },
-            {
-              "name": "R15RightPunch",
-              "className": "KeyframeSequence",
-              "children": [
-                {
-                  "name": "Keyframe",
-                  "className": "Keyframe",
-                  "children": [
-                    {
-                      "name": "HumanoidRootPart",
-                      "className": "Pose",
-                      "children": [
-                        {
-                          "name": "LowerTorso",
-                          "className": "Pose",
-                          "children": [
-                            {
-                              "name": "UpperTorso",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "LeftUpperArm",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "LeftLowerArm",
-                                      "className": "Pose",
-                                      "children": [
-                                        {
-                                          "name": "LeftHand",
-                                          "className": "Pose"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "RightUpperArm",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "RightLowerArm",
-                                      "className": "Pose",
-                                      "children": [
-                                        {
-                                          "name": "RightHand",
-                                          "className": "Pose"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Head",
-                                  "className": "Pose"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "RightUpperLeg",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "RightLowerLeg",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "RightFoot",
-                                      "className": "Pose"
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "name": "LeftUpperLeg",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "LeftLowerLeg",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "LeftFoot",
-                                      "className": "Pose"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "NpcAnimationRigData",
-                  "className": "AnimationRigData"
-                }
-              ]
-            },
-            {
-              "name": "R15Block",
-              "className": "KeyframeSequence",
-              "children": [
-                {
-                  "name": "Keyframe",
-                  "className": "Keyframe",
-                  "children": [
-                    {
-                      "name": "HumanoidRootPart",
-                      "className": "Pose",
-                      "children": [
-                        {
-                          "name": "LowerTorso",
-                          "className": "Pose",
-                          "children": [
-                            {
-                              "name": "UpperTorso",
-                              "className": "Pose",
-                              "children": [
-                                {
-                                  "name": "LeftUpperArm",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "LeftLowerArm",
-                                      "className": "Pose",
-                                      "children": [
-                                        {
-                                          "name": "LeftHand",
-                                          "className": "Pose"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Head",
-                                  "className": "Pose"
-                                },
-                                {
-                                  "name": "RightUpperArm",
-                                  "className": "Pose",
-                                  "children": [
-                                    {
-                                      "name": "RightLowerArm",
-                                      "className": "Pose",
-                                      "children": [
-                                        {
-                                          "name": "RightHand",
-                                          "className": "Pose"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "NpcAnimationRigData",
-                  "className": "AnimationRigData"
-                }
-              ]
-            },
-            {
-              "name": "R6LeftPunch",
-              "className": "KeyframeSequence",
-              "children": [
-                {
-                  "name": "Keyframe",
-                  "className": "Keyframe",
-                  "children": [
-                    {
-                      "name": "HumanoidRootPart",
-                      "className": "Pose",
-                      "children": [
-                        {
-                          "name": "Torso",
-                          "className": "Pose",
-                          "children": [
-                            {
-                              "name": "Left Leg",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Right Arm",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Head",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Right Leg",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Left Arm",
-                              "className": "Pose"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Hit",
-                      "className": "KeyframeMarker"
-                    },
-                    {
-                      "name": "DBReset",
-                      "className": "KeyframeMarker"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "R6RightPunch",
-              "className": "KeyframeSequence",
-              "children": [
-                {
-                  "name": "Keyframe",
-                  "className": "Keyframe",
-                  "children": [
-                    {
-                      "name": "HumanoidRootPart",
-                      "className": "Pose",
-                      "children": [
-                        {
-                          "name": "Torso",
-                          "className": "Pose",
-                          "children": [
-                            {
-                              "name": "Left Leg",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Right Arm",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Head",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Right Leg",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Left Arm",
-                              "className": "Pose"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Hit",
-                      "className": "KeyframeMarker"
-                    },
-                    {
-                      "name": "DBReset",
-                      "className": "KeyframeMarker"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "R6Block",
-              "className": "KeyframeSequence",
-              "children": [
-                {
-                  "name": "Keyframe",
-                  "className": "Keyframe",
-                  "children": [
-                    {
-                      "name": "HumanoidRootPart",
-                      "className": "Pose",
-                      "children": [
-                        {
-                          "name": "Torso",
-                          "className": "Pose",
-                          "children": [
-                            {
-                              "name": "Head",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Right Arm",
-                              "className": "Pose"
-                            },
-                            {
-                              "name": "Left Arm",
-                              "className": "Pose"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
           "name": "Combat Dummy",
           "className": "Model",
           "children": [
@@ -8081,6 +7661,1414 @@
               ]
             }
           ]
+        },
+        {
+          "name": "SmartEnemyAI",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "AttackRange",
+              "className": "NumberValue"
+            },
+            {
+              "name": "Wander",
+              "className": "BoolValue"
+            },
+            {
+              "name": "Team",
+              "className": "BrickColorValue"
+            },
+            {
+              "name": "PunchDamage",
+              "className": "IntValue"
+            },
+            {
+              "name": "PunchLeft",
+              "className": "Animation"
+            },
+            {
+              "name": "PunchRight",
+              "className": "Animation"
+            },
+            {
+              "name": "StopPath",
+              "className": "BindableEvent"
+            },
+            {
+              "name": "UsingTool",
+              "className": "BoolValue"
+            },
+            {
+              "name": "AttackPlayers",
+              "className": "BoolValue"
+            }
+          ]
+        },
+        {
+          "name": "ToolboxTemporaryInsertModel",
+          "className": "Model"
+        },
+        {
+          "name": "Animations",
+          "className": "Model",
+          "children": [
+            {
+              "name": "R15LeftPunch",
+              "className": "KeyframeSequence",
+              "children": [
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe",
+                  "children": [
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose",
+                      "children": [
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose",
+                          "children": [
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose",
+                                      "children": [
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose",
+                                      "children": [
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "RightFoot",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightFoot",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightFoot",
+                                      "className": "Pose"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "LeftFoot",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftFoot",
+                                      "className": "Pose"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NpcAnimationRigData",
+                  "className": "AnimationRigData"
+                }
+              ]
+            },
+            {
+              "name": "R15RightPunch",
+              "className": "KeyframeSequence",
+              "children": [
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe",
+                  "children": [
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose",
+                      "children": [
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose",
+                          "children": [
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose",
+                                      "children": [
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose",
+                                      "children": [
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "RightUpperLeg",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightLowerLeg",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "RightFoot",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightFoot",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightFoot",
+                                      "className": "Pose"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "LeftUpperLeg",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftLowerLeg",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "LeftFoot",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftFoot",
+                                      "className": "Pose"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NpcAnimationRigData",
+                  "className": "AnimationRigData"
+                }
+              ]
+            },
+            {
+              "name": "R15Block",
+              "className": "KeyframeSequence",
+              "children": [
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe",
+                  "children": [
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose",
+                      "children": [
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "LowerTorso",
+                          "className": "Pose",
+                          "children": [
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "UpperTorso",
+                              "className": "Pose",
+                              "children": [
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "LeftUpperArm",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "LeftLowerArm",
+                                      "className": "Pose",
+                                      "children": [
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "LeftHand",
+                                          "className": "Pose"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Head",
+                                  "className": "Pose"
+                                },
+                                {
+                                  "name": "RightUpperArm",
+                                  "className": "Pose",
+                                  "children": [
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose"
+                                    },
+                                    {
+                                      "name": "RightLowerArm",
+                                      "className": "Pose",
+                                      "children": [
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        },
+                                        {
+                                          "name": "RightHand",
+                                          "className": "Pose"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NpcAnimationRigData",
+                  "className": "AnimationRigData"
+                }
+              ]
+            },
+            {
+              "name": "R6LeftPunch",
+              "className": "KeyframeSequence",
+              "children": [
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe",
+                  "children": [
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "Hit",
+                      "className": "KeyframeMarker"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "DBReset",
+                      "className": "KeyframeMarker"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose",
+                      "children": [
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose",
+                          "children": [
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "R6RightPunch",
+              "className": "KeyframeSequence",
+              "children": [
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe"
+                },
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe",
+                  "children": [
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "Hit",
+                      "className": "KeyframeMarker"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "DBReset",
+                      "className": "KeyframeMarker"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose"
+                    },
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose",
+                      "children": [
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose"
+                        },
+                        {
+                          "name": "Torso",
+                          "className": "Pose",
+                          "children": [
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Leg",
+                              "className": "Pose"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "R6Block",
+              "className": "KeyframeSequence",
+              "children": [
+                {
+                  "name": "Keyframe",
+                  "className": "Keyframe",
+                  "children": [
+                    {
+                      "name": "HumanoidRootPart",
+                      "className": "Pose",
+                      "children": [
+                        {
+                          "name": "Torso",
+                          "className": "Pose",
+                          "children": [
+                            {
+                              "name": "Head",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Right Arm",
+                              "className": "Pose"
+                            },
+                            {
+                              "name": "Left Arm",
+                              "className": "Pose"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Ledge Climb",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "Put in StarterCharacterScripts and ungroup",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Animate",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "idle",
+                      "className": "Folder",
+                      "children": [
+                        {
+                          "name": "Animation1",
+                          "className": "Animation",
+                          "children": [
+                            {
+                              "name": "Weight",
+                              "className": "NumberValue"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "toolnone",
+                      "className": "StringValue"
+                    },
+                    {
+                      "name": "climb",
+                      "className": "StringValue"
+                    },
+                    {
+                      "name": "walk",
+                      "className": "StringValue",
+                      "children": [
+                        {
+                          "name": "WalkAnim",
+                          "className": "Animation"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "run",
+                      "className": "StringValue"
+                    },
+                    {
+                      "name": "jump",
+                      "className": "StringValue"
+                    }
+                  ]
+                },
+                {
+                  "name": "Ledge-Climbing System",
+                  "className": "LocalScript",
+                  "filePaths": [
+                    "sync/Workspace/Ledge Climb/Put in StarterCharacterScripts and ungroup/Ledge-Climbing System.client.luau"
+                  ],
+                  "children": [
+                    {
+                      "name": "Jump",
+                      "className": "Animation"
+                    },
+                    {
+                      "name": "Hold",
+                      "className": "Animation"
+                    }
+                  ]
+                },
+                {
+                  "name": "Animate",
+                  "className": "LocalScript",
+                  "filePaths": [
+                    "sync/Workspace/Ledge Climb/Put in StarterCharacterScripts and ungroup/Animate.client.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Put in StarterCharacterScripts and ungroup",
+              "className": "Model"
+            },
+            {
+              "name": "Put this in SoundService and ungroup",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "JumpSound",
+                  "className": "Sound"
+                },
+                {
+                  "name": "Hold",
+                  "className": "Sound"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "ToolboxTemporaryInsertModel",
+          "className": "Model"
         }
       ]
     },
@@ -8748,6 +9736,13 @@
                         "sync/StarterPlayer/StarterPlayerScripts/Components/Sequences/advance-level.luau"
                       ]
                     }
+                  ]
+                },
+                {
+                  "name": "physical-bar",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/physical-bar.luau"
                   ]
                 }
               ]
@@ -10475,42 +11470,8 @@
                       "className": "UICorner"
                     },
                     {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "TextLabel",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        },
-                        {
-                          "name": "Padding",
-                          "className": "UIPadding"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "TextLabel",
-                  "className": "TextLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
+                      "name": "UIStroke",
+                      "className": "UIStroke"
                     }
                   ]
                 },
@@ -10523,32 +11484,8 @@
                       "className": "UICorner"
                     },
                     {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "TextLabel",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        },
-                        {
-                          "name": "Padding",
-                          "className": "UIPadding"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
+                      "name": "UIStroke",
+                      "className": "UIStroke"
                     }
                   ]
                 },
@@ -13862,6 +14799,24 @@
             {
               "name": "SaveSettings",
               "className": "RemoteFunction"
+            },
+            {
+              "name": "Orion",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "ReconcileElement",
+                  "className": "BindableFunction"
+                },
+                {
+                  "name": "GetPlayerData",
+                  "className": "BindableFunction"
+                },
+                {
+                  "name": "IncrementCombo",
+                  "className": "BindableFunction"
+                }
+              ]
             }
           ]
         },
@@ -16632,54 +17587,6 @@
                 {
                   "name": "Attacks",
                   "className": "Folder"
-                }
-              ]
-            },
-            {
-              "name": "SprintBar",
-              "className": "BillboardGui",
-              "children": [
-                {
-                  "name": "Frame",
-                  "className": "CanvasGroup",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "Bar",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "TextLabel",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "UIStroke",
-                          "className": "UIStroke"
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    },
-                    {
-                      "name": "UIScale",
-                      "className": "UIScale"
-                    }
-                  ]
                 }
               ]
             },

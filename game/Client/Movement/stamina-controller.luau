@@ -3,6 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 
@@ -30,72 +31,20 @@ local bar_size = UDim2.fromScale(0.5, 0.97)
 character:SetAttribute("Stamina", max_stamina)
 character:SetAttribute("AntiRegenerate", false)
 
-local function constructBar(ancestor: Instance?)
-	local Instances = {
-		SprintBar = Instance.new("BillboardGui"),
-		Frame = Instance.new("CanvasGroup"),
-		UICorner = Instance.new("UICorner"),
-		Bar_2 = Instance.new("Frame"),
-		UICorner_2 = Instance.new("UICorner"),
-		AspectRatio = Instance.new("UIAspectRatioConstraint"),
-		UIScale = Instance.new("UIScale"),
-	}
-
-	Instances.SprintBar.Name = "SprintBar"
-	Instances.SprintBar.ExtentsOffset = Vector3.new(-3, 0, 0)
-	Instances.SprintBar.MaxDistance = 0
-	Instances.SprintBar.AlwaysOnTop = true
-	Instances.SprintBar.Size = UDim2.new(10, 0, 5, 0)
-	Instances.SprintBar.Parent = ancestor or workspace
-
-	Instances.Frame.Name = "Frame"
-	Instances.Frame.AnchorPoint = Vector2.new(0.5, 1)
-	Instances.Frame.Size = UDim2.new(0.01, 0, 0.31, 0)
-	Instances.Frame.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Instances.Frame.Position = UDim2.new(0.5, 0, 0.66, 0)
-	Instances.Frame.BorderSizePixel = 0
-	Instances.Frame.BackgroundColor3 = Color3.fromRGB(35, 25, 23)
-	Instances.Frame.Parent = Instances.SprintBar
-
-	Instances.UICorner.Name = "UICorner"
-	Instances.UICorner.CornerRadius = UDim.new(1, 0)
-	Instances.UICorner.Parent = Instances.Frame
-
-	Instances.Bar_2.Name = "Bar"
-	Instances.Bar_2.AnchorPoint = Vector2.new(0.5, 1)
-	Instances.Bar_2.ZIndex = 4
-	Instances.Bar_2.Size = UDim2.new(0.5, 0, 0.97, 0)
-	Instances.Bar_2.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Instances.Bar_2.Position = UDim2.new(0.5, 0, 0.99, 0)
-	Instances.Bar_2.BorderSizePixel = 0
-	Instances.Bar_2.BackgroundColor3 = Color3.fromRGB(241, 223, 218)
-	Instances.Bar_2.Parent = Instances.Frame
-
-	Instances.UICorner_2.Name = "UICorner"
-	Instances.UICorner_2.CornerRadius = UDim.new(1, 0)
-	Instances.UICorner_2.Parent = Instances.Bar_2
-
-	Instances.AspectRatio.Name = "AspectRatio"
-	Instances.AspectRatio.AspectRatio = 0.05
-	Instances.AspectRatio.Parent = Instances.Frame
-
-	Instances.UIScale.Name = "UIScale"
-	Instances.UIScale.Scale = 3
-	Instances.UIScale.Parent = Instances.Frame
-
-	return Instances.SprintBar :: any
-end
-
-local bar = constructBar(character) :: BillboardGui
-bar.Adornee = character.PrimaryPart :: BasePart
+local bar = physical_bar.new()
+bar:SetAdornee(character.PrimaryPart)
 
 player.CharacterAdded:Connect(function(new_character)
 	if new_character:FindFirstChild("SprintBar") then
 		return
 	end
 
-	bar = constructBar(new_character) :: BillboardGui
-	bar.Adornee = new_character.PrimaryPart :: BasePart
+	if bar then
+		bar:Destroy()
+	end
+
+	bar = physical_bar.new()
+	bar:SetAdornee(character.PrimaryPart)
 end)
 
 _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
@@ -143,7 +92,5 @@ function controller:Update(deltaTime: number)
 		character:SetAttribute("Stamina", current_stamina)
 	end
 end
-
-sway.register(bar:FindFirstChild("Frame") :: Frame, 6 or 7, 2) -- 67 AHAHAHAHAHABSADBHBAQHB
 
 return controller

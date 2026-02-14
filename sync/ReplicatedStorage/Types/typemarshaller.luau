@@ -155,7 +155,7 @@ export type ProfileData = {
 		},
 	},
 	keybinds: {
-		string: number,
+		[string]: number,
 	},
 }
 
@@ -272,6 +272,57 @@ export type MatchmakerModule = {
 	JoinQueueForParty: (self: any, party: Party) -> boolean,
 	LeaveQueueForParty: (self: any, party: Party | string) -> boolean,
 	GetQueueInfo: (self: any) -> QueueInfo,
+}
+
+export type OrionParameters = {
+	mouse_postion: Vector2?,
+	player_data: PlayerData?,
+}
+
+export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
+
+export type AttackFunction = (Player, ...any) -> unknown
+export type AttackModule = {
+	GetMaxCombo: () -> number,
+	moveset: {
+		AttackType: AttackFunction,
+	},
+}
+
+export type PlayerData = {
+	player: Player,
+	profile: Profile,
+	current_card: string,
+	combo_info: ComboData,
+	shield_info: unknown,
+	element_active: boolean, -- if we initialized the attack stuff
+	element_singleton: any,
+}
+
+export type StyleModule = {
+	model: Model,
+	player: Player,
+
+	grip_info: GripInfo,
+	character: Model,
+	_connections: { RBXScriptConnection },
+	_hit_cache: { [Player]: number },
+	_trail: Trail?,
+	_can_hit: boolean,
+}
+
+export type ComboData = {
+	CurrentCombo: number,
+	LastHitTime: number,
+	MaxCombo: number,
+}
+
+export type GripInfo = {
+	offset: CFrame,
+	joint: Motor6D?,
+	model: Model,
+	attachment: Attachment?,
+	hand: "Left" | "Right",
 }
 
 return nil

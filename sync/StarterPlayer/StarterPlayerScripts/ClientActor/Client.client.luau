@@ -74,6 +74,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
 
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
@@ -650,6 +651,38 @@ local function initializeStatistics()
 	hud.new("Stats", toggleUI, lucide.GetAsset("database"))
 end
 
+local function initializeSpectating()
+	local spectate_gui = PlayerGui.Spectate
+
+	keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
+		if processed then
+			return
+		end
+
+		-- get the keybind for spectating
+
+		profile = expectProfile()
+
+		local keybind = profile.Data.keybinds.enable_spectating
+		if not keybind then
+			keybind = profilestructure.keybinds.enable_spectating
+		end
+
+		keybind = Enum.KeyCode:FromValue(keybind)
+		assert(keybind, "couldn't get Enum keycode from value.")
+
+		if key ~= keybind then
+			return
+		end
+
+		if spectate:IsSpectating() then
+			spectate:Stop()
+		else
+			spectate:On()
+		end
+	end)
+end
+
 initializeCommands()
 initializeAudio()
 initializeMarket()
@@ -662,6 +695,7 @@ initializeLoadouts()
 initializeObjectives()
 initializeParties()
 initializeStatistics()
+initializeSpectating()
 
 hud:Render()
 
@@ -701,7 +735,19 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
 		orion:Execute(player, attack_type)
+
+		hud:Hide()
 	end
+end)
+
+keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
+	if processed then
+		return
+	end
+
+	task.wait(2)
+
+	hud:Show()
 end)
 
 mouse.LeftDown:Connect(function(processed: boolean)
@@ -711,6 +757,16 @@ mouse.LeftDown:Connect(function(processed: boolean)
 
 	local attack_type = "M1"
 	orion:Execute(player, attack_type)
+
+	hud:Hide()
+end)
+
+mouse.LeftUp:Connect(function(processed: boolean)
+	if processed then
+		return
+	end
+
+	hud:Show()
 end)
 
 humanoid.HealthChanged:Connect(function(health)
@@ -725,9 +781,7 @@ humanoid.HealthChanged:Connect(function(health)
 	end)
 end)
 
--- ver_shoulder:Enable()
-
-orion.new(player, expectProfile())
+-- over_shoulder:Enable()
 
 Packet.ReplicateAnimation.listen(function(data)
 	animate.load(tonumber(data.identification))

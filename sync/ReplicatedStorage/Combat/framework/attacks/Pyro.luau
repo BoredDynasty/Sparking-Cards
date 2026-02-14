@@ -26,6 +26,8 @@ local pyro = {
 	lib = CardLibrary.PyroKatana,
 }
 
+local events = ReplicatedStorage.Events
+
 local function comboToAnimationId(combo: number): string
 	if combo == 1 then
 		return "rbxassetid://123950065803851" -- M1_1
@@ -38,18 +40,16 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset:M1(player: Player, ...: any?)
+function pyro.moveset:M1(player: Player, paremeters: typemarshaller.OrionParameters)
 	--print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
-	local orion = require(ReplicatedStorage.Combat.orion)
-
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local player_data = orion:GetPlayerData(player)
+	local player_data = parameters.player_data or events.Orion.GetPlayerData:Invoke(player)
 	assert(player_data, "no player data???????")
 
-	local singleton = orion:ReconcileElement(player, sword, "Katana") :: sword.Sword
+	local singleton = events.Orion.ReconcileElement:Invoke(player, sword, "Katana") :: sword.Sword
 
 	singleton:Activate()
 

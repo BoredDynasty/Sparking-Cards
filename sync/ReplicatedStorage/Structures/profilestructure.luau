@@ -37,10 +37,12 @@ return {
 	},
 	quests = {},
 	products = {},
-	combatBindings = {
+	keybinds = {
 		M1 = Enum.KeyCode.MouseLeftButton.Value, -- melee
 		Skill = Enum.KeyCode.E.Value, -- primary
 		Ultimate = Enum.KeyCode.Q.Value, -- ultimate
 		Support = Enum.KeyCode.R.Value, -- support
+
+		enable_spectating = Enum.KeyCode.N.Value,
 	},
 } :: typemarshaller.ProfileData

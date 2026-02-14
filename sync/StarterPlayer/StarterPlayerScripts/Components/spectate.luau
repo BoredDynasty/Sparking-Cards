@@ -8,6 +8,7 @@ local letterbox = require(StarterPlayer.StarterPlayerScripts.Components.letterbo
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
 local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transition)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
@@ -27,8 +28,8 @@ local next_button = spectate_gui.Container.Next
 local back_button = spectate_gui.Container.Back
 local label = spectate_gui.Container.TextLabel
 
-local spectating = observer.new(false)
-local current_index = observer.new(1)
+local spectating = observer.new(false) :: observer.Observer<boolean>
+local current_index = observer.new(1) :: observer.Observer<number>
 
 local player_list = table.create(#Players:GetPlayers(), player)
 -- dont worry about what we put in the 2nd arguement :]
@@ -47,10 +48,14 @@ end
 
 local function updateSpectator()
 	if #Players:GetPlayers() <= 1 then
+		print("too little players in-game to spectate!")
+
 		return
 	end
 
-	local new_player = player_list[current_index:Get()]
+	local i = current_index:Get()
+
+	local new_player = player_list[i]
 	local new_character = new_player.Character :: typemarshaller.Character
 
 	if new_player then
@@ -101,6 +106,8 @@ function module:On()
 
 	letterbox:On()
 
+	spectating:Set(true)
+
 	-- if we want, we can set the index to 1.
 end
 
@@ -110,16 +117,26 @@ function module:Stop()
 
 	letterbox:Off()
 
+	spectating:Set(true)
+
 	-- if we want, we can set the index to 1.
+end
+
+function module:IsSpectating()
+	return spectating:Get()
 end
 
 shadow(next_button)
 shadow(back_button)
 
+local current_button = observer.new() :: observer.Observer<TextButton>
+
 next_button.Activated:Connect(function()
 	pop(next_button, 1.8)
 
 	audio:PlaySFX("click")
+
+	current_button:Set(next_button)
 
 	module:Next()
 end)
@@ -128,7 +145,23 @@ back_button.Activated:Connect(function()
 
 	audio:PlaySFX("click")
 
+	current_button:Set(back_button)
+
 	module:Back()
+end)
+
+current_button:Watch(function(new_button, old_button)
+	if new_button then
+		spr.target(new_button, 0.6, 0.8, {
+			Size = UDim2.fromScale(0.343, 0.916),
+		})
+	end
+
+	if old_button then
+		spr.target(old_button, 0.6, 0.8, {
+			Size = UDim2.fromScale(0.137, 0.916),
+		})
+	end
 end)
 
 Players.PlayerAdded:Connect(updatePlayerList)
