@@ -26,8 +26,27 @@ _trove:Add(keyboard :: any)
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 
-local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
+local is_sprinting = false
+local character_trove = _trove:Extend()
+
+local function setupCharacter(new_character: Model)
+	character_trove:Clean()
+	character = new_character
+	humanoid = character:WaitForChild("Humanoid") :: Humanoid
+	is_sprinting = false
+
+	character_trove:Connect(humanoid.Died, function()
+		is_sprinting = false
+	end)
+end
+
+if character then
+	setupCharacter(character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
 
 local rate_limit = ratelimit(1, 0.5)
 
@@ -65,6 +84,7 @@ local function onBegan()
 		humanoid.WalkSpeed = new_speed
 	end)
 
+	is_sprinting = true
 	character:SetAttribute("AntiRegenerate", true)
 
 	animate.stop(MovementConfig.Animations.Walk.Id)
@@ -76,9 +96,11 @@ local function onBegan()
 end
 
 local function onEnded()
-	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
+	if not is_sprinting then
 		return
 	end
+
+	is_sprinting = false
 
 	local new_speed = MovementConfig.Character.BaseSpeed
 
@@ -99,21 +121,20 @@ local function onEnded()
 end
 
 function controller:Update(deltaTime: number)
+	if not is_sprinting then
+		return
+	end
+
 	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
+		onEnded()
 		return
 	end
 
 	local current_stamina = character:GetAttribute("Stamina") :: number or 0
 
-	if current_stamina >= 100 then
-		-- insuffient stamina to remove
-
-		return
-	end
-
 	local drain_rate = MovementConfig.Sprint.StaminaDrainRate
 
-	local new_stamina = current_stamina - (drain_rate * deltaTime)
+	local new_stamina = math.max(0, current_stamina - (drain_rate * deltaTime))
 
 	character:SetAttribute("Stamina", new_stamina)
 
