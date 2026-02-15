@@ -152,13 +152,13 @@ end)
 
 current_button:Watch(function(new_button, old_button)
 	if new_button then
-		spr.target(new_button, 0.6, 0.8, {
+		spr.target(new_button, 0.8, 7, {
 			Size = UDim2.fromScale(0.343, 0.916),
 		})
 	end
 
 	if old_button then
-		spr.target(old_button, 0.6, 0.8, {
+		spr.target(old_button, 0.8, 7, {
 			Size = UDim2.fromScale(0.137, 0.916),
 		})
 	end

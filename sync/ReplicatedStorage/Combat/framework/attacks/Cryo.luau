@@ -23,21 +23,12 @@ local random_position = random.create()
 
 local touch_limit = ratelimit(1, 2)
 
-function module:Skill(player: Player, parameters: typemarshaller.OrionParameters)
+function module:Skill(player: Player)
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local mouse_coordinate = parameters and parameters.mouse_position
-	if not mouse_coordinate then
-		return
-	end
+	local mouse = player:GetMouse()
 
-	-- Ensure it's a CFrame for mouse_coordinate.Position to work
-	if typeof(mouse_coordinate) == "Vector3" then
-		mouse_coordinate = CFrame.new(mouse_coordinate)
-	elseif typeof(mouse_coordinate) == "Vector2" then
-		-- This is harder to convert to a world CFrame on the server without more info
-		return
-	end
+	local mouse_coordinate = mouse.Hit
 
 	local root_part = character.PrimaryPart :: BasePart
 
@@ -55,8 +46,8 @@ function module:Skill(player: Player, parameters: typemarshaller.OrionParameters
 
 		local x, y, z =
 			random_position:integer(30, 50) / 30 * i,
-		random_position:integer(30, 50) / 30 * i * 2,
-		random_position:integer(30, 50) / 30 * i
+			random_position:integer(30, 50) / 30 * i * 2,
+			random_position:integer(30, 50) / 30 * i
 
 		local size = Vector3.zero
 
@@ -107,7 +98,7 @@ function module:Skill(player: Player, parameters: typemarshaller.OrionParameters
 		return shard
 	end
 
-	local shards = {}::{MeshPart}
+	local shards = {} :: { MeshPart }
 
 	for i = 1, shards_num do
 		local shard = createShard(i)

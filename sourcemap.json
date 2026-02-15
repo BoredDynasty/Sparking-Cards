@@ -6485,10 +6485,6 @@
           ]
         },
         {
-          "name": "ToolboxTemporaryInsertModel",
-          "className": "Model"
-        },
-        {
           "name": "Combat Dummy",
           "className": "Model",
           "children": [
@@ -7791,6 +7787,34 @@
             {
               "name": "Clouds",
               "className": "Clouds"
+            },
+            {
+              "name": "Dynablox1005_googly_base_left",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_left",
+              "className": "Part"
+            },
+            {
+              "name": "Dynablox1005_googly_base_right",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "googly_spotlight",
+                  "className": "SpotLight"
+                }
+              ]
+            },
+            {
+              "name": "Dynablox1005_googly_pupil_right",
+              "className": "Part"
             }
           ]
         },
@@ -8057,6 +8081,10 @@
               ]
             }
           ]
+        },
+        {
+          "name": "ToolboxTemporaryInsertModel",
+          "className": "Model"
         }
       ]
     },
@@ -8877,6 +8905,13 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Camera/over-shoulder.luau"
                   ]
+                },
+                {
+                  "name": "bobbing",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Camera/bobbing.luau"
+                  ]
                 }
               ]
             },
@@ -8991,21 +9026,71 @@
           "children": [
             {
               "name": "CanvasGroup",
+              "className": "CanvasGroup"
+            }
+          ]
+        },
+        {
+          "name": "Snackbar",
+          "className": "ScreenGui",
+          "children": [
+            {
+              "name": "Snackbar",
               "className": "CanvasGroup",
               "children": [
                 {
-                  "name": "Frame",
+                  "name": "TextLabel",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    }
+                  ]
+                },
+                {
+                  "name": "ActionHolder",
                   "className": "Frame",
                   "children": [
                     {
-                      "name": "Details",
-                      "className": "TextLabel"
+                      "name": "ActionButton",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
                     },
                     {
-                      "name": "UICorner",
-                      "className": "UICorner"
+                      "name": "Exit",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
                     }
                   ]
+                },
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
                 }
               ]
             }
@@ -9318,22 +9403,38 @@
               "className": "Frame",
               "children": [
                 {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
                   "name": "UIListLayout",
                   "className": "UIListLayout"
                 },
                 {
                   "name": "UIPadding",
                   "className": "UIPadding"
+                }
+              ]
+            },
+            {
+              "name": "TextButton",
+              "className": "TextButton",
+              "children": [
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "UIAspectRatioConstraint",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
                 },
                 {
                   "name": "UICorner",
                   "className": "UICorner"
                 }
               ]
-            },
-            {
-              "name": "TextButton",
-              "className": "TextButton"
             }
           ]
         },
@@ -10868,22 +10969,6 @@
                       ]
                     }
                   ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "Snackbar",
-          "className": "ScreenGui",
-          "children": [
-            {
-              "name": "CanvasGroup",
-              "className": "CanvasGroup",
-              "children": [
-                {
-                  "name": "Snackbar",
-                  "className": "Frame"
                 }
               ]
             }
@@ -13733,6 +13818,10 @@
             {
               "name": "GetAllProfiles",
               "className": "RemoteFunction"
+            },
+            {
+              "name": "UpdatePartyList",
+              "className": "RemoteEvent"
             },
             {
               "name": "Matchmaking",
@@ -16997,6 +17086,30 @@
           "className": "Folder",
           "children": [
             {
+              "name": "HudButton",
+              "className": "TextButton",
+              "children": [
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
               "name": "Shop",
               "className": "Folder",
               "children": [
@@ -17776,13 +17889,53 @@
               ]
             },
             {
-              "name": "HudButton",
-              "className": "TextButton",
+              "name": "Snackbar",
+              "className": "CanvasGroup",
               "children": [
                 {
-                  "name": "ImageLabel",
-                  "className": "ImageLabel",
+                  "name": "TextLabel",
+                  "className": "TextLabel",
                   "children": [
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    }
+                  ]
+                },
+                {
+                  "name": "ActionHolder",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "ActionButton",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Exit",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
                     {
                       "name": "AspectRatio",
                       "className": "UIAspectRatioConstraint"
@@ -17792,25 +17945,13 @@
                 {
                   "name": "UICorner",
                   "className": "UICorner"
-                },
-                {
-                  "name": "AspectRatio",
-                  "className": "UIAspectRatioConstraint"
                 }
               ]
             },
             {
-              "name": "Snackbar",
-              "className": "Frame",
+              "name": "PlainTooltip",
+              "className": "TextButton",
               "children": [
-                {
-                  "name": "TextLabel",
-                  "className": "TextLabel"
-                },
-                {
-                  "name": "AspectRatio",
-                  "className": "UIAspectRatioConstraint"
-                },
                 {
                   "name": "UICorner",
                   "className": "UICorner"

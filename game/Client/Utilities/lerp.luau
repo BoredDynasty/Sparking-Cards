@@ -1,5 +1,5 @@
---!strict
+--!nonstrict
 
-return function(a: number, b: number, t: number)
+return function(a, b, t)
 	return a + (b - a) * t
 end

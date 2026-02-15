@@ -14,6 +14,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
+local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
@@ -81,17 +82,11 @@ function module:Render()
 	end)
 
 	for _, button: Button in ipairs(module.buttons) do
-		--print("Rendering button:", button.name)
-		-- Here you would create the actual button UI element and connect the callback
-		-- Instances:
-
 		local icon = button.icon and button.icon.IconName or "file"
 
 		local text_button = button.text_button
 		local ui_corner = text_button.UICorner
 		local icon_image = text_button.ImageLabel
-
-		--Properties:
 
 		text_button.Parent = hud_background
 		text_button.Name = button.name
@@ -166,7 +161,7 @@ function module:Render()
 			local size, position = text_button.AbsoluteSize, text_button.AbsolutePosition
 			local is_within_button = bounds.inner(position, size, mouse:GetPosition())
 
-			print("inner: ", is_within_button)
+			--print("inner: ", is_within_button)
 
 			if not is_within_button then
 				return
@@ -193,7 +188,7 @@ function module:Render()
 			local size, position = text_button.AbsoluteSize, text_button.AbsolutePosition
 			local is_within_button = bounds.inner(position, size, mouse:GetPosition())
 
-			print("inner: ", is_within_button)
+			--print("inner: ", is_within_button)
 
 			if not is_within_button then
 				return
@@ -240,6 +235,7 @@ function module:Render()
 		end)
 
 		shadow(text_button, Color3.new(), 0.5)
+		tooltip.register(text_button, button.name)
 	end
 end
 
@@ -286,22 +282,45 @@ function module:Clear()
 	end
 end
 
-function module:Hide()
-	hud_container.Enabled = false
+local ui_scale = Instance.new("UIScale")
+ui_scale.Parent = hud_container
+ui_scale.Scale = 1
 
-	spr.stop(hud_background)
-	spr.target(hud_background, 0.5, 8, {
-		BackgroundTransparency = 1,
+function module:Hide()
+	spr.stop(ui_scale)
+	spr.stop(hud_background, "Position")
+
+	spr.target(ui_scale, 0.4, 1.5, {
+		Scale = 1.25,
 	})
+
+	spr.target(hud_background, 0.5, 0.8, {
+		Position = UDim2.fromScale(0.472, 2),
+	})
+
+	spr.completed(hud_background, function()
+		hud_background.Visible = false
+	end)
 end
 
 function module:Show()
 	hud_container.Enabled = true
+	hud_background.Position = UDim2.fromScale(0.472, 2)
+
+	ui_scale.Scale = 1.25
+	spr.stop(ui_scale)
+	spr.target(ui_scale, 0.5, 1.5, {
+		Scale = 1,
+	})
 
 	spr.stop(hud_background)
-	spr.target(hud_background, 0.5, 8, {
-		BackgroundTransparency = 0,
+	spr.target(hud_background, 0.8, 3.5, {
+		Position = UDim2.fromScale(0.472, 0.922),
 	})
+end
+
+function module:IsVisible()
+	return hud_background.Visible
 end
 
 return module

@@ -7,5 +7,5 @@
 
 > [!IMPORTANT]
 > We are on **Beta Phase.**
-> `0.3.0` (major.minor.patch)
+> `0.4.0` (major.minor.patch)
 

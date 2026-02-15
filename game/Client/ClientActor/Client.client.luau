@@ -16,6 +16,8 @@ task.wait(5) -- wait for the player to load
 
 -- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
+local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
+local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
 local over_shoulder = require(StarterPlayer.StarterPlayerScripts.Camera["over-shoulder"])
 
 local Packet = require(ReplicatedStorage.Packet)
@@ -30,11 +32,7 @@ local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displa
 
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 
-local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
-
 local future = require(ReplicatedStorage.Packages.future)
-
-local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 
@@ -75,6 +73,7 @@ local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
+local tooltip = require("../Components/tooltip")
 
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
@@ -724,6 +723,9 @@ initializeStatistics()
 initializeSpectating()
 
 hud:Render()
+tooltip:Start()
+camera_controller.new("bobbing", bobbing)
+--motion_blur:On()
 
 movement_controller:Add(script.Parent.Parent.Movement["dash-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])

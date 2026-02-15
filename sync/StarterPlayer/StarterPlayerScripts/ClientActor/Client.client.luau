@@ -16,6 +16,8 @@ task.wait(5) -- wait for the player to load
 
 -- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
+local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
+local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
 local over_shoulder = require(StarterPlayer.StarterPlayerScripts.Camera["over-shoulder"])
 
 local Packet = require(ReplicatedStorage.Packet)
@@ -30,11 +32,7 @@ local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displa
 
 local dropper = require(ReplicatedStorage.ClientModules.dropper)
 
-local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
-
 local future = require(ReplicatedStorage.Packages.future)
-
-local glare = require(StarterPlayer.StarterPlayerScripts.Interface.glare)
 
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
 
@@ -75,6 +73,7 @@ local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
+local tooltip = require("../Components/tooltip")
 
 local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
@@ -113,10 +112,12 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
 
 local RankStructure = require(ReplicatedStorage.Structures.RankStructure)
+local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
 local trove = require(ReplicatedStorage.Packages.trove)
 
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
+local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 local keyboard = input.Keyboard.new()
@@ -165,7 +166,8 @@ end
 local PlayerGui = player.PlayerGui
 
 logger.new()
-glove:Apply(character)
+
+task.spawn(glove.Apply, glove, character)
 
 print("client starting")
 
@@ -177,6 +179,20 @@ local function initializeCommands()
 	Cmdr:SetPlaceName("Sparking Cards Lobby")
 	Cmdr:SetActivationUnlocksMouse(true)
 	Cmdr:SetHideOnLostFocus(false)
+
+	local function showUI()
+		Cmdr:Show()
+	end
+
+	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
+		task.delay(15, function()
+			local snack_bar = hint.new()
+			snack_bar:SetText("Welcome, Developer. Press the '=' symbol to open Cmdr.")
+			snack_bar:SetAction(showUI, "Open")
+			snack_bar:SetCanDismiss(false)
+			snack_bar:SetCanClick(true)
+		end)
+	end
 end
 
 local function initializeAudio()
@@ -408,7 +424,7 @@ local function initializeMatchmaking()
 		end
 	end)
 
-	hud.new("Play", showMatchmakingFrame, lucide.GetAsset("play-circle"))
+	hud.new("Play", showMatchmakingFrame, lucide.GetAsset("play"), true)
 end
 local function initializeBadges()
 	--print("init badges")
@@ -683,9 +699,11 @@ local function initializeSpectating()
 		end
 
 		if spectate:IsSpectating() then
+			hud:Show()
 			spectate:Stop()
 		else
 			spectate:On()
+			hud:Hide()
 		end
 	end)
 end
@@ -705,6 +723,9 @@ initializeStatistics()
 initializeSpectating()
 
 hud:Render()
+tooltip:Start()
+camera_controller.new("bobbing", bobbing)
+--motion_blur:On()
 
 movement_controller:Add(script.Parent.Parent.Movement["dash-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
@@ -749,10 +770,10 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 	if attack_type then
 		orion:Execute(player, attack_type)
 
-		hud:Hide()
+		--hud:Hide()
 	end
 end)
-
+--[[
 keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
 	if processed then
 		return
@@ -762,7 +783,7 @@ keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
 
 	hud:Show()
 end)
-
+--]]
 mouse.LeftDown:Connect(function(processed: boolean)
 	if processed then
 		return
@@ -771,9 +792,9 @@ mouse.LeftDown:Connect(function(processed: boolean)
 	local attack_type = "M1"
 	orion:Execute(player, attack_type)
 
-	hud:Hide()
+	--hud:Hide()
 end)
-
+--[[
 mouse.LeftUp:Connect(function(processed: boolean)
 	if processed then
 		return
@@ -781,7 +802,7 @@ mouse.LeftUp:Connect(function(processed: boolean)
 
 	hud:Show()
 end)
-
+--]]
 humanoid.HealthChanged:Connect(function(health)
 	local minimum_health = 20
 
@@ -793,6 +814,29 @@ humanoid.HealthChanged:Connect(function(health)
 		end
 	end)
 end)
+
+--[[
+-- new scope
+do
+	-- hud bounds
+	local size = Vector2.new(1011, 77 + (1 / 2))
+	local position = Vector2.new(-0.5, 859 + (1 / 4))
+
+	mouse.Moved:Connect(function(mouse_position: Vector2)
+		if not mouse_position then
+			return
+		end
+
+		local is_inside = bounds.inner(position, size, mouse_position)
+
+		if not is_inside then
+			return
+		end
+
+		hud:Show()
+	end)
+end
+--]]
 
 -- over_shoulder:Enable()
 

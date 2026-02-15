@@ -14,6 +14,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
+local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
@@ -81,17 +82,11 @@ function module:Render()
 	end)
 
 	for _, button: Button in ipairs(module.buttons) do
-		--print("Rendering button:", button.name)
-		-- Here you would create the actual button UI element and connect the callback
-		-- Instances:
-
 		local icon = button.icon and button.icon.IconName or "file"
 
 		local text_button = button.text_button
 		local ui_corner = text_button.UICorner
 		local icon_image = text_button.ImageLabel
-
-		--Properties:
 
 		text_button.Parent = hud_background
 		text_button.Name = button.name
@@ -240,6 +235,7 @@ function module:Render()
 		end)
 
 		shadow(text_button, Color3.new(), 0.5)
+		tooltip.register(text_button, button.name)
 	end
 end
 
