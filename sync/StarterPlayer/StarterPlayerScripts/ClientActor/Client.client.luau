@@ -546,6 +546,10 @@ local function initializeObjectives()
 	task.spawn(future.Try, function()
 		profile = expectProfile()
 
+		if profile then
+			orion.new(player, profile)
+		end
+
 		if profile and profile.Data then
 			rank:Set(profile.Data.level)
 		else
@@ -663,9 +667,12 @@ local function initializeSpectating()
 
 		profile = expectProfile()
 
-		local keybind = profile.Data.keybinds.enable_spectating
-		if not keybind then
+		local keybind = nil
+
+		if not profile then
 			keybind = profilestructure.keybinds.enable_spectating
+		else
+			keybind = profile.Data.keybinds.enable_spectating
 		end
 
 		keybind = Enum.KeyCode:FromValue(keybind)
@@ -711,6 +718,12 @@ movement_controller:Start()
 -- rain_controller:Start(rain_controller)
 
 -- control
+
+profile = expectProfile()
+
+if profile then
+	orion.new(player, profile)
+end
 
 local function getAttackTypeFromKey(key: Enum.KeyCode)
 	-- profile = yoink.client:grab("profile_data")

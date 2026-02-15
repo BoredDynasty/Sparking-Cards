@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 
 local future = require(ReplicatedStorage.Packages.future)
@@ -21,7 +22,7 @@ local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
-local hint_gui = playerGui.Dialog
+local snackbar_gui = playerGui.Snackbar
 
 local module = {}
 module.__index = module
@@ -29,75 +30,34 @@ module.__index = module
 local disallowed_whitespace = { "\n", "\r", "\t", "\v", "\f" }
 
 -- Stack manager to track and position hints
-local hint_stack = {
+local snackbar_stack = {
 	hints = {} :: { Hint },
 }
 
+local pool = PoolerPlus:CreatePool("HintPool", function()
+	local templates = ReplicatedStorage.Interfaces
+
+	return templates.Snackbar:Clone()
+end)
+
 type Hint = setmetatable<{
-	hint: TextButton,
+	hint: typeof(pool:Get()),
 	Clicked: SignalPlus.Signal<>,
 	CanClick: observer.Observer<boolean>,
+	action_info: {
+		name: string?,
+		fn: () -> (),
+	}?,
 	expiry: number,
 	dismissable: boolean,
 	swipe_detector: swipe.SwipeDetector,
 }, typeof(module.new())>
 
-local function createHint(ancestor: Instance?)
-	local Instances = {
-		Hint = Instance.new("TextButton"),
-		TextStroke = Instance.new("UIStroke"),
-		BorderStroke = Instance.new("UIStroke"),
-		HintCorner = Instance.new("UICorner"),
-		TextPadding = Instance.new("UIPadding"),
-	}
-
-	Instances.Hint.Name = "Hint"
-	Instances.Hint.Active = false
-	Instances.Hint.AnchorPoint = Vector2.new(0.5, 0.5)
-	Instances.Hint.AutomaticSize = Enum.AutomaticSize.X
-	Instances.Hint.Size = UDim2.new(0, 0, 0, 30)
-	Instances.Hint.BorderColor3 = Color3.fromRGB(27, 42, 53)
-	Instances.Hint.Selectable = false
-	Instances.Hint.BackgroundTransparency = 0.5
-	Instances.Hint.BorderSizePixel = 0
-	Instances.Hint.BackgroundColor3 = Color3.fromRGB(25, 27, 29)
-	Instances.Hint.FontFace =
-		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-	Instances.Hint.TextTransparency = 1
-	Instances.Hint.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Instances.Hint.Text = "hint loading"
-	Instances.Hint.Parent = ancestor
-	Instances.Hint.TextSize = 17
-	Instances.Hint.Position = UDim2.fromScale(0.5, 1.5)
-
-	Instances.TextStroke.Name = "TextStroke"
-	Instances.TextStroke.Thickness = 0
-	Instances.TextStroke.Transparency = 1
-	Instances.TextStroke.Parent = Instances.Hint
-
-	Instances.BorderStroke.Name = "BorderStroke"
-	Instances.BorderStroke.Thickness = 0
-	Instances.BorderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	Instances.BorderStroke.Transparency = 1
-	Instances.BorderStroke.Parent = Instances.Hint
-
-	Instances.HintCorner.Name = "HintCorner"
-	Instances.HintCorner.CornerRadius = UDim.new(0.22, 0)
-	Instances.HintCorner.Parent = Instances.Hint
-
-	Instances.TextPadding.Name = "TextPadding"
-	Instances.TextPadding.PaddingLeft = UDim.new(0, 11)
-	Instances.TextPadding.PaddingRight = UDim.new(0, 11)
-	Instances.TextPadding.Parent = Instances.Hint
-
-	return Instances.Hint
-end
-
 local function update_stack_positions()
 	local base_y = -85
 	local spacing = 45
 
-	for i, hint_obj in ipairs(hint_stack.hints) do
+	for i, hint_obj in ipairs(snackbar_stack.hints) do
 		local target_y = base_y - (i - 1) * spacing
 		spr.target(hint_obj.hint, 0.9, 0.9, {
 			Position = UDim2.new(0.5, 0, 1, target_y),
@@ -106,15 +66,15 @@ local function update_stack_positions()
 end
 
 local function register_hint(hint_obj: Hint)
-	table.insert(hint_stack.hints, hint_obj)
+	table.insert(snackbar_stack.hints, hint_obj)
 	update_stack_positions()
 end
 
 local function unregister_hint(hint_obj: Hint)
-	local i = table.find(hint_stack.hints, hint_obj)
+	local i = table.find(snackbar_stack.hints, hint_obj)
 
 	if i then
-		table.remove(hint_stack.hints, i)
+		table.remove(snackbar_stack.hints, i)
 		update_stack_positions()
 	end
 end
@@ -142,7 +102,7 @@ end
 function module.new()
 	local self = setmetatable({}, module)
 
-	self.hint = createHint(hint_gui.CanvasGroup)
+	self.hint = pool:Get()
 	self.Clicked = SignalPlus()
 	self.CanClick = observer.new(false)
 	self.expiry = 4
@@ -184,7 +144,7 @@ function module.new()
 
 	self.Clicked:Connect(function()
 		future.Try(function()
-			self.hint.Parent = hint_gui
+			self.hint.Parent = snackbar_gui
 
 			spr.target(self.hint, 1, 0.9, {
 				BackgroundTransparency = 1,
@@ -198,7 +158,7 @@ function module.new()
 
 	task.delay(self.expiry, function()
 		future.Try(function()
-			self.hint.Parent = hint_gui -- i wont explain
+			self.hint.Parent = snackbar_gui -- i wont explain
 
 			spr.target(self.hint, 1, 0.9, {
 				BackgroundTransparency = 1,
@@ -264,7 +224,7 @@ end
 function module.Render(self: Hint)
 	-- auto-renders
 
-	self.hint.Parent = hint_gui.CanvasGroup
+	self.hint.Parent = snackbar_gui.CanvasGroup
 
 	register_hint(self)
 

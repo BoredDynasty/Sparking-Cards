@@ -9,9 +9,11 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- just for applying glove models to the player character
 
+local assets = ReplicatedStorage.Assets
+
 local module = {
-	gloveL = fetchAsset("GloveL") :: MeshPart,
-	gloveR = fetchAsset("GloveR") :: MeshPart,
+	gloveL = assets.GloveL,
+	gloveR = assets.GloveR,
 }
 
 -- note: we are using R6

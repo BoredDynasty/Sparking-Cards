@@ -56,10 +56,8 @@ function module.new()
 
 	hydration(self.bar) {
 		Adornee = self.adornee,
-	}
-
-	hydration(self.bar.Frame) {
 		ExtentsOffset = self.padding,
+		Parent = self.adornee,
 	}
 
 	self._trove:Add(self.adornee)
@@ -90,7 +88,9 @@ function module.new()
 end
 
 function module:SetAdornee(self: self, adornee: Instance)
-	self.adornee:Set(adornee)
+	if adornee then
+		self.adornee:Set(adornee)
+	end
 end
 
 function module:SetValue(self: self, value: number)

@@ -4,8 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
 local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
-local Cryo = require(ReplicatedStorage.Combat.framework.attacks.Cryo)
-local Pyro = require(ReplicatedStorage.Combat.framework.attacks.Pyro)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
 local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
@@ -29,10 +27,7 @@ local orion = {
 
 local player_data = {}
 
-local attack_modules = {
-	["Cryo"] = Cryo,
-	["Pyro"] = Pyro,
-}
+local attack_modules = {}
 
 local events = ReplicatedStorage.Events
 
@@ -64,10 +59,13 @@ local function expectProfile(): typemarshaller.Profile
 end
 
 --[[
-	Should be ran on the client side.
+	Initializes orion for a player.
+	Should be ran on both client and server.
 ]]
 function orion.new(player: Player, profile: typemarshaller.Profile)
-	profile = profile or expectProfile()
+	if RunService:IsClient() then
+		profile = profile or expectProfile()
+	end
 
 	local equipped_card = "Pyro"
 	if profile and profile.Data then
@@ -122,6 +120,18 @@ function orion:Execute(
 	attack_type: typemarshaller.AttackType,
 	parameters: typemarshaller.OrionParameters
 )
+	if RunService:IsClient() then
+		if not parameters then
+			parameters = {
+				mouse_position = player:GetMouse().Hit,
+				player_data = orion:GetPlayerData(player),
+			}
+		end
+
+		events.Orion.Execute:FireServer(attack_type, parameters)
+		-- We still execute on client for responsiveness (Visuals etc)
+	end
+
 	local attack_module = nil
 
 	local data = orion:GetPlayerData(player)
@@ -185,6 +195,13 @@ end
 	@return The attack module, or nil if not found
 ]]
 function orion:GetAttackModule(card_name: string): typemarshaller.AttackModule
+	if not attack_modules[card_name] then
+		local module_script = orion.framework.attacks:FindFirstChild(card_name)
+		if module_script and module_script:IsA("ModuleScript") then
+			attack_modules[card_name] = require(module_script)
+		end
+	end
+
 	return attack_modules[card_name]
 end
 
@@ -208,6 +225,16 @@ function orion:ReconcileElement(
 end
 
 -- events
+
+if RunService:IsServer() then
+	events.Orion.Execute.OnServerEvent:Connect(function(player, attack_type, parameters)
+		-- Ensure parameters is a table and update with authoritative server data
+		parameters = parameters or {}
+		parameters.player_data = orion:GetPlayerData(player)
+
+		orion:Execute(player, attack_type, parameters)
+	end)
+end
 
 events.Orion.ReconcileElement.OnInvoke = function(player, style, ...)
 	return orion:ReconcileElement(player, style, ...)

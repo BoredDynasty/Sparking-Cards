@@ -30,7 +30,7 @@ local function isObserver(value)
 end
 
 local function safeSetProperty<a, b>(instance: { [a]: b }, key: a, value: b)
-	return future.new(function(...)
+	return future.Try(function(...)
 		instance[key] = value
 	end)
 end

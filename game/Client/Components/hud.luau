@@ -4,8 +4,11 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
+local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local future = require(ReplicatedStorage.Packages.future)
+local input = require(ReplicatedStorage.Packages.input)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -23,6 +26,16 @@ module.buttons = {} :: { Button }
 
 local global_ratelimit = ratelimit(1, 2.5)
 
+local pool = PoolerPlus:CreatePool("HudPool", function()
+	local templates = ReplicatedStorage.Interfaces
+
+	return templates.HudButton:Clone()
+end)
+
+local mouse = input.Mouse.new()
+
+pool:AdaptivePreload()
+
 export type Button = {
 	name: string,
 	callback: () -> (),
@@ -30,10 +43,11 @@ export type Button = {
 	reactor: observer.Observer<boolean>,
 	limit: ratelimit.Ratelimit<string>,
 	hover_limit: ratelimit.Ratelimit<string>,
-	icon_only: boolean,
+	text_button: typeof(pool:Get()),
+	is_large: boolean,
 }
 
-function module.new(name: string, callback: () -> (), icon: typemarshaller.LucideIcon, icon_only: boolean?)
+function module.new(name: string, callback: () -> (), icon: typemarshaller.LucideIcon, is_large: boolean)
 	local button = {
 		name = name,
 		callback = callback,
@@ -41,22 +55,30 @@ function module.new(name: string, callback: () -> (), icon: typemarshaller.Lucid
 		reactor = observer.new(false) :: observer.Observer<boolean>,
 		limit = ratelimit(1, 0.5) :: ratelimit.Ratelimit<string>,
 		hover_limit = ratelimit(1, 0.9) :: ratelimit.Ratelimit<string>,
-		icon_only = icon_only or false,
+		text_button = pool:Get(),
+		is_large = is_large,
 	}
 
 	table.insert(module.buttons, button)
 end
 
-function module:Render()
-	local hudContainer = player.PlayerGui.Hud
-	local hudBackground = hudContainer.Background
+local hud_container = player.PlayerGui.Hud
+local hud_background = hud_container.Background
 
-	for _, button in ipairs(hudContainer:GetChildren()) do
+function module:Render()
+	for _, button in ipairs(hud_container:GetChildren()) do
 		local attribute = button:GetAttribute("NonDestroyable")
 		if button:IsA("TextButton") and not attribute then
 			button:Destroy() -- Clear existing buttons
 		end
 	end
+
+	-- sort the table from how big the buttons are
+	-- smallest to biggest
+
+	table.sort(module.buttons, function(a: Button, b: Button)
+		return (a.is_large and 1 or 0) < (b.is_large and 1 or 0)
+	end)
 
 	for _, button: Button in ipairs(module.buttons) do
 		--print("Rendering button:", button.name)
@@ -65,50 +87,26 @@ function module:Render()
 
 		local icon = button.icon and button.icon.IconName or "file"
 
-		local TextButton = Instance.new("TextButton")
-		local UICorner = Instance.new("UICorner")
-		local Icon = Instance.new("ImageLabel")
-		local UIAspectRatioConstraint = Instance.new("UIAspectRatioConstraint")
+		local text_button = button.text_button
+		local ui_corner = text_button.UICorner
+		local icon_image = text_button.ImageLabel
 
 		--Properties:
 
-		TextButton.Parent = hudBackground
-		TextButton.Name = button.name
-		TextButton.AnchorPoint = Vector2.new(0.5, 0.5)
-		TextButton.BackgroundColor3 = Color3.fromHex("#1a110f")
-		TextButton.BorderSizePixel = 0
-		TextButton.Size = UDim2.fromScale(0.35, 0.7)
-		TextButton.Font = Enum.Font.Gotham
-		TextButton.TextColor3 = Color3.fromHex("ffb5a0")
-		TextButton.TextSize = 14
+		text_button.Parent = hud_background
+		text_button.Name = button.name
 
-		UICorner.CornerRadius = UDim.new(1, 0)
-		UICorner.Parent = TextButton
+		text_button.AutoButtonColor = false
 
-		Icon.Name = "Icon"
-		Icon.Parent = TextButton
-		Icon.AnchorPoint = Vector2.new(if button.name then 1 else 0.5, 0.5)
-		Icon.BackgroundTransparency = 1
-		Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
-		Icon.Size = UDim2.fromScale(0.40, 0.40)
+		icon_image.Position = UDim2.fromScale(0.5, 0.5)
+		icon_image.AnchorPoint = Vector2.one / 2
+
+		local default_corner = ui_corner.CornerRadius
 
 		task.spawn(function()
-			if button.icon_only then
-				-- make the TextButton width smaller.
-				TextButton.Size = UDim2.fromScale(0.2, 0.7)
-				TextButton.Text = ""
-				Icon.Position = UDim2.fromScale(0.5, 0.5)
-			else
-				TextButton.RichText = true
-
-				-- set icon adjacent to text
-
-				TextButton.Text = button.name
-
-				local text_bounds = TextButton.TextBounds
-				local offset = 10
-
-				Icon.Position = UDim2.new(0.5, (-text_bounds.X / 2) - offset, 0.5, 0)
+			if button.is_large then
+				-- make the TextButton width larger.
+				text_button.Size = UDim2.fromScale(0.077, 1.036)
 			end
 		end)
 
@@ -116,18 +114,15 @@ function module:Render()
 			local ok, default_icon = future.Try(lucide.GetAsset, icon, 256 * 2):Await()
 
 			if ok then
-				Icon.ImageRectOffset = default_icon.ImageRectOffset
-				Icon.ImageRectSize = default_icon.ImageRectSize
-				Icon.Image = default_icon.Url
-				Icon.ImageColor3 = Color3.fromHex("ffb5a0")
-
-				UIAspectRatioConstraint.Parent = Icon
+				icon_image.ImageRectOffset = default_icon.ImageRectOffset
+				icon_image.ImageRectSize = default_icon.ImageRectSize
+				icon_image.Image = default_icon.Url
 			else
 				warn("Failed to fetch asset!")
 			end
 		end)
 
-		TextButton.MouseButton1Click:Connect(function()
+		text_button.MouseButton1Click:Connect(function()
 			if not button.limit(button.name) or not global_ratelimit() then
 				return
 			end
@@ -137,33 +132,87 @@ function module:Render()
 			end)
 		end)
 
-		local default_size = TextButton.Size or UDim2.fromScale(0.35, 0.7)
+		local default_size = text_button.Size
+		local default_color = text_button.BackgroundColor3
 
-		TextButton.MouseEnter:Connect(function()
+		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
+
+		text_button.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
 				return
 			end
 
-			wiggle(Icon)
+			wiggle(icon_image)
 
 			-- mouse hover effect
-			spr.stop(TextButton, "Size")
-			spr.stop(TextButton, "BackgroundColor3")
-			spr.target(TextButton, 0.8, 8, {
-				BackgroundColor3 = Color3.fromHex("#342522"),
-				Size = UDim2.fromScale(0.385, 0.77),
+			spr.stop(text_button, "Size")
+			spr.stop(text_button, "BackgroundColor3")
+			spr.target(text_button, 0.8, 8, {
+				BackgroundColor3 = lighter_color,
 			})
 			audio:PlaySFX("hover")
 		end)
 
-		TextButton.MouseLeave:Connect(function()
-			spr.stop(TextButton, "Size")
-			spr.stop(TextButton, "BackgroundColor3")
-			spr.target(TextButton, 0.8, 8, {
-				BackgroundColor3 = Color3.fromHex("#1a110f"),
-				Size = default_size,
+		text_button.MouseLeave:Connect(function()
+			spr.stop(text_button, "Size")
+			spr.stop(text_button, "BackgroundColor3")
+			spr.target(text_button, 0.8, 8, {
+				BackgroundColor3 = default_color,
 			})
 			audio:PlaySFX("leave")
+		end)
+
+		mouse.LeftDown:Connect(function()
+			local size, position = text_button.AbsoluteSize, text_button.AbsolutePosition
+			local is_within_button = bounds.inner(position, size, mouse:GetPosition())
+
+			--print("inner: ", is_within_button)
+
+			if not is_within_button then
+				return
+			end
+
+			-- "pop" the UICorner
+			-- "pop" the horizontal size of the button a bit
+			-- darken the color of the button a bit
+
+			spr.stop(ui_corner)
+			spr.target(ui_corner, 0.3, 8, {
+				CornerRadius = UDim.new(1 / 8, 0), -- 0.125
+			})
+
+			spr.stop(text_button, "BackgroundColor3")
+			spr.stop(text_button, "Size")
+			spr.target(text_button, 0.3, 8, {
+				Size = default_size + UDim2.fromOffset(10, 0),
+				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+			})
+		end)
+
+		mouse.LeftUp:Connect(function()
+			local size, position = text_button.AbsoluteSize, text_button.AbsolutePosition
+			local is_within_button = bounds.inner(position, size, mouse:GetPosition())
+
+			--print("inner: ", is_within_button)
+
+			if not is_within_button then
+				return
+			end
+
+			-- revert the "pop" of the UICorner and button size
+			-- and the color of the button
+
+			spr.stop(ui_corner)
+			spr.target(ui_corner, 0.3, 8, {
+				CornerRadius = default_corner,
+			})
+
+			spr.stop(text_button, "Size")
+			spr.stop(text_button, "BackgroundColor3")
+			spr.target(text_button, 0.3, 8, {
+				Size = default_size,
+				BackgroundColor3 = default_color,
+			})
 		end)
 
 		button.reactor:Watch(function(newValue: boolean)
@@ -178,19 +227,19 @@ function module:Render()
 			-- tilt the icon
 			-- button size
 			if newValue then
-				spr.stop(Icon)
-				spr.target(Icon, 0.35, 8, {
+				spr.stop(icon_image)
+				spr.target(icon_image, 0.35, 8, {
 					Rotation = 15,
 				})
 			else
-				spr.stop(Icon)
-				spr.target(Icon, 0.35, 8, {
+				spr.stop(icon_image)
+				spr.target(icon_image, 0.35, 8, {
 					Rotation = 0,
 				})
 			end
 		end)
 
-		shadow(TextButton)
+		shadow(text_button, Color3.new(), 0.5)
 	end
 end
 
@@ -230,35 +279,52 @@ function module:Clear()
 		module.buttons[i] = nil
 	end
 
-	local hudContainer = player.PlayerGui.Hud
-
-	for _, button in ipairs(hudContainer:GetChildren()) do
+	for _, button in ipairs(hud_container:GetChildren()) do
 		if button:IsA("TextButton") then
 			button:Destroy() -- Clear existing buttons
 		end
 	end
 end
 
-function module:Hide()
-	local hudContainer = player.PlayerGui.Hud
-	hudContainer.Enabled = false
+local ui_scale = Instance.new("UIScale")
+ui_scale.Parent = hud_container
+ui_scale.Scale = 1
 
-	local hudBackground = hudContainer.Background
-	spr.stop(hudBackground)
-	spr.target(hudBackground, 0.5, 8, {
-		BackgroundTransparency = 1,
+function module:Hide()
+	spr.stop(ui_scale)
+	spr.stop(hud_background, "Position")
+
+	spr.target(ui_scale, 0.4, 1.5, {
+		Scale = 1.25,
 	})
+
+	spr.target(hud_background, 0.5, 0.8, {
+		Position = UDim2.fromScale(0.472, 2),
+	})
+
+	spr.completed(hud_background, function()
+		hud_background.Visible = false
+	end)
 end
 
 function module:Show()
-	local hudContainer = player.PlayerGui.Hud
-	hudContainer.Enabled = true
+	hud_container.Enabled = true
+	hud_background.Position = UDim2.fromScale(0.472, 2)
 
-	local hudBackground = hudContainer.Background
-	spr.stop(hudBackground)
-	spr.target(hudBackground, 0.5, 8, {
-		BackgroundTransparency = 0,
+	ui_scale.Scale = 1.25
+	spr.stop(ui_scale)
+	spr.target(ui_scale, 0.5, 1.5, {
+		Scale = 1,
 	})
+
+	spr.stop(hud_background)
+	spr.target(hud_background, 0.8, 3.5, {
+		Position = UDim2.fromScale(0.472, 0.922),
+	})
+end
+
+function module:IsVisible()
+	return hud_background.Visible
 end
 
 return module

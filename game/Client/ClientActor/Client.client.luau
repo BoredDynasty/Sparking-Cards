@@ -113,10 +113,12 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
 
 local RankStructure = require(ReplicatedStorage.Structures.RankStructure)
+local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
 local trove = require(ReplicatedStorage.Packages.trove)
 
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
+local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 local keyboard = input.Keyboard.new()
@@ -165,7 +167,8 @@ end
 local PlayerGui = player.PlayerGui
 
 logger.new()
-glove:Apply(character)
+
+task.spawn(glove.Apply, glove, character)
 
 print("client starting")
 
@@ -177,6 +180,20 @@ local function initializeCommands()
 	Cmdr:SetPlaceName("Sparking Cards Lobby")
 	Cmdr:SetActivationUnlocksMouse(true)
 	Cmdr:SetHideOnLostFocus(false)
+
+	local function showUI()
+		Cmdr:Show()
+	end
+
+	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
+		task.delay(15, function()
+			local snack_bar = hint.new()
+			snack_bar:SetText("Welcome, Developer. Press the '=' symbol to open Cmdr.")
+			snack_bar:SetAction(showUI, "Open")
+			snack_bar:SetCanDismiss(false)
+			snack_bar:SetCanClick(true)
+		end)
+	end
 end
 
 local function initializeAudio()
@@ -408,7 +425,7 @@ local function initializeMatchmaking()
 		end
 	end)
 
-	hud.new("Play", showMatchmakingFrame, lucide.GetAsset("play-circle"))
+	hud.new("Play", showMatchmakingFrame, lucide.GetAsset("play"), true)
 end
 local function initializeBadges()
 	--print("init badges")
@@ -667,9 +684,12 @@ local function initializeSpectating()
 
 		profile = expectProfile()
 
-		local keybind = profile.Data.keybinds.enable_spectating
-		if not keybind then
+		local keybind = nil
+
+		if not profile then
 			keybind = profilestructure.keybinds.enable_spectating
+		else
+			keybind = profile.Data.keybinds.enable_spectating
 		end
 
 		keybind = Enum.KeyCode:FromValue(keybind)
@@ -680,9 +700,11 @@ local function initializeSpectating()
 		end
 
 		if spectate:IsSpectating() then
+			hud:Show()
 			spectate:Stop()
 		else
 			spectate:On()
+			hud:Hide()
 		end
 	end)
 end
@@ -716,6 +738,12 @@ movement_controller:Start()
 
 -- control
 
+profile = expectProfile()
+
+if profile then
+	orion.new(player, profile)
+end
+
 local function getAttackTypeFromKey(key: Enum.KeyCode)
 	-- profile = yoink.client:grab("profile_data")
 	profile = expectProfile()
@@ -740,10 +768,10 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 	if attack_type then
 		orion:Execute(player, attack_type)
 
-		hud:Hide()
+		--hud:Hide()
 	end
 end)
-
+--[[
 keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
 	if processed then
 		return
@@ -753,7 +781,7 @@ keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
 
 	hud:Show()
 end)
-
+--]]
 mouse.LeftDown:Connect(function(processed: boolean)
 	if processed then
 		return
@@ -762,9 +790,9 @@ mouse.LeftDown:Connect(function(processed: boolean)
 	local attack_type = "M1"
 	orion:Execute(player, attack_type)
 
-	hud:Hide()
+	--hud:Hide()
 end)
-
+--[[
 mouse.LeftUp:Connect(function(processed: boolean)
 	if processed then
 		return
@@ -772,7 +800,7 @@ mouse.LeftUp:Connect(function(processed: boolean)
 
 	hud:Show()
 end)
-
+--]]
 humanoid.HealthChanged:Connect(function(health)
 	local minimum_health = 20
 
@@ -784,6 +812,29 @@ humanoid.HealthChanged:Connect(function(health)
 		end
 	end)
 end)
+
+--[[
+-- new scope
+do
+	-- hud bounds
+	local size = Vector2.new(1011, 77 + (1 / 2))
+	local position = Vector2.new(-0.5, 859 + (1 / 4))
+
+	mouse.Moved:Connect(function(mouse_position: Vector2)
+		if not mouse_position then
+			return
+		end
+
+		local is_inside = bounds.inner(position, size, mouse_position)
+
+		if not is_inside then
+			return
+		end
+
+		hud:Show()
+	end)
+end
+--]]
 
 -- over_shoulder:Enable()
 

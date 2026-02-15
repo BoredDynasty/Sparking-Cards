@@ -4,6 +4,20 @@
 
 -- specifically for drop shadows
 
+--[[
+	```luau
+
+	-- usage
+
+	local shadow = require(path.to.shadow)
+
+	local gui = path.to.gui
+
+	shadow(gui, Color3.new(), 0, 14) -- default values.
+
+	-- runs along the main thread (task.spawn)
+	```
+]]
 return function(parent: Instance, color: Color3?, transparency: number?, spread: number?)
 	color = color or Color3.new() :: Color3
 	transparency = transparency or 0 :: number

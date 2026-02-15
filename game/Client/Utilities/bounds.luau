@@ -9,10 +9,10 @@ local bounds_module = {}
 
    @param position The top-left position of the bounds (Vector2).
    @param size The size of the bounds (Vector2).
-   @param mousePos The mouse position (Vector3).
+   @param mousePos The mouse position (Vector2).
    @return boolean True if the mouse is outside the bounds, false otherwise.
 ]]
-function bounds_module.outer(position: Vector2, size: Vector2, mousePos: Vector3)
+function bounds_module.outer(position: Vector2, size: Vector2, mousePos: Vector2)
 	if not position or not size or not mousePos then
 		return false
 	end
@@ -36,10 +36,10 @@ end
 
    @param position The top-left position of the bounds (Vector2).
    @param size The size of the bounds (Vector2).
-   @param mousePos The mouse position (Vector3).
+   @param mousePos The mouse position (Vector2).
    @return boolean True if the mouse is inside the bounds, false otherwise.
 ]]
-function bounds_module.inner(position: Vector2, size: Vector2, mousePos: Vector3)
+function bounds_module.inner(position: Vector2, size: Vector2, mousePos: Vector2)
 	if not position or not size or not mousePos then
 		return false
 	end

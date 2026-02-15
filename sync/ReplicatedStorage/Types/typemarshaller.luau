@@ -275,7 +275,7 @@ export type MatchmakerModule = {
 }
 
 export type OrionParameters = {
-	mouse_postion: Vector2?,
+	mouse_position: Vector2 | CFrame | nil,
 	player_data: PlayerData?,
 }
 

@@ -4,6 +4,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 
 local future = require(ReplicatedStorage.Packages.future)
@@ -21,101 +22,143 @@ local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
-local hint_gui = playerGui.Dialog
+local snackbar_gui = playerGui.Snackbar
 
 local module = {}
 module.__index = module
 
 local disallowed_whitespace = { "\n", "\r", "\t", "\v", "\f" }
 
--- Stack manager to track and position hints
-local hint_stack = {
-	hints = {} :: { Hint },
+-- Queue manager for hints - only one active at a time
+local snackbar_queue = {
+	active = nil :: Hint?,
+	incoming = {} :: { Hint },
 }
 
-type Hint = setmetatable<{
-	hint: TextButton,
-	Clicked: SignalPlus.Signal<>,
-	CanClick: observer.Observer<boolean>,
-	expiry: number,
-	dismissable: boolean,
-	swipe_detector: swipe.SwipeDetector,
-}, typeof(module.new())>
+local pool = PoolerPlus:CreatePool("HintPool", function()
+	local templates = ReplicatedStorage.Interfaces
 
-local function createHint(ancestor: Instance?)
-	local Instances = {
-		Hint = Instance.new("TextButton"),
-		TextStroke = Instance.new("UIStroke"),
-		BorderStroke = Instance.new("UIStroke"),
-		HintCorner = Instance.new("UICorner"),
-		TextPadding = Instance.new("UIPadding"),
-	}
+	return templates.Snackbar:Clone()
+end)
 
-	Instances.Hint.Name = "Hint"
-	Instances.Hint.Active = false
-	Instances.Hint.AnchorPoint = Vector2.new(0.5, 0.5)
-	Instances.Hint.AutomaticSize = Enum.AutomaticSize.X
-	Instances.Hint.Size = UDim2.new(0, 0, 0, 30)
-	Instances.Hint.BorderColor3 = Color3.fromRGB(27, 42, 53)
-	Instances.Hint.Selectable = false
-	Instances.Hint.BackgroundTransparency = 0.5
-	Instances.Hint.BorderSizePixel = 0
-	Instances.Hint.BackgroundColor3 = Color3.fromRGB(25, 27, 29)
-	Instances.Hint.FontFace =
-		Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Regular, Enum.FontStyle.Normal)
-	Instances.Hint.TextTransparency = 1
-	Instances.Hint.TextColor3 = Color3.fromRGB(255, 255, 255)
-	Instances.Hint.Text = "hint loading"
-	Instances.Hint.Parent = ancestor
-	Instances.Hint.TextSize = 17
-	Instances.Hint.Position = UDim2.fromScale(0.5, 1.5)
+type Snackbar = setmetatable<
+	{
+		hint: typeof(pool:Get()),
+		Clicked: SignalPlus.Signal<>,
+		CanClick: observer.Observer<boolean>,
+		action_info: {
+			name: string?,
+			fn: () -> (),
+		}?,
+		expiry: number,
+		dismissable: boolean,
+		--swipe_detector: swipe.SwipeDetector,
+	},
+	typeof(module.new())
+>
 
-	Instances.TextStroke.Name = "TextStroke"
-	Instances.TextStroke.Thickness = 0
-	Instances.TextStroke.Transparency = 1
-	Instances.TextStroke.Parent = Instances.Hint
+local function show_hint(snackbar_obj: Snackbar)
+	-- animate in with pop effect
+	local scale = snackbar_obj.hint:FindFirstChild("ui_scale", true) :: UIScale?
 
-	Instances.BorderStroke.Name = "BorderStroke"
-	Instances.BorderStroke.Thickness = 0
-	Instances.BorderStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
-	Instances.BorderStroke.Transparency = 1
-	Instances.BorderStroke.Parent = Instances.Hint
-
-	Instances.HintCorner.Name = "HintCorner"
-	Instances.HintCorner.CornerRadius = UDim.new(0.22, 0)
-	Instances.HintCorner.Parent = Instances.Hint
-
-	Instances.TextPadding.Name = "TextPadding"
-	Instances.TextPadding.PaddingLeft = UDim.new(0, 11)
-	Instances.TextPadding.PaddingRight = UDim.new(0, 11)
-	Instances.TextPadding.Parent = Instances.Hint
-
-	return Instances.Hint
-end
-
-local function update_stack_positions()
-	local base_y = -85
-	local spacing = 45
-
-	for i, hint_obj in ipairs(hint_stack.hints) do
-		local target_y = base_y - (i - 1) * spacing
-		spr.target(hint_obj.hint, 0.9, 0.9, {
-			Position = UDim2.new(0.5, 0, 1, target_y),
-		})
+	if not scale then
+		-- create scale if it doesn't exist
+		scale = Instance.new("UIScale")
+		scale.Name = "ui_scale"
+		scale.Scale = 1
+		scale.Parent = snackbar_obj.hint
 	end
+
+	-- pop effect: start bigger
+	scale.Scale = 1.25
+
+	-- start below screen
+	snackbar_obj.hint.Position = UDim2.fromScale(0.5, 1.2)
+	snackbar_obj.hint.Visible = true
+
+	spr.stop(scale)
+	spr.stop(snackbar_obj.hint, "Position")
+
+	-- scale back to 1
+	spr.target(scale, 0.5, 1.5, {
+		Scale = 1,
+	})
+
+	-- animate up to center-bottom
+	spr.target(snackbar_obj.hint, 0.8, 3.5, {
+		Position = UDim2.new(0.5, 0, 1, -85),
+	})
 end
 
-local function register_hint(hint_obj: Hint)
-	table.insert(hint_stack.hints, hint_obj)
-	update_stack_positions()
+local function hide_snackbar(snackbar_obj: Snackbar, on_complete: () -> ())
+	-- animate out with pop effect
+	local scale = snackbar_obj.hint:FindFirstChild("ui_scale", true) :: UIScale?
+
+	if not scale then
+		on_complete()
+		return
+	end
+
+	spr.stop(scale)
+	spr.stop(snackbar_obj.hint, "Position")
+
+	-- pop effect: scale up
+	spr.target(scale, 0.4, 1.5, {
+		Scale = 1.25,
+	})
+
+	-- animate down below screen
+	spr.target(snackbar_obj.hint, 0.5, 0.8, {
+		Position = UDim2.fromScale(0.5, 1.5),
+	})
+
+	spr.completed(snackbar_obj.hint, function()
+		if snackbar_obj.hint then
+			snackbar_obj.hint.Visible = false
+		end
+		on_complete()
+	end)
 end
 
-local function unregister_hint(hint_obj: Hint)
-	local i = table.find(hint_stack.hints, hint_obj)
+local function process_queue()
+	-- sort the table from how much text there is, longest to shortest
+	table.sort(snackbar_queue.incoming, function(a: Snackbar, b: Snackbar)
+		return string.len(a.hint.TextLabel.Text) > string.len(b.hint.TextLabel.Text)
+	end)
 
-	if i then
-		table.remove(hint_stack.hints, i)
-		update_stack_positions()
+	-- if active hint exists, don't process
+	if snackbar_queue.active then
+		return
+	end
+
+	-- if no incoming hints, stop
+	if #snackbar_queue.incoming == 0 then
+		return
+	end
+
+	-- move first incoming to active
+	local next_hint = table.remove(snackbar_queue.incoming, 1)
+	snackbar_queue.active = next_hint
+
+	show_hint(next_hint)
+end
+
+local function enqueue_hint(snackbar_obj: Snackbar)
+	table.insert(snackbar_queue.incoming, snackbar_obj)
+
+	process_queue()
+end
+
+local function dequeue_hint(snackbar_obj: Snackbar)
+	if snackbar_queue.active == snackbar_obj then
+		snackbar_queue.active = nil
+
+		process_queue()
+	else
+		local i = table.find(snackbar_queue.incoming, snackbar_obj)
+		if i then
+			table.remove(snackbar_queue.incoming, i)
+		end
 	end
 end
 
@@ -133,7 +176,6 @@ end
 
 	-- it auto renders and cleans up by itself.
 	-- pretty neat, huh?
-	-- is also chainable
 
 	print("new hint!")
 
@@ -142,24 +184,23 @@ end
 function module.new()
 	local self = setmetatable({}, module)
 
-	self.hint = createHint(hint_gui.CanvasGroup)
+	self.hint = pool:Get()
 	self.Clicked = SignalPlus()
 	self.CanClick = observer.new(false)
 	self.expiry = 4
 	self.dismissable = true
-	self.swipe_detector = swipe.new(self.hint)
+	--self.swipe_detector = swipe.new(self.hint)
+	self.action_info = nil
+
+	local action_button = self.hint.ActionHolder.ActionButton
+	local exit_button = self.hint.ActionHolder.Exit
 
 	self.CanClick:Watch(function(new)
 		future.Try(function()
 			self.hint.Interactable = new
-		end)
-	end)
+			action_button.Interactable = new
 
-	self.hint.Activated:Connect(function()
-		future.Try(function()
-			self.Clicked:Fire()
-
-			pop(self.hint, 1 / 8)
+			action_button.Visible = new
 		end)
 	end)
 
@@ -167,53 +208,38 @@ function module.new()
 		self:Render()
 	end)
 
-	self.swipe_detector.OnSwipe:Connect(function(direction, delta)
+	action_button.Visible = self.CanClick:Get()
+
+	action_button.Activated:Connect(function()
 		future.Try(function()
-			spr.target(self.hint, 0.5, 0.9, {
-				Position = UDim2.fromOffset(delta.X, delta.Y),
-			})
-			if direction == "up" then
-				if self.dismissable then
-					self:Destroy()
-				end
-			else
-				update_stack_positions()
+			if not self.action_info then
+				return
 			end
+
+			task.spawn(self.action_info.fn)
 		end)
+	end)
+
+	exit_button.Activated:Connect(function()
+		if not self.dismissable then
+			return
+		end
+
+		self:Dismiss()
 	end)
 
 	self.Clicked:Connect(function()
-		future.Try(function()
-			self.hint.Parent = hint_gui
-
-			spr.target(self.hint, 1, 0.9, {
-				BackgroundTransparency = 1,
-				TextTransparency = 1,
-			})
-			spr.completed(self.hint, function()
-				self:Destroy()
-			end)
-		end)
+		self:Dismiss()
 	end)
 
 	task.delay(self.expiry, function()
-		future.Try(function()
-			self.hint.Parent = hint_gui -- i wont explain
-
-			spr.target(self.hint, 1, 0.9, {
-				BackgroundTransparency = 1,
-				TextTransparency = 1,
-			})
-			spr.completed(self.hint, function()
-				self:Destroy()
-			end)
-		end)
+		self:Dismiss()
 	end)
 
 	return self
 end
 
-function module.SetText(self: Hint, text: string, translate_text: boolean?)
+function module.SetText(self: Snackbar, text: string, translate_text: boolean?)
 	text = text or ""
 	translate_text = translate_text or true
 
@@ -224,13 +250,26 @@ function module.SetText(self: Hint, text: string, translate_text: boolean?)
 	end
 
 	future.Try(function()
-		self.hint.Text = text
+		self.hint.TextLabel.Text = text
 	end)
 
 	return self
 end
 
-function module.SetExpiry(self: Hint, expiry: number)
+function module.SetAction(self: Snackbar, fn: () -> (), name: string?)
+	local action_button = self.hint.ActionHolder.ActionButton
+
+	action_button.Text = name or "Action"
+
+	future.Try(function()
+		self.action_info = {
+			name = name,
+			fn = fn,
+		}
+	end)
+end
+
+function module.SetExpiry(self: Snackbar, expiry: number)
 	future.Try(function()
 		self.expiry = expiry
 	end)
@@ -238,7 +277,7 @@ function module.SetExpiry(self: Hint, expiry: number)
 	return self
 end
 
-function module.SetCanClick(self: Hint, enabled: boolean)
+function module.SetCanClick(self: Snackbar, enabled: boolean)
 	-- note: dont put this into one line :sob:
 
 	future.Try(function()
@@ -248,29 +287,47 @@ function module.SetCanClick(self: Hint, enabled: boolean)
 	return self
 end
 
-function module.Destroy(self: Hint)
+function module.SetCanDismiss(self: Snackbar, enabled: boolean)
+	future.Try(function()
+		self.dismissable = enabled
+
+		self.hint.ActionHolder.Exit.Visible = enabled
+	end)
+end
+
+function module.Dismiss(self: Snackbar)
+	future.Try(function()
+		self.hint.Parent = snackbar_gui
+
+		hide_snackbar(self, function()
+			if self and self.Destroy then
+				self:Destroy()
+			end
+		end)
+	end)
+end
+
+function module.Destroy(self: Snackbar)
 	spr.stop(self.hint)
 
 	self.CanClick:Destroy()
 	self.Clicked:Destroy()
-	self.hint:Destroy()
 
-	unregister_hint(self)
+	pool:Return(self.hint)
+
+	dequeue_hint(self)
 
 	table.clear(self)
 	setmetatable(self, nil)
 end
 
-function module.Render(self: Hint)
-	-- auto-renders
+function module.Render(self: Snackbar)
+	-- queue the hint for rendering
 
-	self.hint.Parent = hint_gui.CanvasGroup
+	self.hint.Position = UDim2.fromScale(0.5, 1.2) -- below the visible screen
+	self.hint.Parent = snackbar_gui
 
-	register_hint(self)
-
-	spr.target(self.hint, 1, 1.5, {
-		TextTransparency = 0,
-	})
+	enqueue_hint(self)
 end
 
 return module

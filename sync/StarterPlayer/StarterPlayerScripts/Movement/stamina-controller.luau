@@ -32,7 +32,7 @@ character:SetAttribute("Stamina", max_stamina)
 character:SetAttribute("AntiRegenerate", false)
 
 local bar = physical_bar.new()
-bar:SetAdornee(character.PrimaryPart)
+bar:SetAdornee(bar, character.PrimaryPart)
 
 player.CharacterAdded:Connect(function(new_character)
 	if new_character:FindFirstChild("SprintBar") then
@@ -44,7 +44,7 @@ player.CharacterAdded:Connect(function(new_character)
 	end
 
 	bar = physical_bar.new()
-	bar:SetAdornee(character.PrimaryPart)
+	bar:SetAdornee(bar, character.PrimaryPart)
 end)
 
 _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
@@ -57,12 +57,7 @@ _trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
 
 	local scale = UDim2.fromScale(bar_size.X.Scale, bar_size.Y.Scale * percentage)
 
-	local bar_frame = bar:FindFirstChild("Frame") :: Frame
-	local inner_bar = bar_frame:FindFirstChild("Bar") :: Frame
-
-	spr.target(inner_bar, 0.8, 8, {
-		Size = scale,
-	})
+	bar:SetValue(bar, percentage)
 end)
 
 function controller:Update(deltaTime: number)
