@@ -14,18 +14,43 @@ local controller = {}
 
 local player = playerMarshaller.get()
 local character = player.Character or player.CharacterAdded:Wait()
-
-local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
+local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 
 local _trove = trove.new()
 controller._trove = _trove
 
+local character_trove = _trove:Extend()
+
 local _dust = fetchAsset("FootstepDust")
 
-local function onJumpRequest()
-	-- negated the stamina
+local last_jump_drain = 0
 
-	_trove:Connect(UserInputService.JumpRequest, function()
+local function setupCharacter(new_character: Model)
+	character_trove:Clean()
+	character = new_character
+	humanoid = character:WaitForChild("Humanoid") :: Humanoid
+
+	local default_jump_power = humanoid.JumpPower
+	local default_jump_height = humanoid.JumpHeight
+
+	local was_jumping_enabled = humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
+
+	character_trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
+		local current_stamina = character:GetAttribute("Stamina") :: number or 0
+		if current_stamina < MovementConfig.Jump.StaminaCost then
+			humanoid.JumpPower = 0
+			humanoid.JumpHeight = 0
+
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+		else
+			humanoid.JumpPower = default_jump_power
+			humanoid.JumpHeight = default_jump_height
+
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, was_jumping_enabled)
+		end
+	end)
+
+	character_trove:Connect(UserInputService.JumpRequest, function()
 		if humanoid.Health <= 0 then
 			return
 		end
@@ -34,11 +59,12 @@ local function onJumpRequest()
 			return
 		end
 
-		if humanoid:GetState() == Enum.HumanoidStateType.Jumping then
+		if time() - last_jump_drain < 0.2 then
 			return
 		end
 
-		if humanoid:GetState() == Enum.HumanoidStateType.Freefall then
+		local state = humanoid:GetState()
+		if state == Enum.HumanoidStateType.Jumping or state == Enum.HumanoidStateType.Freefall then
 			return
 		end
 
@@ -47,27 +73,14 @@ local function onJumpRequest()
 			return
 		end
 
-		-- TODO) do a camera shake on land
+		last_jump_drain = time()
 
-		humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
-
-		local new_stamina = current_stamina - MovementConfig.Jump.StaminaCost
-
+		-- Apply jump cost
+		local new_stamina = math.max(0, current_stamina - MovementConfig.Jump.StaminaCost)
 		character:SetAttribute("Stamina", new_stamina)
-		character:SetAttribute("AntiRegenerate", false)
-
-		task.delay(0.5, function()
-			if not character then
-				return
-			end
-
-			character:SetAttribute("AntiRegenerate", true)
-		end)
 	end)
-end
 
-local function onLanded()
-	_trove:Connect(humanoid.StateChanged, function(o, new_state)
+	character_trove:Connect(humanoid.StateChanged, function(o, new_state)
 		if new_state ~= Enum.HumanoidStateType.Landed then
 			return
 		end
@@ -105,7 +118,10 @@ local function onLanded()
 	end)
 end
 
-onJumpRequest()
-onLanded()
+if character then
+	setupCharacter(character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
 
 return controller

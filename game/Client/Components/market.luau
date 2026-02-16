@@ -12,6 +12,8 @@ local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
+local lucide = require(ReplicatedStorage.Packages.lucide)
+local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -32,7 +34,6 @@ local shopGui = playerGui.Shop
 local shopCanvas = shopGui.CanvasGroup
 local shopFrame = shopCanvas.Frame
 
-local shopNavigation = shopFrame.Navigation
 local itemHolder = shopFrame.Holder
 local shopFolder = templates.Shop
 local spendings = shopFrame.Spendings
@@ -46,6 +47,27 @@ local limit = ratelimit(1, 0.5)
 local market = {}
 
 shadow(template)
+
+local function expectProfile(): typemarshaller.Profile
+	local fut = future.new(function()
+		return get_profile:InvokeServer() :: typemarshaller.Profile
+	end)
+
+	repeat
+		task.wait(1)
+	--print("pending profile fetch")
+	until not fut:IsPending()
+
+	local result = fut:Unwrap()
+
+	--[[
+	if not result and RunService:IsStudio() then
+		result = { Data = profilestructure }
+	end
+	--]]
+
+	return result
+end
 
 local pool = PoolerPlus:CreatePool("MarketPool", function()
 	return template:Clone()
@@ -79,16 +101,27 @@ function market:DisplaySpendings(profile: typemarshaller.Profile)
 	end
 end
 
-function market:LoadItems(items)
+function market:StartNavigation()
+	local navigation = navigation_rail.new()
+	navigation:Button("Home", lucide.GetAsset("home"), function()
+		-- this is already running along the main thread
+		market:LoadItems()
+	end)
+	navigation:Button("Inventory", lucide.GetAsset("backpack"), function()
+		market:LoadInventory(expectProfile())
+	end)
+
+	navigation:SetActionIcon(lucide.GetAsset("ticket"))
+	navigation:Render()
+end
+
+function market:LoadItems<K, V>(items)
 	pool:ReturnAll()
 
 	items = items or Items
 
-	-- hint.new():SetText("Loading Shop Items..."):SetCanClick(false)
-
 	for i, item in pairs(items) do
 		local template = pool:Get()
-		template.Parent = itemHolder
 		template.Visible = true
 		template:SetAttribute("name_", item.Name)
 
@@ -154,6 +187,8 @@ function market:LoadItems(items)
 
 			audio:PlaySFX("click")
 		end)
+
+		template.Parent = itemHolder
 	end
 
 	--print("done")

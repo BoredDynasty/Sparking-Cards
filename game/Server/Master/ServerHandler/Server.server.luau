@@ -21,6 +21,7 @@ local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local future = require(ReplicatedStorage.Packages.future)
+local log_analytics = require(ReplicatedStorage.Utility["log-analytics"])
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local matchmaker = require(ReplicatedStorage.Modules.matchmaker)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
@@ -65,7 +66,7 @@ if RunService:IsStudio() then
 end
 
 local function loadProfile(player: Player)
-	local profile = retryer.infdelay(1, function(...)
+	local profile = retryer.infdelay(10, function(...)
 		return player_related:StartSessionAsync(`player_{player.UserId}`, {
 			Cancel = function()
 				return player.Parent ~= Players
@@ -145,22 +146,54 @@ local function GetPrisms(player: Player)
 	return profile.prisms
 end
 
-local function AddPrisms(player: Player, amount: number)
+local function AddPrisms(
+	player: Player,
+	amount: number,
+	transaction_type: Enum.AnalyticsEconomyTransactionType,
+	item_name: string?
+)
 	local profile = FetchProfileData(player)
 	if not profile then
 		--print("no profile found to perform action.")
 		return
 	end
+
+	local ending_balance = profile.prisms + amount
+
+	log_analytics.economy(player, {
+		amount = amount,
+		flow_type = Enum.AnalyticsEconomyFlowType.Source,
+		currency_type = "Prisms",
+		ending_balance = ending_balance,
+		transaction_type = transaction_type,
+		item_sku = item_name,
+	})
 
 	profile.prisms += amount
 end
 
-local function DeductPrisms(player: Player, amount: number)
+local function DeductPrisms(
+	player: Player,
+	amount: number,
+	transaction_type: Enum.AnalyticsEconomyTransactionType,
+	item_name: string?
+)
 	local profile = FetchProfileData(player)
 	if not profile then
 		--print("no profile found to perform action.")
 		return
 	end
+
+	local ending_balance = profile.prisms - amount
+
+	log_analytics.economy(player, {
+		amount = amount,
+		flow_type = Enum.AnalyticsEconomyFlowType.Sink,
+		currency_type = "Prisms",
+		ending_balance = ending_balance,
+		transaction_type = transaction_type,
+		item_sku = item_name,
+	})
 
 	profile.prisms -= amount
 end
@@ -210,7 +243,7 @@ print("GameAnalytics is enabled.")
 local gameAnalyticsConfig = {
 	enableInfoLog = false,
 	enableVerboseLog = false,
-	availableResourceCurrencies = { "Prisms" },
+	availableResourceCurrencies = { "Affinity", "Prisms" },
 	build = "0.4.0",
 	availableGamepasses = { "Extra Cards" },
 	automaticSendBusinessEvents = true,
@@ -426,7 +459,7 @@ local function purchaseCard(player: Player, card_name: string)
 
 		local deduct_amount = math.ceil(price) or 1
 
-		DeductPrisms(player, deduct_amount)
+		DeductPrisms(player, deduct_amount, Enum.AnalyticsEconomyTransactionType.Shop, card_name)
 
 		SaveProfileData(player)
 
@@ -456,7 +489,7 @@ local function payPrisms(amount: number, username: string)
 	local player = Players:FindFirstChild(username) :: Player
 	assert(player, "Couldn't fetch player by name: " .. username)
 
-	AddPrisms(player, amount)
+	AddPrisms(player, amount, Enum.AnalyticsEconomyTransactionType.Gameplay)
 
 	local event_parameters = {
 		flowType = GameAnalytics.EGAResourceFlowType.Source,
@@ -515,7 +548,7 @@ local function sellCards(player: Player, card_name: string)
 	local sellPrice = math.floor(Items[i].Price * 0.5)
 
 	-- update profile
-	AddPrisms(player, sellPrice)
+	AddPrisms(player, sellPrice, Enum.AnalyticsEconomyTransactionType.Shop, card_name)
 	DeductCards(player, card_name, 1)
 
 	local event_parameters = {

@@ -3,7 +3,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local compute_level = require(script.Parent["compute-level"])
 local future = require(ReplicatedStorage.Packages.future)
-local promise = require(ReplicatedStorage.Packages.promise)
 
 -- quest-ranking.luau
 

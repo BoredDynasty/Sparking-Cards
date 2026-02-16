@@ -65,12 +65,11 @@ local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["n
 
 local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
 
-local objective = require("../Components/objective")
-
 local observer = require(ReplicatedStorage.Utility.observer)
 
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
+local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
 local tooltip = require("../Components/tooltip")
@@ -82,10 +81,6 @@ local parallax = require("../Interface/parallax")
 local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
 
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-
-local quest = require(ReplicatedStorage.ClientModules.quest)
-
-local quest_ranking = require(ReplicatedStorage.ClientModules["quest-ranking"])
 
 local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
 
@@ -104,7 +99,6 @@ local sway = require("../Interface/sway")
 local swipe = require("../Interface/swipe")
 
 local audio = require(ReplicatedStorage.Modules.audio)
-local tag = require(ReplicatedStorage.Modules.Wrappers.tag)
 
 local throbber = require("../Components/throbber")
 
@@ -223,8 +217,6 @@ local function initializeMarket()
 
 	displayorder.new(shopCanvas)
 
-	local shopNavigation = shopFrame.Navigation
-	local itemHolder = shopFrame.Holder
 	local spendings = shopFrame.Spendings
 
 	local spendings_icon = spendings.SpendingsIcon
@@ -245,39 +237,9 @@ local function initializeMarket()
 		end)
 	end
 
+	market:StartNavigation()
+
 	hud.new("Market", callback, lucide.GetAsset("shopping-cart"))
-
-	local function populateNavigation()
-		-- home, inventory, passive
-		local navi_btns = {
-			{
-				name = "Home",
-				icon = Content.fromAssetId(10723407389),
-				callback = function()
-					task.spawn(market.LoadItems, market)
-				end,
-				holder = shopNavigation,
-			},
-			{
-				name = "Inventory",
-				icon = Content.fromAssetId(10709769841),
-				callback = function()
-					market:LoadInventory(expectProfile())
-				end,
-				holder = shopNavigation,
-			},
-		}
-
-		for i, data in ipairs(navi_btns) do
-			navigation_rail.new(data)
-		end
-
-		navigation_rail:Render()
-
-		shopNavigation.Visible = true
-	end
-
-	task.spawn(populateNavigation)
 end
 local function initializeOptions()
 	--print("init options")
@@ -648,7 +610,7 @@ local function initializeStatistics()
 			holder.Affinity.Text = string.format(fancy_str, "Affinity", profile.Data.affinity)
 			holder.Prisms.Text = string.format(fancy_str, "Prisms", profile.Data.prisms)
 			holder.Victories.Text = string.format(fancy_str, "Victories", profile.Data.victories)
-			holder.Rank.Text = string.format(fancy_str, "Rank", profile.Data.level)
+			--holder.Level.Text = string.format(fancy_str, "Rank", profile.Data.level)
 			holder.LastLogin.Text =
 				string.format(fancy_str, "Last Login", os.date("%Y-%m-%d %H:%M:%S", profile.Data.last_login))
 		end
@@ -724,8 +686,10 @@ initializeSpectating()
 
 hud:Render()
 tooltip:Start()
-camera_controller.new("bobbing", bobbing)
 --motion_blur:On()
+task.delay(15, function()
+	camera_controller.new("bobbing", bobbing)
+end)
 
 movement_controller:Add(script.Parent.Parent.Movement["dash-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
@@ -803,15 +767,23 @@ mouse.LeftUp:Connect(function(processed: boolean)
 	hud:Show()
 end)
 --]]
-humanoid.HealthChanged:Connect(function(health)
-	local minimum_health = 20
 
-	future.Try(function()
-		if health <= minimum_health then
-			health_pulse:On()
-		else
-			health_pulse:Off()
-		end
+local health_bar = physical_bar.new()
+health_bar:SetAdornee(humanoid.RootPart :: BasePart)
+
+local health_thread = nil
+
+humanoid.HealthChanged:Connect(function(health)
+	if health_thread then
+		task.cancel(health_thread)
+	else
+		health_bar:Show()
+	end
+
+	health_bar:SetValue(health)
+
+	health_thread = task.delay(4, function()
+		health_bar:Hide()
 	end)
 end)
 

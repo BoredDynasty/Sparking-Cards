@@ -2,103 +2,146 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
-export type config = {
-	name: string,
-	icon: Content,
-	callback: (boolean | unknown) -> ...unknown,
-	holder: Instance,
-	active: observer.Observer<boolean>,
-}
+-- navigation-rail.luau
+-- all rails must be pre-made
 
 local module = {}
+module.__index = module
 
-module.watching = {} :: { config }
+local navigation_pool = PoolerPlus:CreatePool("NavigationPool", function()
+	local templates = ReplicatedStorage.Interfaces
 
-local function createButton(ancestor: Instance)
-	local Instances = {
-		ButtonTemplate = Instance.new("TextButton"),
-		UICorner = Instance.new("UICorner"),
-		Icon = Instance.new("ImageLabel"),
-		AspectRatio = Instance.new("UIAspectRatioConstraint"),
-		AspectRatio_2 = Instance.new("UIAspectRatioConstraint"),
-	}
+	return templates.NavigationRail:Clone()
+end)
 
-	Instances.ButtonTemplate.Name = "ButtonTemplate"
-	Instances.ButtonTemplate.AnchorPoint = Vector2.new(0.5, 0.5)
-	Instances.ButtonTemplate.Size = UDim2.new(0.88, 0, 0.11, 0)
-	Instances.ButtonTemplate.BorderColor3 = Color3.fromRGB(0, 0, 0)
-	Instances.ButtonTemplate.Position = UDim2.new(0, 25, 0, 25)
-	Instances.ButtonTemplate.BorderSizePixel = 0
-	Instances.ButtonTemplate.BackgroundColor3 = Color3.fromRGB(93, 64, 55)
-	Instances.ButtonTemplate.FontFace = Font.new(
-		"rbxasset://fonts/families/SourceSansPro.json",
-		Enum.FontWeight.Regular,
-		Enum.FontStyle.Normal
-	)
-	Instances.ButtonTemplate.RichText = true
-	Instances.ButtonTemplate.TextColor3 = Color3.fromRGB(0, 0, 0)
-	Instances.ButtonTemplate.Text = ""
-	Instances.ButtonTemplate.Parent = ancestor or ReplicatedStorage
+local button_pool = PoolerPlus:CreatePool("NavigationBtnPool", function()
+	local templates = ReplicatedStorage.Interfaces
 
-	Instances.UICorner.Name = "UICorner"
-	Instances.UICorner.CornerRadius = UDim.new(1, 0)
-	Instances.UICorner.Parent = Instances.ButtonTemplate
+	return templates.NavigationButton:Clone()
+end)
 
-	Instances.Icon.Name = "Icon"
-	Instances.Icon.AnchorPoint = Vector2.new(0.5, 0.5)
-	Instances.Icon.Size = UDim2.new(0.4, 0, 0.4, 0)
-	Instances.Icon.BackgroundTransparency = 1
-	Instances.Icon.Position = UDim2.new(0.5, 0, 0.5, 0)
-	Instances.Icon.ImageColor3 = Color3.fromRGB(255, 219, 209)
-	Instances.Icon.Image = "rbxassetid://10723407389"
-	Instances.Icon.Parent = Instances.ButtonTemplate
+navigation_pool:AdaptivePreload()
+button_pool:AdaptivePreload()
 
-	Instances.AspectRatio.Name = "AspectRatio"
-	Instances.AspectRatio.DominantAxis = Enum.DominantAxis.Height
-	Instances.AspectRatio.Parent = Instances.Icon
+type Button = {
+	name: string,
+	icon: typemarshaller.LucideIcon,
+	text_button: typeof(button_pool:Get()),
+	fn: () -> (),
+}
 
-	Instances.AspectRatio_2.Name = "AspectRatio"
-	Instances.AspectRatio_2.AspectRatio = 1
-	Instances.AspectRatio_2.Parent = Instances.ButtonTemplate
+type NavigationRail = setmetatable<{
+	rail_gui: typeof(navigation_pool:Get()),
+	holder: typeof(navigation_pool:Get().Holder),
 
-	return Instances.ButtonTemplate
-end
+	action_button: typeof(navigation_pool:Get().ActionButton),
+	expand_button: typeof(navigation_pool:Get().Expand),
 
-function module.new(config: config | unknown)
-	local configuration = tablekit.Reconcile(config :: any, {
-		active = observer.new(false),
-	}) :: config
+	active_button: observer.Observer<typeof(button_pool:Get())>,
+	buttons: { Button },
 
-	table.insert(module.watching, configuration)
-end
+	rate_limit: ratelimit.Ratelimit<string>,
+}, typeof(module)>
 
-function module:Render()
-	for i, data in ipairs(module.watching) do
-		local button = createButton(data.holder)
+function module.new()
+	local self = setmetatable({}, module)
 
-		local image_label = button:FindFirstChildOfClass("ImageLabel")
-		if image_label then
-			image_label.ImageContent = data.icon
+	self.rail_gui = navigation_pool:Get()
+	self.holder = self.rail_gui.Holder
+
+	self.action_button = self.rail_gui.ActionButton
+	self.expand_button = self.rail_gui.Expand
+
+	self.active_button = observer.new(nil) :: observer.Observer<typeof(button_pool:Get())>
+	self.buttons = {} :: { Button }
+
+	self.rate_limit = ratelimit(1, 1.5)
+
+	self.active_button:Watch(function(new)
+		spr.target(new, 0.6, 4.3, {
+			BackgroundTransparency = 1,
+		})
+
+		pop(new, 1.1)
+
+		for i, data in ipairs(self.buttons) do
+			if data.text_button == new then
+				continue
+			end
+
+			local text_button = data.text_button
+
+			spr.target(text_button, 0.6, 4.3, {
+				BackgroundTransparency = 1,
+			})
 		end
+	end)
 
-		button.Activated:Connect(function()
-			local is_active = data.active:Get()
+	return self
+end
 
-			task.spawn(future.new, data.callback, is_active)
+function module.Button(self: NavigationRail, name: string, icon: typemarshaller.LucideIcon, fn: () -> ())
+	table.insert(self.buttons, {
+		name = name,
+		icon = icon,
+		text_button = button_pool:Get(),
+		fn = fn,
+	})
+end
 
-			pop(button)
+function module.SetActionIcon(self: NavigationRail, icon: typemarshaller.LucideIcon)
+	task.spawn(function()
+		future.Try(function()
+			local image_label = self.action_button.ImageLabel
+			image_label.ImageContent = Content.fromAssetId(icon.Id)
 
-			audio:PlaySFX("click")
+			pop(image_label, 1.2)
+		end)
+	end)
+end
+
+function module.Render(self: NavigationRail)
+	-- iterate the buttons
+
+	for i, data in ipairs(self.buttons) do
+		local button = data.text_button
+		local fn = data.fn
+		local name = data.name
+		local icon = data.icon
+
+		-- set the name & icon
+
+		button.Name = name
+		task.spawn(function()
+			future.Try(function(...)
+				button.Image.ImageContent = ...
+			end, Content.fromAssetId(icon.Id))
 		end)
 
-		shadow(button)
+		button.Parent = self.holder
+
+		-- shadows aren't required.
+
+		button.Activated:Connect(function()
+			if not self.rate_limit(name) then
+				return
+			end
+
+			self.active_button:Set(button)
+
+			task.spawn(future.Try, fn)
+		end)
 	end
 end
 

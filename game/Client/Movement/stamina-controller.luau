@@ -3,11 +3,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local observer = require(ReplicatedStorage.Utility.observer)
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
-
-local observer = require(ReplicatedStorage.Utility.observer)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- stamina-controller.luau
@@ -19,6 +18,7 @@ controller._trove = _trove
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local root_part = character:WaitForChild("HumanoidRootPart") :: BasePart
 
 local max_stamina = 100
 local regeneration_delay = 1.5
@@ -44,7 +44,7 @@ local function setupCharacter(new_character: Model)
 	end
 
 	bar = physical_bar.new()
-	bar:SetAdornee(bar, character:WaitForChild("PrimaryPart") :: BasePart)
+	bar:SetAdornee(root_part)
 
 	previous_stamina = max_stamina
 	last_drain = 0
@@ -63,8 +63,11 @@ local function setupCharacter(new_character: Model)
 
 		previous_stamina = stamina
 
-		local percentage = math.clamp(stamina / max_stamina, 0, 1)
-		bar:SetValue(bar, percentage)
+		local percentage = stamina / max_stamina
+
+		task.wait(1.5)
+
+		bar:SetValue(percentage)
 	end)
 end
 

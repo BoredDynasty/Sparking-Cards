@@ -20,6 +20,7 @@ local _trove = trove.new()
 controller._trove = _trove
 
 local character_trove = _trove:Extend()
+
 local _dust = fetchAsset("FootstepDust")
 
 local last_jump_drain = 0
@@ -31,6 +32,7 @@ local function setupCharacter(new_character: Model)
 
 	local default_jump_power = humanoid.JumpPower
 	local default_jump_height = humanoid.JumpHeight
+
 	local was_jumping_enabled = humanoid:GetStateEnabled(Enum.HumanoidStateType.Jumping)
 
 	character_trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
@@ -38,10 +40,12 @@ local function setupCharacter(new_character: Model)
 		if current_stamina < MovementConfig.Jump.StaminaCost then
 			humanoid.JumpPower = 0
 			humanoid.JumpHeight = 0
+
 			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 		else
 			humanoid.JumpPower = default_jump_power
 			humanoid.JumpHeight = default_jump_height
+
 			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, was_jumping_enabled)
 		end
 	end)

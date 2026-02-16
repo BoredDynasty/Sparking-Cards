@@ -83,25 +83,9 @@ end)
 pool:AdaptivePreload()
 
 local last_check: number = 0.0
-local check_interval = 2 / 4
+local check_interval = 5
 
-RunService.Heartbeat:Connect(function(dt)
-	last_check += dt
-
-	if last_check < check_interval then
-		return
-	end
-
-	last_check = 0
-
-	local profile = expectProfile()
-
-	if not profile then
-		return
-	end
-
-	module:Clear()
-
+local function insertData(profile: typemarshaller.Profile)
 	for i, saved_option in pairs(profile.Data.options) do
 		local all_option_names = {}
 
@@ -110,8 +94,9 @@ RunService.Heartbeat:Connect(function(dt)
 		end
 
 		for j, option_data in ipairs(settings_data) do
-			local is_similar = select(1, leventine.closest(saved_option, all_option_names))
-				== option_data.name
+			local str = leventine.closest(i, all_option_names)
+
+			local is_similar = str == option_data.name
 
 			if i == option_data.identifier or is_similar then
 				local data = {}
@@ -130,6 +115,28 @@ RunService.Heartbeat:Connect(function(dt)
 			end
 		end
 	end
+end
+
+RunService.Heartbeat:Connect(function(dt)
+	-- requires 300 "heartbeats" to run this.
+
+	last_check += dt
+
+	if last_check < check_interval then
+		return
+	end
+
+	last_check = 0
+
+	local profile = expectProfile()
+
+	if not profile then
+		return
+	end
+
+	module:Clear()
+
+	future.Try(insertData, profile)
 end)
 
 local function booleanToString(boolean: boolean): "on" | "off"

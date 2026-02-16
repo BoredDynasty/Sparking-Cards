@@ -49,8 +49,7 @@ function module:Start(self: Counter)
 	assert(self.label, "no label?")
 
 	self.value.Changed:Connect(function()
-		-- round to to hundrenth place to prevent decimal values from showing up
-		local number_value = math.round(self.value.Value * 100) / 100
+		local number_value = math.round(self.value.Value * 1) / 1
 
 		self.label.Text = tostring(number_value)
 	end)

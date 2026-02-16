@@ -76,7 +76,7 @@ local function onBegan()
 
 	local new_speed = base_speed + speed_increase
 
-	spr.target(humanoid, 0.8, 5, {
+	spr.target(humanoid, 0.55, 2.1, {
 		WalkSpeed = new_speed,
 	})
 
@@ -105,7 +105,7 @@ local function onEnded()
 	local new_speed = MovementConfig.Character.BaseSpeed
 
 	spr.stop(humanoid, "WalkSpeed")
-	spr.target(humanoid, 0.8, 5, {
+	spr.target(humanoid, 0.3, 2.3, {
 		WalkSpeed = new_speed,
 	})
 
@@ -127,6 +127,7 @@ function controller:Update(deltaTime: number)
 
 	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
 		onEnded()
+
 		return
 	end
 

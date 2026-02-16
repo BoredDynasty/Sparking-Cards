@@ -3,11 +3,10 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local observer = require(ReplicatedStorage.Utility.observer)
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
-
-local observer = require(ReplicatedStorage.Utility.observer)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- stamina-controller.luau
@@ -19,67 +18,81 @@ controller._trove = _trove
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
+local root_part = character:WaitForChild("HumanoidRootPart") :: BasePart
 
 local max_stamina = 100
-local regeneration_delay = 2.5
-local regeneration_rate = 10
-local last_drain = observer.new(0)
-local is_regenerating = observer.new(false)
+local regeneration_delay = 1.5
+local regeneration_rate = 15
+local last_drain = 0
+local is_regenerating = false
 
 local bar_size = UDim2.fromScale(0.5, 0.97)
 
-character:SetAttribute("Stamina", max_stamina)
-character:SetAttribute("AntiRegenerate", false)
-
 local bar = physical_bar.new()
-bar:SetAdornee(bar, character.PrimaryPart)
+local previous_stamina = max_stamina
+local character_trove = _trove:Extend()
 
-player.CharacterAdded:Connect(function(new_character)
-	if new_character:FindFirstChild("SprintBar") then
-		return
-	end
+local function setupCharacter(new_character: Model)
+	character_trove:Clean()
+
+	character = new_character
+	character:SetAttribute("Stamina", max_stamina)
+	character:SetAttribute("AntiRegenerate", false)
 
 	if bar then
 		bar:Destroy()
 	end
 
 	bar = physical_bar.new()
-	bar:SetAdornee(bar, character.PrimaryPart)
-end)
+	bar:SetAdornee(root_part)
 
-_trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
-	local stamina = character:GetAttribute("Stamina") :: number?
-	if not stamina then
-		return
-	end
+	previous_stamina = max_stamina
+	last_drain = 0
+	is_regenerating = false
 
-	local percentage = math.clamp(stamina / max_stamina, 0, 1)
+	character_trove:Connect(character:GetAttributeChangedSignal("Stamina"), function()
+		local stamina = character:GetAttribute("Stamina") :: number?
+		if not stamina then
+			return
+		end
 
-	local scale = UDim2.fromScale(bar_size.X.Scale, bar_size.Y.Scale * percentage)
+		if stamina < previous_stamina then
+			last_drain = 0
+			is_regenerating = false
+		end
 
-	bar:SetValue(bar, percentage)
-end)
+		previous_stamina = stamina
+
+		local percentage = stamina / max_stamina
+
+		task.wait(1.5)
+
+		bar:SetValue(percentage)
+	end)
+end
+
+if character then
+	setupCharacter(character)
+end
+
+player.CharacterAdded:Connect(setupCharacter)
 
 function controller:Update(deltaTime: number)
 	local anti_regenerate = character:GetAttribute("AntiRegenerate") :: boolean
 	local current_stamina = character:GetAttribute("Stamina") :: number or max_stamina
 
-	-- TODO) fix this
-
 	if anti_regenerate then
-		last_drain:Set(0)
-		is_regenerating:Set(false)
+		last_drain = 0
+		is_regenerating = false
 	else
-		last_drain:Map(function(current)
-			return current :: number * deltaTime
-		end)
+		last_drain += deltaTime
 
-		if last_drain:Get() :: number >= regeneration_delay then
-			is_regenerating:Set(true)
+		if last_drain >= regeneration_delay then
+			is_regenerating = true
 		end
 	end
 
-	if is_regenerating:Get() and current_stamina < max_stamina then
+	if is_regenerating and current_stamina < max_stamina then
 		local regenerate_amount = regeneration_rate * deltaTime
 
 		current_stamina = math.min(current_stamina + regenerate_amount, max_stamina)
