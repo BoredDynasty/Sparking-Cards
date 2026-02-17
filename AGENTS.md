@@ -22,11 +22,8 @@ This project is an advanced fighting Roblox game built with Luau
 utility that the developer can implement themselves. An alternative is to look at the API/libray you're using and choose the correct function.
 
 ## Code Optimization
-- Avoid additional computation in RunService loops
+- Avoid unnecesary computation in RunService loops
 
 ## PR instructions
 - Update sourcemap.json file by using `rojo sourcemap` before commiting
-- If you decide to add dependencies, make sure to use `wally install` then update the sourcemap
-
-## Testing instructions
-- Use TestEZ to test Luau files
+- If you decide to add external dependencies, make sure to use `wally install` then update the sourcemap

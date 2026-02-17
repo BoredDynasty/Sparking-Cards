@@ -1,6 +1,7 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -8,6 +9,7 @@ local spr = require(ReplicatedStorage.Modules.spr)
 -- displayorder.luau
 
 local module = {}
+module.Changed = SignalPlus() :: SignalPlus.Signal<CanvasData, boolean>
 
 type CanvasData = {
 	canvas: CanvasGroup,
@@ -79,6 +81,8 @@ local function openCanvas(canvas_data: CanvasData)
 	canvas_data.canvas.Visible = true
 
 	canvas_data.state:Set(true)
+
+	module.Changed:Fire(canvas_data, true)
 end
 
 local function closeCanvas(canvas_data: CanvasData)
@@ -106,6 +110,8 @@ local function closeCanvas(canvas_data: CanvasData)
 	end)
 
 	canvas_data.state:Set(false)
+
+	module.Changed:Fire(canvas_data, false)
 end
 
 function module.new(canvas: CanvasGroup)
@@ -152,6 +158,16 @@ function module:Toggle(canvas: CanvasGroup)
 			task.spawn(closeCanvas, other_data)
 		end
 	end
+end
+
+function module:GetState(canvas: CanvasGroup)
+	local data = indexCanvasData(canvas)
+	if not data then
+		warn("canvas not indexed")
+		return false
+	end
+
+	return data.state:Get()
 end
 
 function module:Open(canvas: CanvasGroup)

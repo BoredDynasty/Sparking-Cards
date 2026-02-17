@@ -19,6 +19,8 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local module = {}
 module.__index = module
 
+local events = ReplicatedStorage.Events
+
 export type BaseSword = Model & {
 	Handle: BasePart,
 	Blade: BasePart,
@@ -55,19 +57,10 @@ export type Sword = setmetatable<{
 }, typeof(module)>
 
 function module.new(player: Player, sword_name: string)
-	local orion = require(ReplicatedStorage.Combat.orion)
-
 	local sword_model = fetchAsset(sword_name) :: BaseSword
 	assert(sword_model, "Couldn't fetch sword model: " .. sword_name)
 
 	local self = setmetatable({}, module)
-
-	local player_data = orion:GetPlayerData(player)
-	assert(player_data, "no player data???????")
-
-	if player_data.element_active then
-		error("element already active")
-	end
 
 	self.model = sword_model
 	self.player = player
@@ -98,19 +91,17 @@ function module:Activate()
 	-- swing the sword (client animation + server hit window)
 	print(string.format("%s swings the sword!", tostring(self.player and self.player.Name)))
 
-	local player_data = orion:GetPlayerData(self.player)
+	local player_data = orion.get_player_data()
 	assert(player_data, "no player data???????")
 
-	local combo_info = player_data.combo_info
-
-	combo:increment(combo_info, os.clock())
+	combo:increment(player_data.combo_info, os.clock())
 
 	-- get the corresponding animation from this weapon's animation set
 	local animations = self:GetAnimations()
-	local animation = animations[combo_info.CurrentCombo]
+	local animation = animations[player_data.combo_info.CurrentCombo]
 
 	if animation then
-		Packet.ReplicateAnimation.sendTo({ identification = animation }, self.player)
+		events.PlayAnimation:FireClient(self.player, animation)
 	end
 
 	-- enable hit window and create trail for visual feedback
@@ -150,7 +141,7 @@ function module:Unequip()
 
 	self._connections = {}
 
-	future.new(grip.removeGrip, model):Await()
+	future.new(grip.removeGrip, model)
 
 	-- store model back into ReplicatedStorage so it isn't lost
 	model.Parent = ReplicatedStorage

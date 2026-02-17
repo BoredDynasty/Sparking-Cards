@@ -43,8 +43,360 @@
           ]
         },
         {
-          "name": "Folder",
-          "className": "Folder"
+          "name": "Lobby",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "Barriers",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Model",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        },
+                        {
+                          "name": "Texture",
+                          "className": "Texture"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Union",
+                      "className": "UnionOperation",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Tunnels",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Tunnel",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "RoadMarking",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "BlockMesh"
+                        },
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Trees",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Tree",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Trunk",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Leaves",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "ParticleEmitter",
+                          "className": "ParticleEmitter"
+                        },
+                        {
+                          "name": "SurfaceAppearance",
+                          "className": "SurfaceAppearance"
+                        },
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Bush",
+                      "className": "MeshPart"
+                    }
+                  ]
+                },
+                {
+                  "name": "PineTree1",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Leafs",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Trunk",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Roads",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Road",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "RoadMarking",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "BlockMesh"
+                        },
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Road",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Vegetation",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "TallFern",
+                  "className": "MeshPart"
+                },
+                {
+                  "name": "Fern",
+                  "className": "MeshPart",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Rocks",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Boulder1",
+                  "className": "MeshPart",
+                  "children": [
+                    {
+                      "name": "SurfaceAppearance",
+                      "className": "SurfaceAppearance"
+                    },
+                    {
+                      "name": "Extra",
+                      "className": "StyleSheet"
+                    },
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "BusStop",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "ThreeDTextObject",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "uni0042",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "uni0055",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "uni0053",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "uni0054",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "uni004F",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "uni0050",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Part",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SurfaceGui",
+                      "className": "SurfaceGui",
+                      "children": [
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Union",
+                  "className": "UnionOperation",
+                  "children": [
+                    {
+                      "name": "Seat",
+                      "className": "Seat",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Manhole",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Decal",
+                  "className": "Decal"
+                },
+                {
+                  "name": "Weld",
+                  "className": "Weld"
+                }
+              ]
+            }
+          ]
         },
         {
           "name": "Gauntlet",
@@ -7707,6 +8059,14 @@
           ]
         },
         {
+          "name": "AfterImageCache",
+          "className": "Folder"
+        },
+        {
+          "name": "Model",
+          "className": "Folder"
+        },
+        {
           "name": "Terrain",
           "className": "Terrain",
           "children": [
@@ -7784,6 +8144,26 @@
           "name": "SpawnLocation",
           "className": "SpawnLocation",
           "children": [
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
             {
               "name": "Weld",
               "className": "Weld"
@@ -8009,6 +8389,32 @@
                   ]
                 }
               ]
+            }
+          ]
+        },
+        {
+          "name": "Part",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
             }
           ]
         }
@@ -8383,6 +8789,13 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Utilities/ring-buffer.luau"
                   ]
+                },
+                {
+                  "name": "fetchProfile",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Utilities/fetchProfile.luau"
+                  ]
                 }
               ]
             },
@@ -8475,6 +8888,20 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Gameplay/exp-awarder.luau"
                   ]
+                },
+                {
+                  "name": "after-image",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Gameplay/after-image.luau"
+                  ]
+                },
+                {
+                  "name": "emit-dust",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Gameplay/emit-dust.luau"
+                  ]
                 }
               ]
             },
@@ -8508,13 +8935,6 @@
                   ]
                 },
                 {
-                  "name": "dash-controller",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Movement/dash-controller.luau"
-                  ]
-                },
-                {
                   "name": "walk-controller",
                   "className": "ModuleScript",
                   "filePaths": [
@@ -8533,6 +8953,13 @@
                   "className": "ModuleScript",
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Movement/jump-controller.luau"
+                  ]
+                },
+                {
+                  "name": "ability-controller",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Movement/ability-controller.luau"
                   ]
                 }
               ]
@@ -8633,10 +9060,10 @@
                   ]
                 },
                 {
-                  "name": "metrics",
+                  "name": "subtitles",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/metrics.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/subtitles.luau"
                   ]
                 },
                 {
@@ -13282,6 +13709,13 @@
               "filePaths": [
                 "sync/ReplicatedStorage/Utility/log-analytics.luau"
               ]
+            },
+            {
+              "name": "state-machine",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Utility/state-machine.luau"
+              ]
             }
           ]
         },
@@ -13784,6 +14218,10 @@
             },
             {
               "name": "RepositionCamera",
+              "className": "RemoteEvent"
+            },
+            {
+              "name": "PlayAnimation",
               "className": "RemoteEvent"
             }
           ]
@@ -16799,20 +17237,6 @@
                       ]
                     },
                     {
-                      "name": "TextLabel",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "UIStroke",
-                          "className": "UIStroke"
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
                       "name": "AspectRatio",
                       "className": "UIAspectRatioConstraint"
                     },
@@ -16823,6 +17247,24 @@
                     {
                       "name": "UIPadding",
                       "className": "UIPadding"
+                    }
+                  ]
+                },
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "UIStroke",
+                      "className": "UIStroke"
+                    },
+                    {
+                      "name": "UIScale",
+                      "className": "UIScale"
+                    },
+                    {
+                      "name": "UITextSizeConstraint",
+                      "className": "UITextSizeConstraint"
                     }
                   ]
                 }
@@ -16951,6 +17393,10 @@
                   "className": "ParticleEmitter"
                 }
               ]
+            },
+            {
+              "name": "Dust",
+              "className": "MeshPart"
             }
           ]
         },
@@ -16960,7 +17406,7 @@
           "children": [
             {
               "name": "NavigationRail",
-              "className": "Frame",
+              "className": "CanvasGroup",
               "children": [
                 {
                   "name": "UICorner",

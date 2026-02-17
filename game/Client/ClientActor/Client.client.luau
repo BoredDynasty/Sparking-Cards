@@ -111,7 +111,9 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
+local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
+local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 local keyboard = input.Keyboard.new()
@@ -133,33 +135,13 @@ local _trove = trove.new()
 local character = player.Character or player.CharacterAdded:Wait() :: typemarshaller.Character
 local humanoid = character.Humanoid
 
--- // Functions -- //
-local function expectProfile(): typemarshaller.Profile
-	local fut = future.new(function()
-		return get_profile:InvokeServer() :: typemarshaller.Profile
-	end)
-
-	repeat
-		task.wait(1)
-	--print("pending profile fetch")
-	until not fut:IsPending()
-
-	local result = fut:Unwrap()
-
-	--[[
-	if not result and RunService:IsStudio() then
-		result = { Data = profilestructure }
-	end
-	--]]
-
-	return result
-end
-
 ---------------------------------- Client --------------------------------
 
 local PlayerGui = player.PlayerGui
 
-logger.new()
+if RunService:IsStudio() then
+	logger.new()
+end
 
 task.spawn(glove.Apply, glove, character)
 
@@ -221,21 +203,40 @@ local function initializeMarket()
 
 	local spendings_icon = spendings.SpendingsIcon
 
+	local navigation = market:GetNavigation()
+
 	local function callback()
-		market:DisplaySpendings(expectProfile())
-
-		local new_hint = hint.new()
-		new_hint:SetText("Loading Market...")
-		new_hint:SetExpiry(1.5)
-
 		displayorder:Toggle(shopCanvas)
 
-		task.spawn(market.LoadItems, market)
+		if displayorder:GetState(shopCanvas) then
+			task.spawn(market.LoadItems, market)
 
-		wiggle(spendings_icon, function()
-			--print("completed wiggle")
-		end)
+			navigation:Show()
+
+			market:DisplaySpendings(fetchProfile())
+
+			local new_hint = hint.new()
+			new_hint:SetText("Loading Market...")
+			new_hint:SetExpiry(1.5)
+
+			wiggle(spendings_icon, function()
+				--print("completed wiggle")
+			end)
+		else
+			navigation:Hide()
+			market:Unload()
+		end
 	end
+
+	displayorder.Changed:Connect(function(canvas_data, visible)
+		if canvas_data.canvas == shopCanvas then
+			if visible then
+				return
+			end
+
+			navigation:Hide()
+		end
+	end)
 
 	market:StartNavigation()
 
@@ -253,7 +254,10 @@ local function initializeOptions()
 
 	local function toggleUI()
 		displayorder:Toggle(optionsCanvas)
-		options:Render()
+
+		if displayorder:GetState(optionsCanvas) then
+			options:Render()
+		end
 	end
 
 	hud.new("Options", toggleUI, lucide.GetAsset("cog"))
@@ -404,8 +408,8 @@ local function initializeBadges()
 
 	local function callback()
 		displayorder:Toggle(badgesCanvas)
-		achievement:DisplayTotal(expectProfile())
-		achievement:Load(expectProfile())
+		achievement:DisplayTotal(fetchProfile())
+		achievement:Load(fetchProfile())
 	end
 
 	hud.new("Badges", callback, lucide.GetAsset("trophy", 48), true)
@@ -432,6 +436,16 @@ local function initializeMusic()
 			coordinates = {
 				position = vector.create(-1845, 228, 139),
 				size = vector.create(2048, 64, 2048),
+			},
+		},
+		{
+			biome = "Route 17",
+			id = 12385329420,
+			name = "Greenlight Valley",
+			artist = "Dynasty",
+			coordinates = {
+				position = vector.create(-1791, 323, -3444),
+				size = vector.create(580, 254, 761),
 			},
 		},
 	}
@@ -522,7 +536,7 @@ local function initializeObjectives()
 	local rank = observer.new("") :: observer.Observer<string>
 
 	task.spawn(future.Try, function()
-		profile = expectProfile()
+		profile = fetchProfile()
 
 		if profile then
 			orion.new(player, profile)
@@ -602,7 +616,7 @@ local function initializeStatistics()
 	-- local typewriter = markdown.typewriter.new()
 
 	local function updateStats()
-		profile = expectProfile()
+		profile = fetchProfile()
 
 		if profile then
 			-- proceed
@@ -643,7 +657,7 @@ local function initializeSpectating()
 
 		-- get the keybind for spectating
 
-		profile = expectProfile()
+		profile = fetchProfile()
 
 		local keybind = nil
 
@@ -691,7 +705,6 @@ task.delay(15, function()
 	camera_controller.new("bobbing", bobbing)
 end)
 
-movement_controller:Add(script.Parent.Parent.Movement["dash-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["jump-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["stamina-controller"])
@@ -704,15 +717,11 @@ movement_controller:Start()
 
 -- control
 
-profile = expectProfile()
-
-if profile then
-	orion.new(player, profile)
-end
+orion.register_player()
 
 local function getAttackTypeFromKey(key: Enum.KeyCode)
 	-- profile = yoink.client:grab("profile_data")
-	profile = expectProfile()
+	profile = fetchProfile()
 	if not profile or not profile.Data then
 		return
 	end
@@ -732,11 +741,34 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
-		orion:Execute(player, attack_type)
+		local module = orion.execute()
+		if not module then
+			print("couldnt pull module from `orion.execute`.")
+
+			return
+		end
+
+		local internal = require(module) :: typemarshaller.AttackModule
+		internal.moveset[attack_type](player, {
+			player_data = orion.get_player_data(),
+		})
 
 		--hud:Hide()
 	end
 end)
+
+keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
+	if processed then
+		return
+	end
+
+	if key == Enum.KeyCode.K then
+		ability_controller:Juke("Left")
+	elseif key == Enum.KeyCode.L then
+		ability_controller:Juke("Right")
+	end
+end)
+
 --[[
 keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
 	if processed then
@@ -753,8 +785,7 @@ mouse.LeftDown:Connect(function(processed: boolean)
 		return
 	end
 
-	local attack_type = "M1"
-	orion:Execute(player, attack_type)
+	--
 
 	--hud:Hide()
 end)
@@ -810,11 +841,52 @@ do
 end
 --]]
 
+do
+	-- send a notification when the graphics level
+	-- is not at an "appropriate" value.
+
+	local user_settings = UserSettings()
+	local user_game_settings = user_settings:GetService("UserGameSettings")
+
+	local function getGraphicsQuality()
+		return user_game_settings.SavedQualityLevel.Value
+	end
+
+	local min_quality_level = 6
+	local min_quality_enum = Enum.SavedQualitySetting.QualityLevel6
+
+	user_game_settings.Changed:Connect(function()
+		local quality_level = getGraphicsQuality()
+
+		if quality_level >= min_quality_level then
+			return
+		end
+
+		-- send a notification snackbar
+
+		local str = "Set Quality Level to %s for the best experience."
+
+		local snack_bar = hint.new()
+		snack_bar:SetText(string.format(str, min_quality_level))
+		snack_bar:SetExpiry(7)
+		snack_bar:SetAction(function()
+			future.Try(function()
+				user_game_settings.SavedQualityLevel = min_quality_enum
+			end)
+		end, "Set")
+	end)
+end
+
 -- over_shoulder:Enable()
 
 Packet.ReplicateAnimation.listen(function(data)
 	animate.load(tonumber(data.identification))
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
+end)
+
+events.PlayAnimation.OnClientEvent:Connect(function(...)
+	animate.load(...)
+	animate.play(..., 0.25)
 end)
 
 Packet.CleanupCharacter.listen(function()

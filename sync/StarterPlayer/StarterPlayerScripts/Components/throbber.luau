@@ -12,38 +12,29 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
 local templates = ReplicatedStorage.Interfaces
 
-local __call = function(element: GuiObject, signal: SignalPlus.Signal<>)
-	return future.new(function()
-		if typeof(element) ~= "GuiObject" then
-			return false
-		end
+return function(element: GuiObject, signal: SignalPlus.Signal<>)
+	local loaderTemplates = templates.Loaders
+	local loader = loaderTemplates.Basic:Clone()
 
-		local loaderTemplates = templates.Loaders
-		local loader = loaderTemplates.Basic:Clone()
+	loader.Visible = true
+	loader.Parent = element
+	loader.Position = UDim2.fromScale(0.5, 0.5)
 
-		loader.Visible = true
-		loader.Parent = element
-		loader.Position = UDim2.fromScale(0.5, 0.5)
+	pop(loader)
+
+	local circle = 360
+
+	spr.target(loader, 0, 1 / 1, {
+		Rotation = circle,
+	})
+
+	signal:Once(function()
 		pop(loader)
 
-		local circle = 360
-
-		spr.target(loader, 0, 1 / 1, {
-			Rotation = circle,
-		})
-
-		signal:Once(function()
-			pop(loader)
-
-			task.delay(5, function()
-				loader:Destroy()
-				signal:Destroy()
-				spr.stop(loader, "Rotation")
-			end)
+		task.delay(5, function()
+			loader:Destroy()
+			signal:Destroy()
+			spr.stop(loader, "Rotation")
 		end)
-
-		return "indicating preload!"
 	end)
 end
-
-return __call

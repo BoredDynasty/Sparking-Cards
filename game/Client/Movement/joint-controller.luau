@@ -1,9 +1,8 @@
 --!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local trove = require(ReplicatedStorage.Packages.trove).new()
 
@@ -11,7 +10,7 @@ local trove = require(ReplicatedStorage.Packages.trove).new()
 -- a module for making the character animation (lag)
 -- just like Spider-Man into the spider-verse.
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 
 local character = player.Character or player.CharacterAdded:Wait()
 

@@ -10,6 +10,7 @@ local Packet = require(ReplicatedStorage.Packet)
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
+local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local lucide = require(ReplicatedStorage.Packages.lucide)
@@ -44,30 +45,11 @@ local template = shopFolder.ItemTemplate
 
 local limit = ratelimit(1, 0.5)
 
-local market = {}
+local module = {}
 
 shadow(template)
 
-local function expectProfile(): typemarshaller.Profile
-	local fut = future.new(function()
-		return get_profile:InvokeServer() :: typemarshaller.Profile
-	end)
-
-	repeat
-		task.wait(1)
-	--print("pending profile fetch")
-	until not fut:IsPending()
-
-	local result = fut:Unwrap()
-
-	--[[
-	if not result and RunService:IsStudio() then
-		result = { Data = profilestructure }
-	end
-	--]]
-
-	return result
-end
+local navigation = navigation_rail.new()
 
 local pool = PoolerPlus:CreatePool("MarketPool", function()
 	return template:Clone()
@@ -83,11 +65,11 @@ end)
 
 pool:AdaptivePreload()
 
-function market:Unload()
+function module:Unload()
 	pool:ReturnAll()
 end
 
-function market:DisplaySpendings(profile: typemarshaller.Profile)
+function module:DisplaySpendings(profile: typemarshaller.Profile)
 	local prisms = tonumber(profile and profile.Data.prisms)
 
 	if prisms then
@@ -101,21 +83,25 @@ function market:DisplaySpendings(profile: typemarshaller.Profile)
 	end
 end
 
-function market:StartNavigation()
-	local navigation = navigation_rail.new()
+function module:StartNavigation()
 	navigation:Button("Home", lucide.GetAsset("home"), function()
 		-- this is already running along the main thread
 		market:LoadItems()
 	end)
 	navigation:Button("Inventory", lucide.GetAsset("backpack"), function()
-		market:LoadInventory(expectProfile())
+		market:LoadInventory(fetchProfile())
 	end)
 
+	navigation:SetAdornee(shopGui)
 	navigation:SetActionIcon(lucide.GetAsset("ticket"))
 	navigation:Render()
 end
 
-function market:LoadItems<K, V>(items)
+function module:GetNavigation()
+	return navigation
+end
+
+function module:LoadItems<K, V>(items)
 	pool:ReturnAll()
 
 	items = items or Items
@@ -194,7 +180,7 @@ function market:LoadItems<K, V>(items)
 	--print("done")
 end
 
-function market:LoadInventory(profile: typemarshaller.Profile)
+function module:LoadInventory(profile: typemarshaller.Profile)
 	pool:ReturnAll()
 
 	if not profile then
@@ -257,4 +243,4 @@ function market:LoadInventory(profile: typemarshaller.Profile)
 	end
 end
 
-return market
+return module

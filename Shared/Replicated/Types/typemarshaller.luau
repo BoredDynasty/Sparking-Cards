@@ -281,22 +281,20 @@ export type OrionParameters = {
 
 export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
 
-export type AttackFunction = (Player, ...any) -> unknown
+export type AttackFunction = (Player, OrionParameters) -> unknown
 export type AttackModule = {
 	GetMaxCombo: () -> number,
 	moveset: {
-		AttackType: AttackFunction,
+		[AttackType]: AttackFunction,
 	},
 }
 
 export type PlayerData = {
 	player: Player,
+	damage_multiplier: number,
+	style: StyleModule,
 	profile: Profile,
-	current_card: string,
-	combo_info: ComboData,
-	shield_info: unknown,
-	element_active: boolean, -- if we initialized the attack stuff
-	element_singleton: any,
+	card_name: string,
 }
 
 export type StyleModule = {

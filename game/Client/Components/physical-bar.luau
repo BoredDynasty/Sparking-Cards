@@ -27,14 +27,14 @@ module.__index = module
 
 local tag = "Bar"
 
-local padding = vector.create(-3, 0, 0) -- padding away from the adornee
+local padding = Vector3.new(-3, 0, 0) -- padding away from the adornee
 
 type PhysicalBar = setmetatable<{
 	bar: typeof(pool:Get()),
 	adornee: observer.Observer<Instance?>,
 	padding: observer.Observer<vector>,
 	value: observer.Observer<number>,
-	number_value: NumberValue,
+	int_value: IntValue,
 	ui_scale: UIScale,
 	_trove: typeof(trove.new()),
 }, typeof(module)>
@@ -46,8 +46,8 @@ function module.new()
 	self.adornee = observer.new(nil) :: observer.Observer<Instance?>
 	self.padding = observer.new(padding) -- padding away from the adornee
 	self.value = observer.new(100)
-	self.number_value = Instance.new("NumberValue")
-	self.ui_scale = Instance.new "UIScale"
+	self.int_value = Instance.new("IntValue")
+	self.ui_scale = Instance.new("UIScale")
 
 	sway.register(self.bar.Frame, 6 or 7, 2)
 
@@ -62,12 +62,19 @@ function module.new()
 		Parent = self.adornee,
 	}
 
+	-- ahem, extra work is needed.
+	self.padding:Watch(function(new)
+		hydration(self.bar) {
+			ExtentsOffset = new,
+		}
+	end)
+
 	self.ui_scale.Parent = self.bar.Frame
 
 	self._trove:Add(self.adornee)
 	self._trove:Add(self.padding)
 	self._trove:Add(self.value)
-	self._trove:Add(self.number_value)
+	self._trove:Add(self.int_value)
 
 	self.adornee:Watch(function()
 		local adornee = self.adornee:Get()
@@ -100,27 +107,21 @@ function module.SetAdornee(self: PhysicalBar, adornee: Instance)
 end
 
 function module.SetValue(self: PhysicalBar, value: number)
-	local t_info = TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+	if value < -1 then
+		warn("possible calculation issue detected: ", debug.traceback())
+	end
 
-	local tween = TweenService:Create(self.number_value, t_info, {
-		Value = value,
+	local percentage = math.clamp(value, 0, 1)
+
+	local bar_frame = self.bar.Frame
+	local inner_bar = bar_frame.Bar
+
+	local scale = UDim2.fromScale(1, percentage)
+
+	spr.stop(inner_bar, "Size")
+	spr.target(inner_bar, 0.8, 8, {
+		Size = scale,
 	})
-
-	tween:Play()
-
-	self.number_value.Changed:Connect(function(new_value)
-		local percentage = math.clamp(new_value, 0, 1)
-
-		local bar_frame = self.bar.Frame
-		local inner_bar = bar_frame.Bar
-
-		local scale = UDim2.fromScale(1, percentage)
-
-		spr.stop(inner_bar, "Size")
-		spr.target(inner_bar, 0.8, 8, {
-			Size = scale,
-		})
-	end)
 end
 
 function module.Show(self: PhysicalBar)

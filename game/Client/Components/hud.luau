@@ -14,6 +14,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
+local state_machine = require(ReplicatedStorage.Utility["state-machine"])
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
@@ -24,6 +25,19 @@ local player = Players.LocalPlayer
 
 local module = {}
 module.buttons = {} :: { Button }
+module.horizontal_position = state_machine.new()
+
+local states = {
+	"left",
+	"right",
+	"center",
+}
+
+for i, state in ipairs(states) do
+	module.horizontal_position:RegisterState(state)
+end
+
+module.horizontal_position:Set("left")
 
 local global_ratelimit = ratelimit(1, 2.5)
 
@@ -282,6 +296,16 @@ function module:Clear()
 	end
 end
 
+function module:GetHorizontalAlignment()
+	if module.horizontal_position:Get() == "left" then
+		return Enum.HorizontalAlignment.Left
+	elseif module.horizontal_position:Get() == "right" then
+		return Enum.HorizontalAlignment.Right
+	else
+		return Enum.HorizontalAlignment.Center
+	end
+end
+
 local ui_scale = Instance.new("UIScale")
 ui_scale.Parent = hud_container
 ui_scale.Scale = 1
@@ -290,12 +314,14 @@ function module:Hide()
 	spr.stop(ui_scale)
 	spr.stop(hud_background, "Position")
 
+	module:SetAlignment("left")
+
 	spr.target(ui_scale, 0.4, 1.5, {
 		Scale = 1.25,
 	})
 
 	spr.target(hud_background, 0.5, 0.8, {
-		Position = UDim2.fromScale(0.472, 2),
+		Position = UDim2.fromScale(0.5, 2),
 	})
 
 	spr.completed(hud_background, function()
@@ -305,7 +331,9 @@ end
 
 function module:Show()
 	hud_container.Enabled = true
-	hud_background.Position = UDim2.fromScale(0.472, 2)
+	hud_background.Position = UDim2.fromScale(0.5, 2)
+
+	module:SetAlignment("left")
 
 	ui_scale.Scale = 1.25
 	spr.stop(ui_scale)
@@ -315,8 +343,18 @@ function module:Show()
 
 	spr.stop(hud_background)
 	spr.target(hud_background, 0.8, 3.5, {
-		Position = UDim2.fromScale(0.472, 0.922),
+		Position = UDim2.fromScale(0.5, 0.922),
 	})
+end
+
+function module:SetAlignment(state: "left" | "right" | "center")
+	-- sadly, we cannot animate this.
+
+	module.horizontal_position:Set(state)
+
+	local alignment = module:GetHorizontalAlignment()
+
+	hud_background.UIListLayout.HorizontalAlignment = alignment
 end
 
 function module:IsVisible()

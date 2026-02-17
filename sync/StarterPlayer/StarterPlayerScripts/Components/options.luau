@@ -2,8 +2,10 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
+local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local future = require(ReplicatedStorage.Packages.future)
 local leventine = require(ReplicatedStorage.Utility.leventine)
 local lucide = require(ReplicatedStorage.Packages.lucide)
@@ -18,6 +20,7 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- options.luau
+-- only supports toggling options on and off.
 
 local module = {
 	tracked = {} :: { Option },
@@ -51,27 +54,6 @@ local templates = ReplicatedStorage.Interfaces.Settings
 
 local events = ReplicatedStorage.Events
 local get_profile = events.GetProfile
-
-local function expectProfile(): typemarshaller.Profile
-	local fut = future.new(function()
-		return get_profile:InvokeServer() :: typemarshaller.Profile
-	end)
-
-	repeat
-		task.wait(1)
-	--print("pending profile fetch")
-	until not fut:IsPending()
-
-	local result = fut:Unwrap()
-
-	--[[
-	if not result and RunService:IsStudio() then
-		result = { Data = profilestructure }
-	end
-	--]]
-
-	return result
-end
 
 shadow(templates.OptionTemplate)
 shadow(templates.OptionTemplate.Toggle)
@@ -128,7 +110,7 @@ RunService.Heartbeat:Connect(function(dt)
 
 	last_check = 0
 
-	local profile = expectProfile()
+	local profile = fetchProfile()
 
 	if not profile then
 		return
@@ -212,10 +194,12 @@ function module:Render()
 		end
 
 		local fancy = [[
-		<b>%s</b></br>%s
+		<b>%s<b/><br/>%s
 		]]
 
 		text_display.Text = string.format(fancy :: any, option.name, option.details)
+
+		toggle_btn.Visible = true
 
 		toggle_btn.Activated:Connect(function()
 			if module.limit(option.name) then

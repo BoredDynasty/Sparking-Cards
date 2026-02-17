@@ -5,10 +5,10 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
+local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
-local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
@@ -68,27 +68,85 @@ function module.new()
 
 	self.rate_limit = ratelimit(1, 1.5)
 
-	self.active_button:Watch(function(new)
-		spr.target(new, 0.6, 4.3, {
-			BackgroundTransparency = 1,
-		})
+	self.rail_gui.Position = UDim2.fromScale(-0.5, 0.5)
 
-		pop(new, 1.1)
+	self.active_button:Watch(function(new)
+		if new then
+			spr.target(new, 0.6, 4.3, {
+				BackgroundTransparency = 0,
+			})
+
+			pop(new, 1.1)
+		end
 
 		for i, data in ipairs(self.buttons) do
-			if data.text_button == new then
-				continue
+			if data.text_button ~= new then
+				local text_button = data.text_button
+
+				spr.target(text_button, 0.6, 4.3, {
+					BackgroundTransparency = 1,
+				})
 			end
-
-			local text_button = data.text_button
-
-			spr.target(text_button, 0.6, 4.3, {
-				BackgroundTransparency = 1,
-			})
 		end
 	end)
 
+	self.action_button.AutoButtonColor = false
+	self.expand_button.AutoButtonColor = false
+
 	return self
+end
+
+--[[
+	It is reccomended to place this directly under a **LayerCollector**.
+]]
+function module.SetAdornee(self: NavigationRail, parent: Instance)
+	future.Try(function()
+		self.rail_gui.Parent = parent
+	end)
+end
+
+function module.Show(self: NavigationRail)
+	local ancestor = self.rail_gui:FindFirstAncestorOfClass("ScreenGui")
+	if ancestor then
+		spr.stop(self.rail_gui)
+
+		self.rail_gui.Visible = true
+
+		if ancestor.ZIndexBehavior == Enum.ZIndexBehavior.Sibling then
+			spr.target(self.rail_gui, 0.8, 3, {
+				GroupTransparency = 0,
+			})
+		else
+			spr.target(self.rail_gui, 1, 3, {
+				Position = UDim2.fromScale(0.03, 0.5),
+			})
+		end
+	end
+
+	--hud:SetAlignment("right")
+end
+
+function module.Hide(self: NavigationRail)
+	local ancestor = self.rail_gui:FindFirstAncestorOfClass("ScreenGui")
+	if ancestor then
+		spr.stop(self.rail_gui)
+
+		if ancestor.ZIndexBehavior == Enum.ZIndexBehavior.Sibling then
+			spr.target(self.rail_gui, 0.8, 3, {
+				GroupTransparency = 1,
+			})
+		else
+			spr.target(self.rail_gui, 0.8, 3, {
+				Position = UDim2.fromScale(-0.5, 0.5),
+			})
+		end
+	end
+
+	spr.completed(self.rail_gui, function()
+		self.rail_gui.Visible = false
+	end)
+
+	--hud:SetAlignment("left")
 end
 
 function module.Button(self: NavigationRail, name: string, icon: typemarshaller.LucideIcon, fn: () -> ())
@@ -104,7 +162,7 @@ function module.SetActionIcon(self: NavigationRail, icon: typemarshaller.LucideI
 	task.spawn(function()
 		future.Try(function()
 			local image_label = self.action_button.ImageLabel
-			image_label.ImageContent = Content.fromAssetId(icon.Id)
+			image_label.ImageContent = Content.fromUri(icon.Url)
 
 			pop(image_label, 1.2)
 		end)
@@ -123,13 +181,21 @@ function module.Render(self: NavigationRail)
 		-- set the name & icon
 
 		button.Name = name
-		task.spawn(function()
-			future.Try(function(...)
-				button.Image.ImageContent = ...
-			end, Content.fromAssetId(icon.Id))
+		future.Try(function()
+			task.spawn(function()
+				local content = Content.fromUri(icon.Url)
+
+				button.Image.ImageContent = content
+
+				if content.Uri then
+					button.Image.Image = content.Uri
+				end
+
+				button.TextLabel.Text = name
+			end)
 		end)
 
-		button.Parent = self.holder
+		button.AutoButtonColor = false
 
 		-- shadows aren't required.
 
@@ -140,8 +206,12 @@ function module.Render(self: NavigationRail)
 
 			self.active_button:Set(button)
 
-			task.spawn(future.Try, fn)
+			audio:PlaySFX("click")
+
+			future.Try(fn)
 		end)
+
+		button.Parent = self.holder
 	end
 end
 

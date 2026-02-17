@@ -26,12 +26,10 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 local matchmaker = require(ReplicatedStorage.Modules.matchmaker)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
-local orion = require(ReplicatedStorage.Combat.orion)
 local party = require(ReplicatedStorage.Modules.party)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-local promise = require(ReplicatedStorage.Packages.promise)
 local random = require(ReplicatedStorage.Utility.random)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
@@ -383,10 +381,6 @@ local function onPlayerAdded(player: Player)
 	addHighlight(player.Character or player.CharacterAdded:Wait() :: any)
 	batch(player:GetDescendants())
 	local profile = loadProfile(player)
-
-	if profile then
-		orion.new(player, profile)
-	end
 end
 
 -- just in case the players have joined the server before the script loaded

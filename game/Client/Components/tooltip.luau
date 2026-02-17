@@ -95,7 +95,7 @@ end
 
 function module:Start()
 	local last_check: number = 0.0
-	local check_interval = 1 / 20 -- 0.05
+	local check_interval = 1 / 60
 	local last_postion = mouse:GetPosition()
 
 	local screen_size = camera.ViewportSize
@@ -153,7 +153,7 @@ function module:Start()
 			local target_x = gui_bounds.position.X
 				+ (gui_bounds.size.X / 2)
 				- (tooltip_gui.AbsoluteSize.X / 2)
-			local target_y = gui_bounds.position.Y - tooltip_gui.AbsoluteSize.Y - 4
+			local target_y = gui_bounds.position.Y - tooltip_gui.AbsoluteSize.Y + 10
 
 			local padding = 4
 			target_x, target_y = clamp_tooltip_position(
@@ -171,7 +171,7 @@ function module:Start()
 
 			-- before we set the position, we need to animate it!!!
 
-			tooltip_gui.Position = UDim2.fromOffset(target_x, target_y - 4) -- below the target, with a 10 pixel offset for the animation
+			tooltip_gui.Position = UDim2.fromOffset(target_x, target_y + 10) -- below the target, with a 10 pixel offset for the animation
 			tooltip_gui.Visible = true
 
 			-- transparency effects

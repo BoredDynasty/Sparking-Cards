@@ -22,7 +22,7 @@ local swipe = require(StarterPlayer.StarterPlayerScripts.Interface.swipe)
 local player = Players.LocalPlayer
 local playerGui = player.PlayerGui
 
-local snackbar_gui = playerGui.Snackbar
+local snackbar_gui = playerGui:WaitForChild("Snackbar")
 
 local module = {}
 module.__index = module
