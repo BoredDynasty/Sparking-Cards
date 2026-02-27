@@ -55,8 +55,8 @@ local templates = ReplicatedStorage.Interfaces.Settings
 local events = ReplicatedStorage.Events
 local get_profile = events.GetProfile
 
-shadow(templates.OptionTemplate)
 shadow(templates.OptionTemplate.Toggle)
+shadow(optionsFrame)
 
 local pool = PoolerPlus:CreatePool("OptionsPool", function()
 	return templates.OptionTemplate:Clone()
@@ -206,7 +206,7 @@ function module:Render()
 		end
 
 		local fancy = [[
-		<b>%s<b/><br/>%s
+		<b>%s</b><br/>%s
 		]]
 
 		text_display.Text = string.format(fancy :: any, option.name, option.details)

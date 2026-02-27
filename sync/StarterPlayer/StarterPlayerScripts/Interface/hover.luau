@@ -84,27 +84,3 @@ local function hover(ancestor: GuiObject, gradient: UIGradient)
 end
 
 -- we gotta do a bit of improvising
-local watch: (ancestor: GuiObject, gradient: UIGradient) -> ()
-
-local self = setmetatable({
-	Watching = {} :: { [GuiObject]: UIGradient },
-	Watch = watch,
-}, {
-	__call = hover,
-})
-
-watch = function(ancestor: GuiObject, gradient: UIGradient)
-	self.Watching[ancestor] = gradient
-	ancestor.Destroying:Connect(function()
-		self.Watching[ancestor] = nil
-	end)
-end
-
-(mouse.Moved :: RBXScriptSignal):Connect(function()
-	for ancestor, gradient in pairs(self.Watching) do
-		task.wait()
-		hover(ancestor, gradient)
-	end
-end)
-
-return self

@@ -36,6 +36,7 @@ return {
 	achievements = {
 		--
 	},
+	bookmarked_shop_items = {},
 	quests = {},
 	products = {},
 	keybinds = {

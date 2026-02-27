@@ -43,7 +43,15 @@ function module.new(label: TextLabel | TextButton, number: number, time: number)
 	return self
 end
 
-function module:Start(self: Counter)
+function module.Start(self: Counter)
+	if self.label:GetAttribute("is_text_counting") then
+		repeat
+			task.wait(1)
+		until not self.label:GetAttribute("is_text_counting")
+	end
+
+	self.label:SetAttribute("is_text_counting", true)
+
 	self.tween:Play()
 
 	assert(self.label, "no label?")
@@ -62,8 +70,21 @@ function module:Start(self: Counter)
 		self.label.Text = number_abbreviation:Format(self.number, "space")
 		self.value:Destroy()
 
+		self.label:SetAttribute("is_text_counting", false)
+
 		setmetatable(self, nil)
 	end)
+end
+
+function module.Destroy(self: Counter)
+	self.tween:Cancel()
+
+	self.label.Text = number_abbreviation:Format(self.number, "space")
+	self.value:Destroy()
+
+	self.label:SetAttribute("is_text_counting", false)
+
+	setmetatable(self, nil)
 end
 
 return module

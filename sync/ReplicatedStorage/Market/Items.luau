@@ -5,7 +5,6 @@ local CardLibrary = require(ReplicatedStorage.Combat.CardLibrary)
 
 export type Item = {
 	Name: string,
-	Description: string,
 	Price: number,
 	ExperimentsEnabled: boolean,
 	Icon: string?,
@@ -17,7 +16,6 @@ export type Item = {
 return {
 	{
 		Name = "Pyro",
-		Description = "Pyro damage",
 		Price = 9.99,
 		ExperimentsEnabled = false,
 		NewRelease = true,
@@ -26,7 +24,6 @@ return {
 	},
 	{
 		Name = "Cryo",
-		Description = "Cryo damage",
 		Price = 13.99,
 		ExperimentsEnabled = true,
 		NewRelease = true,
@@ -35,7 +32,6 @@ return {
 	},
 	{
 		Name = "Hydro",
-		Description = "Hydro damage",
 		Price = 40.99,
 		ExperimentsEnabled = true,
 		NewRelease = true,
@@ -44,18 +40,18 @@ return {
 	},
 	{
 		Name = "Shadow",
-		Description = "Shadow Damage",
 		Price = 199.99,
 		NewRelease = true,
+		ExperimentsEnabled = false,
 		Availability = false,
 		Details = CardLibrary.ShadowScythe,
 	},
 	{
 		Name = "Geo",
-		Description = "Geo Damage",
 		Price = 139.99,
 		NewRelease = true,
+		ExperimentsEnabled = false,
 		Availability = false,
 		Details = CardLibrary.GeoClaymore,
 	},
-}
+} :: { Item }

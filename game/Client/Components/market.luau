@@ -13,11 +13,14 @@ local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
+local hydration = require(ReplicatedStorage.Utility.hydration)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
+local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
@@ -43,13 +46,19 @@ local money_label = spendings.Amount
 
 local template = shopFolder.ItemTemplate
 
-local limit = ratelimit(1, 0.5)
+local limit = ratelimit(3, 0.5)
+local alter_quantity_limit = ratelimit(5, 0.5)
+local bookmark_limit = ratelimit(1, 1)
 
 local module = {}
 
 shadow(template)
 
 local navigation = navigation_rail.new()
+
+local profile = fetchProfile()
+
+local events = ReplicatedStorage.Events
 
 local pool = PoolerPlus:CreatePool("MarketPool", function()
 	return template:Clone()
@@ -69,7 +78,11 @@ function module:Unload()
 	pool:ReturnAll()
 end
 
-function module:DisplaySpendings(profile: typemarshaller.Profile)
+function module:DisplaySpendings()
+	money_label.Text = "..."
+
+	profile = fetchProfile()
+
 	local prisms = tonumber(profile and profile.Data.prisms)
 
 	if prisms then
@@ -89,7 +102,7 @@ function module:StartNavigation()
 		market:LoadItems()
 	end)
 	navigation:Button("Inventory", lucide.GetAsset("backpack"), function()
-		market:LoadInventory(fetchProfile())
+		market:LoadInventory()
 	end)
 
 	navigation:SetAdornee(shopGui)
@@ -106,25 +119,62 @@ function module:LoadItems<K, V>(items)
 
 	items = items or Items
 
+	print("shop")
+
+	profile = fetchProfile()
+
 	for i, item in pairs(items) do
 		local template = pool:Get()
 		template.Visible = true
 		template:SetAttribute("name_", item.Name)
 
+		-- variables
+		local quantity = observer.new(1) :: observer.Observer<number>
+		local is_bookmarked = observer.new(false) :: observer.Observer<boolean>
+		print("shop")
+
+		-- find the item in player bookmarks
+
+		future.Try(function()
+			if profile then
+				local j = table.find(profile.Data.bookmarked_shop_items, item.Name)
+				if j then
+					is_bookmarked:Set(true)
+				end
+			end
+		end)
+		print("shop")
+
 		local title = template.Title
+		local description = template.Description
 
 		local purchaseButton = template.Buy
 		local experimentButton = template.Test
 
-		title.Text = item.Name
-			.. [[<br/>
-			<font weight="Regular">
-			<font transparency="0.5">]]
-			.. item.Price
-			.. [[</font></font>]]
+		local title_str = [[
+			%s<br/><font weight="Regular"><font transparency="0.5">$%s</font></font>
+		]]
+
+		title.Text = string.format(title_str :: any, item.Name, item.Price)
+
+		quantity.Changed:Connect(function()
+			local new_quantity = quantity:Get()
+
+			local price = math.floor(item.Price * new_quantity) + 0.99
+
+			title.Text = string.format(title_str :: any, item.Name, price)
+		end)
+		print("shop")
 
 		template.Visible = true
+
+		-- format the description
+
+		description.Text = `"{item.Details.MovesetName}"`
+		description.TextColor3 = item.Details.TextColor
+
 		purchaseButton.AutoButtonColor = false
+		print("shop")
 
 		if item.ExperimentsEnabled then
 			experimentButton.Visible = true
@@ -141,23 +191,129 @@ function module:LoadItems<K, V>(items)
 			experimentButton.Visible = false
 		end
 
-		--print("setting up buttons")
+		-- bookmark system
 
-		task.spawn(function()
-			local icon = purchaseButton:FindFirstChildOfClass("ImageLabel")
-			if icon then
-				icon.ImageContent = Content.fromAssetId(10734924532)
+		local bookmark_button = template.Bookmark
 
-				wiggle(icon)
+		bookmark_button.MouseEnter:Connect(function()
+			task.spawn(function()
+				if not is_bookmarked:Get() then
+					local content = Content.fromAssetId(10709782154)
+
+					bookmark_button.ImageLabel.ImageContent = content
+				else
+					local content = Content.fromAssetId(10709781919)
+
+					bookmark_button.ImageLabel.ImageContent = content
+				end
+			end)
+		end)
+
+		bookmark_button.MouseLeave:Connect(function()
+			task.spawn(function()
+				if not is_bookmarked:Get() then
+					local content = Content.fromAssetId(10709782154)
+
+					bookmark_button.ImageLabel.ImageContent = content
+				else
+					local content = Content.fromAssetId(10709782044)
+
+					bookmark_button.ImageLabel.ImageContent = content
+				end
+			end)
+		end)
+
+		bookmark_button.Activated:Connect(function()
+			if not bookmark_limit(bookmark_button) then
+				return
 			end
+
+			is_bookmarked:Map(function(current)
+				return not current
+			end)
+
+			-- toggle bookmark on the server
+
+			events.BookmarkShopCard:InvokeServer(item.Name)
+		end)
+		print("shop")
+
+		-- quantity system
+
+		local quantity_frame = template.Quantity
+
+		-- automagically updates text!
+		hydration(quantity_frame.TextLabel) {
+			Text = quantity,
+		}
+		print("shop")
+
+		local quantity_add = quantity_frame:WaitForChild("Add")
+		local quantity_remove = quantity_frame:WaitForChild("Remove")
+
+		quantity_add.Activated:Connect(function()
+			future.Try(function()
+				if not alter_quantity_limit(quantity_frame.Add) then
+					return
+				end
+
+				quantity:Map(function(current)
+					return math.clamp(current + 1, 1, 1000)
+				end)
+
+				pop(quantity_add)
+
+				audio:PlaySFX("continue")
+			end)
+		end)
+
+		quantity_remove.Activated:Connect(function()
+			future.Try(function()
+				if not alter_quantity_limit(quantity_frame.Add) then
+					return
+				end
+
+				if quantity:Get() == 1 then
+					audio:PlayVariation("wood-block", 3)
+
+					print("attempted setting quantity below 1")
+				end
+
+				quantity:Map(function(current)
+					return math.clamp(current - 1, 1, 1000)
+				end)
+
+				pop(quantity_remove)
+
+				audio:PlaySFX("continue")
+			end)
+		end)
+		print("shop")
+
+		quantity_remove.MouseEnter:Connect(function()
+			audio:PlaySFX("hover")
+		end)
+
+		quantity_remove.MouseLeave:Connect(function()
+			audio:PlaySFX("leave")
+		end)
+
+		quantity_add.MouseEnter:Connect(function()
+			audio:PlaySFX("hover")
+		end)
+
+		quantity_add.MouseLeave:Connect(function()
+			audio:PlaySFX("leave")
 		end)
 
 		purchaseButton.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
 		end)
+
 		purchaseButton.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
 		end)
+
 		purchaseButton.Activated:Connect(function()
 			if not limit(template) then
 				--print("cooldown")
@@ -167,12 +323,30 @@ function module:LoadItems<K, V>(items)
 
 			--print("Purchasing card: " .. item.Name)
 
-			Packet.BuyCard.send({ card_name = item.Name })
+			for k = 1, quantity:Get() do
+				Packet.BuyCard.send({ card_name = item.Name })
+			end
 
 			pop(purchaseButton)
 
+			ripple(purchaseButton)
+
 			audio:PlaySFX("click")
+
+			module:DisplaySpendings()
 		end)
+
+		template.AncestryChanged:Connect(function(k, new)
+			if new ~= itemHolder then
+				-- cleanup the observers
+
+				future.Try(function()
+					quantity:Destroy()
+					is_bookmarked:Destroy()
+				end)
+			end
+		end)
+		print("shop")
 
 		template.Parent = itemHolder
 	end
@@ -180,38 +354,55 @@ function module:LoadItems<K, V>(items)
 	--print("done")
 end
 
-function module:LoadInventory(profile: typemarshaller.Profile)
+function module:LoadInventory()
 	pool:ReturnAll()
 
+	profile = fetchProfile()
+
 	if not profile then
-		--print("no profile to load inventory")
+		local snackbar = hint.new()
+		snackbar:SetText("Couldn't fetch inventory.")
+		snackbar:SetCanClick(true)
+		snackbar:SetAction(function()
+			module:LoadInventory()
+		end, "Retry")
 
 		return
 	end
 
-	local items = profile.Data.cards
+	local items = profile.Data.cards :: { [string]: number }
 
 	for i, item in pairs(items) do
 		if item <= 0 then
 			continue
 		end
 
+		local quantity = observer.new(1) :: observer.Observer<number>
+
 		local template = pool:Get()
 		template:SetAttribute("name_", i)
-		template.Parent = itemHolder
 		template.Visible = true
 
+		local bookmark_button = template.Bookmark
+
+		bookmark_button.Visible = false
+
 		local title = template.Title
+		template.Description.Visible = false
 
 		local sell_btn = template.Buy
 		local experimentButton = template.Test
 
-		title.Text = i
-			.. [[<br/>
+		local str = [[
+			%s
+			<br/>
 			<font weight="Regular">
-			<font transparency="0.5">]]
-			.. item
-			.. [[</font></font>]]
+			<font transparency="0.5"
+			%s
+			</font></font>
+		]]
+
+		title.Text = string.format(str :: any, i, item)
 
 		template.Visible = true
 		experimentButton.Visible = false
@@ -221,8 +412,54 @@ function module:LoadInventory(profile: typemarshaller.Profile)
 		task.spawn(function()
 			local icon = sell_btn:FindFirstChildOfClass("ImageLabel")
 			if icon then
-				icon.ImageContent = Content.fromAssetId(10734896206)
+				icon.ImageContent = Content.fromAssetId(10734908626)
 			end
+		end)
+
+		local quantity_frame = template.Quantity
+
+		hydration(quantity_frame.TextLabel) {
+			Text = quantity,
+		}
+
+		quantity_frame.Add.Activated:Connect(function()
+			if not alter_quantity_limit(quantity_frame.Add) then
+				return
+			end
+
+			audio:PlaySFX("hover")
+		end)
+
+		quantity_frame.Remove.Activated:Connect(function()
+			if not alter_quantity_limit(quantity_frame.Remove) then
+				return
+			end
+
+			audio:PlaySFX("hover")
+		end)
+
+		quantity_frame.Remove.MouseEnter:Connect(function()
+			audio:PlaySFX("hover")
+		end)
+
+		quantity_frame.Remove.MouseLeave:Connect(function()
+			audio:PlaySFX("leave")
+		end)
+
+		quantity_frame.Add.MouseEnter:Connect(function()
+			audio:PlaySFX("hover")
+		end)
+
+		quantity_frame.Add.MouseLeave:Connect(function()
+			audio:PlaySFX("leave")
+		end)
+
+		sell_btn.MouseEnter:Connect(function()
+			audio:PlaySFX("hover")
+		end)
+
+		sell_btn.MouseLeave:Connect(function()
+			audio:PlaySFX("leave")
 		end)
 
 		sell_btn.Activated:Connect(function()
@@ -232,14 +469,27 @@ function module:LoadInventory(profile: typemarshaller.Profile)
 				return
 			end
 
-			Packet.SellCard.send({ card_name = i })
+			for j = 1, quantity:Get() do
+				Packet.BuyCard.send({ card_name = item.Name })
+			end
 			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 
 			local value = Items[i].Price
 			local floor = math.floor(value / 10)
 
 			prism_awarder.award(floor, true)
+
+			module:DisplaySpendings()
 		end)
+
+		template.AncestryChanged:Connect(function(k, new)
+			if new ~= itemHolder then
+				-- cleanup the observer
+
+				quantity:Destroy()
+			end
+		end)
+		template.Parent = itemHolder
 	end
 end
 

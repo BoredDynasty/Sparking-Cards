@@ -5,12 +5,10 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
-local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local spr = require(ReplicatedStorage.Modules.spr)
-local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- navigation-rail.luau
@@ -69,6 +67,7 @@ function module.new()
 	self.rate_limit = ratelimit(1, 1.5)
 
 	self.rail_gui.Position = UDim2.fromScale(-0.5, 0.5)
+	self.rail_gui.AnchorPoint = Vector2.new(0, 0.5)
 
 	self.active_button:Watch(function(new)
 		if new then
@@ -118,7 +117,7 @@ function module.Show(self: NavigationRail)
 			})
 		else
 			spr.target(self.rail_gui, 1, 3, {
-				Position = UDim2.fromScale(0.03, 0.5),
+				Position = UDim2.fromScale(0, 0.5),
 			})
 		end
 	end
@@ -137,7 +136,7 @@ function module.Hide(self: NavigationRail)
 			})
 		else
 			spr.target(self.rail_gui, 0.8, 3, {
-				Position = UDim2.fromScale(-0.5, 0.5),
+				Position = UDim2.fromScale(-0.3, 0.5),
 			})
 		end
 	end

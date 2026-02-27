@@ -25,6 +25,7 @@ return {
 	options = {
 		background_music = true,
 		gui_sound = true,
+		background_music_volume = 1,
 	},
 	equipped_emotes = {
 		17782874968,
@@ -35,6 +36,7 @@ return {
 	achievements = {
 		--
 	},
+	bookmarked_shop_items = {},
 	quests = {},
 	products = {},
 	keybinds = {

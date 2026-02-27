@@ -11,11 +11,13 @@ local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local ServerStorage = game:GetService("ServerStorage")
 
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
 local Fireworks = require(ReplicatedStorage.Modules.Fireworks)
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
+local Network = require(ReplicatedStorage.Network)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local batch = require(ReplicatedStorage.Utility.batch)
@@ -30,10 +32,11 @@ local party = require(ReplicatedStorage.Modules.party)
 local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local quest = require(ServerStorage.modules.quest)
 local random = require(ReplicatedStorage.Utility.random)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
-local skill_tree = require(ReplicatedStorage.Combat.framework["skill-tree"])
+local skill_chart = require(ReplicatedStorage.Structures["skill-chart"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
 local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
@@ -59,10 +62,11 @@ local profile_key = "playerdata"
 local player_related = profilestore.New(profile_key, profilestructure)
 
 -- change this if i want data to save in studio
+--[[
 if RunService:IsStudio() then
 	player_related = player_related.Mock
 end
-
+--]]
 local function loadProfile(player: Player)
 	local profile = retryer.infdelay(10, function(...)
 		return player_related:StartSessionAsync(`player_{player.UserId}`, {
@@ -621,6 +625,23 @@ local function startLightingCycle()
 	end)
 end
 
+local function insertShopBookmark(player: Player, card_name: string)
+	if not card_name then
+		warn("no card to bookmark")
+
+		return
+	end
+
+	local profile = FetchProfileData(player)
+
+	local i = table.find(profile.bookmarked_shop_items, card_name)
+	if i then
+		table.remove(profile.bookmarked_shop_items, i)
+	else
+		table.insert(profile.bookmarked_shop_items, card_name)
+	end
+end
+
 local function addQuest(player: Player, quest_data: string)
 	-- deserialize
 	local deserialized_data = messagepack.decode(quest_data) :: {
@@ -665,9 +686,6 @@ end
 --("SetPlayerExperience", setPlayerExperience)
 --("GetStats", getStats)
 
-Packet.AddQuest.listen(function(data, player: Player?)
-	addQuest(data.player, data.quest_data)
-end)
 Packet.SetTime.listen(function(data, player: Player?)
 	setClock(data.clock_time)
 end)
@@ -679,6 +697,7 @@ Packet.CreateMatch.listen(function(_, player: Player)
 end)
 
 -- Skill purchases
+--[[
 Packet.BuySkill.listen(function(data, player: Player)
 	local skill_name = data.skill_name
 	local profile = FetchProfileData(player)
@@ -688,7 +707,7 @@ Packet.BuySkill.listen(function(data, player: Player)
 	end
 
 	local skill_info
-	for _, s in ipairs(skill_tree) do
+	for _, s in ipairs(skill_chart) do
 		if s.name == skill_name then
 			skill_info = s
 			break
@@ -727,7 +746,7 @@ Packet.BuySkill.listen(function(data, player: Player)
 	Packet.SkillPurchased.sendTo({ skill_name = skill_name, remaining_affinity = profile.affinity }, player)
 	Packet.SendNotification.sendTo({ message = "Skill unlocked: " .. skill_name }, player)
 end)
-
+--]]
 Packet.BuyCard.listen(function(data, player: Player)
 	purchaseCard(player, data.card_name)
 end)
@@ -855,29 +874,16 @@ PartyRemotes.Leave.OnServerInvoke = function(player: Player, data: { party_id: s
 
 	return false
 end
-Packet.BlowFirework.listen(function(data: { amount: number, position: Vector3 }, player: Player)
-	local WhenToStop = 0
-
-	local fut = future.Try(function()
-		while WhenToStop < data.amount do
-			Fireworks.create(
-				data.position + Vector3.new(random.float(-4, 4), -2, random.float(-4, 4)),
-				data.amount
-			)
-
-			WhenToStop += 1
-		end
-	end)
-
-	local ok, result = fut:Await()
-	--print("is ok: ", ok, result)
-
-	--print(`Player {player.Name} blew {data.amount} fireworks at position {tostring(data.position)}`)
-end)
 
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
+ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
+Events.SendQuestProgress.OnInvoke = function(...)
+	print("got quest progress: ", ...)
+end
+Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 
 startLightingCycle()
+quest:StartTracking()
 
 -- TODO) add player saving options
 Players.PlayerAdded:Connect(onPlayerAdded)

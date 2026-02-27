@@ -101,11 +101,11 @@ export type Character = Model & {
 
 export type ProfileData = {
 	cards: {
-		string: number,
+		[string]: number,
 	},
 	prisms: number,
 	affinity: number, -- skill points
-	skills: { string: boolean },
+	skills: { string },
 	level: Rank,
 	experience: number,
 	last_login: number,
@@ -134,17 +134,8 @@ export type ProfileData = {
 			points: number,
 		}
 	},
-	quests: {
-		{
-			name: string,
-			description: string,
-			inquirer_img: string | Instance, -- img id or a model
-			progress: number,
-			date_acquired: number, -- unix timestamp millis
-			date_completed: number?,
-			module: ModuleScript?,
-		} -- another cyclic module dependency
-	},
+	bookmarked_shop_items: { string },
+	quests: { Quest },
 	products: {
 		[number]: {
 			id: number,
@@ -321,6 +312,23 @@ export type GripInfo = {
 	model: Model,
 	attachment: Attachment?,
 	hand: "Left" | "Right",
+}
+
+export type SkillType = "major" | "minor"
+
+export type Skill = {
+	name: string,
+	technique: string?,
+	upgrade_number: number?,
+	description: string,
+	cost: number, -- must be rounded to the nearest tenth
+	level_required: number, -- dont worry, we can convert level number to rank name
+	requirements: { string? }, -- ahem, ALL skill requirements.
+	next: { string? },
+	blacklisted: { string? }, -- what cards CAN'T use this skill
+	icon: Content | string, -- content or "rbxassetid://ASSET_ID"
+	type: SkillType,
+	multiplier: number, -- a decimal
 }
 
 return nil

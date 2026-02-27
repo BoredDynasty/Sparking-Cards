@@ -8,15 +8,14 @@ export type Card = {
 	WeaponType: string, -- General category for the weapon type (e.g., "Gauntlet", "Sword")
 	BaseDamageMultiplier: number, -- Base damage multiplier for this card's attacks
 	MaxCombo: number, -- Max M1 combo count for this weapon/card
-	MovesetName: string?,
-	FlavorText: string?,
-	TextColor: Color3?,
+	MovesetName: string,
+	TextColor: Color3,
 	Moveset: {
-		M1: string, -- AttackName for the first M1 attack (e.g., "CryoGauntlet_M1_1")
-		Skill: string, -- AttackName for the E skill (e.g., "CryoGauntlet_IceShard_Skill")
-		Ultimate: string, -- AttackName for the Q ultimate (e.g., "CryoGauntlet_BlizzardRush_Ultimate")
-		Support: string?, -- Optional AttackName for the R support move
-		-- Potentially add M1_2, M1_3 etc. if combo pieces have unique AttackNames not covered by Orion's NextComboAttack
+		M1: string,
+		Skill: string,
+		Ultimate: string,
+		Support: string,
+		-- Potentially add M1_2, M1_3 etc. if combo pieces have unique AttackNames not covered by Orion
 	},
 	-- Other card-specific properties could include:
 	-- DefaultDamageValues: { M1 = 10, Skill = 25, Ultimate = 50, Support = 0 }?
@@ -30,9 +29,6 @@ local CardLibrary = {
 		DisplayName = "Cryo Gauntlet",
 		WeaponType = "Gauntlet",
 		MovesetName = "Glacial Emperor's Decree",
-		FlavorText = [[
-		The will of the tundra made manifest; where the Emperor treads, life itself slows to a halt.
-		]],
 		TextColor = Color3.fromRGB(100, 193, 255),
 		BaseDamageMultiplier = 1.15,
 		MaxCombo = 7,
@@ -47,9 +43,6 @@ local CardLibrary = {
 		DisplayName = "Pyro Katana",
 		WeaponType = "Sword",
 		MovesetName = "Conflagration of the Blazing Heart",
-		FlavorText = [[
-		A single spark, given the will to burn the world.
-		]],
 		TextColor = Color3.fromRGB(255, 88, 88),
 		BaseDamageMultiplier = 1.3,
 		MaxCombo = 3,
@@ -65,9 +58,6 @@ local CardLibrary = {
 		DisplayName = "Hydro Catalyst",
 		WeaponType = "Catalyst",
 		MovesetName = "Tidal Sovereign's Judgment",
-		FlavorText = [[
-		In the crushing darkness of the abyss, even light bends. Accept the judgment of the tides.
-		]],
 		TextColor = Color3.fromRGB(119, 151, 255),
 		BaseDamageMultiplier = 1.1,
 		MaxCombo = 3,
@@ -81,10 +71,7 @@ local CardLibrary = {
 	ShadowScythe = {
 		DisplayName = "Shadow Scythe",
 		WeaponType = "Scythe",
-		MovesetName = "wip",
-		FlavorText = [[
-			Power drawn from silence, feeding on fear and motion.
-		]],
+		MovesetName = "Oblivion Reap",
 		TextColor = Color3.fromRGB(80, 0, 120),
 		BaseDamageMultiplier = 1.35,
 		Moveset = {
@@ -97,10 +84,7 @@ local CardLibrary = {
 	AnemoTwinBlades = {
 		DisplayName = "Anemo Twin Blades",
 		WeaponType = "TwinBlades",
-		MovesetName = "wip",
-		FlavorText = [[
-			The unseen force that cuts between heartbeats.
-		]],
+		MovesetName = "Heavenly Current",
 		TextColor = Color3.fromRGB(180, 255, 243),
 		BaseDamageMultiplier = 1.05,
 		Moveset = {
@@ -115,10 +99,7 @@ local CardLibrary = {
 	GeoClaymore = {
 		DisplayName = "Geo Claymore",
 		WeaponType = "Claymore",
-		MovesetName = "wip",
-		FlavorText = [[
-			Strength that doesn’t ask permission.
-		]],
+		MovesetName = "Stonebound Oath",
 		TextColor = Color3.fromRGB(180, 120, 60),
 		BaseDamageMultiplier = 1.4,
 		Moveset = {
@@ -133,10 +114,8 @@ local CardLibrary = {
 	LightStaff = {
 		DisplayName = "Light Staff",
 		WeaponType = "Staff",
-		MovesetName = "wip",
-		FlavorText = [[
-			A beacon of hope, illuminating the path ahead.
-		]],
+		MovesetName = "Radiant Canon",
+
 		TextColor = Color3.fromRGB(255, 255, 200),
 		BaseDamageMultiplier = 1.1,
 		Moveset = {
@@ -151,10 +130,7 @@ local CardLibrary = {
 	ElectroPolearm = {
 		DisplayName = "Electro Polearm",
 		WeaponType = "Polearm",
-		MovesetName = "wip",
-		FlavorText = [[
-			A conduit for the storm's fury, striking with lightning speed.
-		]],
+		MovesetName = "Stormpiercer Art",
 		TextColor = Color3.fromRGB(200, 180, 255),
 		BaseDamageMultiplier = 1.25,
 		Moveset = {
@@ -162,6 +138,20 @@ local CardLibrary = {
 			Skill = "ElectroPolearm_StaticSurge_Skill",
 			Ultimate = "ElectroPolearm_ThunderGate_Ultimate",
 			Support = "ElectroPolearm_ChargeGuard_Support",
+		},
+	},
+
+	PoisonDagger = {
+		DisplayName = "Posion Dagger",
+		WeaponType = "Dagger",
+		MovesetName = "Virulent Whisper",
+		TextColor = Color3.fromRGB(140, 200, 90),
+		BaseDamageMultiplier = 1.2,
+		Moveset = {
+			M1 = "PoisonDagger_Venom_Lash_1",
+			Skill = "PoisonDagger_Toxic_Spiral_Skill",
+			Ultimate = "PoisonDagger_Acid_Bloom_Ultimate",
+			Supprt = "PoisonDagger_Plague_Waltz_Support",
 		},
 	},
 

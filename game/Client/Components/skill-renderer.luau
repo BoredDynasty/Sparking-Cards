@@ -5,7 +5,6 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
-local skill_tree = require(ReplicatedStorage.Combat.framework["skill-tree"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transition)
 

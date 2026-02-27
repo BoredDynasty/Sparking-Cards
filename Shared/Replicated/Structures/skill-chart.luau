@@ -1,8 +1,4 @@
---!strict
-
--- skill-tree.luau
-
-local skill_chart = {
+return {
 	-- TODO) expand here
 	{
 		name = "Itchy Feet",
@@ -13,7 +9,8 @@ local skill_chart = {
 		requirements = {},
 		next = { "Itchy Feet 2" },
 		blacklisted = { "Geo" },
-		icon = "rbxassetid://0",
+		icon = "rbxassetid://94114158506489",
+		multiplier = 1.05,
 	},
 	{
 		name = "Very Itchy Feet",
@@ -24,7 +21,8 @@ local skill_chart = {
 		requirements = {},
 		next = { "Itchy Feet 3" },
 		blacklisted = { "Geo" },
-		icon = "rbxassetid://0",
+		icon = "rbxassetid://94114158506489",
+		multiplier = 1.05,
 	},
 	{
 		name = "Extreme Itchy Feet",
@@ -35,7 +33,8 @@ local skill_chart = {
 		requirements = {},
 		next = { "Itchy Feet 4" },
 		blacklisted = { "Geo" },
-		icon = "rbxassetid://0",
+		icon = "rbxassetid://94114158506489",
+		multiplier = 1.05,
 	},
 	{
 		name = "Mega Itchy Feet",
@@ -46,7 +45,8 @@ local skill_chart = {
 		requirements = {},
 		next = {},
 		blacklisted = { "Geo" },
-		icon = "rbxassetid://0",
+		icon = "rbxassetid://94114158506489",
+		multiplier = 1.05,
 	},
 	{
 		name = "Investment Oppertunity",
@@ -58,6 +58,7 @@ local skill_chart = {
 		next = { "Investment Oppertunity 2" },
 		blacklisted = {},
 		icon = "rbxassetid://0",
+		multiplier = 1.05,
 	},
 	{
 		name = "Better Investment Oppertunity",
@@ -69,6 +70,7 @@ local skill_chart = {
 		next = { "Investment Oppertunity 3" },
 		blacklisted = {},
 		icon = "rbxassetid://0",
+		multiplier = 1.05,
 	},
 	{
 		name = "Best Investment Oppertunity",
@@ -80,6 +82,7 @@ local skill_chart = {
 		next = {},
 		blacklisted = {},
 		icon = "rbxassetid://0",
+		multiplier = 1.05,
 	},
 	{
 		name = "Ranged Mastery",
@@ -91,6 +94,7 @@ local skill_chart = {
 		next = { "Ranged Mastery 2" },
 		blacklisted = {},
 		icon = "rbxassetid://0",
+		multiplier = 1.5,
 	},
 	{
 		name = "Ranged Mastery 2",
@@ -102,6 +106,7 @@ local skill_chart = {
 		next = { "Ranged Mastery 3" },
 		blacklisted = {},
 		icon = "rbxassetid://0",
+		multiplier = 1.5,
 	},
 	{
 		name = "Ranged Mastery 3",
@@ -113,37 +118,6 @@ local skill_chart = {
 		next = {},
 		blacklisted = {},
 		icon = "rbxassetid://0",
+		multiplier = 1.5,
 	},
-} :: skill_chart
-
-export type skill_chart = {
-	{
-		name: string,
-		technique: string?,
-		upgrade_number: number?,
-		description: string,
-		cost: number, -- must be rounded to the nearest tenth
-		level_required: number, -- dont worry, we can convert level number to rank name
-		requirements: { string? }, -- ahem, ALL skill requirements.
-		next: { string? },
-		blacklisted: { string? }, -- what cards CAN'T use this skill
-		icon: Content | string, -- content or "rbxassetid://ASSET_ID"
-		type: "major" | "minor",
-	}
 }
-
-export type skill = {
-	name: string,
-	technique: string?,
-	upgrade_number: number?,
-	description: string,
-	cost: number, -- must be rounded to the nearest tenth
-	level_required: number, -- dont worry, we can convert level number to rank name
-	requirements: { string? }, -- ahem, ALL skill requirements.
-	next: { string? },
-	blacklisted: { string? }, -- what cards CAN'T use this skill
-	icon: Content | string, -- content or "rbxassetid://ASSET_ID"
-	type: "major" | "minor",
-}
-
-return skill_chart

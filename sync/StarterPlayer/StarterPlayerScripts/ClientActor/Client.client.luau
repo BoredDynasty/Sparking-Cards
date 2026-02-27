@@ -139,7 +139,7 @@ local humanoid = character.Humanoid
 
 local PlayerGui = player.PlayerGui
 
-if RunService:IsStudio() then
+if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
 	logger.new()
 end
 
@@ -209,15 +209,11 @@ local function initializeMarket()
 		displayorder:Toggle(shopCanvas)
 
 		if displayorder:GetState(shopCanvas) then
-			task.spawn(market.LoadItems, market)
+			market:LoadItems()
 
 			navigation:Show()
 
-			market:DisplaySpendings(fetchProfile())
-
-			local new_hint = hint.new()
-			new_hint:SetText("Loading Market...")
-			new_hint:SetExpiry(1.5)
+			market:DisplaySpendings()
 
 			wiggle(spendings_icon, function()
 				--print("completed wiggle")
@@ -438,6 +434,16 @@ local function initializeMusic()
 				size = vector.create(2048, 64, 2048),
 			},
 		},
+		{
+			biome = "Route 17",
+			id = 12385329420,
+			name = "Greenlight Valley",
+			artist = "Dynasty",
+			coordinates = {
+				position = vector.create(-1791, 323, -3444),
+				size = vector.create(580, 254, 761),
+			},
+		},
 	}
 
 	for i, track in ipairs(tracks) do
@@ -523,34 +529,68 @@ local function initializeObjectives()
 	local completed_value = observer.new(0)
 	local uncompleted_value = observer.new(0)
 
-	local rank = observer.new("") :: observer.Observer<string>
-
-	task.spawn(future.Try, function()
-		profile = fetchProfile()
-
-		if profile then
-			orion.new(player, profile)
-		end
-
-		if profile and profile.Data then
-			rank:Set(profile.Data.level)
-		else
-			rank:Set("Bronze I")
-			local rank_hint = hint.new()
-			rank_hint:SetText("Couldn't fetch Rank")
-			rank_hint:SetCanClick(false)
-		end
-	end)
+	local get_quest_data = events.GetQuestData
+	local get_progress = events.GetQuestProgress -- remote function
 
 	local function toggleUI()
 		displayorder:Toggle(objectiveGui.CanvasGroup)
 	end
 
+	type GetProgressParams = {
+		list: { string },
+		map: {
+			[string]: ModuleScript?,
+		},
+	}
+
+	get_progress.OnClientInvoke = function(params: GetProgressParams)
+		-- lets get our current progress first.
+
+		local current_progress = get_quest_data:InvokeServer() :: { typemarshaller.Quest }?
+
+		if not current_progress then
+			warn("oouldnt pull current_progress: ", current_progress)
+
+			return nil
+		end
+
+		local progress_data = nil
+
+		for i, current_quest_progress in ipairs(current_progress) do
+			local module = current_quest_progress.module
+
+			local singleton = require(module)
+			if not singleton then
+				warn("couldnt require quest module singleton")
+
+				continue
+			end
+
+			print("got module singleton")
+
+			local new_progress = singleton(player, current_quest_progress.progress)
+
+			progress_data = new_progress
+
+			-- we can use this as a chance to display other information
+
+			completed_value:Set(0)
+			completed_value:Map(function(current: number)
+				if current_quest_progress.completed then
+					return current + 1
+				end
+
+				return current
+			end)
+		end
+
+		print("completed iterating.")
+
+		return progress_data
+	end
+
 	hydration(objectiveGui.CanvasGroup.Frame.Completed.Value) {
 		Text = completed_value,
-	}
-	hydration(objectiveGui.CanvasGroup.Frame.Uncompleted.Value) {
-		Text = uncompleted_value,
 	}
 
 	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"), true)
@@ -808,28 +848,41 @@ humanoid.HealthChanged:Connect(function(health)
 	end)
 end)
 
---[[
--- new scope
 do
-	-- hud bounds
-	local size = Vector2.new(1011, 77 + (1 / 2))
-	local position = Vector2.new(-0.5, 859 + (1 / 4))
+	-- send a notification when the graphics level
+	-- is not at an "appropriate" value.
 
-	mouse.Moved:Connect(function(mouse_position: Vector2)
-		if not mouse_position then
+	local user_settings = UserSettings()
+	local user_game_settings = user_settings:GetService("UserGameSettings")
+
+	local function getGraphicsQuality()
+		return user_game_settings.SavedQualityLevel.Value
+	end
+
+	local min_quality_level = 6
+	local min_quality_enum = Enum.SavedQualitySetting.QualityLevel6
+
+	user_game_settings.Changed:Connect(function()
+		local quality_level = getGraphicsQuality()
+
+		if quality_level >= min_quality_level then
 			return
 		end
 
-		local is_inside = bounds.inner(position, size, mouse_position)
+		-- send a notification snackbar
 
-		if not is_inside then
-			return
-		end
+		local str = "Set Quality Level to %s for the best experience."
 
-		hud:Show()
+		local snack_bar = hint.new()
+		snack_bar:SetText(string.format(str, min_quality_level))
+		snack_bar:SetExpiry(7)
+		snack_bar:SetAction(function()
+			future.Try(function()
+				user_game_settings.SavedQualityLevel = min_quality_enum
+			end)
+		end, "Set")
 	end)
 end
---]]
 
 -- over_shoulder:Enable()
 

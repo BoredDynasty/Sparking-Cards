@@ -39,7 +39,7 @@ end
 
 module.horizontal_position:Set("left")
 
-local global_ratelimit = ratelimit(1, 2.5)
+local global_ratelimit = ratelimit(1, 1)
 
 local pool = PoolerPlus:CreatePool("HudPool", function()
 	local templates = ReplicatedStorage.Interfaces
@@ -68,7 +68,7 @@ function module.new(name: string, callback: () -> (), icon: typemarshaller.Lucid
 		callback = callback,
 		icon = icon,
 		reactor = observer.new(false) :: observer.Observer<boolean>,
-		limit = ratelimit(1, 0.5) :: ratelimit.Ratelimit<string>,
+		limit = ratelimit(1, 1) :: ratelimit.Ratelimit<string>,
 		hover_limit = ratelimit(1, 0.9) :: ratelimit.Ratelimit<string>,
 		text_button = pool:Get(),
 		is_large = is_large,
@@ -95,7 +95,9 @@ function module:Render()
 		return (a.is_large and 1 or 0) < (b.is_large and 1 or 0)
 	end)
 
-	for _, button: Button in ipairs(module.buttons) do
+	task.wait(1)
+
+	for i, button: Button in ipairs(module.buttons) do
 		local icon = button.icon and button.icon.IconName or "file"
 
 		local text_button = button.text_button

@@ -59,6 +59,9 @@ local function getAnimator(): Animator?
 	return nil
 end
 
+--[[
+	Include the prefix.
+]]
 function module.load(animationId: string): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then
@@ -78,6 +81,9 @@ function module.load(animationId: string): AnimationTrack?
 	return track
 end
 
+--[[
+	Include the prefix.
+]]
 function module.play(animationId: string, ...: any): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then
@@ -94,6 +100,9 @@ function module.play(animationId: string, ...: any): AnimationTrack?
 	return track
 end
 
+--[[
+	Include the prefix.
+]]
 function module.stop(animationId: string): ()
 	local animator = getAnimator(character)
 	if not animator then
@@ -119,6 +128,9 @@ function module.stop_all()
 	end
 end
 
+--[[
+	Include the prefix.
+]]
 function module.getTrack(animationId: string): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then

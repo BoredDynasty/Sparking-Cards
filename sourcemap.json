@@ -7,18 +7,20 @@
       "className": "Workspace",
       "children": [
         {
-          "name": "TestPart",
+          "name": "Part",
           "className": "Part",
           "children": [
             {
-              "name": "ImageLabel",
-              "className": "ImageLabel",
-              "children": [
-                {
-                  "name": "UIAspectRatioConstraint",
-                  "className": "UIAspectRatioConstraint"
-                }
-              ]
+              "name": "Explosion",
+              "className": "ParticleEmitter"
+            },
+            {
+              "name": "Trail",
+              "className": "ParticleEmitter"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
             }
           ]
         },
@@ -2147,190 +2149,6 @@
           "className": "Folder",
           "children": [
             {
-              "name": "vfx pack",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "Explosion",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Hit",
-                      "className": "Attachment",
-                      "children": [
-                        {
-                          "name": "Impact",
-                          "className": "Sound"
-                        },
-                        {
-                          "name": "2",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "3",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "4",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "5",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "7",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Shards",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Shockwave",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Spark",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Specs",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "SpecsDark",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Star",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Wind",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Wind1",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "blue star 1",
-                          "className": "ParticleEmitter"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Part",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Line2",
-                      "className": "ParticleEmitter"
-                    },
-                    {
-                      "name": "Line1",
-                      "className": "ParticleEmitter"
-                    },
-                    {
-                      "name": "star",
-                      "className": "ParticleEmitter"
-                    }
-                  ]
-                },
-                {
-                  "name": "Projectile",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment2",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Attachment1",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Main",
-                      "className": "Attachment",
-                      "children": [
-                        {
-                          "name": "Smoke",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "Spark",
-                          "className": "ParticleEmitter"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Trail",
-                      "className": "Trail"
-                    }
-                  ]
-                },
-                {
-                  "name": "f",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment",
-                      "children": [
-                        {
-                          "name": "ParticleEmitter",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "BLACKSHARDS",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "rocks(14",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "impact2",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "impact",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "ground1",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "glow(1)",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "flash(1",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "crescents",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "crescentblack(4",
-                          "className": "ParticleEmitter"
-                        },
-                        {
-                          "name": "brightershards",
-                          "className": "ParticleEmitter"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
               "name": "Heads",
               "className": "Model",
               "children": [
@@ -3689,6 +3507,62 @@
               ]
             },
             {
+              "name": "f",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Attachment",
+                  "className": "Attachment",
+                  "children": [
+                    {
+                      "name": "ParticleEmitter",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "BLACKSHARDS",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "rocks(14",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "impact2",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "impact",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "ground1",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "glow(1)",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "flash(1",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "crescents",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "crescentblack(4",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "brightershards",
+                      "className": "ParticleEmitter"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "name": "Part",
               "className": "Part",
               "children": [
@@ -3824,6 +3698,18 @@
                 },
                 {
                   "name": "Dots 2",
+                  "className": "ParticleEmitter"
+                },
+                {
+                  "name": "Line2",
+                  "className": "ParticleEmitter"
+                },
+                {
+                  "name": "Line1",
+                  "className": "ParticleEmitter"
+                },
+                {
+                  "name": "star",
                   "className": "ParticleEmitter"
                 }
               ]
@@ -4983,6 +4869,110 @@
                 {
                   "name": "FireSpecs1",
                   "className": "ParticleEmitter"
+                }
+              ]
+            },
+            {
+              "name": "Explosion",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Hit",
+                  "className": "Attachment",
+                  "children": [
+                    {
+                      "name": "Impact",
+                      "className": "Sound"
+                    },
+                    {
+                      "name": "2",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "3",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "4",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "5",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "7",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Shards",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Shockwave",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Spark",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Specs",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "SpecsDark",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Star",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Wind",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Wind1",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "blue star 1",
+                      "className": "ParticleEmitter"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Projectile",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Attachment2",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "Attachment1",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "Main",
+                  "className": "Attachment",
+                  "children": [
+                    {
+                      "name": "Smoke",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Spark",
+                      "className": "ParticleEmitter"
+                    }
+                  ]
+                },
+                {
+                  "name": "Trail",
+                  "className": "Trail"
                 }
               ]
             }
@@ -6763,6 +6753,10 @@
           ]
         },
         {
+          "name": "Model",
+          "className": "Folder"
+        },
+        {
           "name": "ToolboxTemporaryInsertModel",
           "className": "Model"
         },
@@ -8060,11 +8054,13 @@
         },
         {
           "name": "AfterImageCache",
-          "className": "Folder"
-        },
-        {
-          "name": "Model",
-          "className": "Folder"
+          "className": "Folder",
+          "children": [
+            {
+              "name": "Sound",
+              "className": "Sound"
+            }
+          ]
         },
         {
           "name": "Terrain",
@@ -8141,28 +8137,28 @@
           ]
         },
         {
+          "name": "TestPart",
+          "className": "Part",
+          "children": [
+            {
+              "name": "ImageLabel",
+              "className": "ImageLabel",
+              "children": [
+                {
+                  "name": "UIAspectRatioConstraint",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "SpawnLocation",
           "className": "SpawnLocation",
           "children": [
             {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
+              "name": "Decal",
+              "className": "Decal"
             },
             {
               "name": "Weld",
@@ -8389,32 +8385,6 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "name": "Part",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
             }
           ]
         }
@@ -9102,6 +9072,13 @@
                   ]
                 },
                 {
+                  "name": "hand-card",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/hand-card.luau"
+                  ]
+                },
+                {
                   "name": "Sequences",
                   "className": "Folder",
                   "children": [
@@ -9238,6 +9215,13 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Interface/wiggle.luau"
                   ]
+                },
+                {
+                  "name": "expressive-button",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/expressive-button.luau"
+                  ]
                 }
               ]
             },
@@ -9354,8 +9338,19 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Classes/dragger.luau"
                   ]
+                },
+                {
+                  "name": "chip",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Classes/chip.luau"
+                  ]
                 }
               ]
+            },
+            {
+              "name": "Frameworks",
+              "className": "Folder"
             }
           ]
         },
@@ -9606,20 +9601,6 @@
                       "className": "UIAspectRatioConstraint"
                     },
                     {
-                      "name": "Holder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UIPadding",
-                          "className": "UIPadding"
-                        },
-                        {
-                          "name": "UIListLayout",
-                          "className": "UIListLayout"
-                        }
-                      ]
-                    },
-                    {
                       "name": "Spendings",
                       "className": "Frame",
                       "children": [
@@ -9644,6 +9625,20 @@
                         {
                           "name": "Amount",
                           "className": "TextLabel"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Holder",
+                      "className": "ScrollingFrame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
                         }
                       ]
                     }
@@ -10512,8 +10507,190 @@
           ]
         },
         {
-          "name": "SuperTexture",
-          "className": "ScreenGui"
+          "name": "SkillTree",
+          "className": "ScreenGui",
+          "children": [
+            {
+              "name": "Frame",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "Loader",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                },
+                {
+                  "name": "Holder",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "UIListLayout",
+                      "className": "UIListLayout"
+                    },
+                    {
+                      "name": "Frame",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "TextLabel",
+                          "className": "TextLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Frame",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel",
+                              "children": [
+                                {
+                                  "name": "ImageLabel",
+                                  "className": "ImageLabel",
+                                  "children": [
+                                    {
+                                      "name": "AspectRatio",
+                                      "className": "UIAspectRatioConstraint"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "AspectRatio",
+                                  "className": "UIAspectRatioConstraint"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "UIListLayout",
+                              "className": "UIListLayout"
+                            },
+                            {
+                              "name": "UIPadding",
+                              "className": "UIPadding"
+                            },
+                            {
+                              "name": "TextButton",
+                              "className": "TextButton",
+                              "children": [
+                                {
+                                  "name": "UICorner",
+                                  "className": "UICorner"
+                                },
+                                {
+                                  "name": "UIPadding",
+                                  "className": "UIPadding"
+                                },
+                                {
+                                  "name": "UIStroke",
+                                  "className": "UIStroke"
+                                },
+                                {
+                                  "name": "Outline",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UIStroke",
+                                      "className": "UIStroke",
+                                      "children": [
+                                        {
+                                          "name": "UIGradient",
+                                          "className": "UIGradient"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "AspectRatio",
+                                      "className": "UIAspectRatioConstraint"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "AspectRatio",
+                                  "className": "UIAspectRatioConstraint"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Spendings",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "Padding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "SpendingsIcon",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UIAspectRatioConstraint",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Amount",
+                      "className": "TextLabel"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         },
         {
           "name": "Party",
@@ -11232,6 +11409,30 @@
               ]
             }
           ]
+        },
+        {
+          "name": "CombatButtons",
+          "className": "ScreenGui",
+          "children": [
+            {
+              "name": "Frame",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                }
+              ]
+            }
+          ]
         }
       ]
     },
@@ -11244,6 +11445,26 @@
           "className": "ModuleScript",
           "filePaths": [
             "sync/ReplicatedStorage/Packet.luau"
+          ]
+        },
+        {
+          "name": "Network",
+          "className": "ModuleScript",
+          "filePaths": [
+            "sync/ReplicatedStorage/Network.luau"
+          ]
+        },
+        {
+          "name": "Kits",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "bloxstrap-rpc-sdk",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Kits/bloxstrap-rpc-sdk.luau"
+              ]
+            }
           ]
         },
         {
@@ -12926,7 +13147,36 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "name": "sleitnick_typed-remote@0.3.0",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "typed-remote",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Packages/_Index/sleitnick_typed-remote@0.3.0/typed-remote.luau"
+                      ],
+                      "children": [
+                        {
+                          "name": "wally",
+                          "className": "ModuleScript",
+                          "filePaths": [
+                            "sync/ReplicatedStorage/Packages/_Index/sleitnick_typed-remote@0.3.0/typed-remote/wally.luau"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
                 }
+              ]
+            },
+            {
+              "name": "typedremote",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Packages/typedremote.luau"
               ]
             }
           ]
@@ -13066,6 +13316,13 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Modules/matchmaker.luau"
+              ]
+            },
+            {
+              "name": "skill-manager",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/skill-manager.luau"
               ]
             },
             {
@@ -13371,22 +13628,6 @@
               ]
             },
             {
-              "name": "quest",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/quest.luau"
-              ],
-              "children": [
-                {
-                  "name": "take-a-hike",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/ClientModules/quest/take-a-hike.luau"
-                  ]
-                }
-              ]
-            },
-            {
               "name": "dropper",
               "className": "ModuleScript",
               "filePaths": [
@@ -13487,6 +13728,19 @@
                   ]
                 }
               ]
+            },
+            {
+              "name": "quest-modules",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "take-a-hike",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/ClientModules/quest-modules/take-a-hike.luau"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -13569,6 +13823,13 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Structures/settings-data.luau"
+              ]
+            },
+            {
+              "name": "skill-chart",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Structures/skill-chart.luau"
               ]
             }
           ]
@@ -13816,13 +14077,6 @@
                   ]
                 },
                 {
-                  "name": "skill-tree",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Combat/framework/skill-tree.luau"
-                  ]
-                },
-                {
                   "name": "attacks",
                   "className": "Folder",
                   "children": [
@@ -13854,10 +14108,10 @@
                       ]
                     },
                     {
-                      "name": "impact",
+                      "name": "ground-crack",
                       "className": "ModuleScript",
                       "filePaths": [
-                        "sync/ReplicatedStorage/Combat/framework/effects/impact.luau"
+                        "sync/ReplicatedStorage/Combat/framework/effects/ground-crack.luau"
                       ]
                     }
                   ]
@@ -13959,6 +14213,10 @@
                       ]
                     }
                   ]
+                },
+                {
+                  "name": "skill-tree",
+                  "className": "Folder"
                 }
               ]
             },
@@ -14115,7 +14373,7 @@
               "className": "RemoteFunction"
             },
             {
-              "name": "GetProfileBoundary",
+              "name": "GetProfileServer",
               "className": "BindableFunction"
             },
             {
@@ -14223,6 +14481,30 @@
             {
               "name": "PlayAnimation",
               "className": "RemoteEvent"
+            },
+            {
+              "name": "InsertSkill",
+              "className": "RemoteFunction"
+            },
+            {
+              "name": "RemoveSkill",
+              "className": "RemoteFunction"
+            },
+            {
+              "name": "GetQuestProgress",
+              "className": "RemoteFunction"
+            },
+            {
+              "name": "SendQuestProgress",
+              "className": "BindableFunction"
+            },
+            {
+              "name": "GetQuestData",
+              "className": "RemoteFunction"
+            },
+            {
+              "name": "BookmarkShopCard",
+              "className": "RemoteFunction"
             }
           ]
         },
@@ -17397,6 +17679,54 @@
             {
               "name": "Dust",
               "className": "MeshPart"
+            },
+            {
+              "name": "Crack-01",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Main",
+                  "className": "Attachment",
+                  "children": [
+                    {
+                      "name": "Floor2",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Floor1",
+                      "className": "ParticleEmitter"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Big-Crack-01",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Main",
+                  "className": "Attachment",
+                  "children": [
+                    {
+                      "name": "Impact1",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Impact2",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Ash1",
+                      "className": "ParticleEmitter"
+                    },
+                    {
+                      "name": "Fire1",
+                      "className": "ParticleEmitter"
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -17522,93 +17852,7 @@
               "children": [
                 {
                   "name": "ItemTemplate",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "UIStroke",
-                      "className": "UIStroke"
-                    },
-                    {
-                      "name": "Buy",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Test",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Image",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Title",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        },
-                        {
-                          "name": "UITextSizeConstraint",
-                          "className": "UITextSizeConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
+                  "className": "Frame"
                 }
               ]
             },
@@ -18402,6 +18646,126 @@
                   "className": "UIAspectRatioConstraint"
                 }
               ]
+            },
+            {
+              "name": "Chip",
+              "className": "TextButton",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "UIPadding",
+                  "className": "UIPadding"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                },
+                {
+                  "name": "Outline",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UIStroke",
+                      "className": "UIStroke",
+                      "children": [
+                        {
+                          "name": "UIGradient",
+                          "className": "UIGradient"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
+              "name": "CardTemplate",
+              "className": "CanvasGroup",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "UIAspectRatioConstraint",
+                  "className": "UIAspectRatioConstraint"
+                },
+                {
+                  "name": "Content",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "CardName",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel"
+                    },
+                    {
+                      "name": "CardType",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "CardDescription",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "UITextSizeConstraint",
+                          "className": "UITextSizeConstraint"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -18498,10 +18862,6 @@
           ]
         },
         {
-          "name": "Network",
-          "className": "Folder"
-        },
-        {
           "name": "Effects",
           "className": "Folder",
           "children": [
@@ -18551,19 +18911,6 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Types/typemarshaller.luau"
-              ]
-            }
-          ]
-        },
-        {
-          "name": "Kits",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "bloxstrap-rpc-sdk",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Kits/bloxstrap-rpc-sdk.luau"
               ]
             }
           ]
@@ -21289,36 +21636,6 @@
           ]
         },
         {
-          "name": "BiomeStorage",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "Grass",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Hitbox",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Bottom",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Top",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Grass",
-                      "className": "Beam"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
           "name": "TodoList",
           "className": "Folder",
           "children": [
@@ -21333,12 +21650,24 @@
           ]
         },
         {
-          "name": "BLINK_CONFIGURATION_FILES",
+          "name": "modules",
           "className": "Folder",
           "children": [
             {
-              "name": "main",
-              "className": "StringValue"
+              "name": "quest",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ServerStorage/modules/quest.luau"
+              ],
+              "children": [
+                {
+                  "name": "registered",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ServerStorage/modules/quest/registered.luau"
+                  ]
+                }
+              ]
             }
           ]
         },

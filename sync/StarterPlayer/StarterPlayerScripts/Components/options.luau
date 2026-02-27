@@ -55,7 +55,6 @@ local templates = ReplicatedStorage.Interfaces.Settings
 local events = ReplicatedStorage.Events
 local get_profile = events.GetProfile
 
-shadow(templates.OptionTemplate)
 shadow(templates.OptionTemplate.Toggle)
 
 local pool = PoolerPlus:CreatePool("OptionsPool", function()
@@ -67,8 +66,21 @@ pool:AdaptivePreload()
 local last_check: number = 0.0
 local check_interval = 5
 
+-- unfortunately,
+-- i will have to figure out just HOW
+-- to implement such.
+-- hint: use RbxGuiLib by EgoMoose.
+local unsupported_types = {
+	"number",
+}
+
 local function insertData(profile: typemarshaller.Profile)
 	for i, saved_option in pairs(profile.Data.options) do
+		-- remove this code block once we figure more out.
+		if table.find(unsupported_types, type(saved_option)) then
+			continue
+		end
+
 		local all_option_names = {}
 
 		for j, option_data in ipairs(settings_data) do
@@ -177,7 +189,6 @@ function module:Render()
 	-- render
 	for i, option in ipairs(module.tracked) do
 		local option_template = pool:Get()
-		option_template.Parent = holder
 
 		local text_display = option_template:FindFirstChild("TextDisplay", true) :: TextLabel
 		local toggle_btn = option_template:FindFirstChild("Toggle", true) :: TextButton
@@ -224,6 +235,8 @@ function module:Render()
 				end
 			end
 		end)
+
+		option_template.Parent = holder
 	end
 end
 

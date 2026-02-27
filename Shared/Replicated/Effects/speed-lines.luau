@@ -1,46 +1,42 @@
---!nonstrict
+--!strict
 
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
-local future = require(ReplicatedStorage.Packages.future)
-local observer = require(ReplicatedStorage.Utility.observer)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 
 -- speed-lines.luau
 
-local module = {
-	-- variables
-	speed = 20,
-	rate = 1500,
-	offset = 10,
-	render_priority = Enum.RenderPriority.Camera.Value,
-	is_bound = observer.new(false),
-	tag = "speed-lines",
-}
+local module = {}
 
-export type lines = BasePart & {
-	Attachment: Attachment & {
-		ParticleEmitter: ParticleEmitter,
-	},
-}
+local speed = 20
+local rate = 1500
+local offset = 10
+local render_priority = Enum.RenderPriority.Camera.Value
+local state = false
+local tag = "speed-lines"
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
-local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
+local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 
-function module:On(camera: Camera, lines: lines)
-	camera = camera or workspace.CurrentCamera
+local camera = workspace.CurrentCamera
 
-	assert(lines, "Did you forget to input the lines model?")
+local pool = PoolerPlus:CreatePool("SpeedlinesPool", function()
+	local assets = ReplicatedStorage.Assets
+
+	return assets.Speedlines:Clone()
+end)
+
+pool:AdaptivePreload()
+
+function module:On()
+	local lines = pool:Get()
 
 	local function compute()
 		if not character or not humanoid or humanoid.Health <= 0 then
 			module:Off(lines)
-		end
-
-		if not lines or not lines:FindFirstChild("Attachment") then
-			return
 		end
 
 		local viewport_size = camera.ViewportSize
@@ -52,53 +48,34 @@ function module:On(camera: Camera, lines: lines)
 
 		-- so you can see them on any other device
 		if aspect_ratio > 1.5 then
-			module.offset = 10
+			offset = 10
 		else
-			module.offset = 13
+			offset = 13
 		end
 
+		-- TODO) make the fov in compliance with user options.
 		-- we should replace the 70 with the default FOV.
 		-- 70 is the placeholder for now
-		lines.CFrame = coordinate + look_vector * (module.offset / (fov / 70))
-		lines.Attachment.ParticleEmitter.Rate = (humanoid.WalkSpeed / module.speed :: number)
-			* module.rate :: number
+		lines.CFrame = coordinate + look_vector * (offset / (fov / 70))
+		lines.Attachment.ParticleEmitter.Rate = (humanoid.WalkSpeed / speed) * rate
 	end
 
-	lines.Name = "Speed_Lines"
 	lines.Parent = camera
 	lines.Attachment.ParticleEmitter.Enabled = true
 
-	if module.is_bound:Get() == true then
-		module:Off(camera:FindFirstChild("Speed_Lines") :: any)
+	if state then
+		module:Off()
 	end
 
-	future.Try(function(...)
-		RunService:BindToRenderStep(module.tag, module.render_priority, compute)
-	end)
+	RunService:BindToRenderStep(tag, render_priority, compute)
 
-	module.is_bound:Set(true)
-
-	return lines
+	state = true
 end
 
-function module:Off(lines: lines?)
-	RunService:UnbindFromRenderStep(module.tag)
+function module:Off()
+	RunService:UnbindFromRenderStep(tag)
 
-	return future.Try(function()
-		if lines then
-			lines:Destroy()
-		else
-			local camera = workspace.CurrentCamera
-
-			lines = camera:FindFirstChild("Speed_Lines") :: lines?
-
-			if lines then
-				lines:Destroy()
-			end
-
-			-- if lines not found, assume we already cleaned up
-		end
-	end)
+	pool:ReturnAll()
 end
 
 return module
