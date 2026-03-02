@@ -21,11 +21,9 @@ local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
-local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
-local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
-local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
+local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 
 -- market.luau
 
@@ -97,16 +95,16 @@ function module:DisplaySpendings()
 end
 
 function module:StartNavigation()
-	navigation:Button("Home", lucide.GetAsset("home"), function()
+	navigation:Button("Home", "home", function()
 		-- this is already running along the main thread
 		market:LoadItems()
 	end)
-	navigation:Button("Inventory", lucide.GetAsset("backpack"), function()
+	navigation:Button("Inventory", "backpack", function()
 		market:LoadInventory()
 	end)
 
 	navigation:SetAdornee(shopGui)
-	navigation:SetActionIcon(lucide.GetAsset("ticket"))
+	navigation:SetActionIcon("ticket")
 	navigation:Render()
 end
 
@@ -119,8 +117,6 @@ function module:LoadItems<K, V>(items)
 
 	items = items or Items
 
-	print("shop")
-
 	profile = fetchProfile()
 
 	for i, item in pairs(items) do
@@ -129,9 +125,9 @@ function module:LoadItems<K, V>(items)
 		template:SetAttribute("name_", item.Name)
 
 		-- variables
+		-- TODO) figure out an effective way to get rid of these observers so no memory leak
 		local quantity = observer.new(1) :: observer.Observer<number>
 		local is_bookmarked = observer.new(false) :: observer.Observer<boolean>
-		print("shop")
 
 		-- find the item in player bookmarks
 
@@ -143,7 +139,6 @@ function module:LoadItems<K, V>(items)
 				end
 			end
 		end)
-		print("shop")
 
 		local title = template.Title
 		local description = template.Description
@@ -162,9 +157,30 @@ function module:LoadItems<K, V>(items)
 
 			local price = math.floor(item.Price * new_quantity) + 0.99
 
-			title.Text = string.format(title_str :: any, item.Name, price)
+			task.spawn(function()
+				profile = fetchProfile()
+				if not profile then
+					return
+				end
+
+				local prisms = profile.Data.prisms
+
+				local remaining_balance = prisms - price
+				if remaining_balance <= 0 then
+					-- let the player know they're too BROKE to afford this card.
+
+					local snackbar = hint.new()
+					snackbar:SetText("You're too broke to afford this.")
+					snackbar:SetExpiry(2)
+				end
+			end)
+
+			if price == item.Price then
+				title.Text = string.format(title_str :: any, item.Name, price)
+			else
+				title.Text = string.format(title_str :: any, item.Name, item.Price .. " > " .. price)
+			end
 		end)
-		print("shop")
 
 		template.Visible = true
 
@@ -174,7 +190,6 @@ function module:LoadItems<K, V>(items)
 		description.TextColor3 = item.Details.TextColor
 
 		purchaseButton.AutoButtonColor = false
-		print("shop")
 
 		if item.ExperimentsEnabled then
 			experimentButton.Visible = true
@@ -236,7 +251,6 @@ function module:LoadItems<K, V>(items)
 
 			events.BookmarkShopCard:InvokeServer(item.Name)
 		end)
-		print("shop")
 
 		-- quantity system
 
@@ -246,10 +260,12 @@ function module:LoadItems<K, V>(items)
 		hydration(quantity_frame.TextLabel) {
 			Text = quantity,
 		}
-		print("shop")
 
 		local quantity_add = quantity_frame:WaitForChild("Add")
 		local quantity_remove = quantity_frame:WaitForChild("Remove")
+
+		tooltip.register(quantity_add, "Increase quantity")
+		tooltip.register(quantity_remove, "Decrease quantity")
 
 		quantity_add.Activated:Connect(function()
 			future.Try(function()
@@ -288,7 +304,6 @@ function module:LoadItems<K, V>(items)
 				audio:PlaySFX("continue")
 			end)
 		end)
-		print("shop")
 
 		quantity_remove.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
@@ -327,6 +342,8 @@ function module:LoadItems<K, V>(items)
 				Packet.BuyCard.send({ card_name = item.Name })
 			end
 
+			confetti(nil, shopCanvas)
+
 			pop(purchaseButton)
 
 			ripple(purchaseButton)
@@ -346,7 +363,6 @@ function module:LoadItems<K, V>(items)
 				end)
 			end
 		end)
-		print("shop")
 
 		template.Parent = itemHolder
 	end
@@ -470,7 +486,7 @@ function module:LoadInventory()
 			end
 
 			for j = 1, quantity:Get() do
-				Packet.BuyCard.send({ card_name = item.Name })
+				Packet.BuyCard.send({ card_name = i })
 			end
 			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 

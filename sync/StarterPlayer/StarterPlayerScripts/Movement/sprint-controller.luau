@@ -5,10 +5,12 @@ local StarterPlayer = game:GetService("StarterPlayer")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
+local brick_particle = require(StarterPlayer.StarterPlayerScripts.Gameplay["brick-particle"])
 
 local input = require(ReplicatedStorage.Packages.input)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
+local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- sprint-controller.luau
@@ -48,7 +50,7 @@ if character then
 	setupCharacter(character)
 end
 
-local rate_limit = ratelimit(1, 0.5)
+local rate_limit = ratelimit(3, 0.5)
 
 local run_animations = {
 	121791117079049,
@@ -57,53 +59,20 @@ local run_animations = {
 
 -- TODO) make this in compliance with user data.
 -- and the players skill tree.
-local running_speed = 32
-local acceleration = 60
-local deceleration = 80
-
-local rotation_power_back = 0.5
-local rotation_power_left = 0.5
-local rotation_speed = 0.1
-local original_c0 = root_joint.C0
-
-for i, id in ipairs(run_animations) do
-	animate.load(`rbxassetid://{id}`)
-end
+local running_speed = 15
 
 local function onBegan()
-	if not rate_limit(player.UserId) then
+	if is_sprinting then
 		return
 	end
 
-	-- are we even in a running motion?
-	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
-		return
-	end
+	local current_stamina = character:GetAttribute("Stamina") :: number or 0
 
-	local stamina = character:GetAttribute("Stamina") :: number or 0
-
-	-- are we out of breath?
-	if stamina <= 0 then
-		return
-	end
-
-	-- are we even moving?
-	if humanoid.MoveDirection.Magnitude <= 0 then
-		return
-	end
-
-	is_sprinting = true
-	character:SetAttribute("IsSprinting", is_sprinting)
-
-	-- remove regeneration
 	character:SetAttribute("AntiRegenerate", true)
 
-	speed_lines:On()
+	animate.play(run_animations[1], 0.25)
 
-	-- play a random animation
-
-	local animation_id = run_animations[math.random(1, #run_animations)]
-	animate.play(`rbxassetid://{animation_id}`)
+	humanoid.WalkSpeed += running_speed
 end
 
 local function onEnded()
@@ -113,26 +82,21 @@ local function onEnded()
 	end
 
 	is_sprinting = false
-	character:SetAttribute("IsSprinting", is_sprinting)
 
 	-- allow for regeneration
 	character:SetAttribute("AntiRegenerate", false)
 
-	animate.stop_all()
+	local animation_id = 111852268003786
+	animate.stop(run_animations[1], 0.25)
 
-	speed_lines:Off()
+	-- reset walkspeed
+
+	humanoid.WalkSpeed -= running_speed
 end
 
 function module:Update(delta_time: number)
 	-- have we already stopped sprinting?
 	if not is_sprinting then
-		return
-	end
-
-	-- are we even running?
-	if humanoid:GetState() ~= Enum.HumanoidStateType.Running then
-		onEnded()
-
 		return
 	end
 
@@ -142,25 +106,6 @@ function module:Update(delta_time: number)
 	if move_direction.Magnitude <= 0 then
 		return
 	end
-
-	local walk_speed = humanoid.WalkSpeed
-
-	if walk_speed < running_speed then
-		humanoid.WalkSpeed += (acceleration * delta_time)
-	else
-		humanoid.WalkSpeed -= (deceleration * delta_time)
-	end
-
-	-- tilt the character
-	local root_part_cf = root_part.CFrame
-
-	local dot_back = root_part_cf.LookVector:Dot(move_direction)
-	local dot_left = root_part_cf.RightVector:Dot(move_direction)
-
-	root_joint.C0:Lerp(
-		original_c0 * CFrame.Angles(dot_back * rotation_power_back, dot_left * rotation_power_left, 0),
-		rotation_speed
-	)
 
 	-- drain stamina
 	local current_stamina = character:GetAttribute("Stamina") :: number or 0

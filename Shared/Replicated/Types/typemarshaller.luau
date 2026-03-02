@@ -272,7 +272,7 @@ export type OrionParameters = {
 
 export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
 
-export type AttackFunction = (Player, OrionParameters) -> unknown
+export type AttackFunction = (Player) -> boolean
 export type AttackModule = {
 	GetMaxCombo: () -> number,
 	moveset: {

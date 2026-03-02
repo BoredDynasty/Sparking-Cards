@@ -17,6 +17,7 @@ local retryer = require(ReplicatedStorage.Utility.retryer)
 local settings_data = require(ReplicatedStorage.Structures["settings-data"])
 local shadow = require("../Interface/shadow")
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
+local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- options.luau
@@ -24,7 +25,7 @@ local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 local module = {
 	tracked = {} :: { Option },
-	limit = ratelimit(1, 0.5),
+	limit = ratelimit(2, 0.5),
 }
 export type OptionCallbacks = {
 	on: (...unknown) -> ...unknown,
@@ -54,6 +55,7 @@ local templates = ReplicatedStorage.Interfaces.Settings
 
 local events = ReplicatedStorage.Events
 local get_profile = events.GetProfile
+local save_setting = events.SaveSetting
 
 shadow(templates.OptionTemplate.Toggle)
 shadow(optionsFrame)
@@ -177,7 +179,7 @@ function module:Get(name: string): Option?
 	return nil
 end
 
-function module:Render()
+function module:Unload()
 	local holder = optionsFrame.Holder
 
 	-- cleanup existing
@@ -186,6 +188,12 @@ function module:Render()
 			object:Destroy()
 		end
 	end
+end
+
+function module:LoadItems()
+	local holder = optionsFrame.Holder
+
+	module:Unload()
 
 	-- render
 	for i, option in ipairs(module.tracked) do
@@ -213,6 +221,13 @@ function module:Render()
 
 		toggle_btn.Visible = true
 
+		tooltip.register(toggle_btn, booleanToString(value:Get()))
+		value.Changed:Connect(function()
+			tooltip.unregister(toggle_btn)
+			task.wait()
+			tooltip.register(toggle_btn, booleanToString(value:Get()))
+		end)
+
 		toggle_btn.Activated:Connect(function()
 			if module.limit(option.name) then
 				return
@@ -233,6 +248,8 @@ function module:Render()
 
 				if type(value:Get()) == "boolean" then
 					future.new(updateIcon, btn_icon, value:Get(), icon_data)
+
+					save_setting:InvokeServer(option.name, value:Get())
 				end
 			end
 		end)
@@ -242,7 +259,7 @@ function module:Render()
 end
 
 function module:Clear()
-	return future.new(table.clear, module.tracked)
+	table.clear(module.tracked)
 end
 
 return module

@@ -5,12 +5,12 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
-local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
+local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local spr = require(ReplicatedStorage.Modules.spr)
-local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- navigation-rail.luau
@@ -69,6 +69,7 @@ function module.new()
 	self.rate_limit = ratelimit(1, 1.5)
 
 	self.rail_gui.Position = UDim2.fromScale(-0.5, 0.5)
+	self.rail_gui.AnchorPoint = Vector2.new(0, 0.5)
 
 	self.active_button:Watch(function(new)
 		if new then
@@ -118,7 +119,7 @@ function module.Show(self: NavigationRail)
 			})
 		else
 			spr.target(self.rail_gui, 1, 3, {
-				Position = UDim2.fromScale(0.03, 0.5),
+				Position = UDim2.fromScale(0, 0.5),
 			})
 		end
 	end
@@ -137,7 +138,7 @@ function module.Hide(self: NavigationRail)
 			})
 		else
 			spr.target(self.rail_gui, 0.8, 3, {
-				Position = UDim2.fromScale(-0.5, 0.5),
+				Position = UDim2.fromScale(-0.3, 0.5),
 			})
 		end
 	end
@@ -149,20 +150,23 @@ function module.Hide(self: NavigationRail)
 	--hud:SetAlignment("left")
 end
 
-function module.Button(self: NavigationRail, name: string, icon: typemarshaller.LucideIcon, fn: () -> ())
+function module.Button(self: NavigationRail, name: string, icon: string, fn: () -> ())
 	table.insert(self.buttons, {
 		name = name,
-		icon = icon,
+		icon = lucide.GetAsset(icon, 256),
 		text_button = button_pool:Get(),
 		fn = fn,
 	})
 end
 
-function module.SetActionIcon(self: NavigationRail, icon: typemarshaller.LucideIcon)
+function module.SetActionIcon(self: NavigationRail, icon: string)
 	task.spawn(function()
 		future.Try(function()
+			local lucide_asset = lucide.GetAsset(icon, 256)
+
 			local image_label = self.action_button.ImageLabel
-			image_label.ImageContent = Content.fromUri(icon.Url)
+			image_label.ImageContent = Content.fromUri(lucide_asset.Url)
+			image_label.Image = "rbxassetid://" .. lucide_asset.Id
 
 			pop(image_label, 1.2)
 		end)
@@ -183,14 +187,7 @@ function module.Render(self: NavigationRail)
 		button.Name = name
 		future.Try(function()
 			task.spawn(function()
-				local content = Content.fromUri(icon.Url)
-
-				button.Image.ImageContent = content
-
-				if content.Uri then
-					button.Image.Image = content.Uri
-				end
-
+				button.Image.Image = "rbxassetid://" .. icon.Id
 				button.TextLabel.Text = name
 			end)
 		end)
@@ -209,6 +206,8 @@ function module.Render(self: NavigationRail)
 			audio:PlaySFX("click")
 
 			future.Try(fn)
+
+			ripple(button, 0.8)
 		end)
 
 		button.Parent = self.holder

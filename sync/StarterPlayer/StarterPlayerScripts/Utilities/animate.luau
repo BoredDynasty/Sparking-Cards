@@ -1,8 +1,6 @@
 --!strict
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local Players = game:GetService("Players")
 
 -- animate.luau
 
@@ -43,7 +41,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 
 local module = {}
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 
 local function getAnimator(): Animator?
@@ -62,10 +60,14 @@ end
 --[[
 	Include the prefix.
 ]]
-function module.load(animationId: string): AnimationTrack?
+function module.load(animationId: string | number): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then
 		return nil
+	end
+
+	if type(animationId) == "number" then
+		animationId = `rbxassetid://{animationId}`
 	end
 
 	-- Check if already loaded
@@ -76,7 +78,7 @@ function module.load(animationId: string): AnimationTrack?
 	end
 
 	local animation = Instance.new("Animation")
-	animation.AnimationId = animationId
+	animation.AnimationId = animationId :: string
 	local track = animator:LoadAnimation(animation)
 	return track
 end
@@ -84,7 +86,7 @@ end
 --[[
 	Include the prefix.
 ]]
-function module.play(animationId: string, ...: any): AnimationTrack?
+function module.play(animationId: string | number, ...: any): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then
 		return nil
@@ -97,16 +99,21 @@ function module.play(animationId: string, ...: any): AnimationTrack?
 
 	-- Optionally pass arguments to Play (fadeTime, weight, speed)
 	track:Play(...)
+
 	return track
 end
 
 --[[
 	Include the prefix.
 ]]
-function module.stop(animationId: string): ()
+function module.stop(animationId: string | string): ()
 	local animator = getAnimator(character)
 	if not animator then
 		return
+	end
+
+	if type(animationId) == "number" then
+		animationId = `rbxassetid://{animationId}`
 	end
 
 	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
@@ -131,10 +138,14 @@ end
 --[[
 	Include the prefix.
 ]]
-function module.getTrack(animationId: string): AnimationTrack?
+function module.getTrack(animationId: string | string): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then
 		return nil
+	end
+
+	if type(animationId) == "number" then
+		animationId = `rbxassetid://{animationId}`
 	end
 
 	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do

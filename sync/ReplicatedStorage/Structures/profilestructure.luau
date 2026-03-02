@@ -18,7 +18,7 @@ return {
 	skills = {}, -- unlocked skills
 	level = "Bronze I",
 	experience = 0,
-	last_login = 0,
+	last_login = DateTime.now().UnixTimestampMillis,
 	equipped_card = "Pyro",
 	victories = 0,
 	-- Other

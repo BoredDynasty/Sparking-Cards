@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local input = require(ReplicatedStorage.Packages.input)
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -18,17 +17,14 @@ module.tracking = {} :: { Tooltip }
 local player = Players.LocalPlayer
 local player_gui = player.PlayerGui
 
+-- ensure the Tooltip ScreenGui is available
+local tooltip_container = player_gui:WaitForChild("Tooltip") :: ScreenGui
+
 local mouse = input.Mouse.new()
 
-local templates = ReplicatedStorage.Interfaces
+local templates = ReplicatedStorage:WaitForChild("Interfaces")
 
 local camera = workspace.CurrentCamera
-
-local plain_pool = PoolerPlus:CreatePool("PlainTooltipPool", function()
-	return templates.PlainTooltip:Clone()
-end)
-
-plain_pool:AdaptivePreload()
 
 local active_tooltip = nil
 
@@ -36,7 +32,6 @@ type Tooltip = {
 	object: GuiObject,
 	text: string,
 	actions: Actions?,
-	gui_bounds: { [string]: Vector2 },
 }
 
 type Actions = {
@@ -47,16 +42,10 @@ type Actions = {
 }
 
 function module.register(object: GuiObject, text: string, actions: Actions?)
-	local gui_bounds = {
-		size = object.AbsoluteSize,
-		position = object.AbsolutePosition,
-	}
-
 	local data = {
 		object = object,
 		text = text,
 		actions = actions,
-		gui_bounds = gui_bounds,
 	}
 
 	table.insert(module.tracking, data)
@@ -94,66 +83,27 @@ local function clamp_tooltip_position(
 end
 
 function module:Start()
-	local last_check: number = 0.0
-	local check_interval = 1 / 60
-	local last_postion = mouse:GetPosition()
+	for i, data in ipairs(module.tracking) do
+		local object = data.object
+		local tooltip_gui = nil :: TextButton?
 
-	local screen_size = camera.ViewportSize
-
-	local conn = nil
-
-	conn = mouse.Moved:Connect(function(position: Vector2)
-		last_check += RunService.Heartbeat:Wait()
-
-		if last_check < check_interval then
-			return
-		end
-		last_check = 0
-
-		if last_postion and (position - last_postion).Magnitude < 1 then
-			return
-		end
-
-		last_postion = position
-
-		-- iterate the registered tooltips
-
-		debug.profilebegin("tooltip_iter")
-
-		for i, data in ipairs(module.tracking) do
-			if active_tooltip ~= nil then
+		object.MouseEnter:Connect(function()
+			if tooltip_gui then
 				return
 			end
 
-			local object = data.object
+			local gui_bounds = {
+				size = object.AbsoluteSize,
+				position = object.AbsolutePosition,
+			}
 
-			local gui_bounds = data.gui_bounds
-
-			local is_inside = bounds.inner(gui_bounds.position, gui_bounds.size, position)
-			if not is_inside then
-				continue
-				-- continue iterating over the next piece of data.
-			end
-
-			local is_active = object:GetAttribute("TooltipActive") :: boolean
-			if is_active then
-				continue
-				-- we are already handling this one; continue iteration.
-			end
-
-			object:SetAttribute("TooltipActive", true)
-			active_tooltip = object
-
-			-- render the tooltip.
-
-			local tooltip_gui = plain_pool:Get() -- TODO) allow for both rich and plain tooltips.
-			-- keep a 4dp distance between the target and tooltip.
-			-- make sure the tooltip doesn't go past the screen bounds.
+			tooltip_gui = templates.PlainTooltip:Clone()
+			assert(tooltip_gui, "huh?")
 
 			local target_x = gui_bounds.position.X
 				+ (gui_bounds.size.X / 2)
 				- (tooltip_gui.AbsoluteSize.X / 2)
-			local target_y = gui_bounds.position.Y - tooltip_gui.AbsoluteSize.Y + 10
+			local target_y = gui_bounds.position.Y - tooltip_gui.AbsoluteSize.Y - 4
 
 			local padding = 4
 			target_x, target_y = clamp_tooltip_position(
@@ -161,77 +111,49 @@ function module:Start()
 				target_y,
 				tooltip_gui.AbsoluteSize.X,
 				tooltip_gui.AbsoluteSize.Y,
-				screen_size,
+				camera.ViewportSize,
 				padding
 			)
 
 			tooltip_gui.Text = data.text
-			tooltip_gui.Parent = player_gui.Tooltip
-			tooltip_gui.AnchorPoint = Vector2.zero
+			tooltip_gui.Parent = tooltip_container
 
-			-- before we set the position, we need to animate it!!!
-
-			tooltip_gui.Position = UDim2.fromOffset(target_x, target_y + 10) -- below the target, with a 10 pixel offset for the animation
+			tooltip_gui.Position = UDim2.fromOffset(target_x, target_y - 4)
 			tooltip_gui.Visible = true
-
-			-- transparency effects
 
 			tooltip_gui.TextTransparency = 1
 			tooltip_gui.BackgroundTransparency = 1
 
-			-- animate!!!
 			spr.target(tooltip_gui, 0.73, 3.5, {
 				Position = UDim2.fromOffset(target_x, target_y),
 				TextTransparency = 0,
 				BackgroundTransparency = 0,
 			})
+		end)
 
-			-- after mouseleave, remove the tooltip.
+		object.MouseLeave:Connect(function()
+			if not tooltip_gui then
+				return
+			end
 
-			local leave_conn = nil
+			task.wait(1.5)
 
-			local done = false -- this flag prevents further function execution.
+			local target_x = tooltip_gui.Position.X.Offset
+			local target_y = tooltip_gui.Position.Y.Offset
 
-			leave_conn = mouse.Moved:Connect(function(new_position: Vector2)
-				if done then
-					return
-				end
+			spr.target(tooltip_gui, 0.73, 3.5, {
+				Position = UDim2.fromOffset(target_x, target_y - 4),
+				TextTransparency = 1,
+				BackgroundTransparency = 1,
+			})
 
-				local is_inside = bounds.inner(gui_bounds.position, gui_bounds.size, new_position)
-				if is_inside then
-					return
-				end
-
-				-- mouse has left the target; remove the tooltip.
-
-				-- the Material 3 guidelines state that we should wait 1.5s before removing.
-
-				done = true
-
-				task.wait(1.5)
-
-				object:SetAttribute("TooltipActive", false)
-				active_tooltip = nil
-
-				spr.target(tooltip_gui, 0.73, 3.5, {
-					Position = UDim2.fromOffset(target_x, target_y - 4),
-					TextTransparency = 1,
-					BackgroundTransparency = 1,
-				})
-
-				spr.completed(tooltip_gui, function()
-					tooltip_gui.Visible = false
-					plain_pool:Return(tooltip_gui)
-
-					if leave_conn then
-						leave_conn:Disconnect()
-					end
-				end)
+			spr.completed(tooltip_gui, function()
+				tooltip_gui.Visible = false
+				tooltip_gui:Destroy()
+				tooltip_gui = nil
 			end)
-		end
-
-		debug.profileend()
-	end)
+		end)
+	end
 end
 
 return module

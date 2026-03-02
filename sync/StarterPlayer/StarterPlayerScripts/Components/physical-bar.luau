@@ -4,6 +4,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local TweenService = game:GetService("TweenService")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
+local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local spr = require(ReplicatedStorage.Modules.spr)
@@ -76,7 +77,7 @@ function module.new()
 	self._trove:Add(self.value)
 	self._trove:Add(self.int_value)
 
-	self.adornee:Watch(function()
+	local function updatePadding()
 		local adornee = self.adornee:Get()
 
 		if adornee and adornee:GetAttribute(tag) then
@@ -84,16 +85,26 @@ function module.new()
 			-- add more padding for each new bar to avoid overlap.
 
 			local existing_bars = adornee:GetAttribute(tag) :: number
+			print(existing_bars)
 
 			adornee:SetAttribute(tag, existing_bars + 1)
+			print(adornee:GetAttribute(tag))
 
 			local new_padding = padding * existing_bars
+			print("new padding: ", new_padding)
 
 			self.padding:Set(new_padding)
 		elseif adornee and not adornee:GetAttribute(tag) then
 			adornee:SetAttribute(tag, 1)
 
 			self.padding:Set(padding)
+		end
+	end
+
+	self.adornee:Watch(updatePadding)
+	task.spawn(future.Try, function()
+		while true do
+			updatePadding()
 		end
 	end)
 

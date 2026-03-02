@@ -8,6 +8,9 @@ local constants = {
 	distance = 200,
 }
 
+local events = ReplicatedStorage.Events
+local report_progress = events.ReportQuestProgress
+
 return function(player: Player, progress: number)
 	local character = player.Character
 	if not character then
@@ -21,7 +24,7 @@ return function(player: Player, progress: number)
 
 	local initial_position = primary_part.Position
 
-	local max_position = 1
+	local max_position = 0
 
 	task.spawn(function()
 		while humanoid.WalkSpeed > 0 do
@@ -49,6 +52,8 @@ return function(player: Player, progress: number)
 			end
 		end
 	end)
+
+	report_progress:FireServer("Take a Hike", max_position)
 
 	return max_position
 end

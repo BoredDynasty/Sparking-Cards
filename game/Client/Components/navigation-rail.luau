@@ -5,9 +5,11 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local future = require(ReplicatedStorage.Packages.future)
+local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local spr = require(ReplicatedStorage.Modules.spr)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
@@ -148,20 +150,23 @@ function module.Hide(self: NavigationRail)
 	--hud:SetAlignment("left")
 end
 
-function module.Button(self: NavigationRail, name: string, icon: typemarshaller.LucideIcon, fn: () -> ())
+function module.Button(self: NavigationRail, name: string, icon: string, fn: () -> ())
 	table.insert(self.buttons, {
 		name = name,
-		icon = icon,
+		icon = lucide.GetAsset(icon, 256),
 		text_button = button_pool:Get(),
 		fn = fn,
 	})
 end
 
-function module.SetActionIcon(self: NavigationRail, icon: typemarshaller.LucideIcon)
+function module.SetActionIcon(self: NavigationRail, icon: string)
 	task.spawn(function()
 		future.Try(function()
+			local lucide_asset = lucide.GetAsset(icon, 256)
+
 			local image_label = self.action_button.ImageLabel
-			image_label.ImageContent = Content.fromUri(icon.Url)
+			image_label.ImageContent = Content.fromUri(lucide_asset.Url)
+			image_label.Image = "rbxassetid://" .. lucide_asset.Id
 
 			pop(image_label, 1.2)
 		end)
@@ -182,14 +187,7 @@ function module.Render(self: NavigationRail)
 		button.Name = name
 		future.Try(function()
 			task.spawn(function()
-				local content = Content.fromUri(icon.Url)
-
-				button.Image.ImageContent = content
-
-				if content.Uri then
-					button.Image.Image = content.Uri
-				end
-
+				button.Image.Image = "rbxassetid://" .. icon.Id
 				button.TextLabel.Text = name
 			end)
 		end)
@@ -208,6 +206,8 @@ function module.Render(self: NavigationRail)
 			audio:PlaySFX("click")
 
 			future.Try(fn)
+
+			ripple(button, 0.8)
 		end)
 
 		button.Parent = self.holder

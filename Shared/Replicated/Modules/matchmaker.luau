@@ -143,7 +143,7 @@ local function form_match_with_players(players: { Player })
 	end
 
 	-- teleport solo players + players that were in parties
-	local ok, result = safeteleport(game.PlaceId, players)
+	local ok, result = safeteleport(90845913624517, players)
 
 	-- notify players
 	for _, p in ipairs(players) do

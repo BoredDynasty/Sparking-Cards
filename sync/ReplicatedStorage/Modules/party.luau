@@ -266,6 +266,72 @@ function module:RemovePartyById(party_id: string): boolean
 	return false
 end
 
+function module:AddPlayerToPartyById(party_id: string, player_id: number)
+	for i, party in ipairs(queued_parties) do
+		if party.party_id == party_id then
+			for _, member in ipairs(self.members) do
+				if member == player_id then
+					return false -- already in party
+				end
+			end
+
+			if #party.members >= 4 then
+				return false -- party full
+			end
+
+			if party.settings.mode == "Solo" then
+				return false -- cannot add members in Solo mode
+			end
+
+			if party.settings.friends_only then
+				-- perform a friends check here
+				local leader = Players:GetPlayerByUserId(self.leader_id)
+
+				-- Example friend check logic (this is a placeholder)
+				if player_id and leader then
+					if leader:IsFriendsWithAsync(player_id) then
+					-- they are friends, allow joining
+					else
+						return false -- not friends, cannot join
+					end
+				else
+					return false -- player id or leader not found
+				end
+			end
+
+			table.insert(party.members, player_id)
+			register_member_lookup(party, player_id)
+
+			events.UpdatePartyList:FireAllClients(module:GetParties())
+
+			return true
+		end
+	end
+
+	return false
+end
+
+function module:RemovePlayerFromPartyById(party_id: string, player_id: number)
+	for i, party in ipairs(queued_parties) do
+		if party.party_id == party_id then
+			for j, member in ipairs(party.members) do
+				if member == player_id then
+					table.remove(party.members, j)
+					unregister_member_lookup(player_id)
+
+					events.UpdatePartyList:FireAllClients(module:GetParties())
+
+					return true
+				end
+			end
+
+			return false -- member not found
+		end
+	end
+
+	return false
+end
+
 function module:Destroy(self: self)
 	for i, party in ipairs(queued_parties) do
 		if party.party_id == self.party_id then

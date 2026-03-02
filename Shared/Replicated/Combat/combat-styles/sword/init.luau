@@ -179,9 +179,7 @@ function module:OnTouched(hit: Instance)
 		target = target_player,
 	}
 
-	future.Try(damage.__call, params):After(function(ok, result)
-		print("hit: ", ok, result)
-	end)
+	print("damage!")
 end
 
 function module:CreateTrail()

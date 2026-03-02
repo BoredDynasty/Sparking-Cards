@@ -30,8 +30,6 @@ local damage = require(ReplicatedStorage.Combat.Strike.damage)
 
 local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displayorder)
 
-local dropper = require(ReplicatedStorage.ClientModules.dropper)
-
 local future = require(ReplicatedStorage.Packages.future)
 
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
@@ -71,10 +69,9 @@ local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local quest_frontend = require(StarterPlayer.StarterPlayerScripts.Components["quest-frontend"])
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
 local tooltip = require("../Components/tooltip")
-
-local orion = require(ReplicatedStorage.Combat.orion) -- Orion Combat Framework
 
 local parallax = require("../Interface/parallax")
 
@@ -163,31 +160,12 @@ local function initializeCommands()
 	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
 		task.delay(15, function()
 			local snack_bar = hint.new()
-			snack_bar:SetText("Welcome, Developer. Press the '=' symbol to open Cmdr.")
+			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
 			snack_bar:SetAction(showUI, "Open")
 			snack_bar:SetCanDismiss(false)
 			snack_bar:SetCanClick(true)
 		end)
 	end
-end
-
-local function initializeAudio()
-	--print("init audio")
-
-	task.spawn(function()
-		audio:AddSFX("wood-block-1", 9120917813)
-		audio:AddSFX("wood-block-2", 9120917604)
-		audio:AddSFX("wood-block-3", 9120917605)
-		audio:AddSFX("wood-block-4", 9120917794)
-		audio:AddSFX("wood-block-5", 9120917978)
-
-		audio:AddSFX("continue", 92647604633081)
-
-		audio:AddSFX("click", 90092163763441)
-		audio:AddSFX("hover", 119879668444252)
-		audio:AddSFX("leave", 85897203168160)
-		audio:AddSFX("success", 76288726968959)
-	end)
 end
 
 local function initializeMarket()
@@ -252,11 +230,11 @@ local function initializeOptions()
 		displayorder:Toggle(optionsCanvas)
 
 		if displayorder:GetState(optionsCanvas) then
-			options:Render()
+			options:LoadItems()
 		end
 	end
 
-	hud.new("Options", toggleUI, lucide.GetAsset("cog"))
+	hud.new("Options", toggleUI, lucide.GetAsset("settings"))
 end
 local function initializeMatchmaking()
 	print("init matchmaking")
@@ -521,77 +499,18 @@ local function initializeLoadouts()
 end
 
 local function initializeObjectives()
-	--print("init objectives")
-
 	local objectiveGui = PlayerGui.Objective
 	displayorder.new(objectiveGui.CanvasGroup)
 
-	local completed_value = observer.new(0)
-	local uncompleted_value = observer.new(0)
-
-	local get_quest_data = events.GetQuestData
-	local get_progress = events.GetQuestProgress -- remote function
-
 	local function toggleUI()
 		displayorder:Toggle(objectiveGui.CanvasGroup)
-	end
 
-	type GetProgressParams = {
-		list: { string },
-		map: {
-			[string]: ModuleScript?,
-		},
-	}
-
-	get_progress.OnClientInvoke = function(params: GetProgressParams)
-		-- lets get our current progress first.
-
-		local current_progress = get_quest_data:InvokeServer() :: { typemarshaller.Quest }?
-
-		if not current_progress then
-			warn("oouldnt pull current_progress: ", current_progress)
-
-			return nil
+		if displayorder:GetState(objectiveGui.CanvasGroup) then
+			quest_frontend:LoadItems()
+		else
+			quest_frontend:Unload()
 		end
-
-		local progress_data = nil
-
-		for i, current_quest_progress in ipairs(current_progress) do
-			local module = current_quest_progress.module
-
-			local singleton = require(module)
-			if not singleton then
-				warn("couldnt require quest module singleton")
-
-				continue
-			end
-
-			print("got module singleton")
-
-			local new_progress = singleton(player, current_quest_progress.progress)
-
-			progress_data = new_progress
-
-			-- we can use this as a chance to display other information
-
-			completed_value:Set(0)
-			completed_value:Map(function(current: number)
-				if current_quest_progress.completed then
-					return current + 1
-				end
-
-				return current
-			end)
-		end
-
-		print("completed iterating.")
-
-		return progress_data
 	end
-
-	hydration(objectiveGui.CanvasGroup.Frame.Completed.Value) {
-		Text = completed_value,
-	}
 
 	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"), true)
 end
@@ -647,6 +566,9 @@ local function initializeStatistics()
 
 	local function updateStats()
 		profile = fetchProfile()
+		if not profile then
+			profile = profilestructure -- use a sample profile
+		end
 
 		if profile then
 			-- proceed
@@ -655,8 +577,11 @@ local function initializeStatistics()
 			holder.Prisms.Text = string.format(fancy_str, "Prisms", profile.Data.prisms)
 			holder.Victories.Text = string.format(fancy_str, "Victories", profile.Data.victories)
 			--holder.Level.Text = string.format(fancy_str, "Rank", profile.Data.level)
-			holder.LastLogin.Text =
-				string.format(fancy_str, "Last Login", os.date("%Y-%m-%d %H:%M:%S", profile.Data.last_login))
+			holder.LastLogin.Text = string.format(
+				fancy_str,
+				"Last Login",
+				DateTime.fromUnixTimestampMillis(profile.Data.last_login):ToIsoDate()
+			)
 		end
 	end
 
@@ -715,7 +640,6 @@ local function initializeSpectating()
 end
 
 initializeCommands()
-initializeAudio()
 initializeMarket()
 initializeOptions()
 initializeMatchmaking()
@@ -725,7 +649,6 @@ initializeMusic()
 initializeLoadouts()
 initializeObjectives()
 initializeParties()
-initializeStatistics()
 initializeSpectating()
 
 hud:Render()
@@ -747,19 +670,21 @@ movement_controller:Start()
 
 -- control
 
-orion.register_player()
-
-local function getAttackTypeFromKey(key: Enum.KeyCode)
+local function getAttackTypeFromKey(key: Enum.KeyCode): string?
 	-- profile = yoink.client:grab("profile_data")
 	profile = fetchProfile()
 	if not profile or not profile.Data then
-		return
+		profile = {
+			Data = profilestructure,
+		}
 	end
 
 	local attack_types = {}
 	for i, value in pairs(profile.Data.keybinds) do
 		attack_types[i] = Enum.KeyCode:FromValue(value)
 	end
+
+	print(attack_types[key])
 
 	return attack_types[key]
 end
@@ -771,17 +696,7 @@ keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
 
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
-		local module = orion.execute()
-		if not module then
-			print("couldnt pull module from `orion.execute`.")
-
-			return
-		end
-
-		local internal = require(module) :: typemarshaller.AttackModule
-		internal.moveset[attack_type](player, {
-			player_data = orion.get_player_data(),
-		})
+		events.ExecuteAttack:InvokeServer(attack_type)
 
 		--hud:Hide()
 	end
@@ -900,7 +815,6 @@ Packet.CleanupCharacter.listen(function()
 	music:Destroy()
 	options:Clear()
 	hud:Clear()
-	dropper._trove:Clean()
 end)
 
 print("Client has finished")

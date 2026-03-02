@@ -74,9 +74,32 @@ function module:AddSFX(name: string, sound_id: number, config)
 	sound_effects[name] = create_sound(sound_id, SoundService, config or {})
 end
 
-function module:PlaySFX(name: string)
+--[[
+	@param name The SFX name
+	@param point Where the SFX should play from.
+]]
+function module:PlaySFX(name: string, point: Vector3?)
 	local sfx = sound_effects[name]
 	if sfx then
+		if point then
+			local part = Instance.new("Part")
+			part.Anchored = true
+			part.CanCollide = false
+			part.Transparency = 1
+			part.Size = Vector3.new(1, 1, 1)
+			part.CFrame = CFrame.new(point)
+			part.Parent = workspace
+
+			sfx.Parent = part
+
+			sfx.Ended:Connect(function()
+				part:Destroy()
+				sfx.Parent = SoundService
+			end)
+		else
+			sfx.Parent = SoundService
+		end
+
 		sfx:Play()
 	end
 end
@@ -93,6 +116,10 @@ function module:ConfigureSFX(name: string, config)
 
 	if config.pitch then
 		sfx.PlaybackSpeed = config.pitch
+	end
+
+	if config.looped then
+		sfx.Looped = config.looped
 	end
 end
 

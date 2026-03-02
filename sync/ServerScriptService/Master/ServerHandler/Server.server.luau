@@ -14,14 +14,16 @@ local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
 
 local Cmdr = require(ReplicatedStorage.Packages:WaitForChild("cmdr"))
+local Cryo = require(ReplicatedStorage.Combat.framework.attacks.Cryo)
 local Fireworks = require(ReplicatedStorage.Modules.Fireworks)
 local GameAnalytics = require(ReplicatedStorage.Packages["gameanalytics-sdk"])
 local Items = require(ReplicatedStorage.Market.Items)
-local Network = require(ReplicatedStorage.Network)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
+local Pyro = require(ReplicatedStorage.Combat.framework.attacks.Pyro)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
+local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
 local log_analytics = require(ReplicatedStorage.Utility["log-analytics"])
 local lucide = require(ReplicatedStorage.Packages.lucide)
@@ -40,6 +42,7 @@ local skill_chart = require(ReplicatedStorage.Structures["skill-chart"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
 local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
+local sword = require(ReplicatedStorage.Combat["combat-styles"].sword)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local windshake = require(ReplicatedStorage.Packages.windshake)
@@ -50,16 +53,48 @@ local Events = ReplicatedStorage:WaitForChild("Events")
 local MatchmakingRemotes = Events:WaitForChild("Matchmaking")
 local PartyRemotes = Events:WaitForChild("Party")
 
--- ensure QueueUpdated RemoteEvent exists so matchmaker can broadcast safely
-if not MatchmakingRemotes:FindFirstChild("QueueUpdated") then
-	local ev = Instance.new("RemoteEvent")
-	ev.Name = "QueueUpdated"
-	ev.Parent = MatchmakingRemotes
-end
+type PlayerData = {
+	player: Player,
+	damage_multiplier: number,
+	style: typemarshaller.StyleModule,
+	card_name: string,
+}
 
 local profiles = {}
 local profile_key = "playerdata"
 local player_related = profilestore.New(profile_key, profilestructure)
+
+local combat_data = {} :: { PlayerData }
+
+print("GameAnalytics is enabled.")
+
+local gameAnalyticsConfig = {
+	enableInfoLog = false,
+	enableVerboseLog = false,
+	availableResourceCurrencies = { "Affinity", "Prisms" },
+	build = "0.4.0",
+	availableGamepasses = { "Extra Cards" },
+	automaticSendBusinessEvents = true,
+	reportErrors = true,
+	useCustomId = true, -- Corrected key name
+	gameKey = "4e689e435634bbfe9892f625af5c51bf",
+	secretKey = "1a5289ebbc7daa44accc4d5deb256833263c512a",
+}
+local resourceItemTypes = {
+	"Weapons",
+	"Boosters",
+	"IAP",
+	"Gameplay",
+}
+
+Cmdr:RegisterDefaultCommands()
+Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
+Cmdr:RegisterHooksIn(ReplicatedStorage.Hooks)
+
+-- selene:allow(mixed_table)
+GameAnalytics:initialize(gameAnalyticsConfig :: any)
+GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
+-- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 
 -- change this if i want data to save in studio
 --[[
@@ -160,7 +195,7 @@ local function AddPrisms(
 		return
 	end
 
-	local ending_balance = profile.prisms + amount
+	local ending_balance = math.clamp(profile.prisms + amount, 0, math.huge)
 
 	log_analytics.economy(player, {
 		amount = amount,
@@ -186,7 +221,7 @@ local function DeductPrisms(
 		return
 	end
 
-	local ending_balance = profile.prisms - amount
+	local ending_balance = math.clamp(profile.prisms - amount, 0, math.huge)
 
 	log_analytics.economy(player, {
 		amount = amount,
@@ -240,35 +275,61 @@ local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 	future.Try(table.insert, profile.quests, quest)
 end
 
-print("GameAnalytics is enabled.")
+local function registerCombatPlayer(player: Player)
+	local data = {
+		player = player,
+		damage_multiplier = 1.00,
+		style = sword.new(player, "Katana"),
+		combo_info = combo.new(3),
+		card_name = "Pyro",
+	} :: PlayerData
 
-local gameAnalyticsConfig = {
-	enableInfoLog = false,
-	enableVerboseLog = false,
-	availableResourceCurrencies = { "Affinity", "Prisms" },
-	build = "0.4.0",
-	availableGamepasses = { "Extra Cards" },
-	automaticSendBusinessEvents = true,
-	reportErrors = true,
-	useCustomId = true, -- Corrected key name
-	gameKey = "4e689e435634bbfe9892f625af5c51bf",
-	secretKey = "1a5289ebbc7daa44accc4d5deb256833263c512a",
-}
-local resourceItemTypes = {
-	"Weapons",
-	"Boosters",
-	"IAP",
-	"Gameplay",
-}
+	table.insert(combat_data, data)
+end
 
-Cmdr:RegisterDefaultCommands()
-Cmdr:RegisterCommandsIn(ReplicatedStorage.Commands)
-Cmdr:RegisterHooksIn(ReplicatedStorage.Hooks)
+local function indexCombatPlayer(player: Player): PlayerData?
+	for i, data in ipairs(combat_data) do
+		if player == data.player then
+			return data
+		end
+	end
 
--- selene:allow(mixed_table)
-GameAnalytics:initialize(gameAnalyticsConfig)
-GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
--- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
+	return nil
+end
+
+local function indexCombatModule(name: string): typemarshaller.AttackModule
+	local modules = {
+		pyro = Pyro,
+		cryo = Cryo,
+	}
+
+	return modules[string.lower(name)] -- non-case-sensitive
+end
+
+local function executeAttack(player: Player, attack_type: typemarshaller.AttackType)
+	local data = indexCombatPlayer(player)
+	if not data then
+		warn("no combat data")
+
+		return
+	end
+
+	local profile = FetchProfileData(player)
+	if not profile then
+		warn("couldnt fetch profile for attack execution")
+		return
+	end
+
+	local equipped_card = profile.equipped_card
+
+	local module = indexCombatModule(equipped_card)
+	if not module then
+		warn("couldnt index module: ", module, equipped_card)
+		return
+	end
+
+	return module.moveset[attack_type](player)
+end
 
 -- TODO) add the products
 
@@ -354,37 +415,36 @@ end
 
 local function onPlayerAdded(player: Player)
 	GameAnalytics:PlayerJoined(player)
-	future.new(GameAnalytics.PlayerJoined, GameAnalytics, player)
+	future.Try(GameAnalytics.PlayerJoined, GameAnalytics, player)
 
 	local function addHighlight(character: Model)
-		return future.new(function()
-			if character:FindFirstChildOfClass("Highlight") then
-				return "already has highlight"
-			end
-			local highlight = Instance.new("Highlight")
-			highlight.Adornee = character
-			highlight.Parent = character
-			highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-			highlight.FillColor = Color3.fromRGB(255, 255, 255)
-			highlight.FillTransparency = 0.95
-			highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-			highlight.OutlineTransparency = 0.7
-			highlight.Enabled = true
+		if character:FindFirstChildOfClass("Highlight") then
+			return
+		end
 
-			return "new highlight"
-		end)
+		local highlight = Instance.new("Highlight")
+		highlight.Adornee = character
+		highlight.Parent = character
+		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
+		highlight.FillColor = Color3.fromRGB(255, 255, 255)
+		highlight.FillTransparency = 0.95
+		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+		highlight.OutlineTransparency = 0.7
+		highlight.Enabled = true
 	end
 
 	player.CharacterAdded:Connect(function(character)
 		character:SetAttribute("Stamina", 100)
 		character:SetAttribute("MaxStamina", 100)
 
-		addHighlight(character):Expect("couldn't make highlight for some reason")
+		addHighlight(character)
 	end)
 
 	addHighlight(player.Character or player.CharacterAdded:Wait() :: any)
 	batch(player:GetDescendants())
 	local profile = loadProfile(player)
+
+	registerCombatPlayer(player)
 end
 
 -- just in case the players have joined the server before the script loaded
@@ -424,16 +484,6 @@ local function purchaseCard(player: Player, card_name: string)
 		return
 	end
 
-	local event_parameters = {
-		flowType = GameAnalytics.EGAResourceFlowType.Sink,
-		currency = "Prisms",
-		amount = 1,
-		itemType = "Weapons",
-		itemId = card_name .. " Card",
-	}
-
-	GameAnalytics:addResourceEvent(player.UserId, event_parameters)
-
 	-- get the Item in the registered Items module
 	local i = nil
 	for j, item in ipairs(Items) do
@@ -458,6 +508,16 @@ local function purchaseCard(player: Player, card_name: string)
 		local deduct_amount = math.ceil(price) or 1
 
 		DeductPrisms(player, deduct_amount, Enum.AnalyticsEconomyTransactionType.Shop, card_name)
+
+		local event_parameters = {
+			flowType = GameAnalytics.EGAResourceFlowType.Sink,
+			currency = "Prisms",
+			amount = 1,
+			itemType = "Weapons",
+			itemId = card_name .. " Card",
+		}
+
+		GameAnalytics:addResourceEvent(player.UserId, event_parameters)
 
 		SaveProfileData(player)
 
@@ -633,6 +693,9 @@ local function insertShopBookmark(player: Player, card_name: string)
 	end
 
 	local profile = FetchProfileData(player)
+	if not profile then
+		return
+	end
 
 	local i = table.find(profile.bookmarked_shop_items, card_name)
 	if i then
@@ -846,15 +909,16 @@ PartyRemotes.Join.OnServerInvoke = function(player: Player, data: { party_id: st
 	local party_obj = party:GetPartyById(data and data.party_id or "")
 
 	if party_obj then
-		local success = party_obj:AddMember(player.UserId)
+		print("got party obj")
+		local ok = party:AddPlayerToPartyById(data.party_id, player.UserId)
 
-		if success then
+		if ok then
 			Packet.SendNotification.sendTo({ message = "Joined party successfully!" }, player)
 		else
 			Packet.SendNotification.sendTo({ message = "Failed to join party." }, player)
 		end
 
-		return success
+		return ok
 	end
 
 	return false
@@ -865,7 +929,7 @@ PartyRemotes.Leave.OnServerInvoke = function(player: Player, data: { party_id: s
 	if party_obj then
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
-				party_obj:RemoveMember(player.UserId)
+				party:RemovePlayerFromPartyById(data.party_id, player.UserId)
 
 				return true
 			end
@@ -877,14 +941,16 @@ end
 
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
-Events.SendQuestProgress.OnInvoke = function(...)
-	print("got quest progress: ", ...)
-end
+-- progress reporting is now handled by the quest module via ReportQuestProgress
+-- (see Shared/Storage/modules/quest/init.luau)
+
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
+Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
+	return executeAttack(player, ...)
+end
 
 startLightingCycle()
-quest:StartTracking()
-
+-- quest:StartTracking() -- deprecated; no longer necessary
 -- TODO) add player saving options
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)

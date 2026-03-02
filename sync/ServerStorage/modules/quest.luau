@@ -1,9 +1,9 @@
 --!strict
 
-local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local ServerStorage = game:GetService("ServerStorage")
+local _Players = game:GetService("Players")
+local _RunService = game:GetService("RunService")
 
 local leventine = require(ReplicatedStorage.Utility.leventine)
 local registered = require(ServerStorage.modules.quest.registered)
@@ -16,14 +16,12 @@ local module = {}
 
 local events = ReplicatedStorage.Events
 
-local get_progress = events.GetQuestProgress -- remote function
-local send_progress = events.SendQuestProgress -- bindable function
 local get_quest_data = events.GetQuestData
 
 local get_profile = events.GetProfileServer
 
 function module:GetRegistered(): { string }
-	local list = table.create(#registered)
+	local list = table.create(#registered) :: { string }
 
 	for i, data in ipairs(registered) do
 		table.insert(list, data.name)
@@ -66,62 +64,64 @@ function module:GetModuleFromName(name: string): ModuleScript?
 	return nil
 end
 
-function module:StartTracking()
-	local conn = nil
-
-	local last_check: number = 0.0
-	local check_interval = 2
-
-	local registered_list = module:GetRegistered()
-
-	conn = RunService.Heartbeat:Connect(function(dt)
-		last_check += dt
-
-		if last_check < check_interval then
-			return
-		end
-
-		last_check = 0
-
-		-- map a list of modules.
-		-- [quest_name]: modulescript
-
-		local map = {}
-		for i, name in ipairs(registered_list) do
-			local quest_module = module:GetModuleFromName(name)
-
-			map[name] = quest_module
-		end
-
-		--  invoke the client
-
-		for i, player in ipairs(Players:GetPlayers()) do
-			if not player.Parent then
-				continue
-			end
-
-			local progress = get_progress:InvokeClient(player, {
-				list = registered_list,
-				map = map,
-			})
-
-			send_progress:Invoke(progress)
-		end
-	end)
-end
-
-get_quest_data.OnServerInvoke = function(player: Player): { typemarshaller.Quest }?
+-- helper to return a sanitized copy of a player's quest list
+function module:GetPlayerQuests(player: Player): { typemarshaller.Quest }
 	local profile = get_profile:Invoke(player) :: typemarshaller.ProfileData
-
 	if not profile then
-		return nil
+		return {}
 	end
 
-	-- give the player all their quest data.
+	-- we return a shallow copy so callers can't accidentally mutate the stored table
+	local out: { typemarshaller.Quest } = {}
 
-	local quest_data = profile.quests
+	for i, q in ipairs(profile.quests or {}) do
+		local copy: typemarshaller.Quest = {
+			name = q.name,
+			description = q.description,
+			inquirer_img = q.inquirer_img,
+			progress = q.progress,
+			date_acquired = q.date_acquired,
+			date_completed = q.date_completed,
+			completed = q.completed,
+		}
+		-- module fields are not serialised to the client
+		out[i] = copy
+	end
 
-	return quest_data
+	return out
 end
+
+-- RemoteFunctions exposed for client requests
+get_quest_data.OnServerInvoke = function(player: Player)
+	return module:GetPlayerQuests(player)
+end
+
+-- clients will fire this event whenever they make progress on a quest.  the
+-- payload should be { name = string, progress = number }.
+local report_progress = events.ReportQuestProgress
+
+report_progress.OnServerEvent:Connect(function(player: Player, name: string, progress: number)
+	if not module:IsRegistered(name) then
+		warn("quest not registered: ", name)
+	end
+
+	local profile = get_profile:Invoke(player) :: typemarshaller.ProfileData
+	if not profile then
+		return
+	end
+
+	for _, q in ipairs(profile.quests) do
+		if q.name == name then
+			q.progress = progress or q.progress
+
+			if q.progress >= 100 and not q.completed then
+				q.completed = true
+				q.date_completed = DateTime.now().UnixTimestampMillis
+			end
+
+			break
+		end
+	end
+end)
 
 return module

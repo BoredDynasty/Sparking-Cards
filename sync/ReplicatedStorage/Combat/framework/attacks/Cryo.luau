@@ -11,7 +11,9 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
 -- Cryo.luau
 
-local module = {}
+local module = {
+	moveset = {},
+}
 
 local pool = PoolerPlus:CreatePool("ShardPool", function()
 	return fetchAsset("IceShard") :: MeshPart
@@ -23,7 +25,11 @@ local random_position = random.create()
 
 local touch_limit = ratelimit(1, 2)
 
-function module:Skill(player: Player)
+function module.moveset:M1(player: Player)
+	--
+end
+
+function module.moveset:Skill(player: Player)
 	local character = player.Character or player.CharacterAdded:Wait()
 
 	local mouse = player:GetMouse()

@@ -7,6 +7,7 @@ local Packet = require(ReplicatedStorage.Packet)
 
 local nearest = require(ReplicatedStorage.Combat.hitbox.nearest)
 local sword = require(ReplicatedStorage.Combat["combat-styles"].sword)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- Pyro.luau
 
@@ -29,13 +30,15 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset:M1(player: Player, parameters)
+function pyro.moveset:M1(player: Player)
 	--print("Pyro M1_1 executed for player:", player.Name)
 	-- Implement the actual attack logic here
 
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local singleton = parameters.player_data.style :: sword.Sword
+	local combat_data = events.GetPlayerCombatData:Invoke() :: typemarshaller.PlayerData
+
+	local singleton = combat_data.style :: sword.Sword
 
 	singleton:Activate()
 
