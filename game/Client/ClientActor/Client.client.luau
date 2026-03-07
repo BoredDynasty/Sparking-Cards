@@ -18,15 +18,12 @@ task.wait(5) -- wait for the player to load
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
-local over_shoulder = require(StarterPlayer.StarterPlayerScripts.Camera["over-shoulder"])
 
 local Packet = require(ReplicatedStorage.Packet)
 
 local achievement = require(StarterPlayer.StarterPlayerScripts.Components.achievement)
 
 local animate = require("../Utilities/animate")
-
-local damage = require(ReplicatedStorage.Combat.Strike.damage)
 
 local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displayorder)
 
@@ -38,8 +35,6 @@ local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health
 
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
-
-local hydration = require(ReplicatedStorage.Utility.hydration)
 
 local input = require(ReplicatedStorage.Packages.input)
 
@@ -73,43 +68,25 @@ local quest_frontend = require(StarterPlayer.StarterPlayerScripts.Components["qu
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
 local tooltip = require("../Components/tooltip")
 
-local parallax = require("../Interface/parallax")
-
-local parallaxLayers = require(ReplicatedStorage.Structures.parallaxLayers)
-
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-
-local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
-
-local retryer = require(ReplicatedStorage.Utility.retryer)
-
-local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
-
-local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
 
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 
 local spr = require(ReplicatedStorage.Modules.spr)
 
-local sway = require("../Interface/sway")
-
 local swipe = require("../Interface/swipe")
 
 local audio = require(ReplicatedStorage.Modules.audio)
 
-local throbber = require("../Components/throbber")
-
+local proximity_prompt = require(ReplicatedStorage.Modules["proximity-prompt"])
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
 
-local RankStructure = require(ReplicatedStorage.Structures.RankStructure)
 local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
-local trove = require(ReplicatedStorage.Packages.trove)
 
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
-local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
@@ -127,8 +104,6 @@ local get_profile = events.GetProfile
 local player = Players.LocalPlayer
 local profile = nil
 
-local _trove = trove.new()
-
 local character = player.Character or player.CharacterAdded:Wait() :: typemarshaller.Character
 local humanoid = character.Humanoid
 
@@ -139,8 +114,6 @@ local PlayerGui = player.PlayerGui
 if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
 	logger.new()
 end
-
-task.spawn(glove.Apply, glove, character)
 
 print("client starting")
 
@@ -166,6 +139,28 @@ local function initializeCommands()
 			snack_bar:SetCanClick(true)
 		end)
 	end
+end
+
+local function initializeAudio()
+	--print("init audio")
+
+	task.spawn(function()
+		audio:AddSFX("wood-block-1", 9120917813)
+		audio:AddSFX("wood-block-2", 9120917604)
+		audio:AddSFX("wood-block-3", 9120917605)
+		audio:AddSFX("wood-block-4", 9120917794)
+		audio:AddSFX("wood-block-5", 9120917978)
+
+		audio:AddSFX("continue", 92647604633081)
+
+		audio:AddSFX("click", 90092163763441)
+		audio:AddSFX("hover", 119879668444252)
+		audio:AddSFX("leave", 85897203168160)
+		audio:AddSFX("success", 76288726968959)
+
+		audio:AddSFX("train_brakes", 185857550)
+		audio:AddSFX("train_clattering", 149026377)
+	end)
 end
 
 local function initializeMarket()
@@ -650,6 +645,7 @@ initializeLoadouts()
 initializeObjectives()
 initializeParties()
 initializeSpectating()
+initializeAudio()
 
 hud:Render()
 tooltip:Start()
@@ -681,7 +677,9 @@ local function getAttackTypeFromKey(key: Enum.KeyCode): string?
 
 	local attack_types = {}
 	for i, value in pairs(profile.Data.keybinds) do
-		attack_types[i] = Enum.KeyCode:FromValue(value)
+		local j = Enum.KeyCode:FromValue(value)
+
+		attack_types[j] = i
 	end
 
 	print(attack_types[key])
@@ -763,6 +761,8 @@ humanoid.HealthChanged:Connect(function(health)
 	end)
 end)
 
+glove:Apply(character)
+
 do
 	-- send a notification when the graphics level
 	-- is not at an "appropriate" value.
@@ -797,6 +797,18 @@ do
 			end)
 		end, "Set")
 	end)
+end
+
+do
+	local prompt = proximity_prompt.new()
+	prompt:SetName("aa")
+	prompt:SetAction("please speed")
+	prompt:SetAdornee(workspace.TestPart)
+	prompt:SetHoldDuration(3)
+	prompt:SetKeybind(Enum.KeyCode.E)
+	prompt:SetMaxDistance(20)
+
+	prompt:Show()
 end
 
 -- over_shoulder:Enable()

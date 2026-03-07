@@ -29,6 +29,7 @@ module.__index = module
 local tag = "Bar"
 
 local padding = Vector3.new(-3, 0, 0) -- padding away from the adornee
+local bar_spacing = Vector3.new(4, 0, 0) -- spacing between bars
 
 type PhysicalBar = setmetatable<{
 	bar: typeof(pool:Get()),
@@ -37,6 +38,7 @@ type PhysicalBar = setmetatable<{
 	value: observer.Observer<number>,
 	int_value: IntValue,
 	ui_scale: UIScale,
+	bar_index: number,
 	_trove: typeof(trove.new()),
 }, typeof(module)>
 
@@ -45,17 +47,15 @@ function module.new()
 
 	self.bar = pool:Get()
 	self.adornee = observer.new(nil) :: observer.Observer<Instance?>
-	self.padding = observer.new(padding) -- padding away from the adornee
+	self.padding = observer.new(padding)
 	self.value = observer.new(100)
 	self.int_value = Instance.new("IntValue")
 	self.ui_scale = Instance.new("UIScale")
+	self.bar_index = 0
 
 	sway.register(self.bar.Frame, 6 or 7, 2)
 
 	self._trove = trove.new()
-
-	-- use hydration module for integration with the observer class.
-	-- automatically updates values for us; no extra work needed.
 
 	hydration(self.bar) {
 		Adornee = self.adornee,
@@ -63,7 +63,6 @@ function module.new()
 		Parent = self.adornee,
 	}
 
-	-- ahem, extra work is needed.
 	self.padding:Watch(function(new)
 		hydration(self.bar) {
 			ExtentsOffset = new,
@@ -81,32 +80,26 @@ function module.new()
 		local adornee = self.adornee:Get()
 
 		if adornee and adornee:GetAttribute(tag) then
-			-- supports multiple bars.
-			-- add more padding for each new bar to avoid overlap.
+			-- supports multiple bars with spacing.
+			-- each bar gets its own index for proper spacing.
 
 			local existing_bars = adornee:GetAttribute(tag) :: number
-			print(existing_bars)
+			self.bar_index = existing_bars
 
 			adornee:SetAttribute(tag, existing_bars + 1)
-			print(adornee:GetAttribute(tag))
 
-			local new_padding = padding * existing_bars
-			print("new padding: ", new_padding)
+			local new_padding = padding + (bar_spacing * existing_bars)
 
 			self.padding:Set(new_padding)
 		elseif adornee and not adornee:GetAttribute(tag) then
 			adornee:SetAttribute(tag, 1)
+			self.bar_index = 0
 
 			self.padding:Set(padding)
 		end
 	end
 
 	self.adornee:Watch(updatePadding)
-	task.spawn(future.Try, function()
-		while true do
-			updatePadding()
-		end
-	end)
 
 	return self
 end
@@ -179,6 +172,13 @@ function module.Hide(self: PhysicalBar)
 end
 
 function module.Destroy(self: PhysicalBar)
+	local adornee = self.adornee:Get()
+
+	if adornee and adornee:GetAttribute(tag) then
+		local current_count = adornee:GetAttribute(tag) :: number
+		adornee:SetAttribute(tag, current_count - 1)
+	end
+
 	self._trove:Destroy()
 
 	pool:Return(self.bar)

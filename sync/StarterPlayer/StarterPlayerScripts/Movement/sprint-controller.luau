@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
+local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
 local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
@@ -123,9 +124,9 @@ function module:Update(delta_time: number)
 	end
 end
 
-player.CharacterAdded:Connect(setupCharacter);
-(keyboard.KeyDown :: RBXScriptSignal<Enum.KeyCode, boolean>):Connect(function(key, processed)
-	if key ~= MovementConfig.Keybinds.Sprint then
+player.CharacterAdded:Connect(setupCharacter)
+UserInputService.InputBegan:Connect(function(key, processed)
+	if key.KeyCode ~= MovementConfig.Keybinds.Sprint then
 		return
 	end
 
@@ -134,9 +135,10 @@ player.CharacterAdded:Connect(setupCharacter);
 	end
 
 	onBegan()
-end);
-(keyboard.KeyUp :: RBXScriptSignal<Enum.KeyCode, boolean>):Connect(function(key, processed)
-	if key ~= MovementConfig.Keybinds.Sprint then
+end)
+
+UserInputService.InputEnded:Connect(function(key, processed)
+	if key.KeyCode ~= MovementConfig.Keybinds.Sprint then
 		return
 	end
 

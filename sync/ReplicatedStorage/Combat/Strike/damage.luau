@@ -2,130 +2,65 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
-
 local damage_indicator = require(ReplicatedStorage.Effects["damage-indicator"])
-local future = require(ReplicatedStorage.Packages.future)
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
--- damage.luau
-
--- This module handles the damage calculations and effects for combat strikes in the orion framework.
 
 export type Damage = {
-	amount: number, -- The amount of damage dealt
-	source: Player?, -- Optional player who dealt the damage
-	target: Player, -- player who received the damage
+	amount: number,
+	source: Player?,
+	target: Player,
 }
 
-local module = setmetatable({}, {
-	--[[
-	@param amount: number, -- The amount of damage dealt
-	@param source: Player?, -- Optional player who dealt the damage
-	@param target: Player, -- player who received the damage
-]]
-	__call = function<a...>(self: { read __call: (Damage) -> a... }, parameters: Damage)
-		return self.__call(parameters)
-	end,
-})
-module.__index = module
-
+local module = {}
 module.incoming = {} :: { Damage }
 module.cancel = SignalPlus() :: SignalPlus.Signal<Player>
 
---[[
-	@param amount: number, -- The amount of damage dealt
-	@param source: Player?, -- Optional player who dealt the damage
-	@param target: Player, -- player who received the damage
-]]
-function module.__call(parameters: Damage)
-	-- Process damage logic here
-	if not parameters.amount then
-		warn("no damage amount inputted")
-
+function module:apply(parameters: Damage): boolean
+	if not parameters.amount or not parameters.target then
+		warn("Invalid damage parameters")
 		return false
 	end
 
-	if not parameters.source then
-		print("no damage source")
-	end
-
-	if not parameters.target then
-		warn("no damage target")
-
-		return false
-	end
-
-	local damage_amount = parameters.amount
-	local source_player_id = parameters.source and parameters.source.UserId
-	local target_player_id = parameters.target.UserId
-
-	-- get the player instances
-	local source_player = future
-		.new(function()
-			if source_player_id then
-				return playerMarshaller.getByUserId(source_player_id)
-			else
-				return nil
-			end
-		end)
-		:Unwrap()
-
-	local target_player = playerMarshaller.getByUserId(target_player_id)
-
-	if not target_player then
-		warn("couldn't get target player from id")
-
-		return false
-	end
-
-	local target_character = target_player.Character
+	local target_character = parameters.target.Character
 	if not target_character then
 		return false
 	end
 
-	-- do a nice lil visual effect for the damage
-	local target_root = target_character:FindFirstChild("HumanoidRootPart") :: BasePart
-	if target_root then
-		damage_indicator(damage_amount, Color3.fromHex("#ffffff"), target_root)
-	end
-
-	local target_humanoid = target_character:FindFirstChild("Humanoid") :: Humanoid
+	local target_humanoid = target_character:FindFirstChild("Humanoid") :: Humanoid?
 	if not target_humanoid then
-		print("no humanoid to damage")
+		warn("No humanoid found on target")
+		return false
 	end
 
-	table.insert(module.incoming, {
-		amount = damage_amount,
-		source = source_player,
-		target = target_player,
-	})
+	-- Visual effect
+	local target_root = target_character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	if target_root then
+		damage_indicator(parameters.amount, Color3.fromHex("#ffffff"), target_root)
+	end
 
-	local thread = task.spawn(function()
-		task.wait(2 / 16) -- around 0.125s
+	-- Store damage record
+	table.insert(module.incoming, parameters)
 
-		target_humanoid:TakeDamage(damage_amount)
+	-- Apply damage with delay
+	local thread = task.delay(2 / 16, function()
+		target_humanoid:TakeDamage(parameters.amount)
 	end)
 
+	-- Handle cancellation
 	module.cancel:Connect(function(player)
 		if player == parameters.target then
 			task.cancel(thread)
 		end
 	end)
 
-	return true -- Indicate success
+	return true
 end
 
-function module:GetIncoming()
-	return module.incoming
-end
-
-function module:GetIcomingForPlayer(player: Player): Damage?
+function module:GetIncomingForPlayer(player: Player): Damage?
 	for _, data in ipairs(module.incoming) do
 		if data.target == player then
 			return data
 		end
 	end
-
 	return nil
 end
 

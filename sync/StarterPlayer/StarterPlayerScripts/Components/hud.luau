@@ -12,6 +12,7 @@ local input = require(ReplicatedStorage.Packages.input)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local state_machine = require(ReplicatedStorage.Utility["state-machine"])
@@ -39,15 +40,13 @@ end
 
 module.horizontal_position:Set("left")
 
-local global_ratelimit = ratelimit(1, 1)
+local global_ratelimit = ratelimit(3, 2.5)
 
 local pool = PoolerPlus:CreatePool("HudPool", function()
 	local templates = ReplicatedStorage.Interfaces
 
 	return templates.HudButton:Clone()
 end)
-
-local mouse = input.Mouse.new()
 
 pool:AdaptivePreload()
 
@@ -68,7 +67,7 @@ function module.new(name: string, callback: () -> (), icon: typemarshaller.Lucid
 		callback = callback,
 		icon = icon,
 		reactor = observer.new(false) :: observer.Observer<boolean>,
-		limit = ratelimit(1, 1) :: ratelimit.Ratelimit<string>,
+		limit = ratelimit(1, 3.5) :: ratelimit.Ratelimit<string>,
 		hover_limit = ratelimit(1, 0.9) :: ratelimit.Ratelimit<string>,
 		text_button = pool:Get(),
 		is_large = is_large,
@@ -112,14 +111,12 @@ function module:Render()
 		icon_image.Position = UDim2.fromScale(0.5, 0.5)
 		icon_image.AnchorPoint = Vector2.one / 2
 
-		local default_corner = ui_corner.CornerRadius
+		local default_corner = UDim.new(0.238, 0)
 
-		task.spawn(function()
-			if button.is_large then
-				-- make the TextButton width larger.
-				text_button.Size = UDim2.fromScale(0.077, 1.036)
-			end
-		end)
+		if button.is_large then
+			-- make the TextButton width larger.
+			text_button.Size = UDim2.fromScale(0.077, 1.036)
+		end
 
 		task.spawn(function()
 			local ok, default_icon = future.Try(lucide.GetAsset, icon, 256 * 2):Await()
@@ -133,20 +130,55 @@ function module:Render()
 			end
 		end)
 
-		text_button.MouseButton1Click:Connect(function()
+		local default_size = text_button.Size
+		local default_color = text_button.BackgroundColor3
+
+		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
+
+		text_button.Activated:Connect(function()
 			if not button.limit(button.name) or not global_ratelimit() then
 				return
 			end
+
+			-- "pop" the UICorner
+			-- "pop" the horizontal size of the button a bit
+			-- darken the color of the button a bit
+
+			spr.stop(ui_corner)
+			spr.target(ui_corner, 0.7, 4.9, {
+				CornerRadius = UDim.new(1 / 8, 0), -- 0.125
+			})
+
+			spr.stop(text_button, "BackgroundColor3")
+			spr.stop(text_button, "Size")
+			spr.target(text_button, 0.7, 5, {
+				Size = default_size + UDim2.fromOffset(10, 0),
+				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+			})
+
+			ripple(text_button, 0.9)
 
 			button.reactor:Map(function(current)
 				return not current
 			end)
 		end)
 
-		local default_size = text_button.Size
-		local default_color = text_button.BackgroundColor3
+		text_button.MouseButton1Up:Connect(function()
+			-- revert the "pop" of the UICorner and button size
+			-- and the color of the button
 
-		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
+			spr.stop(ui_corner)
+			spr.target(ui_corner, 0.7, 4.9, {
+				CornerRadius = default_corner,
+			})
+
+			spr.stop(text_button, "Size")
+			spr.stop(text_button, "BackgroundColor3")
+			spr.target(text_button, 0.7, 6, {
+				Size = default_size,
+				BackgroundColor3 = default_color,
+			})
+		end)
 
 		text_button.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
@@ -173,66 +205,7 @@ function module:Render()
 			audio:PlaySFX("leave")
 		end)
 
-		mouse.LeftDown:Connect(function()
-			local size, position = text_button.AbsoluteSize, text_button.AbsolutePosition
-			local is_within_button = bounds.inner(position, size, mouse:GetPosition())
-
-			--print("inner: ", is_within_button)
-
-			if not is_within_button then
-				return
-			end
-
-			-- "pop" the UICorner
-			-- "pop" the horizontal size of the button a bit
-			-- darken the color of the button a bit
-
-			spr.stop(ui_corner)
-			spr.target(ui_corner, 0.3, 8, {
-				CornerRadius = UDim.new(1 / 8, 0), -- 0.125
-			})
-
-			spr.stop(text_button, "BackgroundColor3")
-			spr.stop(text_button, "Size")
-			spr.target(text_button, 0.3, 8, {
-				Size = default_size + UDim2.fromOffset(10, 0),
-				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
-			})
-		end)
-
-		mouse.LeftUp:Connect(function()
-			local size, position = text_button.AbsoluteSize, text_button.AbsolutePosition
-			local is_within_button = bounds.inner(position, size, mouse:GetPosition())
-
-			--print("inner: ", is_within_button)
-
-			if not is_within_button then
-				return
-			end
-
-			-- revert the "pop" of the UICorner and button size
-			-- and the color of the button
-
-			spr.stop(ui_corner)
-			spr.target(ui_corner, 0.3, 8, {
-				CornerRadius = default_corner,
-			})
-
-			spr.stop(text_button, "Size")
-			spr.stop(text_button, "BackgroundColor3")
-			spr.target(text_button, 0.3, 8, {
-				Size = default_size,
-				BackgroundColor3 = default_color,
-			})
-		end)
-
 		button.reactor:Watch(function(newValue: boolean)
-			if button.callback then
-				task.spawn(future.Try, button.callback)
-			else
-				warn("No callback defined for button: ", button.name)
-			end
-
 			audio:PlaySFX("click")
 
 			-- tilt the icon
@@ -248,10 +221,16 @@ function module:Render()
 					Rotation = 0,
 				})
 			end
+
+			if button.callback then
+				future.Try(button.callback):Await()
+			else
+				warn("No callback defined for button: ", button.name)
+			end
 		end)
 
 		shadow(text_button, Color3.new(), 0.5)
-		tooltip.register(text_button, button.name)
+		--tooltip.register(text_button, button.name)
 	end
 end
 

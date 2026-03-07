@@ -7,16 +7,28 @@
       "className": "Workspace",
       "children": [
         {
-          "name": "Part",
+          "name": "StationSensor",
           "className": "Part",
           "children": [
             {
-              "name": "Explosion",
-              "className": "ParticleEmitter"
+              "name": "DepartDirection",
+              "className": "IntValue"
             },
             {
-              "name": "Trail",
-              "className": "ParticleEmitter"
+              "name": "DoorLeft",
+              "className": "BoolValue"
+            },
+            {
+              "name": "Decal",
+              "className": "Decal"
+            },
+            {
+              "name": "SetLine",
+              "className": "StringValue"
+            },
+            {
+              "name": "SetName",
+              "className": "StringValue"
             },
             {
               "name": "Weld",
@@ -183,14 +195,6 @@
                         {
                           "name": "Weld",
                           "className": "Weld"
-                        },
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        },
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
                         }
                       ]
                     }
@@ -279,10 +283,6 @@
                     {
                       "name": "Extra",
                       "className": "StyleSheet"
-                    },
-                    {
-                      "name": "Weld",
-                      "className": "Weld"
                     },
                     {
                       "name": "Weld",
@@ -6770,15 +6770,25 @@
           "children": [
             {
               "name": "Part",
-              "className": "Folder",
+              "className": "Part",
               "children": [
                 {
-                  "name": "Weld",
-                  "className": "Weld"
+                  "name": "Mesh",
+                  "className": "CylinderMesh"
                 },
                 {
                   "name": "Weld",
                   "className": "Weld"
+                }
+              ]
+            },
+            {
+              "name": "GrayBlock",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "bus stop at lithuania",
+                  "className": "Decal"
                 }
               ]
             }
@@ -8091,6 +8101,250 @@
           ]
         },
         {
+          "name": "Track",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Part",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Weld",
+                  "className": "Weld"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Train",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Weld 2.2",
+              "className": "Script",
+              "filePaths": [
+                "sync/Workspace/Train/Weld 2.2.server.luau"
+              ]
+            },
+            {
+              "name": "Destination",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SGUI",
+                      "className": "SurfaceGui",
+                      "children": [
+                        {
+                          "name": "LineName",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "LineNumber",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "RightDoors",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "Lights",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SurfaceGui",
+                      "className": "SurfaceGui",
+                      "children": [
+                        {
+                          "name": "White",
+                          "className": "ImageLabel"
+                        },
+                        {
+                          "name": "Red",
+                          "className": "ImageLabel"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "SpotLight",
+                      "className": "SpotLight"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "LeftDoors",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "CeilingLight",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Design",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Light",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SurfaceLight",
+                      "className": "SurfaceLight"
+                    }
+                  ]
+                },
+                {
+                  "name": "Part",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Seat",
+              "className": "Seat"
+            },
+            {
+              "name": "Part",
+              "className": "Part"
+            },
+            {
+              "name": "Union",
+              "className": "UnionOperation"
+            },
+            {
+              "name": "VehicleSeat",
+              "className": "VehicleSeat",
+              "children": [
+                {
+                  "name": "TrainScript",
+                  "className": "Script",
+                  "filePaths": [
+                    "sync/Workspace/Train/VehicleSeat/TrainScript.server.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Wedge",
+              "className": "WedgePart"
+            },
+            {
+              "name": "Engine",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Clattering",
+                  "className": "Sound"
+                },
+                {
+                  "name": "Brake",
+                  "className": "Sound"
+                },
+                {
+                  "name": "BodyVelocity",
+                  "className": "BodyVelocity"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "BusStop",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Part",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "SurfaceGui",
+                  "className": "SurfaceGui",
+                  "children": [
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Union",
+              "className": "UnionOperation",
+              "children": [
+                {
+                  "name": "Seat",
+                  "className": "Seat",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "Terrain",
           "className": "Terrain",
           "children": [
@@ -8189,6 +8443,98 @@
             {
               "name": "Weld",
               "className": "Weld"
+            },
+            {
+              "name": "Light",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "Container",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "KeyBG",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Key",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "KeyShadowBG",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "ActionText",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "ObjectText",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "HoldDurationLine",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "HoldDurationValue",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "HoldDurationDecor",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "Line",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -8199,6 +8545,24 @@
             {
               "name": "Decal",
               "className": "Decal"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            }
+          ]
+        },
+        {
+          "name": "Part",
+          "className": "Part",
+          "children": [
+            {
+              "name": "Explosion",
+              "className": "ParticleEmitter"
+            },
+            {
+              "name": "Trail",
+              "className": "ParticleEmitter"
             },
             {
               "name": "Weld",
@@ -8425,1419 +8789,6 @@
                   ]
                 }
               ]
-            }
-          ]
-        },
-        {
-          "name": "Vitaru Urban Mini",
-          "className": "Model",
-          "children": [
-            {
-              "name": "Wheels",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "RL",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "WheelFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "SuspensionFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "Mesh",
-                      "className": "CylinderMesh"
-                    },
-                    {
-                      "name": "Parts",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "MeshPart",
-                          "className": "MeshPart"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "FL",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "WheelFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "SuspensionFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "Mesh",
-                      "className": "CylinderMesh"
-                    },
-                    {
-                      "name": "Parts",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "MeshPart",
-                          "className": "MeshPart"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "RR",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "WheelFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "SuspensionFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "Mesh",
-                      "className": "CylinderMesh"
-                    },
-                    {
-                      "name": "Parts",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "MeshPart",
-                          "className": "MeshPart"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "FR",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "WheelFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "SuspensionFixed",
-                      "className": "Model"
-                    },
-                    {
-                      "name": "Mesh",
-                      "className": "CylinderMesh"
-                    },
-                    {
-                      "name": "Parts",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "MeshPart",
-                          "className": "MeshPart"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "DriveSeat",
-              "className": "VehicleSeat",
-              "children": [
-                {
-                  "name": "Horn",
-                  "className": "Sound",
-                  "children": [
-                    {
-                      "name": "Control",
-                      "className": "Script",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/DriveSeat/Horn/Control.server.luau"
-                      ],
-                      "children": [
-                        {
-                          "name": "G",
-                          "className": "ScreenGui",
-                          "children": [
-                            {
-                              "name": "Horn",
-                              "className": "LocalScript",
-                              "filePaths": [
-                                "sync/Workspace/Vitaru Urban Mini/DriveSeat/Horn/Control/G/Horn.client.luau"
-                              ]
-                            },
-                            {
-                              "name": "src",
-                              "className": "ObjectValue"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Pbrake",
-                  "className": "Sound",
-                  "children": [
-                    {
-                      "name": "Control",
-                      "className": "Script",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/DriveSeat/Pbrake/Control.server.luau"
-                      ],
-                      "children": [
-                        {
-                          "name": "G",
-                          "className": "ScreenGui",
-                          "children": [
-                            {
-                              "name": "Horn",
-                              "className": "LocalScript",
-                              "filePaths": [
-                                "sync/Workspace/Vitaru Urban Mini/DriveSeat/Pbrake/Control/G/Horn.client.luau"
-                              ]
-                            },
-                            {
-                              "name": "src",
-                              "className": "ObjectValue"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Body",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "PAINT",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Union",
-                      "className": "UnionOperation"
-                    },
-                    {
-                      "name": "MeshPart",
-                      "className": "MeshPart"
-                    }
-                  ]
-                },
-                {
-                  "name": "Lights",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Light",
-                      "className": "UnionOperation"
-                    },
-                    {
-                      "name": "LIght",
-                      "className": "MeshPart"
-                    }
-                  ]
-                },
-                {
-                  "name": "Others",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Union",
-                      "className": "UnionOperation"
-                    },
-                    {
-                      "name": "Model",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "MeshPart",
-                          "className": "MeshPart"
-                        },
-                        {
-                          "name": "Part",
-                          "className": "Part",
-                          "children": [
-                            {
-                              "name": "Mesh",
-                              "className": "BlockMesh"
-                            },
-                            {
-                              "name": "Decal",
-                              "className": "Decal"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Model",
-                          "className": "Model",
-                          "children": [
-                            {
-                              "name": "MeshPart",
-                              "className": "MeshPart"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "MeshPart",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Decal",
-                          "className": "Decal"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Part",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Mesh",
-                          "className": "BlockMesh"
-                        },
-                        {
-                          "name": "Decal",
-                          "className": "Decal"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Bags",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "MeshPart",
-                          "className": "MeshPart"
-                        },
-                        {
-                          "name": "untitled",
-                          "className": "MeshPart"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Door",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "Open",
-                          "className": "Part",
-                          "children": [
-                            {
-                              "name": "Mesh",
-                              "className": "CylinderMesh"
-                            },
-                            {
-                              "name": "Door",
-                              "className": "Script",
-                              "filePaths": [
-                                "sync/Workspace/Vitaru Urban Mini/Body/Others/Door/Open/Door.server.luau"
-                              ]
-                            },
-                            {
-                              "name": "Script",
-                              "className": "Script",
-                              "filePaths": [
-                                "sync/Workspace/Vitaru Urban Mini/Body/Others/Door/Open/Script.server.luau"
-                              ]
-                            },
-                            {
-                              "name": "Door1",
-                              "className": "Sound"
-                            },
-                            {
-                              "name": "ClickDetector",
-                              "className": "ClickDetector"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Close",
-                          "className": "Part",
-                          "children": [
-                            {
-                              "name": "Mesh",
-                              "className": "CylinderMesh"
-                            },
-                            {
-                              "name": "ClickDetector",
-                              "className": "ClickDetector"
-                            },
-                            {
-                              "name": "Door",
-                              "className": "Sound"
-                            },
-                            {
-                              "name": "Script",
-                              "className": "Script",
-                              "filePaths": [
-                                "sync/Workspace/Vitaru Urban Mini/Body/Others/Door/Close/Script.server.luau"
-                              ]
-                            },
-                            {
-                              "name": "Doorsclosing",
-                              "className": "Sound"
-                            },
-                            {
-                              "name": "Doorsclosing1",
-                              "className": "Sound"
-                            },
-                            {
-                              "name": "Door2",
-                              "className": "Sound"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "DoorA",
-                          "className": "Model",
-                          "children": [
-                            {
-                              "name": "Handle",
-                              "className": "MeshPart"
-                            },
-                            {
-                              "name": "Glass",
-                              "className": "UnionOperation"
-                            },
-                            {
-                              "name": "Door",
-                              "className": "UnionOperation"
-                            },
-                            {
-                              "name": "Visible",
-                              "className": "BoolValue",
-                              "children": [
-                                {
-                                  "name": "Script",
-                                  "className": "Script",
-                                  "filePaths": [
-                                    "sync/Workspace/Vitaru Urban Mini/Body/Others/Door/DoorA/Visible/Script.server.luau"
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "DoorB",
-                          "className": "Model",
-                          "children": [
-                            {
-                              "name": "Handle",
-                              "className": "MeshPart"
-                            },
-                            {
-                              "name": "Glass",
-                              "className": "UnionOperation"
-                            },
-                            {
-                              "name": "Door",
-                              "className": "UnionOperation"
-                            },
-                            {
-                              "name": "Visible",
-                              "className": "BoolValue",
-                              "children": [
-                                {
-                                  "name": "Script",
-                                  "className": "Script",
-                                  "filePaths": [
-                                    "sync/Workspace/Vitaru Urban Mini/Body/Others/Door/DoorB/Visible/Script.server.luau"
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "name": "L1",
-                              "className": "MeshPart"
-                            },
-                            {
-                              "name": "L2",
-                              "className": "MeshPart"
-                            },
-                            {
-                              "name": "L4",
-                              "className": "MeshPart"
-                            },
-                            {
-                              "name": "L3",
-                              "className": "MeshPart"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Seat",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "Seat",
-                          "className": "Seat"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Display (Edit this)",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Restter",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Mesh",
-                          "className": "BlockMesh"
-                        },
-                        {
-                          "name": "Decal",
-                          "className": "Decal"
-                        },
-                        {
-                          "name": "ClickDetector",
-                          "className": "ClickDetector"
-                        },
-                        {
-                          "name": "Script",
-                          "className": "Script",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/Body/Display (Edit this)/Restter/Script.server.luau"
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Previous_Route",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Mesh",
-                          "className": "BlockMesh"
-                        },
-                        {
-                          "name": "Decal",
-                          "className": "Decal"
-                        },
-                        {
-                          "name": "ClickDetector",
-                          "className": "ClickDetector"
-                        },
-                        {
-                          "name": "Script",
-                          "className": "Script",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/Body/Display (Edit this)/Previous_Route/Script.server.luau"
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Next_Route",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Mesh",
-                          "className": "BlockMesh"
-                        },
-                        {
-                          "name": "Decal",
-                          "className": "Decal"
-                        },
-                        {
-                          "name": "ClickDetector",
-                          "className": "ClickDetector"
-                        },
-                        {
-                          "name": "Script",
-                          "className": "Script",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/Body/Display (Edit this)/Next_Route/Script.server.luau"
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Model",
-                      "className": "Model",
-                      "children": [
-                        {
-                          "name": "Part",
-                          "className": "Part",
-                          "children": [
-                            {
-                              "name": "Mesh",
-                              "className": "BlockMesh"
-                            },
-                            {
-                              "name": "Decal",
-                              "className": "Decal"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Union",
-                          "className": "UnionOperation"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Dest",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "SurfaceGui",
-                          "className": "SurfaceGui",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Dest_scipt (Edit this)",
-                      "className": "Script",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/Body/Display (Edit this)/Dest_scipt (Edit this).server.luau"
-                      ]
-                    },
-                    {
-                      "name": "Value",
-                      "className": "NumberValue"
-                    },
-                    {
-                      "name": "Num",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "SurfaceGui",
-                          "className": "SurfaceGui",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Motors",
-                  "className": "Script",
-                  "filePaths": [
-                    "sync/Workspace/Vitaru Urban Mini/Body/Motors.server.luau"
-                  ]
-                },
-                {
-                  "name": "SW",
-                  "className": "Part"
-                }
-              ]
-            },
-            {
-              "name": "Misc",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "SW",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Wheel",
-                      "className": "MeshPart"
-                    },
-                    {
-                      "name": "Body",
-                      "className": "Script",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/Misc/SW/Body.server.luau"
-                      ]
-                    },
-                    {
-                      "name": "SS",
-                      "className": "Part"
-                    },
-                    {
-                      "name": "Part",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Mesh",
-                          "className": "BlockMesh"
-                        },
-                        {
-                          "name": "Decal",
-                          "className": "Decal"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "A-Chassis Tune",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune.luau"
-              ],
-              "children": [
-                {
-                  "name": "Plugins",
-                  "className": "Folder",
-                  "children": [
-                    {
-                      "name": "AC6_Controls_Module",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "Controls_AC6",
-                          "className": "LocalScript",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/AC6_Controls_Module/Controls_AC6.client.luau"
-                          ]
-                        },
-                        {
-                          "name": "Window",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "Overlay",
-                              "className": "TextLabel"
-                            },
-                            {
-                              "name": "Error",
-                              "className": "TextLabel"
-                            },
-                            {
-                              "name": "//INSPARE",
-                              "className": "TextLabel"
-                            },
-                            {
-                              "name": "Header",
-                              "className": "TextLabel"
-                            },
-                            {
-                              "name": "Tabs",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "Controller",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Mouse",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Keyboard",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Line",
-                                  "className": "Frame"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Content",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "ControlRDZone",
-                                  "className": "TextLabel",
-                                  "children": [
-                                    {
-                                      "name": "S",
-                                      "className": "ScrollingFrame"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ControlLDZone",
-                                  "className": "TextLabel",
-                                  "children": [
-                                    {
-                                      "name": "S",
-                                      "className": "ScrollingFrame"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "MSteerWidth",
-                                  "className": "TextLabel",
-                                  "children": [
-                                    {
-                                      "name": "S",
-                                      "className": "ScrollingFrame"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "MSteerDZone",
-                                  "className": "TextLabel",
-                                  "children": [
-                                    {
-                                      "name": "S",
-                                      "className": "ScrollingFrame"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "T",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ContlrToggleTCS",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrToggleTMode",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrPBrake",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrClutch",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrShiftDown",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrShiftUp",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrSteer",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrBrake",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrThrottle",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MousePBrake",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MouseClutch",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MouseShiftDown",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MouseShiftUp",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MouseSteer",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MouseBrake",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "MouseThrottle",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ToggleABS",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ToggleTCS",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ToggleTransMode",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "PBrake",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Clutch",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ShiftDown",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ShiftUp",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "SteerRight2",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "SteerLeft2",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Brake2",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Throttle2",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "SteerRight",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "SteerLeft",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Brake",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "Throttle",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ToggleMouseDrive",
-                                  "className": "TextButton"
-                                },
-                                {
-                                  "name": "ContlrToggleABS",
-                                  "className": "TextButton"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Toggle",
-                          "className": "TextButton"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AC6_MSteer_Camera",
-                      "className": "LocalScript",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/AC6_MSteer_Camera.client.luau"
-                      ]
-                    },
-                    {
-                      "name": "[SS6] Dynamic Friction",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "UISizeConstraint",
-                          "className": "UISizeConstraint"
-                        },
-                        {
-                          "name": "UIAspectRatioConstraint",
-                          "className": "UIAspectRatioConstraint"
-                        },
-                        {
-                          "name": "Tires",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "RL",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "First",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "Second",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "Image",
-                                          "className": "ImageLabel"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "name": "RR",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "First",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "Second",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "Image",
-                                          "className": "ImageLabel"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "name": "FL",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "First",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "Second",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "Image",
-                                          "className": "ImageLabel"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            },
-                            {
-                              "name": "FR",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "First",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "Second",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "Image",
-                                          "className": "ImageLabel"
-                                        }
-                                      ]
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Simulated",
-                          "className": "LocalScript",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/[SS6] Dynamic Friction/Simulated.client.luau"
-                          ]
-                        },
-                        {
-                          "name": "Background",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "L",
-                              "className": "ImageLabel"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "WearData",
-                          "className": "Folder",
-                          "children": [
-                            {
-                              "name": "FL",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "FR",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "RL",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "RR",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "STime",
-                              "className": "NumberValue"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AC6_Stock_Sound",
-                      "className": "LocalScript",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/AC6_Stock_Sound.client.luau"
-                      ],
-                      "children": [
-                        {
-                          "name": "Rev",
-                          "className": "Sound",
-                          "children": [
-                            {
-                              "name": "SetRev",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "SetPitch",
-                              "className": "NumberValue"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AC6_FE_Sounds",
-                          "className": "RemoteEvent",
-                          "children": [
-                            {
-                              "name": "Handler",
-                              "className": "Script",
-                              "filePaths": [
-                                "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/AC6_Stock_Sound/AC6_FE_Sounds/Handler.server.luau"
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Engine2",
-                          "className": "Sound",
-                          "children": [
-                            {
-                              "name": "SetRev",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "SetPitch",
-                              "className": "NumberValue"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Engine",
-                          "className": "Sound",
-                          "children": [
-                            {
-                              "name": "SetRev",
-                              "className": "NumberValue"
-                            },
-                            {
-                              "name": "SetPitch",
-                              "className": "NumberValue"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Lights",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "Lights",
-                          "className": "LocalScript",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/Lights/Lights.client.luau"
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AC6_Stock_Gauges",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "Tach",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "Needle",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "Frame",
-                                  "className": "Frame"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Speedo",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "Needle",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "Frame",
-                                  "className": "Frame"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "ln",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "Frame",
-                              "className": "Frame"
-                            },
-                            {
-                              "name": "Num",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Gear",
-                          "className": "TextLabel"
-                        },
-                        {
-                          "name": "ABS",
-                          "className": "TextLabel"
-                        },
-                        {
-                          "name": "PBrake",
-                          "className": "TextLabel"
-                        },
-                        {
-                          "name": "TCS",
-                          "className": "TextLabel"
-                        },
-                        {
-                          "name": "TMode",
-                          "className": "TextLabel"
-                        },
-                        {
-                          "name": "Speed",
-                          "className": "TextButton"
-                        },
-                        {
-                          "name": "Gauges_AC6",
-                          "className": "LocalScript",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/AC6_Stock_Gauges/Gauges_AC6.client.luau"
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Start/Stop",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "Start",
-                          "className": "Sound"
-                        },
-                        {
-                          "name": "ButtonScript",
-                          "className": "LocalScript",
-                          "filePaths": [
-                            "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/Start/Stop/ButtonScript.client.luau"
-                          ]
-                        },
-                        {
-                          "name": "Start1",
-                          "className": "Sound"
-                        },
-                        {
-                          "name": "Start2",
-                          "className": "Sound"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "SteeringWheel",
-                      "className": "LocalScript",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Plugins/SteeringWheel.client.luau"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Initialize",
-                  "className": "Script",
-                  "filePaths": [
-                    "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Initialize.server.luau"
-                  ],
-                  "children": [
-                    {
-                      "name": "MiscWeld",
-                      "className": "ModuleScript",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/Initialize/MiscWeld.luau"
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "README",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/README.luau"
-                  ]
-                },
-                {
-                  "name": "A-Chassis Interface",
-                  "className": "ScreenGui",
-                  "children": [
-                    {
-                      "name": "Car",
-                      "className": "ObjectValue"
-                    },
-                    {
-                      "name": "Values",
-                      "className": "Folder",
-                      "children": [
-                        {
-                          "name": "RPM",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "Horsepower",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "Torque",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "TransmissionMode",
-                          "className": "StringValue"
-                        },
-                        {
-                          "name": "Gear",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "Throttle",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "SteerC",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "SteerT",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "Brake",
-                          "className": "NumberValue"
-                        },
-                        {
-                          "name": "TCS",
-                          "className": "BoolValue"
-                        },
-                        {
-                          "name": "PBrake",
-                          "className": "BoolValue"
-                        },
-                        {
-                          "name": "TCSActive",
-                          "className": "BoolValue"
-                        },
-                        {
-                          "name": "Velocity",
-                          "className": "Vector3Value"
-                        },
-                        {
-                          "name": "ABS",
-                          "className": "BoolValue"
-                        },
-                        {
-                          "name": "ABSActive",
-                          "className": "BoolValue"
-                        },
-                        {
-                          "name": "MouseSteerOn",
-                          "className": "BoolValue"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "IsOn",
-                      "className": "BoolValue"
-                    },
-                    {
-                      "name": "ControlsOpen",
-                      "className": "BoolValue"
-                    },
-                    {
-                      "name": "Drive",
-                      "className": "LocalScript",
-                      "filePaths": [
-                        "sync/Workspace/Vitaru Urban Mini/A-Chassis Tune/A-Chassis Interface/Drive.client.luau"
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "Train",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "LeftDoors",
-              "className": "Model"
-            },
-            {
-              "name": "RightDoors",
-              "className": "Model"
             }
           ]
         }
@@ -10461,10 +9412,10 @@
                   ]
                 },
                 {
-                  "name": "skill-renderer",
+                  "name": "quest-frontend",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/skill-renderer.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/quest-frontend.luau"
                   ]
                 },
                 {
@@ -10538,10 +9489,10 @@
                   ]
                 },
                 {
-                  "name": "quest-frontend",
+                  "name": "skill-tree-frontend",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/quest-frontend.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/skill-tree-frontend.luau"
                   ]
                 },
                 {
@@ -10688,6 +9639,13 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Interface/expressive-button.luau"
                   ]
+                },
+                {
+                  "name": "fade",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/fade.luau"
+                  ]
                 }
               ]
             },
@@ -10817,6 +9775,904 @@
             {
               "name": "Frameworks",
               "className": "Folder"
+            },
+            {
+              "name": "PromptPlusLoader",
+              "className": "LocalScript",
+              "filePaths": [
+                "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader.client.luau"
+              ],
+              "children": [
+                {
+                  "name": "PromptPlus",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader/PromptPlus.luau"
+                  ],
+                  "children": [
+                    {
+                      "name": "Styles",
+                      "className": "Folder",
+                      "children": [
+                        {
+                          "name": "CircleGradient1",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "CircleGradient2",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "CircleDark",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Light",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Dark",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "CircleLight",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Gradient2",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Gradient1",
+                          "className": "BillboardGui",
+                          "children": [
+                            {
+                              "name": "Container",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "KeyBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "KeyShadowBG",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "ActionText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "ObjectText",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "Key",
+                                  "className": "TextLabel"
+                                },
+                                {
+                                  "name": "HoldDurationDecor",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "Line",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationLine",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "HoldDurationValue",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIListLayout",
+                                      "className": "UIListLayout"
+                                    },
+                                    {
+                                      "name": "UIGradient",
+                                      "className": "UIGradient"
+                                    }
+                                  ]
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Settings",
+                      "className": "Configuration"
+                    },
+                    {
+                      "name": "Modules",
+                      "className": "Folder",
+                      "children": [
+                        {
+                          "name": "Highlight",
+                          "className": "ModuleScript",
+                          "filePaths": [
+                            "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader/PromptPlus/Modules/Highlight.luau"
+                          ],
+                          "children": [
+                            {
+                              "name": "ItemHighlight",
+                              "className": "Highlight"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Sounds",
+                      "className": "Folder",
+                      "children": [
+                        {
+                          "name": "Trigger",
+                          "className": "Sound"
+                        },
+                        {
+                          "name": "Hover_Enter",
+                          "className": "Sound"
+                        },
+                        {
+                          "name": "Hover_Leave",
+                          "className": "Sound"
+                        },
+                        {
+                          "name": "Holding",
+                          "className": "Sound",
+                          "children": [
+                            {
+                              "name": "ChorusSoundEffect",
+                              "className": "ChorusSoundEffect"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "LICENSE",
+                  "className": "Script",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader/LICENSE.server.luau"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -14892,6 +14748,13 @@
               ]
             },
             {
+              "name": "proximity-prompt",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/proximity-prompt.luau"
+              ]
+            },
+            {
               "name": "Serialization",
               "className": "Folder",
               "children": [
@@ -15125,6 +14988,19 @@
                   "className": "ModuleScript",
                   "filePaths": [
                     "sync/ReplicatedStorage/Modules/Animation/spin.luau"
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Logic",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "pathfinding",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/Modules/Logic/pathfinding.luau"
                   ]
                 }
               ]
@@ -16065,6 +15941,10 @@
             {
               "name": "GetPlayerCombatData",
               "className": "BindableFunction"
+            },
+            {
+              "name": "GetRegisteredQuests",
+              "className": "RemoteFunction"
             }
           ]
         },
@@ -20706,6 +20586,30 @@
                   ]
                 }
               ]
+            },
+            {
+              "name": "ProxyPrompt",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "TextButton",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "Key",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "Details",
+                      "className": "TextLabel"
+                    }
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -20899,6 +20803,19 @@
         {
           "name": "Modules",
           "className": "Folder"
+        },
+        {
+          "name": "Scripts",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "patroller-execution",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ServerScriptService/Scripts/patroller-execution.luau"
+              ]
+            }
+          ]
         }
       ]
     },

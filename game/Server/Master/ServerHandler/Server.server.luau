@@ -965,14 +965,12 @@ end
 
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
--- progress reporting is now handled by the quest module via ReportQuestProgress
--- (see Shared/Storage/modules/quest/init.luau)
 
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
-
+initializeAudio()
 startLightingCycle()
 -- quest:StartTracking() -- deprecated; no longer necessary
 -- TODO) add player saving options

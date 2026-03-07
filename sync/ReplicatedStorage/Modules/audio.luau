@@ -93,8 +93,8 @@ function module:PlaySFX(name: string, point: Vector3?)
 			sfx.Parent = part
 
 			sfx.Ended:Connect(function()
-				part:Destroy()
 				sfx.Parent = SoundService
+				part:Destroy()
 			end)
 		else
 			sfx.Parent = SoundService

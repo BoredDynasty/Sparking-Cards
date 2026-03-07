@@ -59,14 +59,14 @@ local function openCanvas(canvas_data: CanvasData)
 	-- then chills out” animation.
 	-- it's both overused and effective~!
 
+	spr.stop(scale)
+	spr.stop(canvas_data.canvas, "Position")
+
 	-- add .25 to the scale for initializing the effect
 	scale.Scale = 1.25
 
 	-- rest below the screen
 	canvas_data.canvas.Position = UDim2.fromScale(0.5, 2)
-
-	spr.stop(scale)
-	spr.stop(canvas_data.canvas, "Position")
 
 	spr.target(scale, 0.5, 1.5, {
 		Scale = 1,
@@ -96,6 +96,9 @@ local function closeCanvas(canvas_data: CanvasData)
 
 	spr.stop(scale)
 	spr.stop(canvas_data.canvas, "Position")
+
+	canvas_data.canvas.Position = UDim2.fromScale(0.5, 0.5)
+	scale.Scale = 1.25
 
 	spr.target(scale, 0.4, 1.5, {
 		Scale = 1.25,

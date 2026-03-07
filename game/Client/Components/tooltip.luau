@@ -1,11 +1,7 @@
 --!strict
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
-local StarterPlayer = game:GetService("StarterPlayer")
-
-local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
-local input = require(ReplicatedStorage.Packages.input)
+print(1)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- tooltip.luau
@@ -13,26 +9,27 @@ local spr = require(ReplicatedStorage.Modules.spr)
 
 local module = {}
 module.tracking = {} :: { Tooltip }
+print(1)
 
 local player = Players.LocalPlayer
 local player_gui = player.PlayerGui
+print(1)
 
--- ensure the Tooltip ScreenGui is available
-local tooltip_container = player_gui:WaitForChild("Tooltip") :: ScreenGui
+local tooltip_container = player_gui.Tooltip
+print(1)
 
-local mouse = input.Mouse.new()
-
-local templates = ReplicatedStorage:WaitForChild("Interfaces")
+local templates = ReplicatedStorage.Interfaces
+print(1)
 
 local camera = workspace.CurrentCamera
-
-local active_tooltip = nil
+print(1)
 
 type Tooltip = {
 	object: GuiObject,
 	text: string,
 	actions: Actions?,
 }
+print(1)
 
 type Actions = {
 	{
@@ -40,6 +37,7 @@ type Actions = {
 		fn: () -> (),
 	}
 }
+print(1)
 
 function module.register(object: GuiObject, text: string, actions: Actions?)
 	local data = {
@@ -47,20 +45,28 @@ function module.register(object: GuiObject, text: string, actions: Actions?)
 		text = text,
 		actions = actions,
 	}
+	print(1)
 
 	table.insert(module.tracking, data)
-
+	--[[
 	object.Destroying:Connect(function()
-		task.spawn(module.unregister, object)
+		module.unregister(object)
 	end)
+	--]]
+	print(1)
 end
+print(1)
 
 function module.unregister(object: GuiObject)
+	print(1)
+
 	for i, data in ipairs(module.tracking) do
 		if data.object == object then
 			table.remove(module.tracking, i)
+			print(1)
 		end
 	end
+	print(1)
 end
 
 local function clamp_tooltip_position(
@@ -88,9 +94,11 @@ function module:Start()
 		local tooltip_gui = nil :: TextButton?
 
 		object.MouseEnter:Connect(function()
+			print(1)
 			if tooltip_gui then
 				return
 			end
+			print(2)
 
 			local gui_bounds = {
 				size = object.AbsoluteSize,
@@ -104,6 +112,7 @@ function module:Start()
 				+ (gui_bounds.size.X / 2)
 				- (tooltip_gui.AbsoluteSize.X / 2)
 			local target_y = gui_bounds.position.Y - tooltip_gui.AbsoluteSize.Y - 4
+			print(3)
 
 			local padding = 4
 			target_x, target_y = clamp_tooltip_position(
@@ -114,32 +123,41 @@ function module:Start()
 				camera.ViewportSize,
 				padding
 			)
+			print(4)
 
 			tooltip_gui.Text = data.text
 			tooltip_gui.Parent = tooltip_container
+			print(5)
 
 			tooltip_gui.Position = UDim2.fromOffset(target_x, target_y - 4)
 			tooltip_gui.Visible = true
+			print(6)
 
 			tooltip_gui.TextTransparency = 1
 			tooltip_gui.BackgroundTransparency = 1
+			print(7)
 
 			spr.target(tooltip_gui, 0.73, 3.5, {
 				Position = UDim2.fromOffset(target_x, target_y),
 				TextTransparency = 0,
 				BackgroundTransparency = 0,
 			})
+			print(8)
 		end)
 
 		object.MouseLeave:Connect(function()
+			print(9)
 			if not tooltip_gui then
 				return
 			end
+			print(10)
 
 			task.wait(1.5)
 
 			local target_x = tooltip_gui.Position.X.Offset
 			local target_y = tooltip_gui.Position.Y.Offset
+
+			print(11)
 
 			spr.target(tooltip_gui, 0.73, 3.5, {
 				Position = UDim2.fromOffset(target_x, target_y - 4),
@@ -147,11 +165,15 @@ function module:Start()
 				BackgroundTransparency = 1,
 			})
 
+			print(12)
+
 			spr.completed(tooltip_gui, function()
 				tooltip_gui.Visible = false
 				tooltip_gui:Destroy()
 				tooltip_gui = nil
 			end)
+
+			print(13)
 		end)
 	end
 end

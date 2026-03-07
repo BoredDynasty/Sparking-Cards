@@ -221,11 +221,11 @@ function module:LoadItems()
 
 		toggle_btn.Visible = true
 
-		tooltip.register(toggle_btn, booleanToString(value:Get()))
+		--tooltip.register(toggle_btn, booleanToString(value:Get()))
 		value.Changed:Connect(function()
-			tooltip.unregister(toggle_btn)
+			--tooltip.unregister(toggle_btn)
 			task.wait()
-			tooltip.register(toggle_btn, booleanToString(value:Get()))
+			--tooltip.register(toggle_btn, booleanToString(value:Get()))
 		end)
 
 		toggle_btn.Activated:Connect(function()

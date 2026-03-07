@@ -1,4 +1,4 @@
---!strict
+--!nonstrict
 
 -- Server.server.luau
 
@@ -21,6 +21,7 @@ local Items = require(ReplicatedStorage.Market.Items)
 local Packet = require(ReplicatedStorage.Packet)
 local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local Pyro = require(ReplicatedStorage.Combat.framework.attacks.Pyro)
+local audio = require(ReplicatedStorage.Modules.audio)
 local batch = require(ReplicatedStorage.Utility.batch)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
@@ -44,6 +45,7 @@ local star = require(ReplicatedStorage.Environment.star)
 local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
 local sword = require(ReplicatedStorage.Combat["combat-styles"].sword)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
+local train = require(ServerStorage.modules.train)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local windshake = require(ReplicatedStorage.Packages.windshake)
 
@@ -723,6 +725,28 @@ local function addQuest(player: Player, quest_data: string)
 	print("server: added quest")
 end
 
+local function initializeAudio()
+	--print("init audio")
+
+	task.spawn(function()
+		audio:AddSFX("wood-block-1", 9120917813)
+		audio:AddSFX("wood-block-2", 9120917604)
+		audio:AddSFX("wood-block-3", 9120917605)
+		audio:AddSFX("wood-block-4", 9120917794)
+		audio:AddSFX("wood-block-5", 9120917978)
+
+		audio:AddSFX("continue", 92647604633081)
+
+		audio:AddSFX("click", 90092163763441)
+		audio:AddSFX("hover", 119879668444252)
+		audio:AddSFX("leave", 85897203168160)
+		audio:AddSFX("success", 76288726968959)
+
+		audio:AddSFX("train_brakes", 185857550)
+		audio:AddSFX("train_clattering", 149026377)
+	end)
+end
+
 local function addProducts()
 	-- TODO) add the product thingies
 end
@@ -941,14 +965,12 @@ end
 
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
--- progress reporting is now handled by the quest module via ReportQuestProgress
--- (see Shared/Storage/modules/quest/init.luau)
 
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
-
+initializeAudio()
 startLightingCycle()
 -- quest:StartTracking() -- deprecated; no longer necessary
 -- TODO) add player saving options

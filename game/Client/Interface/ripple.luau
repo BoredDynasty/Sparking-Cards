@@ -1,11 +1,8 @@
 --!nonstrict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
-local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
-local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
 local property = require(ReplicatedStorage.Utility.property)

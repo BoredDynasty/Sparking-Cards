@@ -35,6 +35,9 @@ local snackbar_queue = {
 	incoming = {} :: { Hint },
 }
 
+-- Debounce flag: prevents new hints from processing until active hint finishes dismissing
+local debounce_locked = false
+
 local pool = PoolerPlus:CreatePool("HintPool", function()
 	local templates = ReplicatedStorage.Interfaces
 
@@ -88,6 +91,15 @@ local function show_hint(snackbar_obj: Snackbar)
 	spr.target(snackbar_obj.hint, 0.8, 3.5, {
 		Position = UDim2.new(0.5, 0, 1, -85),
 	})
+
+	-- Start expiry timer after hint becomes fully visible (animation completes)
+	spr.completed(snackbar_obj.hint, function()
+		task.delay(snackbar_obj.expiry, function()
+			pcall(function()
+				snackbar_obj:Dismiss()
+			end)
+		end)
+	end)
 end
 
 local function hide_snackbar(snackbar_obj: Snackbar, on_complete: () -> ())
@@ -126,6 +138,11 @@ local function process_queue()
 		return string.len(a.hint.TextLabel.Text) > string.len(b.hint.TextLabel.Text)
 	end)
 
+	-- if debounce is locked, don't process (wait for active hint to fully dismiss)
+	if debounce_locked then
+		return
+	end
+
 	-- if active hint exists, don't process
 	if snackbar_queue.active then
 		return
@@ -139,6 +156,9 @@ local function process_queue()
 	-- move first incoming to active
 	local next_hint = table.remove(snackbar_queue.incoming, 1)
 	snackbar_queue.active = next_hint
+
+	-- Lock debounce: no new hints can be processed until this one finishes dismissing
+	debounce_locked = true
 
 	show_hint(next_hint)
 end
@@ -232,10 +252,6 @@ function module.new()
 		self:Dismiss()
 	end)
 
-	task.delay(self.expiry, function()
-		self:Dismiss()
-	end)
-
 	return self
 end
 
@@ -300,9 +316,15 @@ function module.Dismiss(self: Snackbar)
 		self.hint.Parent = snackbar_gui
 
 		hide_snackbar(self, function()
+			-- Unlock debounce so next queued hint can process
+			debounce_locked = false
+
 			if self and self.Destroy then
 				self:Destroy()
 			end
+
+			-- Process next hint in queue
+			process_queue()
 		end)
 	end)
 end

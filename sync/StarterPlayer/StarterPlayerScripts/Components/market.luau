@@ -264,8 +264,8 @@ function module:LoadItems<K, V>(items)
 		local quantity_add = quantity_frame:WaitForChild("Add")
 		local quantity_remove = quantity_frame:WaitForChild("Remove")
 
-		tooltip.register(quantity_add, "Increase quantity")
-		tooltip.register(quantity_remove, "Decrease quantity")
+		--tooltip.register(quantity_add, "Increase quantity")
+		--tooltip.register(quantity_remove, "Decrease quantity")
 
 		quantity_add.Activated:Connect(function()
 			future.Try(function()

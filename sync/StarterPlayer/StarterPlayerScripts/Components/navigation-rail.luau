@@ -153,7 +153,7 @@ end
 function module.Button(self: NavigationRail, name: string, icon: string, fn: () -> ())
 	table.insert(self.buttons, {
 		name = name,
-		icon = lucide.GetAsset(icon, 256),
+		icon = lucide.GetAsset(icon, 256 * 2),
 		text_button = button_pool:Get(),
 		fn = fn,
 	})
@@ -162,7 +162,7 @@ end
 function module.SetActionIcon(self: NavigationRail, icon: string)
 	task.spawn(function()
 		future.Try(function()
-			local lucide_asset = lucide.GetAsset(icon, 256)
+			local lucide_asset = lucide.GetAsset(icon, 256 * 2)
 
 			local image_label = self.action_button.ImageLabel
 			image_label.ImageContent = Content.fromUri(lucide_asset.Url)

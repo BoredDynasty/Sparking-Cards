@@ -7,6 +7,7 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local Packet = require(ReplicatedStorage.Packet)
 local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
+local fade = require(StarterPlayer.StarterPlayerScripts.Interface.fade)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
@@ -184,8 +185,16 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 				if leader_id then
 					if leader_id == player.UserId then
 						display.Enter.Interactable = false
+						fade.fade(display.Enter, {
+							recursive = true,
+							transparency = {
+								start = 0,
+								target = 0.4,
+							},
+						})
 					else
 						display.Enter.Interactable = true
+						fade.fade_in(display.Enter, 0.5, true)
 					end
 				end
 			end)

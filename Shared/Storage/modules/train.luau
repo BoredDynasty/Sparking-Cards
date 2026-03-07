@@ -50,6 +50,7 @@ local function update_light_color(light: Instance, direction: number): ()
 
 	if not white_dot or not red_dot then
 		warn(`Light {light.Name} missing color indicators`)
+
 		return
 	end
 
@@ -104,13 +105,19 @@ local function update_destination_display(station_sensor: BasePart): ()
 	end
 end
 
-local function handle_door_animation(): ()
+local function handle_door_animation(open_left_doors: boolean): ()
 	local all_doors = tablekit.MergeArrays(
 		right_doors:GetChildren() :: { any },
 		left_doors:GetChildren() :: { any }
 	) :: { BasePart }
 
 	for _, door in ipairs(all_doors) do
+		if open_left_doors then
+			if door.Parent ~= left_doors then
+				continue
+			end
+		end
+
 		door.CanCollide = false
 		door.Transparency = 1
 
@@ -125,6 +132,7 @@ seat.Touched:Connect(function(base_part)
 	if base_part.Name ~= "StationSensor" then
 		return
 	end
+
 	if base_part == last_station then
 		return
 	end
@@ -144,7 +152,9 @@ seat.Touched:Connect(function(base_part)
 	update_destination_display(base_part)
 
 	-- Animate doors
-	handle_door_animation()
+	local left_doors = base_part:GetAttribute("LeftDoors") :: boolean
+
+	handle_door_animation(left_doors)
 
 	-- Wait for doors to close and be ready to depart
 	task.wait(STATION_STOP_DURATION)
