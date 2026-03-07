@@ -176,7 +176,7 @@ audio:PlaySFX("train_clattering", engine.Position)
 -- Update physics and audio based on movement
 RunService.Heartbeat:Connect(function()
 	-- Update engine velocity based on throttle
-	engine_velocity.Velocity = seat.Throttle * (engine.CFrame.LookVector * seat.MaxSpeed)
+	engine_velocity.Velocity = seat.Throttle * (engine.CFrame.LookVector.Unit * seat.MaxSpeed)
 
 	-- Adjust train sound volume based on current speed
 	local speed_ratio = engine.AssemblyLinearVelocity.Magnitude / seat.MaxSpeed

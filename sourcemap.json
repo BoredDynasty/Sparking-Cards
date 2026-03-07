@@ -8262,10 +8262,6 @@
               "className": "Seat"
             },
             {
-              "name": "Part",
-              "className": "Part"
-            },
-            {
               "name": "Union",
               "className": "UnionOperation"
             },
@@ -8303,6 +8299,10 @@
                   "className": "BodyVelocity"
                 }
               ]
+            },
+            {
+              "name": "Roof",
+              "className": "Part"
             }
           ]
         },
@@ -20610,6 +20610,10 @@
                   ]
                 }
               ]
+            },
+            {
+              "name": "ProximityPrompt",
+              "className": "BillboardGui"
             }
           ]
         },

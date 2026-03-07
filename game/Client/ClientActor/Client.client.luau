@@ -502,6 +502,7 @@ local function initializeObjectives()
 
 		if displayorder:GetState(objectiveGui.CanvasGroup) then
 			quest_frontend:LoadItems()
+			quest_frontend:DisplayCompletions()
 		else
 			quest_frontend:Unload()
 		end
