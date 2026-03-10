@@ -1,5 +1,4 @@
 return {
-	-- TODO) expand here
 	{
 		name = "Itchy Feet",
 		technique = "Itchy Feet",

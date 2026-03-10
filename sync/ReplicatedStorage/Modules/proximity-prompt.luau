@@ -12,6 +12,11 @@ local Trove = require(ReplicatedStorage.Packages.trove)
 
 local module = {}
 
+local pool = PoolerPlus:CreatePool("ProxyPool", function()
+	return ReplicatedStorage.Interfaces.ProxyPrompt
+end)
+pool:AdaptivePreload()
+
 export type ProximityPrompt = setmetatable<{
 	keybind: Enum.KeyCode,
 	adornee: Instance?,
@@ -20,6 +25,14 @@ export type ProximityPrompt = setmetatable<{
 	hold_duration: number,
 	max_distance: number,
 	fn: (() -> ())?,
+	_prompt: typeof(pool:Get())?,
+	_trove: typeof(Trove.new()),
+
+	_in_range: boolean,
+	_is_showing: boolean,
+	_is_holding: boolean,
+	_hold_time: number,
+	_player: Player,
 
 	Holding: any,
 	Triggered: any,
@@ -30,17 +43,15 @@ export type ProximityPrompt = setmetatable<{
 	SetAction: (self: ProximityPrompt, str: string, fn: (() -> ())?) -> (),
 	SetHoldDuration: (self: ProximityPrompt, duration: number) -> (),
 	SetMaxDistance: (self: ProximityPrompt, distance: number) -> (),
+	_UpdatePromptUI: (self: ProximityPrompt) -> (),
+	_SetupInputHandling: (self: ProximityPrompt) -> (),
+	_SetupProximityDetection: (self: ProximityPrompt) -> (),
 	Show: (self: ProximityPrompt) -> (),
 	Hide: (self: ProximityPrompt) -> (),
 	Destroy: (self: ProximityPrompt) -> (),
 }, typeof(module)>
 
-local pool = PoolerPlus:CreatePool("ProxyPool", function()
-	return ReplicatedStorage.Interfaces.ProxyPrompt
-end)
-pool:AdaptivePreload()
-
-function module.new(): ProximityPrompt
+function module.new()
 	return setmetatable({
 		keybind = Enum.KeyCode.E,
 		adornee = nil,
@@ -61,7 +72,7 @@ function module.new(): ProximityPrompt
 		_is_holding = false,
 		_hold_time = 0,
 		_player = Players.LocalPlayer,
-	}, module) :: ProximityPrompt
+	}, module)
 end
 
 function module.SetAdornee(self: ProximityPrompt, adornee: Instance)
@@ -145,18 +156,20 @@ function module._UpdatePromptUI(self: ProximityPrompt)
 		return
 	end
 
-	local button = self._prompt:FindFirstChildOfClass("TextButton")
+	local button = self._prompt.TextButton
 	if not button then
 		return
 	end
 
+	local keycode_name = UserInputService:GetStringForKeyCode(self.keybind)
+
 	local str = "%s<br/><font transparency='0.4'><font size='14'>%s to interact</font></font>"
-	local formatted = string.format(str, self.interaction_name, self.keybind.Name)
+	local formatted = string.format(str :: any, self.interaction_name, keycode_name)
 
 	button.Text = formatted
 	button.Details.Text = formatted
 
-	button.Key.Text = self.keybind.Name
+	button.Key.Text = keycode_name
 end
 
 function module._SetupInputHandling(self: ProximityPrompt)
@@ -217,7 +230,7 @@ function module._SetupProximityDetection(self: ProximityPrompt)
 		return
 	end
 
-	local humanoid_root_part = character:FindFirstChild("HumanoidRootPart")
+	local humanoid_root_part = character:FindFirstChild("HumanoidRootPart") :: BasePart
 	if not humanoid_root_part then
 		return
 	end
@@ -233,9 +246,9 @@ function module._SetupProximityDetection(self: ProximityPrompt)
 		local adornee_position = Vector3.new()
 
 		if self.adornee:IsA("BasePart") then
-			adornee_position = (self.adornee :: BasePart).Position
+			adornee_position = self.adornee.Position
 		elseif self.adornee:IsA("Model") then
-			local model_primary_part = (self.adornee :: Model).PrimaryPart
+			local model_primary_part = self.adornee.PrimaryPart
 
 			adornee_position = model_primary_part.Position
 		end

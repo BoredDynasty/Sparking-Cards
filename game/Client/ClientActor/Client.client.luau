@@ -21,8 +21,6 @@ local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["cam
 
 local Packet = require(ReplicatedStorage.Packet)
 
-local achievement = require(StarterPlayer.StarterPlayerScripts.Components.achievement)
-
 local animate = require("../Utilities/animate")
 
 local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displayorder)
@@ -40,6 +38,7 @@ local input = require(ReplicatedStorage.Packages.input)
 
 local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
 
+local flight = require(ReplicatedStorage.Combat.framework.features.flight)
 local logger = require(ReplicatedStorage.ClientModules.logger)
 
 local lucide = require(ReplicatedStorage.Packages.lucide)
@@ -60,11 +59,13 @@ local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["num
 
 local observer = require(ReplicatedStorage.Utility.observer)
 
+local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local quest_frontend = require(StarterPlayer.StarterPlayerScripts.Components["quest-frontend"])
+local skill_frontend = require(StarterPlayer.StarterPlayerScripts.Components["skill-frontend"])
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
 local tooltip = require("../Components/tooltip")
 
@@ -158,8 +159,12 @@ local function initializeAudio()
 		audio:AddSFX("leave", 85897203168160)
 		audio:AddSFX("success", 76288726968959)
 
+		audio:AddSFX("cancel-1", 127645399844758)
+
 		audio:AddSFX("train_brakes", 185857550)
 		audio:AddSFX("train_clattering", 149026377)
+
+		audio:AddMusic("flight-wind", 3308152153)
 	end)
 end
 
@@ -368,17 +373,18 @@ local function initializeBadges()
 	local badgesCanvas = badgesGui.CanvasGroup
 	local badgeFrame = badgesCanvas.Frame
 
-	local itemHolder = badgeFrame.Holder
-	local totalBadges = badgeFrame.Total
 	shadow(badgeFrame)
-	shadow(totalBadges)
 
 	displayorder.new(badgesCanvas)
 
 	local function callback()
 		displayorder:Toggle(badgesCanvas)
-		achievement:DisplayTotal(fetchProfile())
-		achievement:Load(fetchProfile())
+		badge_frontend:LoadItems()
+		badge_frontend:DisplayTotalPoints()
+		task.wait(5)
+		if displayorder:GetState(badgesCanvas) then
+			badge_frontend:DisplayTotalAchievements()
+		end
 	end
 
 	hud.new("Badges", callback, lucide.GetAsset("trophy", 48), true)
@@ -387,10 +393,14 @@ local function initializeNotifiers()
 	--print("init notifiers")
 
 	Packet.SendNotification.listen(function(data)
-		local hint_ = hint.new()
-		hint_:SetText(data.message)
-		hint_:SetExpiry(data.duration or 4)
-		hint_:SetCanClick(false)
+		if RunService:IsStudio() then
+			print("Notification received: ", tablekit.ToString(data))
+		else
+			local hint_ = hint.new()
+			hint_:SetText(data.message)
+			hint_:SetExpiry(data.duration or 4)
+			hint_:SetCanClick(false)
+		end
 	end)
 end
 local function initializeMusic()
@@ -409,9 +419,9 @@ local function initializeMusic()
 		},
 		{
 			biome = "Route 17",
-			id = 12385329420,
-			name = "Greenlight Valley",
-			artist = "Dynasty",
+			id = 133345791762540,
+			name = "Tariro",
+			artist = "Pufino | Freetouse",
 			coordinates = {
 				position = vector.create(-1791, 323, -3444),
 				size = vector.create(580, 254, 761),
@@ -436,6 +446,8 @@ local function initializeMusic()
 
 	local song_name = musicCanvas.SongName
 	local artist_display = musicCanvas.Artist
+
+	musicGui.Enabled = not RunService:IsStudio()
 
 	music.Playing.Changed:Connect(function(track: music.Track)
 		if not track then
@@ -511,12 +523,30 @@ local function initializeObjectives()
 	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"), true)
 end
 
+local function initializeSkills()
+	local skillGui = PlayerGui.SkillTree
+	displayorder.new(skillGui.CanvasGroup)
+
+	skill_frontend:Unload()
+
+	local function toggleUI()
+		displayorder:Toggle(skillGui.CanvasGroup)
+
+		if displayorder:GetState(skillGui.CanvasGroup) then
+			skill_frontend:LoadCatagories()
+		else
+			skill_frontend:Unload()
+		end
+	end
+
+	hud.new("Skills", toggleUI, lucide.GetAsset("currency"), true)
+end
+
 local function initializeParties()
 	--print("init parties")
 
 	local party_gui = PlayerGui.Party
 	local party_canvas = party_gui.CanvasGroup
-	local party_frame = party_canvas.Frame
 
 	displayorder.new(party_canvas)
 
@@ -644,12 +674,12 @@ initializeNotifiers()
 initializeMusic()
 initializeLoadouts()
 initializeObjectives()
+initializeSkills()
 initializeParties()
 initializeSpectating()
 initializeAudio()
 
 hud:Render()
-tooltip:Start()
 --motion_blur:On()
 task.delay(15, function()
 	camera_controller.new("bobbing", bobbing)
@@ -729,7 +759,35 @@ mouse.LeftDown:Connect(function(processed: boolean)
 		return
 	end
 
-	--
+	type BeamParams = {
+		origin: Vector3,
+		direction: Vector3?,
+		target: Vector3?,
+		max_distance: number?,
+		speed: number?,
+		width: number?,
+		color: Color3?,
+		texture: string?,
+		damage: number?,
+		falloff: boolean?,
+		pierce: boolean?,
+		pierce_count: number?,
+		ignored_instances: { Instance }?,
+		source: Model?, -- used for damage attribution
+		life_time: number?, -- visual life time
+		hit_particle: ParticleEmitter?, -- optional particle effect to play at hit point
+	}
+
+	-- test
+	events.FireBeam:FireServer({
+		origin = mouse:Project(),
+		direction = Vector3.new(0, -1, 0), -- downwards
+		color = Color3.new(1, 0, 0),
+		damage = 10,
+		speed = 500,
+		width = 0.5,
+		life_time = 0.5,
+	})
 
 	--hud:Hide()
 end)
@@ -792,6 +850,7 @@ do
 		local snack_bar = hint.new()
 		snack_bar:SetText(string.format(str, min_quality_level))
 		snack_bar:SetExpiry(7)
+		snack_bar:SetCanClick(true)
 		snack_bar:SetAction(function()
 			future.Try(function()
 				user_game_settings.SavedQualityLevel = min_quality_enum
@@ -813,6 +872,10 @@ do
 end
 
 -- over_shoulder:Enable()
+
+player.CharacterAdded:Connect(function(model)
+	flight.setup()
+end)
 
 Packet.ReplicateAnimation.listen(function(data)
 	animate.load(tonumber(data.identification))

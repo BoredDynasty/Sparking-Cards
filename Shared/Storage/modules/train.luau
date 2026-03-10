@@ -1,6 +1,7 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
+local TweenService = game:GetService("TweenService")
 
 local audio = require(ReplicatedStorage.Modules.audio)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
@@ -137,12 +138,14 @@ seat.Touched:Connect(function(base_part)
 		return
 	end
 
+	local T_info = TweenInfo.new(4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+
 	last_station = base_part
 
 	audio:PlaySFX("train_brakes", engine.Position)
 
 	-- Stop the train
-	seat.Throttle = 0
+	TweenService:Create(seat, T_info, { Throttle = 0 }):Play()
 
 	-- Get and apply departure direction
 	local depart_direction = base_part:GetAttribute("DepartDirection") :: number
@@ -160,7 +163,8 @@ seat.Touched:Connect(function(base_part)
 	task.wait(STATION_STOP_DURATION)
 
 	-- Resume movement in departure direction
-	seat.Throttle = depart_throttle
+	T_info = TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	TweenService:Create(seat, T_info, { Throttle = depart_throttle }):Play()
 end)
 
 -- Initialize direction based on initial throttle

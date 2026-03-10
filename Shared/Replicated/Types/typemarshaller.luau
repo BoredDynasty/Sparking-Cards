@@ -127,13 +127,7 @@ export type ProfileData = {
 	equipped_emotes: {
 		[string]: any,
 	},
-	achievements: {
-		{
-			name: string,
-			description: string,
-			points: number,
-		}
-	},
+	achievements: { Badge },
 	bookmarked_shop_items: { string },
 	quests: { Quest },
 	products: {
@@ -147,6 +141,12 @@ export type ProfileData = {
 	},
 	keybinds: {
 		[string]: number,
+	},
+	navigation_to: {
+		{
+			destination: Vector3,
+			region_name: string?,
+		}
 	},
 }
 
@@ -163,6 +163,13 @@ export type Quest = {
 	date_completed: number?,
 	completed: boolean?,
 	module: ModuleScript?,
+}
+
+export type Badge = {
+	name: string,
+	description: string,
+	points: number,
+	date_acquired: number, -- unix timestamp millis
 }
 
 export type LucideIcon = {

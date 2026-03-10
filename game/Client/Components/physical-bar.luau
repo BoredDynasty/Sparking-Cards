@@ -120,7 +120,7 @@ function module.SetValue(self: PhysicalBar, value: number)
 	local bar_frame = self.bar.Frame
 	local inner_bar = bar_frame.Bar
 
-	local scale = UDim2.fromScale(1, percentage)
+	local scale = UDim2.fromScale(0.5, percentage)
 
 	spr.stop(inner_bar, "Size")
 	spr.target(inner_bar, 0.8, 8, {

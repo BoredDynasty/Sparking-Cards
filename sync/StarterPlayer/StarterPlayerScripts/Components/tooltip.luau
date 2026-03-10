@@ -1,35 +1,34 @@
 --!strict
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-print(1)
+local RunService = game:GetService("RunService")
+
+local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local spr = require(ReplicatedStorage.Modules.spr)
 
 -- tooltip.luau
 -- https://m3.material.io/components/tooltips/guidelines
 
 local module = {}
-module.tracking = {} :: { Tooltip }
-print(1)
+
+local registered_tooltips: { Tooltip } = {}
 
 local player = Players.LocalPlayer
 local player_gui = player.PlayerGui
-print(1)
 
 local tooltip_container = player_gui.Tooltip
-print(1)
 
 local templates = ReplicatedStorage.Interfaces
-print(1)
 
 local camera = workspace.CurrentCamera
-print(1)
 
 type Tooltip = {
 	object: GuiObject,
 	text: string,
 	actions: Actions?,
+	tooltip_gui: GuiObject?,
+	hide_thread: thread?,
 }
-print(1)
 
 type Actions = {
 	{
@@ -37,145 +36,162 @@ type Actions = {
 		fn: () -> (),
 	}
 }
-print(1)
 
-function module.register(object: GuiObject, text: string, actions: Actions?)
-	local data = {
-		object = object,
-		text = text,
-		actions = actions,
-	}
-	print(1)
+local pool = PoolerPlus:CreatePool("TooltipPool", function()
+	return templates.PlainTooltip:Clone()
+end)
 
-	table.insert(module.tracking, data)
-	--[[
-	object.Destroying:Connect(function()
-		module.unregister(object)
-	end)
-	--]]
-	print(1)
-end
-print(1)
-
-function module.unregister(object: GuiObject)
-	print(1)
-
-	for i, data in ipairs(module.tracking) do
-		if data.object == object then
-			table.remove(module.tracking, i)
-			print(1)
-		end
-	end
-	print(1)
-end
-
-local function clamp_tooltip_position(
-	target_x: number,
-	target_y: number,
-	tooltip_width: number,
-	tooltip_height: number,
-	screen_size: Vector2,
-	padding: number
-): (number, number)
-	local min_x = padding
-	local max_x = screen_size.X - tooltip_width - padding
-	local min_y = padding
-	local max_y = screen_size.Y - tooltip_height - padding
-
-	local clamped_x = math.clamp(target_x, min_x, max_x)
-	local clamped_y = math.clamp(target_y, min_y, max_y)
-
-	return clamped_x, clamped_y
-end
-
-function module:Start()
-	for i, data in ipairs(module.tracking) do
-		local object = data.object
-		local tooltip_gui = nil :: TextButton?
-
-		object.MouseEnter:Connect(function()
-			print(1)
-			if tooltip_gui then
-				return
+local function close_all_tooltips()
+	for _, data in ipairs(registered_tooltips) do
+		if data.tooltip_gui then
+			local tooltip = data.tooltip_gui
+			data.tooltip_gui = nil
+			if data.hide_thread then
+				task.cancel(data.hide_thread)
+				data.hide_thread = nil
 			end
-			print(2)
-
-			local gui_bounds = {
-				size = object.AbsoluteSize,
-				position = object.AbsolutePosition,
-			}
-
-			tooltip_gui = templates.PlainTooltip:Clone()
-			assert(tooltip_gui, "huh?")
-
-			local target_x = gui_bounds.position.X
-				+ (gui_bounds.size.X / 2)
-				- (tooltip_gui.AbsoluteSize.X / 2)
-			local target_y = gui_bounds.position.Y - tooltip_gui.AbsoluteSize.Y - 4
-			print(3)
-
-			local padding = 4
-			target_x, target_y = clamp_tooltip_position(
-				target_x,
-				target_y,
-				tooltip_gui.AbsoluteSize.X,
-				tooltip_gui.AbsoluteSize.Y,
-				camera.ViewportSize,
-				padding
-			)
-			print(4)
-
-			tooltip_gui.Text = data.text
-			tooltip_gui.Parent = tooltip_container
-			print(5)
-
-			tooltip_gui.Position = UDim2.fromOffset(target_x, target_y - 4)
-			tooltip_gui.Visible = true
-			print(6)
-
-			tooltip_gui.TextTransparency = 1
-			tooltip_gui.BackgroundTransparency = 1
-			print(7)
-
-			spr.target(tooltip_gui, 0.73, 3.5, {
-				Position = UDim2.fromOffset(target_x, target_y),
-				TextTransparency = 0,
-				BackgroundTransparency = 0,
-			})
-			print(8)
-		end)
-
-		object.MouseLeave:Connect(function()
-			print(9)
-			if not tooltip_gui then
-				return
-			end
-			print(10)
-
-			task.wait(1.5)
-
-			local target_x = tooltip_gui.Position.X.Offset
-			local target_y = tooltip_gui.Position.Y.Offset
-
-			print(11)
-
-			spr.target(tooltip_gui, 0.73, 3.5, {
-				Position = UDim2.fromOffset(target_x, target_y - 4),
+			-- Animate out immediately
+			spr.target(tooltip, 0.8, 1, {
 				TextTransparency = 1,
 				BackgroundTransparency = 1,
 			})
-
-			print(12)
-
-			spr.completed(tooltip_gui, function()
-				tooltip_gui.Visible = false
-				tooltip_gui:Destroy()
-				tooltip_gui = nil
+			spr.completed(tooltip, function()
+				tooltip.Visible = false
+				pool:Return(tooltip)
 			end)
-
-			print(13)
-		end)
+		end
 	end
+end
+
+local function position_tooltip(tooltip: GuiObject, object: GuiObject): UDim2
+	local obj_pos = object.AbsolutePosition
+	local obj_size = object.AbsoluteSize
+	local tooltip_size = tooltip.AbsoluteSize
+	local screen_size = camera.ViewportSize
+
+	-- Try above first
+	local x = obj_pos.X + obj_size.X / 2 - tooltip_size.X / 2
+	local y_above = obj_pos.Y - tooltip_size.Y - 4
+
+	if y_above >= 0 then
+		-- Clamp to screen
+		x = math.clamp(x, 4, screen_size.X - tooltip_size.X - 4)
+		y_above = math.max(y_above, 4)
+		return UDim2.fromOffset(x, y_above)
+	else
+		-- Try below
+		local y_below = obj_pos.Y + obj_size.Y + 4
+		if y_below + tooltip_size.Y <= screen_size.Y then
+			x = math.clamp(x, 4, screen_size.X - tooltip_size.X - 4)
+			return UDim2.fromOffset(x, y_below)
+		else
+			-- Fallback to above, clamped
+			x = math.clamp(x, 4, screen_size.X - tooltip_size.X - 4)
+			y_above = math.max(y_above, 4)
+			return UDim2.fromOffset(x, y_above)
+		end
+	end
+end
+
+function module.new(object: GuiObject, text: string, actions: Actions?)
+	-- Remove existing for this object
+
+	for i, data in ipairs(registered_tooltips) do
+		if data.object == object then
+			if data.tooltip_gui then
+				local tooltip = data.tooltip_gui
+				data.tooltip_gui = nil
+
+				if data.hide_thread then
+					task.cancel(data.hide_thread)
+					data.hide_thread = nil
+				end
+
+				spr.target(tooltip, 0.8, 1, {
+					TextTransparency = 1,
+					BackgroundTransparency = 1,
+				})
+
+				spr.completed(tooltip, function()
+					tooltip.Visible = false
+					pool:Return(tooltip)
+				end)
+			end
+
+			table.remove(registered_tooltips, i)
+
+			break
+		end
+	end
+
+	local data: Tooltip = {
+		object = object,
+		text = text,
+		actions = actions,
+		tooltip_gui = nil,
+		hide_thread = nil,
+	}
+
+	table.insert(registered_tooltips, data)
+
+	-- Set up events
+	object.MouseEnter:Connect(function()
+		-- Close all other tooltips
+		close_all_tooltips()
+
+		-- Cancel any hide thread for this one
+		if data.hide_thread then
+			task.cancel(data.hide_thread)
+			data.hide_thread = nil
+		end
+
+		-- Get tooltip from pool
+		local tooltip = pool:Get()
+		data.tooltip_gui = tooltip
+
+		-- Set text
+		if tooltip:IsA("TextLabel") or tooltip:IsA("TextButton") then
+			tooltip.Text = text
+		end
+
+		-- Position
+		local pos = position_tooltip(tooltip, object)
+		tooltip.Position = pos
+		tooltip.Parent = tooltip_container
+		tooltip.Visible = true
+
+		-- Animate in
+		tooltip.TextTransparency = 1
+		tooltip.BackgroundTransparency = 1
+		spr.target(tooltip, 0.8, 1, {
+			TextTransparency = 0,
+			BackgroundTransparency = 0,
+		})
+	end)
+
+	object.MouseLeave:Connect(function()
+		if not data.tooltip_gui then
+			return
+		end
+
+		-- Start hide timer
+		data.hide_thread = task.delay(1.5, function()
+			if data.tooltip_gui then
+				local tooltip = data.tooltip_gui
+				data.tooltip_gui = nil
+				data.hide_thread = nil
+
+				spr.target(tooltip, 0.8, 1, {
+					TextTransparency = 1,
+					BackgroundTransparency = 1,
+				})
+				spr.completed(tooltip, function()
+					tooltip.Visible = false
+					pool:Return(tooltip)
+				end)
+			end
+		end)
+	end)
 end
 
 return module

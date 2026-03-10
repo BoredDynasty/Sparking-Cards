@@ -17,6 +17,8 @@ function module.new(model: Model)
 	self.humanoid = self.model:WaitForChild("Humanoid", 3)
 	self.time_between_patrols = 3
 
+	self.animator = self.humanoid:WaitForChild("Animator", 3)
+
 	if self.primary_part ~= nil then
 		self.primary_part:SetNetworkOwner(nil)
 	end
@@ -24,6 +26,10 @@ function module.new(model: Model)
 	return self
 end
 
+--[[
+	It is reccomended to use an Actor instance. 
+	This is because the Actor will handle the patrol loop and other AI related behavior, such as combat and fleeing.
+]]
 function module:Patrol(path_array: { Vector3 })
 	if not self.primary_part then
 		return false
@@ -58,6 +64,20 @@ function module:Patrol(path_array: { Vector3 })
 	end
 
 	return true
+end
+
+function module:PlayAnimation(animation: Animation)
+	if self.animator then
+		self.animator:LoadAnimation(animation):Play()
+	end
+end
+
+function module:StopAnimations()
+	if self.animator then
+		for _, track in ipairs(self.animator:GetPlayingAnimationTracks()) do
+			track:Stop()
+		end
+	end
 end
 
 return module

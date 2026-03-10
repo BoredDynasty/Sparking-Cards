@@ -206,7 +206,11 @@ function module:Render()
 		end)
 
 		button.reactor:Watch(function(newValue: boolean)
-			audio:PlaySFX("click")
+			if newValue then
+				audio:PlaySFX("click")
+			else
+				audio:PlaySFX("cancel")
+			end
 
 			-- tilt the icon
 			-- button size

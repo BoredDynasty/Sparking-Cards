@@ -1,37 +1,29 @@
 --!strict
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
+
+local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
-local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
-local brick_particle = require(StarterPlayer.StarterPlayerScripts.Gameplay["brick-particle"])
-
-local input = require(ReplicatedStorage.Packages.input)
-local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
-local speed_lines = require(ReplicatedStorage.Effects["speed-lines"])
-local spr = require(ReplicatedStorage.Modules.spr)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- sprint-controller.luau
-
-local _trove = trove.new()
+-- this single module has had a million rewrites
+-- send help
 
 local module = {}
-module._trove = _trove
-
-local keyboard = input.Keyboard.new()
-
-_trove:Add(keyboard :: any)
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local humanoid = character:WaitForChild("Humanoid") :: Humanoid
 local root_part = humanoid.RootPart :: BasePart
-local root_joint = root_part:WaitForChild("RootJoint") :: Motor6D
 
+local _trove = trove.new()
+
+local max_stamina = 100
 local is_sprinting = false
+
 local character_trove = _trove:Extend()
 
 local function setupCharacter(new_character: Model)
@@ -47,106 +39,67 @@ local function setupCharacter(new_character: Model)
 	end)
 end
 
-if character then
-	setupCharacter(character)
+local function sigmoid(x: number)
+	return 1 / (1 + math.exp(-x))
 end
 
-local rate_limit = ratelimit(3, 0.5)
+local function getSpeedFromStamina(current_stamina: number): number
+	local x = (current_stamina - 50) * 0.1
 
-local run_animations = {
-	121791117079049,
-	111852268003786,
+	return sigmoid(x)
+end
+
+-- TODO) we are going to add a keybind configuration in the player profile.
+local default_keybinds = {
+	sprint = Enum.KeyCode.LeftShift,
 }
 
--- TODO) make this in compliance with user data.
--- and the players skill tree.
-local running_speed = 15
-
-local function onBegan()
-	if is_sprinting then
+UserInputService.InputBegan:Connect(function(input, processed)
+	if processed then
+		return
+	end
+	if humanoid.MoveDirection == Vector3.zero then
 		return
 	end
 
-	local current_stamina = character:GetAttribute("Stamina") :: number or 0
+	if input.KeyCode == default_keybinds.sprint then
+		is_sprinting = true
+	end
+end)
 
-	character:SetAttribute("AntiRegenerate", true)
-
-	animate.play(run_animations[1], 0.25)
-
-	humanoid.WalkSpeed += running_speed
-end
-
-local function onEnded()
-	-- have we already stopped sprinting?
-	if not is_sprinting then
+UserInputService.InputEnded:Connect(function(input, processed)
+	if processed then
 		return
 	end
 
-	is_sprinting = false
-
-	-- allow for regeneration
-	character:SetAttribute("AntiRegenerate", false)
-
-	local animation_id = 111852268003786
-	animate.stop(run_animations[1], 0.25)
-
-	-- reset walkspeed
-
-	humanoid.WalkSpeed -= running_speed
-end
+	if input.KeyCode == default_keybinds.sprint then
+		is_sprinting = false
+	end
+end)
 
 function module:Update(delta_time: number)
-	-- have we already stopped sprinting?
-	if not is_sprinting then
-		return
-	end
+	if is_sprinting then
+		-- 1. calculate stamina deduction
+		-- 2. deduct stamina from character using :SetAttribute
+		-- 3. set walkspeed
 
-	local move_direction = humanoid.MoveDirection
+		local current_stamina = character:GetAttribute("Stamina") :: number or 0
+		-- TODO) add a skill tree multipliier for stamina and drain rate.
+		local drain_rate = MovementConfig.Sprint.StaminaDrainRate
 
-	-- are we even moving?
-	if move_direction.Magnitude <= 0 then
-		return
-	end
+		local new_stamina = math.max(0, current_stamina - (drain_rate * delta_time))
 
-	-- drain stamina
-	local current_stamina = character:GetAttribute("Stamina") :: number or 0
+		character:SetAttribute("Stamina", new_stamina)
+		character:SetAttribute("AntiRegenerate", true)
 
-	-- TODO) add a skill tree multipliier for stamina and drain rate.
-	local drain_rate = MovementConfig.Sprint.StaminaDrainRate
+		local speed_multiplier = getSpeedFromStamina(new_stamina)
+		humanoid.WalkSpeed = 12 + (speed_multiplier * 24)
+	else
+		-- allow for regeneration when not sprinting
+		-- the stamina-controller already handles most of this
 
-	local new_stamina = math.max(0, current_stamina - (drain_rate * delta_time))
-
-	character:SetAttribute("Stamina", new_stamina)
-
-	-- if not enough stamina or not moving, stop.
-	if new_stamina <= 0 or humanoid.MoveDirection.Magnitude == 0 then
-		onEnded()
+		character:SetAttribute("AntiRegenerate", false)
 	end
 end
-
-player.CharacterAdded:Connect(setupCharacter)
-UserInputService.InputBegan:Connect(function(key, processed)
-	if key.KeyCode ~= MovementConfig.Keybinds.Sprint then
-		return
-	end
-
-	if processed then
-		return
-	end
-
-	onBegan()
-end)
-
-UserInputService.InputEnded:Connect(function(key, processed)
-	if key.KeyCode ~= MovementConfig.Keybinds.Sprint then
-		return
-	end
-
-	if processed then
-		return
-	end
-
-	onEnded()
-end)
 
 return module

@@ -172,6 +172,7 @@ function module:LoadItems<K, V>(items)
 					local snackbar = hint.new()
 					snackbar:SetText("You're too broke to afford this.")
 					snackbar:SetExpiry(2)
+					audio:PlayVariation("cancel", 1)
 				end
 			end)
 

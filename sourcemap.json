@@ -8262,25 +8262,24 @@
               "className": "Seat"
             },
             {
+              "name": "Part",
+              "className": "Part"
+            },
+            {
               "name": "Union",
               "className": "UnionOperation"
             },
             {
               "name": "VehicleSeat",
-              "className": "VehicleSeat",
-              "children": [
-                {
-                  "name": "TrainScript",
-                  "className": "Script",
-                  "filePaths": [
-                    "sync/Workspace/Train/VehicleSeat/TrainScript.server.luau"
-                  ]
-                }
-              ]
+              "className": "VehicleSeat"
             },
             {
               "name": "Wedge",
               "className": "WedgePart"
+            },
+            {
+              "name": "Roof",
+              "className": "Part"
             },
             {
               "name": "Engine",
@@ -8299,10 +8298,6 @@
                   "className": "BodyVelocity"
                 }
               ]
-            },
-            {
-              "name": "Roof",
-              "className": "Part"
             }
           ]
         },
@@ -8340,6 +8335,51 @@
                     }
                   ]
                 }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "LocationMarkers",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "Loader",
+              "className": "Script",
+              "filePaths": [
+                "sync/Workspace/LocationMarkers/Loader.server.luau"
+              ],
+              "children": [
+                {
+                  "name": "IndicatorsClient",
+                  "className": "LocalScript",
+                  "filePaths": [
+                    "sync/Workspace/LocationMarkers/Loader/IndicatorsClient.client.luau"
+                  ],
+                  "children": [
+                    {
+                      "name": "CreateNewIndicator",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/Workspace/LocationMarkers/Loader/IndicatorsClient/CreateNewIndicator.luau"
+                      ]
+                    },
+                    {
+                      "name": "UpdateIndicatorUI",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/Workspace/LocationMarkers/Loader/IndicatorsClient/UpdateIndicatorUI.luau"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "README",
+              "className": "Script",
+              "filePaths": [
+                "sync/Workspace/LocationMarkers/README.server.luau"
               ]
             }
           ]
@@ -8441,10 +8481,6 @@
               "className": "Attachment"
             },
             {
-              "name": "Weld",
-              "className": "Weld"
-            },
-            {
               "name": "Light",
               "className": "BillboardGui",
               "children": [
@@ -8531,6 +8567,26 @@
                           "className": "UIListLayout"
                         }
                       ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            },
+            {
+              "name": "Indicator",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "Container",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
                     }
                   ]
                 }
@@ -9419,10 +9475,10 @@
                   ]
                 },
                 {
-                  "name": "achievement",
+                  "name": "dialogue",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/achievement.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/dialogue.luau"
                   ]
                 },
                 {
@@ -9489,10 +9545,24 @@
                   ]
                 },
                 {
-                  "name": "skill-tree-frontend",
+                  "name": "skill-frontend",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/skill-tree-frontend.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/skill-frontend.luau"
+                  ]
+                },
+                {
+                  "name": "direction-indicator",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/direction-indicator.luau"
+                  ]
+                },
+                {
+                  "name": "badge-frontend",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/badge-frontend.luau"
                   ]
                 },
                 {
@@ -9775,904 +9845,6 @@
             {
               "name": "Frameworks",
               "className": "Folder"
-            },
-            {
-              "name": "PromptPlusLoader",
-              "className": "LocalScript",
-              "filePaths": [
-                "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader.client.luau"
-              ],
-              "children": [
-                {
-                  "name": "PromptPlus",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader/PromptPlus.luau"
-                  ],
-                  "children": [
-                    {
-                      "name": "Styles",
-                      "className": "Folder",
-                      "children": [
-                        {
-                          "name": "CircleGradient1",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "CircleGradient2",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "CircleDark",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Light",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Dark",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "CircleLight",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Gradient2",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Gradient1",
-                          "className": "BillboardGui",
-                          "children": [
-                            {
-                              "name": "Container",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "KeyBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "KeyShadowBG",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "ActionText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "ObjectText",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "Key",
-                                  "className": "TextLabel"
-                                },
-                                {
-                                  "name": "HoldDurationDecor",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "Line",
-                                      "className": "Frame",
-                                      "children": [
-                                        {
-                                          "name": "UICorner",
-                                          "className": "UICorner"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationLine",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "HoldDurationValue",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "UIListLayout",
-                                      "className": "UIListLayout"
-                                    },
-                                    {
-                                      "name": "UIGradient",
-                                      "className": "UIGradient"
-                                    }
-                                  ]
-                                }
-                              ]
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Settings",
-                      "className": "Configuration"
-                    },
-                    {
-                      "name": "Modules",
-                      "className": "Folder",
-                      "children": [
-                        {
-                          "name": "Highlight",
-                          "className": "ModuleScript",
-                          "filePaths": [
-                            "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader/PromptPlus/Modules/Highlight.luau"
-                          ],
-                          "children": [
-                            {
-                              "name": "ItemHighlight",
-                              "className": "Highlight"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Sounds",
-                      "className": "Folder",
-                      "children": [
-                        {
-                          "name": "Trigger",
-                          "className": "Sound"
-                        },
-                        {
-                          "name": "Hover_Enter",
-                          "className": "Sound"
-                        },
-                        {
-                          "name": "Hover_Leave",
-                          "className": "Sound"
-                        },
-                        {
-                          "name": "Holding",
-                          "className": "Sound",
-                          "children": [
-                            {
-                              "name": "ChorusSoundEffect",
-                              "className": "ChorusSoundEffect"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "LICENSE",
-                  "className": "Script",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/PromptPlusLoader/LICENSE.server.luau"
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -10690,6 +9862,30 @@
       "name": "StarterGui",
       "className": "StarterGui",
       "children": [
+        {
+          "name": "CombatButtons",
+          "className": "ScreenGui",
+          "children": [
+            {
+              "name": "Frame",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                }
+              ]
+            }
+          ]
+        },
         {
           "name": "Tooltip",
           "className": "ScreenGui",
@@ -11125,16 +10321,6 @@
                       ]
                     },
                     {
-                      "name": "Loader",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
                       "name": "AspectRatio",
                       "className": "UIAspectRatioConstraint"
                     },
@@ -11161,8 +10347,46 @@
                           "className": "UICorner"
                         },
                         {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "UIAspectRatioConstraint",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
                           "name": "Padding",
                           "className": "UIPadding"
+                        },
+                        {
+                          "name": "Frame",
+                          "className": "ScrollingFrame",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            },
+                            {
+                              "name": "Amount",
+                              "className": "TextLabel"
+                            },
+                            {
+                              "name": "UIListLayout",
+                              "className": "UIListLayout"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Frame",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
                         },
                         {
                           "name": "ImageLabel",
@@ -11175,8 +10399,12 @@
                           ]
                         },
                         {
-                          "name": "Amount",
-                          "className": "TextLabel"
+                          "name": "TextBox",
+                          "className": "TextBox"
+                        },
+                        {
+                          "name": "UIStroke",
+                          "className": "UIStroke"
                         }
                       ]
                     }
@@ -11933,157 +11161,11 @@
           "className": "ScreenGui",
           "children": [
             {
-              "name": "Frame",
-              "className": "Frame",
+              "name": "CanvasGroup",
+              "className": "CanvasGroup",
               "children": [
                 {
-                  "name": "UICorner",
-                  "className": "UICorner"
-                },
-                {
-                  "name": "Loader",
-                  "className": "ImageLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "AspectRatio",
-                  "className": "UIAspectRatioConstraint"
-                },
-                {
-                  "name": "Holder",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UIPadding",
-                      "className": "UIPadding"
-                    },
-                    {
-                      "name": "UIListLayout",
-                      "className": "UIListLayout"
-                    },
-                    {
-                      "name": "Frame",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "TextLabel",
-                          "className": "TextLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "UIPadding",
-                          "className": "UIPadding"
-                        },
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Frame",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel",
-                              "children": [
-                                {
-                                  "name": "ImageLabel",
-                                  "className": "ImageLabel",
-                                  "children": [
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "UIListLayout",
-                              "className": "UIListLayout"
-                            },
-                            {
-                              "name": "UIPadding",
-                              "className": "UIPadding"
-                            },
-                            {
-                              "name": "TextButton",
-                              "className": "TextButton",
-                              "children": [
-                                {
-                                  "name": "UICorner",
-                                  "className": "UICorner"
-                                },
-                                {
-                                  "name": "UIPadding",
-                                  "className": "UIPadding"
-                                },
-                                {
-                                  "name": "UIStroke",
-                                  "className": "UIStroke"
-                                },
-                                {
-                                  "name": "Outline",
-                                  "className": "Frame",
-                                  "children": [
-                                    {
-                                      "name": "UIStroke",
-                                      "className": "UIStroke",
-                                      "children": [
-                                        {
-                                          "name": "UIGradient",
-                                          "className": "UIGradient"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "UICorner",
-                                      "className": "UICorner"
-                                    },
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Spendings",
+                  "name": "Frame",
                   "className": "Frame",
                   "children": [
                     {
@@ -12091,22 +11173,150 @@
                       "className": "UICorner"
                     },
                     {
-                      "name": "Padding",
-                      "className": "UIPadding"
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
                     },
                     {
-                      "name": "SpendingsIcon",
-                      "className": "ImageLabel",
+                      "name": "Spendings",
+                      "className": "Frame",
                       "children": [
                         {
-                          "name": "UIAspectRatioConstraint",
-                          "className": "UIAspectRatioConstraint"
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "Padding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "SpendingsIcon",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "UIAspectRatioConstraint",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Amount",
+                          "className": "TextLabel"
                         }
                       ]
                     },
                     {
-                      "name": "Amount",
-                      "className": "TextLabel"
+                      "name": "Holder",
+                      "className": "ScrollingFrame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        },
+                        {
+                          "name": "Frame",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            },
+                            {
+                              "name": "UIPadding",
+                              "className": "UIPadding"
+                            },
+                            {
+                              "name": "ImageLabel",
+                              "className": "ImageLabel",
+                              "children": [
+                                {
+                                  "name": "AspectRatio",
+                                  "className": "UIAspectRatioConstraint"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Frame",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "UIListLayout",
+                                  "className": "UIListLayout"
+                                },
+                                {
+                                  "name": "UIPadding",
+                                  "className": "UIPadding"
+                                },
+                                {
+                                  "name": "TextButton",
+                                  "className": "TextButton",
+                                  "children": [
+                                    {
+                                      "name": "UICorner",
+                                      "className": "UICorner"
+                                    },
+                                    {
+                                      "name": "UIPadding",
+                                      "className": "UIPadding"
+                                    },
+                                    {
+                                      "name": "UIStroke",
+                                      "className": "UIStroke"
+                                    },
+                                    {
+                                      "name": "Outline",
+                                      "className": "Frame",
+                                      "children": [
+                                        {
+                                          "name": "UIStroke",
+                                          "className": "UIStroke",
+                                          "children": [
+                                            {
+                                              "name": "UIGradient",
+                                              "className": "UIGradient"
+                                            }
+                                          ]
+                                        },
+                                        {
+                                          "name": "UICorner",
+                                          "className": "UICorner"
+                                        }
+                                      ]
+                                    }
+                                  ]
+                                },
+                                {
+                                  "name": "SkillConnectionVisual",
+                                  "className": "Frame",
+                                  "children": [
+                                    {
+                                      "name": "ImageLabel",
+                                      "className": "ImageLabel",
+                                      "children": [
+                                        {
+                                          "name": "AspectRatio",
+                                          "className": "UIAspectRatioConstraint"
+                                        }
+                                      ]
+                                    },
+                                    {
+                                      "name": "AspectRatio",
+                                      "className": "UIAspectRatioConstraint"
+                                    }
+                                  ]
+                                }
+                              ]
+                            },
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        }
+                      ]
                     }
                   ]
                 }
@@ -12833,24 +12043,56 @@
           ]
         },
         {
-          "name": "CombatButtons",
+          "name": "Dialogue",
           "className": "ScreenGui",
           "children": [
             {
-              "name": "Frame",
-              "className": "Frame",
+              "name": "Snackbar",
+              "className": "CanvasGroup",
               "children": [
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    }
+                  ]
+                },
+                {
+                  "name": "ActionHolder",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "ActionButton",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
                 {
                   "name": "UICorner",
                   "className": "UICorner"
                 },
                 {
                   "name": "ImageLabel",
-                  "className": "ImageLabel"
-                },
-                {
-                  "name": "UIStroke",
-                  "className": "UIStroke"
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel"
+                    }
+                  ]
                 }
               ]
             }
@@ -14734,13 +13976,6 @@
               ]
             },
             {
-              "name": "skill-manager",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Modules/skill-manager.luau"
-              ]
-            },
-            {
               "name": "ai-backend",
               "className": "ModuleScript",
               "filePaths": [
@@ -15609,6 +14844,13 @@
                       "filePaths": [
                         "sync/ReplicatedStorage/Combat/framework/features/shield.luau"
                       ]
+                    },
+                    {
+                      "name": "flight",
+                      "className": "ModuleScript",
+                      "filePaths": [
+                        "sync/ReplicatedStorage/Combat/framework/features/flight.luau"
+                      ]
                     }
                   ]
                 },
@@ -15945,6 +15187,10 @@
             {
               "name": "GetRegisteredQuests",
               "className": "RemoteFunction"
+            },
+            {
+              "name": "FireBeam",
+              "className": "RemoteEvent"
             }
           ]
         },
@@ -19175,6 +18421,332 @@
           "className": "Folder",
           "children": [
             {
+              "name": "BadgeTemplate",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                },
+                {
+                  "name": "Details",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Share",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Image",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Title",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
+              "name": "Indicator",
+              "className": "ImageLabel"
+            },
+            {
+              "name": "SkillCatagory",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "UIPadding",
+                  "className": "UIPadding"
+                },
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                },
+                {
+                  "name": "Frame",
+                  "className": "ScrollingFrame",
+                  "children": [
+                    {
+                      "name": "TextLabel",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UIListLayout",
+                      "className": "UIListLayout"
+                    },
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    }
+                  ]
+                },
+                {
+                  "name": "Grip",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "UIAspectRatioConstraint",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "ProximityPrompt",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "Container",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "KeyBG",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Key",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "KeyShadowBG",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "ActionText",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "ObjectText",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "HoldDurationValue",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "HoldDurationLine",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "HoldDurationDecor",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "Line",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "SkillLevelInfo",
+              "className": "TextButton",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "UIPadding",
+                  "className": "UIPadding"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                },
+                {
+                  "name": "Outline",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UIStroke",
+                      "className": "UIStroke",
+                      "children": [
+                        {
+                          "name": "UIGradient",
+                          "className": "UIGradient"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
+              "name": "SkillConnectionVisual",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
               "name": "PlainTooltip",
               "className": "TextButton",
               "children": [
@@ -19966,95 +19538,7 @@
             },
             {
               "name": "Badges",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "ItemTemplate",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "UIStroke",
-                      "className": "UIStroke"
-                    },
-                    {
-                      "name": "Details",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Share",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Image",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Title",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                }
-              ]
+              "className": "Folder"
             },
             {
               "name": "Party",
@@ -20610,10 +20094,6 @@
                   ]
                 }
               ]
-            },
-            {
-              "name": "ProximityPrompt",
-              "className": "BillboardGui"
             }
           ]
         },
@@ -23542,10 +23022,6 @@
               ]
             }
           ]
-        },
-        {
-          "name": "__Rojo_SessionLock",
-          "className": "ObjectValue"
         }
       ]
     },

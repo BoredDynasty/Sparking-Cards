@@ -65,8 +65,6 @@ local function setupCharacter(new_character: Model)
 
 		local percentage = stamina / max_stamina
 
-		task.wait(1.5)
-
 		bar:SetValue(percentage)
 	end)
 end

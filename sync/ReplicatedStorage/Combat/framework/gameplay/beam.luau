@@ -1,24 +1,14 @@
 --!strict
-
 -- beam.luau
 
-local Debris = game:GetService("Debris")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local Workspace = game:GetService("Workspace")
-
-local _damage = require(ReplicatedStorage.Combat.Strike.damage)
-
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
-local beam_module = {}
-beam_module.__index = beam_module
+local module = {}
+module.__index = module
 
 export type BeamParams = {
 	origin: Vector3,
 	direction: Vector3?,
 	target: Vector3?,
-	maxDistance: number?,
+	max_distance: number?,
 	speed: number?,
 	width: number?,
 	color: Color3?,
@@ -26,12 +16,11 @@ export type BeamParams = {
 	damage: number?,
 	falloff: boolean?,
 	pierce: boolean?,
-	pierceCount: number?,
-	ignoredInstances: { Instance }?,
+	pierce_count: number?,
+	ignored_instances: { Instance }?,
 	source: Model?, -- used for damage attribution
-	lifeTime: number?, -- visual life time
-	hitParticle: ParticleEmitter?, -- optional particle effect to play at hit point
-	onHit: ((hitResult: { position: Vector3, instance: Instance }, humanoid: Humanoid, part: BasePart) -> ())?, -- optional callback on hit
+	life_time: number?, -- visual life time
+	hit_particle: ParticleEmitter?, -- optional particle effect to play at hit point
 }
 
 local function createAttachmentPart(position: Vector3)
@@ -41,13 +30,15 @@ local function createAttachmentPart(position: Vector3)
 	part.Transparency = 1
 	part.Size = Vector3.new(0.2, 0.2, 0.2)
 	part.CFrame = CFrame.new(position)
-	part.Parent = Workspace
+	part.Parent = workspace
+
 	local att = Instance.new("Attachment")
 	att.Parent = part
+
 	return part, att
 end
 
-local function makeBeam(att0: Attachment, att1: Attachment, width: number, color: Color3?, texture: string)
+local function createBeam(att0: Attachment, att1: Attachment, width: number, texture: string, color: Color3?)
 	local beam = Instance.new("Beam")
 	beam.Attachment0 = att0
 	beam.Attachment1 = att1
@@ -73,201 +64,105 @@ local function makeBeam(att0: Attachment, att1: Attachment, width: number, color
 	return beam
 end
 
-local function isDescendantIgnored(hitInstance: Instance, ignored: { Instance })
-	if not hitInstance then
+local function is_descendant_ignored(instance: Instance, ignored: { Instance })
+	if not instance then
 		return false
 	end
 
-	for _, inst in ipairs(ignored) do
-		if inst and (hitInstance:IsDescendantOf(inst) or hitInstance == inst) then
+	for i, inst in ipairs(ignored) do
+		if inst and instance:IsDescendantOf(inst) or inst == instance then
 			return true
 		end
 	end
+
 	return false
 end
 
--- Utility to find humanoid from a hit part
-local function getHumanoidFromPart(part: BasePart): (Humanoid?, Model?)
-	if not part then
-		return nil, nil
-	end
-	local player = playerMarshaller.getFromCharacter(part:FindFirstAncestorOfClass("Model") :: Model)
-
-	if player then
-		local character = player.Character or player.CharacterAdded:Wait()
-		local humanoid = character.Humanoid
-
-		return humanoid, character
-	end
-
-	return nil, nil
-end
-
---[[
-   Fires a hitscan beam from origin in direction (or towards target) up to maxDistance,
-
-   dealing damage to the first humanoid hit (or multiple if piercing).
-
-   @param origin: Vector3,
-	@param direction: Vector3?,
-	@param target: Vector3?,
-	@param maxDistance: number?,
-	@param speed: number?,
-	@param width: number?,
-	@param color: Color3?,
-	@param texture: string?,
-	@param damage: number?,
-	@param falloff: boolean?,
-	@param pierce: boolean?,
-	@param pierceCount: number?,
-	@param ignoredInstances: { Instance }?,
-	@param source: Model?, -- used for damage attribution
-	@param lifeTime: number?, -- visual life time
-	@param hitParticle: ParticleEmitter?, -- optional particle effect to play at hit point
-	@param onHit: ((hitResult: { position: Vector3, instance: Instance }, humanoid: Humanoid, part: BasePart) -> ())?, -- optional callback on hit
-]]
-function beam_module.Fire(params: BeamParams)
-	assert(params and params.origin, "beam_module.Fire: origin required")
-
-	local origin = params.origin
-	local direction = nil
-
-	if params.target then
-		direction = (params.target - origin).Unit
-	elseif params.direction then
-		direction = params.direction.Unit
-	else
-		warn("beam_module.Fire: either direction or target required")
+-- we will use raycasting here.
+function module.fire(params: BeamParams)
+	if not params.origin then
+		warn("origin required to fire a beam.")
 		return
 	end
 
-	local maxDistance = params.maxDistance or 300
-	--local speed = params.speed or math.huge
-	local width = params.width or 0.25
+	local direction = params.direction
+		or (params.target and (params.target - params.origin).Unit)
+		or Vector3.new(0, 0, -1)
+	local max_distance = params.max_distance or 1000
 
-	local color = params.color or Color3.fromRGB(255, 200, 100)
+	local end_position = params.origin + direction * max_distance
 
-	local lifetime = params.lifeTime or 0.6
-	local damage = params.damage or 10
+	-- raycast params
 
-	local falloff = params.falloff == nil and true or params.falloff
+	local raycast_params = RaycastParams.new()
+	raycast_params.FilterType = Enum.RaycastFilterType.Blacklist
+	raycast_params.IgnoreWater = true
+	raycast_params.FilterDescendantsInstances = params.ignored_instances or {}
 
-	local pierce = params.pierce or false
-	local pierceCount = (params.pierceCount ~= nil) and params.pierceCount or (pierce and math.huge or 1)
+	local raycast_result = workspace:Raycast(params.origin, direction * max_distance, raycast_params)
 
-	local ignored = params.ignoredInstances or {}
+	-- determine beam end position
+	local hit_position = end_position
+	local hit_instance = nil
 
-	local source = params.source
-	local onHit = params.onHit
+	if raycast_result then
+		hit_position = raycast_result.Position
+		hit_instance = raycast_result.Instance
+	end
 
-	-- Setup raycasting params
-	local rayParams = RaycastParams.new()
-	rayParams.FilterType = Enum.RaycastFilterType.Exclude
-	rayParams.FilterDescendantsInstances = ignored
-	rayParams.IgnoreWater = true
+	-- create visual beam
+	local origin_part, origin_att = createAttachmentPart(params.origin)
+	local end_part, end_att = createAttachmentPart(hit_position)
 
-	local remaining = maxDistance
-	local currentOrigin = origin
-	local hits = 0
+	local beam = createBeam(origin_att, end_att, params.width or 0.5, params.texture, params.color)
 
-	local visualParts = {}
+	-- handle pierce logic
+	local pierce_count = params.pierce_count or 1
+	local hit_instances = {}
 
-	while remaining > 0 and hits < pierceCount do
-		local rayResult = Workspace:Raycast(currentOrigin, direction * remaining, rayParams)
+	if
+		raycast_result
+		and hit_instance
+		and not is_descendant_ignored(hit_instance, params.ignored_instances or {})
+	then
+		-- find the character or model that was hit
+		local humanoid = hit_instance:FindFirstChild("Humanoid")
+		local character = humanoid and hit_instance.Parent or hit_instance:FindFirstAncestorOfClass("Model")
 
-		local hitPos, hitInstance, distanceTraveled = nil, nil, remaining
+		if character and not table.find(hit_instances, character) then
+			table.insert(hit_instances, character)
 
-		if rayResult then
-			hitPos = rayResult.Position
-			hitInstance = rayResult.Instance
-			distanceTraveled = (hitPos - currentOrigin).Magnitude
-		else
-			hitPos = currentOrigin + direction * remaining
-			distanceTraveled = remaining
-		end
-
-		-- Visual: create attachments & beam between currentOrigin and hitPos
-		local partA, attA = createAttachmentPart(currentOrigin)
-		local partB, attB = createAttachmentPart(hitPos)
-
-		table.insert(visualParts, partA)
-		table.insert(visualParts, partB)
-
-		local beam = makeBeam(attA, attB, width, color, params.texture or "")
-		-- optional glow particle at hit
-		if params.hitParticle then
-			local particle = params.hitParticle:Clone()
-			particle.Parent = partB
-			particle.Enabled = true
-
-			particle:Emit(1)
-
-			Debris:AddItem(particle, lifetime)
-		end
-
-		-- Damage handling if we hit something relevant
-		if hitInstance and not isDescendantIgnored(hitInstance, ignored) then
-			local humanoid, model = getHumanoidFromPart(hitInstance)
-			if humanoid and humanoid.Health > 0 then
-				hits = hits + 1
-				-- compute damage with falloff
-
-				local appliedDamage = damage
-
-				if falloff then
-					local distFromOrigin = (currentOrigin - origin).Magnitude + distanceTraveled
-
-					local factor = math.max(0, 1 - (distFromOrigin / maxDistance))
-					appliedDamage = math.max(0, math.floor(appliedDamage * factor + 0.5))
-
-					if appliedDamage <= 0 then
-						appliedDamage = 1
-					end
-				end
-
-				if onHit then
-					onHit({ position = hitPos, instance = hitInstance }, humanoid, hitInstance :: BasePart)
-				else
-					_damage.__call({
-						amount = appliedDamage,
-						source = source and playerMarshaller.getFromCharacter(source),
-						target = model and playerMarshaller.getFromCharacter(model),
-					})
-				end
-			else
-				-- hit non-humanoid part: still counts as a hit for piercing behaviour if configured
-				if not pierce then
-					hits = hits + 1
-				end
+			-- deal damage if damage is specified
+			if params.damage and humanoid then
+				humanoid:TakeDamage(params.damage)
 			end
-		else
-			-- no hit -> beam ended on empty space
-			hits = hits + 1
+
+			-- apply falloff if enabled
+			local adjusted_damage = params.damage or 0
+			if params.falloff and humanoid then
+				local distance = (hit_position - params.origin).Magnitude
+				adjusted_damage = adjusted_damage
+					* math.max(0, 1 - (distance / (params.max_distance or 1000)))
+			end
+
+			-- play hit particle if provided
+			if params.hit_particle then
+				local particle_clone = params.hit_particle:Clone()
+				particle_clone.Parent = hit_instance
+				game:GetService("Debris"):AddItem(particle_clone, 0.5)
+			end
 		end
 
-		-- Move origin forward to continue pierce
-		if rayResult then
-			-- nudge slightly forward so we don't immediately hit the same part
-			local epsilon = 0.5
-
-			currentOrigin = hitPos + direction * epsilon
-			remaining = remaining - distanceTraveled - epsilon
-
-			-- if not piercing, break
-			if not pierce then
-				break
-			end
-		else
-			break
+		-- continue pierce if enabled and pierce count available
+		if params.pierce and pierce_count > 1 then
+			-- TODO: implement pierce continuation from hit position
 		end
 	end
 
-	-- cleanup visuals after lifetime
-	for _, p in ipairs(visualParts :: { Instance }) do
-		Debris:AddItem(p, lifetime)
-	end
-
-	print("Boom!")
+	-- cleanup beams and parts after lifetime
+	local lifetime = params.life_time or 0.5
+	game:GetService("Debris"):AddItem(origin_part, lifetime)
+	game:GetService("Debris"):AddItem(end_part, lifetime)
 end
 
-return beam_module
+return module

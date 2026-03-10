@@ -7,6 +7,7 @@ local _RunService = game:GetService("RunService")
 
 local leventine = require(ReplicatedStorage.Utility.leventine)
 local registered = require(ServerStorage.modules.quest.registered)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- quest.luau
@@ -21,7 +22,7 @@ local get_quest_data = events.GetQuestData
 local get_profile = events.GetProfileServer
 
 function module:GetRegistered(): { string }
-	local list = table.create(#registered) :: { string }
+	local list = {}
 
 	for i, data in ipairs(registered) do
 		table.insert(list, data.name)
@@ -56,6 +57,7 @@ function module:GetModuleFromName(name: string): ModuleScript?
 
 		if leventine.has_match(all_names[i], name, false) then
 			-- well done.
+			print("has match.")
 
 			return data.module
 		end
@@ -68,25 +70,24 @@ end
 function module:GetPlayerQuests(player: Player): { typemarshaller.Quest }
 	local profile = get_profile:Invoke(player) :: typemarshaller.ProfileData
 	if not profile then
+		warn("could not invoke profile. out: empty table.")
+
 		return {}
 	end
 
 	-- we return a shallow copy so callers can't accidentally mutate the stored table
-	local out: { typemarshaller.Quest } = {}
+	local out = {}
 
 	for i, q in ipairs(profile.quests or {}) do
-		local copy: typemarshaller.Quest = {
-			name = q.name,
-			description = q.description,
-			inquirer_img = q.inquirer_img,
-			progress = q.progress,
-			date_acquired = q.date_acquired,
-			date_completed = q.date_completed,
-			completed = q.completed,
-		}
+		local copy = tablekit.DeepCopy(q :: any) :: typemarshaller.Quest
+
+		print("quest copy: ", tablekit.ToString(copy :: any))
+
 		-- module fields are not serialised to the client
 		out[i] = copy
 	end
+
+	print("out: ", tablekit.ToString(out :: any))
 
 	return out
 end
@@ -107,6 +108,8 @@ report_progress.OnServerEvent:Connect(function(player: Player, name: string, pro
 
 	local profile = get_profile:Invoke(player) :: typemarshaller.ProfileData
 	if not profile then
+		warn("no profile, halting progress report.")
+
 		return
 	end
 

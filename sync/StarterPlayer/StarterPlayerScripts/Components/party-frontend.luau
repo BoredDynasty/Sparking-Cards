@@ -185,16 +185,8 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 				if leader_id then
 					if leader_id == player.UserId then
 						display.Enter.Interactable = false
-						fade.fade(display.Enter, {
-							recursive = true,
-							transparency = {
-								start = 0,
-								target = 0.4,
-							},
-						})
 					else
 						display.Enter.Interactable = true
-						fade.fade_in(display.Enter, 0.5, true)
 					end
 				end
 			end)

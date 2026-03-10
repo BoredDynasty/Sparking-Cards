@@ -47,4 +47,5 @@ return {
 
 		enable_spectating = Enum.KeyCode.N.Value,
 	},
+	navigation_to = {},
 } :: typemarshaller.ProfileData

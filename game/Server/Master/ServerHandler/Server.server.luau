@@ -23,6 +23,7 @@ local ProfileStore = require(ReplicatedStorage.Packages.profilestore)
 local Pyro = require(ReplicatedStorage.Combat.framework.attacks.Pyro)
 local audio = require(ReplicatedStorage.Modules.audio)
 local batch = require(ReplicatedStorage.Utility.batch)
+local beam = require(ReplicatedStorage.Combat.framework.gameplay.beam)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
@@ -742,8 +743,10 @@ local function initializeAudio()
 		audio:AddSFX("leave", 85897203168160)
 		audio:AddSFX("success", 76288726968959)
 
-		audio:AddSFX("train_brakes", 185857550)
-		audio:AddSFX("train_clattering", 149026377)
+		audio:AddMusic("train_brakes", 185857550)
+		audio:AddMusic("train_clattering", 149026377, {
+			looped = true,
+		})
 	end)
 end
 
@@ -784,8 +787,55 @@ Packet.CreateMatch.listen(function(_, player: Player)
 end)
 
 -- Skill purchases
---[[
 Packet.BuySkill.listen(function(data, player: Player)
+	local skill_name = data.skill_name
+	local profile = FetchProfileData(player)
+	if not profile then
+		Packet.SendNotification.sendTo({ message = "Profile not found" }, player)
+		return
+	end
+
+	local skill_info: typemarshaller.Skill
+	for _, s in ipairs(skill_chart) do
+		if s.name == skill_name then
+			skill_info = s
+			break
+		end
+	end
+
+	if not skill_info then
+		Packet.SendNotification.sendTo({ message = "Skill not found" }, player)
+		return
+	end
+
+	profile.skills = profile.skills or {}
+	if table.find(profile.skills, skill_name) then
+		Packet.SendNotification.sendTo({ message = "Skill already unlocked" }, player)
+		return
+	end
+
+	-- requirements
+	for _, req in ipairs(skill_info.requirements or {}) do
+		if not table.find(profile.skills, req) then
+			Packet.SendNotification.sendTo({ message = "Requirements not met" }, player)
+			return
+		end
+	end
+
+	if profile.affinity < skill_info.cost then
+		Packet.SendNotification.sendTo({ message = "Not enough Affinity" }, player)
+		return
+	end
+
+	profile.affinity -= skill_info.cost
+	table.insert(profile.skills, skill_name)
+
+	SaveProfileData(player)
+
+	Packet.SendNotification.sendTo({ message = "Skill unlocked: " .. skill_name }, player)
+end)
+
+Packet.SellSkill.listen(function(data, player: Player)
 	local skill_name = data.skill_name
 	local profile = FetchProfileData(player)
 	if not profile then
@@ -807,33 +857,24 @@ Packet.BuySkill.listen(function(data, player: Player)
 	end
 
 	profile.skills = profile.skills or {}
-	if profile.skills[skill_name] then
-		Packet.SendNotification.sendTo({ message = "Skill already unlocked" }, player)
+	local index = table.find(profile.skills, skill_name)
+	if not index then
+		Packet.SendNotification.sendTo({ message = "Skill not unlocked" }, player)
 		return
 	end
 
-	-- requirements
-	for _, req in ipairs(skill_info.requirements or {}) do
-		if not profile.skills[req] then
-			Packet.SendNotification.sendTo({ message = "Requirements not met" }, player)
-			return
-		end
-	end
-
-	if profile.affinity < skill_info.cost then
-		Packet.SendNotification.sendTo({ message = "Not enough Affinity" }, player)
-		return
-	end
-
-	profile.affinity -= skill_info.cost
-	profile.skills[skill_name] = true
+	-- Refund half the cost
+	local refund = math.floor(skill_info.cost / 2)
+	profile.affinity += refund
+	table.remove(profile.skills, index)
 
 	SaveProfileData(player)
 
-	Packet.SkillPurchased.sendTo({ skill_name = skill_name, remaining_affinity = profile.affinity }, player)
-	Packet.SendNotification.sendTo({ message = "Skill unlocked: " .. skill_name }, player)
+	Packet.SendNotification.sendTo(
+		{ message = "Skill sold: " .. skill_name .. " (Refunded " .. refund .. " Affinity)" },
+		player
+	)
 end)
---]]
 Packet.BuyCard.listen(function(data, player: Player)
 	purchaseCard(player, data.card_name)
 end)
@@ -970,6 +1011,11 @@ Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
+Events.FireBeam.OnServerEvent:Connect(function(player, params)
+	print("firing beam")
+	beam.fire(params)
+	print("beam fired!")
+end)
 initializeAudio()
 startLightingCycle()
 -- quest:StartTracking() -- deprecated; no longer necessary
