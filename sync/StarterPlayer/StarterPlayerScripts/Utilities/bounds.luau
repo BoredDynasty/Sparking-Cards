@@ -2,28 +2,26 @@
 
 -- bounds.luau
 
-local bounds_module = {}
+local module = {}
 
 --[[
    Checks if the mouse position is outside the given bounds.
 
    @param position The top-left position of the bounds (Vector2).
    @param size The size of the bounds (Vector2).
-   @param mousePos The mouse position (Vector2).
-   @return boolean True if the mouse is outside the bounds, false otherwise.
+   @param mouse_position The mouse position (Vector2).
+   @return boolean true if the mouse is outside the bounds, false otherwise.
 ]]
-function bounds_module.outer(position: Vector2, size: Vector2, mousePos: Vector2)
-	if not position or not size or not mousePos then
+function module.outer(position: Vector2, size: Vector2, mouse_position: Vector2)
+	if not position or not size or not mouse_position then
 		return false
 	end
 
 	if
-		not (
-			mousePos.X >= position.X
-			and mousePos.X <= position.X + size.X
-			and mousePos.Y >= position.Y
-			and mousePos.Y <= position.Y + size.Y
-		)
+		mouse_position.X < position.X
+		or mouse_position.X > position.X + size.X
+		or mouse_position.Y < position.Y
+		or mouse_position.Y > position.Y + size.Y
 	then
 		return true
 	end
@@ -37,18 +35,18 @@ end
    @param position The top-left position of the bounds (Vector2).
    @param size The size of the bounds (Vector2).
    @param mousePos The mouse position (Vector2).
-   @return boolean True if the mouse is inside the bounds, false otherwise.
+   @return boolean true if the mouse is inside the bounds, false otherwise.
 ]]
-function bounds_module.inner(position: Vector2, size: Vector2, mousePos: Vector2)
-	if not position or not size or not mousePos then
+function module.inner(position: Vector2, size: Vector2, mouse_position: Vector2)
+	if not position or not size or not mouse_position then
 		return false
 	end
 
 	if
-		mousePos.X >= position.X
-		and mousePos.X <= position.X + size.X
-		and mousePos.Y >= position.Y
-		and mousePos.Y <= position.Y + size.Y
+		mouse_position.X >= position.X
+		and mouse_position.X <= position.X + size.X
+		and mouse_position.Y >= position.Y
+		and mouse_position.Y <= position.Y + size.Y
 	then
 		return true
 	end
@@ -56,4 +54,4 @@ function bounds_module.inner(position: Vector2, size: Vector2, mousePos: Vector2
 	return false
 end
 
-return bounds_module
+return module

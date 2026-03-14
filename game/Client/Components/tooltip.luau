@@ -51,7 +51,7 @@ local function close_all_tooltips()
 				data.hide_thread = nil
 			end
 			-- Animate out immediately
-			spr.target(tooltip, 0.8, 1, {
+			spr.target(tooltip, 0.8, 4, {
 				TextTransparency = 1,
 				BackgroundTransparency = 1,
 			})
@@ -107,7 +107,7 @@ function module.new(object: GuiObject, text: string, actions: Actions?)
 					data.hide_thread = nil
 				end
 
-				spr.target(tooltip, 0.8, 1, {
+				spr.target(tooltip, 0.8, 4, {
 					TextTransparency = 1,
 					BackgroundTransparency = 1,
 				})
@@ -163,7 +163,7 @@ function module.new(object: GuiObject, text: string, actions: Actions?)
 		-- Animate in
 		tooltip.TextTransparency = 1
 		tooltip.BackgroundTransparency = 1
-		spr.target(tooltip, 0.8, 1, {
+		spr.target(tooltip, 0.8, 4, {
 			TextTransparency = 0,
 			BackgroundTransparency = 0,
 		})
@@ -181,7 +181,7 @@ function module.new(object: GuiObject, text: string, actions: Actions?)
 				data.tooltip_gui = nil
 				data.hide_thread = nil
 
-				spr.target(tooltip, 0.8, 1, {
+				spr.target(tooltip, 0.8, 4, {
 					TextTransparency = 1,
 					BackgroundTransparency = 1,
 				})

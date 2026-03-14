@@ -20,6 +20,7 @@ This project also uses Google's design language: Material 3
 - Always use Native Luau functions when applicable
 - When an instance or function doesn't exist, comment a 
 utility or instance that the developer can implement themselves.
+- When scripting UI, look at other scripts managing UI as inspiration. Use animation modules like catmull-rom spline or "spr."
 
 ## Code Optimization
 - Avoid unnecesary computation in RunService loops

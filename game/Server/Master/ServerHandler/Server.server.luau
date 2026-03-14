@@ -27,6 +27,7 @@ local beam = require(ReplicatedStorage.Combat.framework.gameplay.beam)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
+local ground_crack = require(ReplicatedStorage.Combat.framework.effects["ground-crack"])
 local log_analytics = require(ReplicatedStorage.Utility["log-analytics"])
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local matchmaker = require(ReplicatedStorage.Modules.matchmaker)
@@ -62,10 +63,6 @@ type PlayerData = {
 	style: typemarshaller.StyleModule,
 	card_name: string,
 }
-
-local profiles = {}
-local profile_key = "playerdata"
-local player_related = profilestore.New(profile_key, profilestructure)
 
 local combat_data = {} :: { PlayerData }
 
@@ -105,6 +102,10 @@ if RunService:IsStudio() then
 	player_related = player_related.Mock
 end
 --]]
+local profiles = {}
+local profile_key = "playerdata"
+local player_related = profilestore.New(profile_key, profilestructure)
+
 local function loadProfile(player: Player)
 	local profile = retryer.infdelay(10, function(...)
 		return player_related:StartSessionAsync(`player_{player.UserId}`, {
@@ -141,8 +142,10 @@ local function loadProfile(player: Player)
 
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
-	elseif not profile then
+	elseif not profile and not RunService:IsStudio() then
 		player:Kick("The Roblox Servers are on fire, try rejoining.")
+	elseif RunService:IsStudio() and not profile then
+		print("The Roblox Servers are on fire.")
 	end
 
 	return profile
@@ -292,7 +295,7 @@ end
 
 local function indexCombatPlayer(player: Player): PlayerData?
 	for i, data in ipairs(combat_data) do
-		if player == data.player then
+		if player.UserId == data.player.UserId then
 			return data
 		end
 	end
@@ -660,6 +663,8 @@ local function setClock(number: number)
 	})
 end
 
+local overideClocktime = false
+
 local function startLightingCycle()
 	-- how long, in minutes, a day ingame lasts
 	local day_length = 24
@@ -677,6 +682,12 @@ local function startLightingCycle()
 	end
 
 	RunService.Heartbeat:Connect(function()
+		if overideClocktime then
+			start_time = tick() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
+
+			return
+		end
+
 		local current_time = tick()
 
 		if current_time > end_time then
@@ -743,6 +754,10 @@ local function initializeAudio()
 		audio:AddSFX("leave", 85897203168160)
 		audio:AddSFX("success", 76288726968959)
 
+		audio:AddSFX("ground-crack", 139091089156450)
+
+		audio:AddSFX("ice-blast", 77805087245612)
+
 		audio:AddMusic("train_brakes", 185857550)
 		audio:AddMusic("train_clattering", 149026377, {
 			looped = true,
@@ -759,25 +774,14 @@ MarketplaceService.ProcessReceipt = function(receiptInfo: typemarshaller.Receipt
 	productMarshaller._call(receiptInfo)
 end
 
--- Register Events
--- ("NewMatch")
--- ("PayCards")
--- ("FastTravel")
--- ("SetCameraHost")
--- ("GetPlayerInfo")
--- ("SetCameraView")
--- ("SetPlayerExperience")
--- ("LevelUp")
--- ("SetPlayerExperience")
---
---("FastTravel", FastTravel)
---("PayCards", payCards)
---("GetPlayerInfo", getPlayerInfo)
---("SetPlayerExperience", setPlayerExperience)
---("GetStats", getStats)
-
 Packet.SetTime.listen(function(data, player: Player?)
+	overideClocktime = true
+
 	setClock(data.clock_time)
+
+	task.delay(1, function()
+		overideClocktime = false
+	end)
 end)
 Packet.StreamArea.listen(function(data, player: Player)
 	streamArea(player, data.area_center)
@@ -1015,6 +1019,11 @@ Events.FireBeam.OnServerEvent:Connect(function(player, params)
 	print("firing beam")
 	beam.fire(params)
 	print("beam fired!")
+end)
+Events.FireGroundCrack.OnServerEvent:Connect(function(player, type: keyof<typeof(ground_crack)>, ...)
+	print("firing ground crack")
+	ground_crack[type](...)
+	print("ground crack fired!")
 end)
 initializeAudio()
 startLightingCycle()

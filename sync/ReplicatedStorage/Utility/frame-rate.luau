@@ -59,4 +59,39 @@ function module:GetPercentileFramesPerSecond(
 	return 1 / (total_frame_time / target_count)
 end
 
+--[[
+	@within module
+	@param threshold number -- The maximum allowed deviation in seconds between frame times.
+	@param sample_count number? -- Number of frames to sample for stability check. Defaults to 10.
+	@returns boolean -- Returns true if frames are stable within the threshold.
+	@desc
+	Waits until the frame times are stable within the given threshold.
+]]
+function module:WaitUntilFramesAreStable(threshold: number, sample_count: number?): boolean
+	sample_count = sample_count or 10
+	assert(threshold > 0, "Threshold must be positive")
+	assert(sample_count > 1, "Sample count must be greater than 1")
+
+	local frame_times = table.create(sample_count, 0)
+	while true do
+		local total = 0
+		for i = 1, sample_count do
+			frame_times[i] = RunService.PreRender:Wait()
+			total += frame_times[i]
+		end
+
+		local mean = total / sample_count
+		local variance = 0
+		for i = 1, sample_count do
+			local diff = frame_times[i] - mean
+			variance += diff * diff
+		end
+		local stddev = math.sqrt(variance / sample_count)
+
+		if stddev <= threshold then
+			return true
+		end
+	end
+end
+
 return module

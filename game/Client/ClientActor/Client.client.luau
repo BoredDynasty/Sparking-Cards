@@ -18,6 +18,7 @@ task.wait(5) -- wait for the player to load
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
+local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 
 local Packet = require(ReplicatedStorage.Packet)
 
@@ -33,6 +34,7 @@ local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health
 
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
+local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
 
 local input = require(ReplicatedStorage.Packages.input)
 
@@ -60,6 +62,7 @@ local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["num
 local observer = require(ReplicatedStorage.Utility.observer)
 
 local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
+local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
@@ -72,6 +75,7 @@ local tooltip = require("../Components/tooltip")
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 
 local spr = require(ReplicatedStorage.Modules.spr)
 
@@ -85,9 +89,11 @@ local timer = require(ReplicatedStorage.Modules.timer)
 
 local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
 
+local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
+local expressive_shapes = require(StarterPlayer.StarterPlayerScripts.Interface["expressive-shapes"])
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
@@ -132,11 +138,13 @@ local function initializeCommands()
 	end
 
 	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
-		task.delay(15, function()
+		task.spawn(function()
+			frame_rate:WaitUntilFramesAreStable(0.03)
+
 			local snack_bar = hint.new()
 			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
-			snack_bar:SetAction(showUI, "Open")
-			snack_bar:SetCanDismiss(false)
+			snack_bar:SetAction(showUI, "Cmdr")
+			snack_bar:SetCanDismiss(true)
 			snack_bar:SetCanClick(true)
 		end)
 	end
@@ -250,7 +258,9 @@ local function initializeMatchmaking()
 	local matchmakingFrame = matchmakingCanvas.Frame
 
 	local statusText = matchmakingFrame.Time
-	local pulseImage = matchmakingFrame.Pulse
+
+	local shape = matchmakingFrame.Shape
+	local gamepad_image = shape.ImageLabel
 
 	shadow(matchmakingFrame)
 
@@ -272,6 +282,8 @@ local function initializeMatchmaking()
 			hint_:SetText(join_res.message or "Failed to join matchmaking.")
 			hint_:SetCanClick(false)
 
+			audio:PlaySFX("cancel-1")
+
 			return
 		end
 
@@ -279,11 +291,11 @@ local function initializeMatchmaking()
 		local info = events.Matchmaking.RequestQueueInfo:InvokeServer()
 		print(tablekit.ToString(info))
 
-		spr.target(matchmakingFrame, 0.6, 8, {
-			Position = UDim2.fromScale(0.5, 0.1),
+		spr.target(matchmakingFrame, 0.6, 4, {
+			Position = UDim2.fromScale(0.5, 0.115),
 		})
 
-		if performed_hint <= 2 then
+		if performed_hint <= 3 then
 			local new_hint = hint.new()
 			new_hint:SetText("Swipe up on the bar to cancel matchmaking. [" .. performed_hint .. "/3]")
 			new_hint:SetExpiry(3)
@@ -292,6 +304,8 @@ local function initializeMatchmaking()
 		end
 
 		state:Set(true)
+
+		expressive_shapes.register(shape, gamepad_image)
 
 		clock:Start()
 		-- every 0.33_ seconds
@@ -303,14 +317,16 @@ local function initializeMatchmaking()
 			minutes = minutes % 60
 
 			local seconds = total_seconds % 60
+
+			-- add in the loading dots "." ".." "..." effect thingy
+			local dots = string.rep(".", math.floor(total_seconds * 3) % 4)
 			statusText.Text = string.format(
-				'Searching...<br/><font transparency="0.5"><font size="14">%02d:%02d:%02d</font></font>',
+				'Searching%s<br/><font transparency="0.5"><font size="14">%02d:%02d:%02d</font></font>',
+				dots,
 				hours,
 				minutes,
 				seconds
 			)
-
-			pop(pulseImage, 1.8)
 		end)
 
 		audio:PlaySFX("success")
@@ -324,12 +340,14 @@ local function initializeMatchmaking()
 			hint_:SetText("Failed to leave matchmaking.")
 			hint_:SetCanClick(false)
 
+			audio:PlaySFX("cancel-1")
+
 			return
 		end
 
 		task.wait(1 / 8)
 
-		spr.target(matchmakingFrame, 1, 2.5, {
+		spr.target(matchmakingFrame, 0.6, 2.5, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
 
@@ -337,6 +355,8 @@ local function initializeMatchmaking()
 
 		clock:Reset()
 		clock:Stop()
+
+		expressive_shapes.unregister(shape)
 
 		if interval_thread then
 			task.cancel(interval_thread)
@@ -360,7 +380,17 @@ local function initializeMatchmaking()
 		if direction == "up" then
 			future.Try(hideMatchmakingFrame)
 		else
-			return
+			-- nudge the frame towards the delta direction as a fun little effect
+			spr.target(matchmakingFrame, 0.3, 3, {
+				Position = matchmakingFrame.Position + UDim2.fromOffset(delta.X * 0.1, delta.Y * 0.1),
+			})
+
+			-- then spring back to the center
+			task.wait(1 / 3)
+			spr.stop(matchmakingFrame, "Position")
+			spr.target(matchmakingFrame, 0.5, 5, {
+				Position = UDim2.fromScale(0.5, 0.115),
+			})
 		end
 	end)
 
@@ -400,6 +430,32 @@ local function initializeNotifiers()
 			hint_:SetText(data.message)
 			hint_:SetExpiry(data.duration or 4)
 			hint_:SetCanClick(false)
+
+			local negative_outcomes = {
+				"failed",
+				"couldnt",
+				"couldn't",
+				"could not",
+				"attempted",
+				"tried",
+				"no",
+				"not",
+				"n't",
+				"unsuccessful",
+				"error",
+				"mistake",
+				"wrong",
+				"declined",
+				"refused",
+			}
+			-- if we find these words in the data message, play the 'cancel' sound
+
+			for i, word in ipairs(negative_outcomes) do
+				if string.find(string.lower(data.message), word) then
+					audio:PlaySFX("cancel-1")
+					return
+				end
+			end
 		end
 	end)
 end
@@ -606,7 +662,7 @@ local function initializeStatistics()
 			holder.LastLogin.Text = string.format(
 				fancy_str,
 				"Last Login",
-				DateTime.fromUnixTimestampMillis(profile.Data.last_login):ToIsoDate()
+				DateTime.fromUnixTimestampMillis(profile.Data.last_login):FormatLocalTime("", "en-us")
 			)
 		end
 	end
@@ -681,9 +737,8 @@ initializeAudio()
 
 hud:Render()
 --motion_blur:On()
-task.delay(15, function()
-	camera_controller.new("bobbing", bobbing)
-end)
+
+camera_controller.new("bobbing", bobbing)
 
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["jump-controller"])
@@ -698,7 +753,6 @@ movement_controller:Start()
 -- control
 
 local function getAttackTypeFromKey(key: Enum.KeyCode): string?
-	-- profile = yoink.client:grab("profile_data")
 	profile = fetchProfile()
 	if not profile or not profile.Data then
 		profile = {
@@ -716,6 +770,26 @@ local function getAttackTypeFromKey(key: Enum.KeyCode): string?
 	print(attack_types[key])
 
 	return attack_types[key]
+end
+
+do
+	profile = fetchProfile()
+	if not profile or not profile.Data then
+		profile = {
+			Data = profilestructure,
+		}
+	end
+
+	for i, value in pairs(profile.Data.keybinds) do
+		-- if needed, format the name
+		-- e.g "enable_spectating" to "Enable Spectating"
+		-- switch the cases and replace underscores with spaces
+		local formatted_name = i:gsub("_", " "):gsub("(%a)(%a*)", function(first, rest)
+			return first:upper() .. rest:lower()
+		end)
+
+		keybindlink.register(value, formatted_name)
+	end
 end
 
 keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
@@ -759,35 +833,12 @@ mouse.LeftDown:Connect(function(processed: boolean)
 		return
 	end
 
-	type BeamParams = {
-		origin: Vector3,
-		direction: Vector3?,
-		target: Vector3?,
-		max_distance: number?,
-		speed: number?,
-		width: number?,
-		color: Color3?,
-		texture: string?,
-		damage: number?,
-		falloff: boolean?,
-		pierce: boolean?,
-		pierce_count: number?,
-		ignored_instances: { Instance }?,
-		source: Model?, -- used for damage attribution
-		life_time: number?, -- visual life time
-		hit_particle: ParticleEmitter?, -- optional particle effect to play at hit point
-	}
+	local root = humanoid.RootPart
+	if not root then
+		return
+	end
 
-	-- test
-	events.FireBeam:FireServer({
-		origin = mouse:Project(),
-		direction = Vector3.new(0, -1, 0), -- downwards
-		color = Color3.new(1, 0, 0),
-		damage = 10,
-		speed = 500,
-		width = 0.5,
-		life_time = 0.5,
-	})
+	events.FireGroundCrack:FireServer("crack", root.CFrame)
 
 	--hud:Hide()
 end)
@@ -849,7 +900,7 @@ do
 
 		local snack_bar = hint.new()
 		snack_bar:SetText(string.format(str, min_quality_level))
-		snack_bar:SetExpiry(7)
+		snack_bar:SetExpiry(4)
 		snack_bar:SetCanClick(true)
 		snack_bar:SetAction(function()
 			future.Try(function()
@@ -857,18 +908,6 @@ do
 			end)
 		end, "Set")
 	end)
-end
-
-do
-	local prompt = proximity_prompt.new()
-	prompt:SetName("aa")
-	prompt:SetAction("please speed")
-	prompt:SetAdornee(workspace.TestPart)
-	prompt:SetHoldDuration(3)
-	prompt:SetKeybind(Enum.KeyCode.E)
-	prompt:SetMaxDistance(20)
-
-	prompt:Show()
 end
 
 -- over_shoulder:Enable()

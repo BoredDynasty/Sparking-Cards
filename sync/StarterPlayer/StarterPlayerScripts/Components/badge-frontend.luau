@@ -9,7 +9,9 @@ local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local badges = require(ReplicatedStorage.Structures.badges)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
+local leventine = require(ReplicatedStorage.Utility.leventine)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
@@ -74,6 +76,16 @@ local function isRegisteredBadge(badge: typemarshaller.Badge)
 	end
 
 	return false
+end
+
+local function getBadgeDataFromName(name: string): typemarshaller.Badge?
+	for i, badge_data in ipairs(badges) do
+		if badge_data.name == name then
+			return badge_data
+		end
+	end
+
+	return nil
 end
 
 function module:Unload()
@@ -180,17 +192,24 @@ end
 function module:LoadItems()
 	profile = fetchProfile()
 
-	if not profile then
-		--print("no profile to load badges")
-
-		return
-	end
-
 	module:Unload()
 
-	local items = profile.Data.achievements
+	local items = {}
+
+	future.Try(function()
+		items = profile.Data.achievements or {}
+	end)
 
 	for i, item in ipairs(items) do
+		if not item.name or not item.description or not item.points then
+			if RunService:IsStudio() then
+				warn("Invalid badge data: " .. tablekit.ToString(item :: any))
+			else
+				warn(tablekit.ToString(item :: any) .. " is missing required fields.")
+				continue
+			end
+		end
+
 		if not isRegisteredBadge(item) then
 			warn(tablekit.ToString(item :: any) .. " is not a registered badge.")
 		end
@@ -235,11 +254,77 @@ function module:LoadItems()
 
 		template.Parent = itemHolder
 	end
+
+	-- also load the other badges the player hasnt achieved yet, but make them grayed out or smth.
+	for i, badge_data in ipairs(badges) do
+		local found = false
+		for j, item in ipairs(items) do
+			if item.name == badge_data.name then
+				found = true
+				break
+			end
+		end
+
+		if not found then
+			local template = pool:Get()
+
+			shadow(template)
+
+			local title = template.Title
+			title.Text = badge_data.name
+
+			local details_btn = template.Details
+			local share_btn = template.Share
+			share_btn.Visible = false
+			details_btn.Activated:Connect(function()
+				if not module.limit(details_btn) then
+					return
+				end
+
+				audio:PlayVariation("cancel", 1)
+
+				local snackbar = hint.new()
+				snackbar:SetText("You have not unlocked this badge yet.")
+				snackbar:SetCanDismiss(true)
+				snackbar:SetExpiry(2)
+				snackbar:SetCanClick(true)
+			end)
+
+			template.Parent = itemHolder
+		end
+	end
 end
 
 -- TODO: implement a searchbar for searching badges by name or description. this will be a bit tricky, but it should be doable.
 local function initializeSearchbar()
-	-- we will implement this later, for now its just a placeholder.
+	-- use a levenshtien or smth
+
+	local searchbar = shopFrame.Frame
+	local text_box = searchbar.TextBox
+
+	local badge_names = {}
+
+	local last_text = ""
+
+	text_box.Changed:Connect(function()
+		local current_text = text_box.Text
+		if current_text == last_text then
+			return
+		end
+
+		last_text = current_text
+
+		table.clear(badge_names)
+
+		for i, badge in ipairs(badges) do
+			table.insert(badge_names, badge.name)
+		end
+
+		local map = leventine.map(current_text, badge_names)
+		print(table.concat(map, ", "))
+	end)
 end
+
+initializeSearchbar()
 
 return module

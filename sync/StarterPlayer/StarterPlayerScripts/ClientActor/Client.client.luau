@@ -18,6 +18,7 @@ task.wait(5) -- wait for the player to load
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
+local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 
 local Packet = require(ReplicatedStorage.Packet)
 
@@ -33,6 +34,7 @@ local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health
 
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
+local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
 
 local input = require(ReplicatedStorage.Packages.input)
 
@@ -60,6 +62,7 @@ local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["num
 local observer = require(ReplicatedStorage.Utility.observer)
 
 local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
+local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
@@ -85,6 +88,7 @@ local timer = require(ReplicatedStorage.Modules.timer)
 
 local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
 
+local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
@@ -132,11 +136,13 @@ local function initializeCommands()
 	end
 
 	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
-		task.delay(15, function()
+		task.spawn(function()
+			frame_rate:WaitUntilFramesAreStable(0.03)
+
 			local snack_bar = hint.new()
 			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
-			snack_bar:SetAction(showUI, "Open")
-			snack_bar:SetCanDismiss(false)
+			snack_bar:SetAction(showUI, "Cmdr")
+			snack_bar:SetCanDismiss(true)
 			snack_bar:SetCanClick(true)
 		end)
 	end
@@ -606,7 +612,7 @@ local function initializeStatistics()
 			holder.LastLogin.Text = string.format(
 				fancy_str,
 				"Last Login",
-				DateTime.fromUnixTimestampMillis(profile.Data.last_login):ToIsoDate()
+				DateTime.fromUnixTimestampMillis(profile.Data.last_login):FormatLocalTime("", "en-us")
 			)
 		end
 	end
@@ -681,9 +687,8 @@ initializeAudio()
 
 hud:Render()
 --motion_blur:On()
-task.delay(15, function()
-	camera_controller.new("bobbing", bobbing)
-end)
+
+camera_controller.new("bobbing", bobbing)
 
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["jump-controller"])
@@ -698,7 +703,6 @@ movement_controller:Start()
 -- control
 
 local function getAttackTypeFromKey(key: Enum.KeyCode): string?
-	-- profile = yoink.client:grab("profile_data")
 	profile = fetchProfile()
 	if not profile or not profile.Data then
 		profile = {
@@ -716,6 +720,19 @@ local function getAttackTypeFromKey(key: Enum.KeyCode): string?
 	print(attack_types[key])
 
 	return attack_types[key]
+end
+
+do
+	profile = fetchProfile()
+	if not profile or not profile.Data then
+		profile = {
+			Data = profilestructure,
+		}
+	end
+
+	for i, value in pairs(profile.Data.keybinds) do
+		keybindlink.register(value, i)
+	end
 end
 
 keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
@@ -759,35 +776,12 @@ mouse.LeftDown:Connect(function(processed: boolean)
 		return
 	end
 
-	type BeamParams = {
-		origin: Vector3,
-		direction: Vector3?,
-		target: Vector3?,
-		max_distance: number?,
-		speed: number?,
-		width: number?,
-		color: Color3?,
-		texture: string?,
-		damage: number?,
-		falloff: boolean?,
-		pierce: boolean?,
-		pierce_count: number?,
-		ignored_instances: { Instance }?,
-		source: Model?, -- used for damage attribution
-		life_time: number?, -- visual life time
-		hit_particle: ParticleEmitter?, -- optional particle effect to play at hit point
-	}
+	local root = humanoid.RootPart
+	if not root then
+		return
+	end
 
-	-- test
-	events.FireBeam:FireServer({
-		origin = mouse:Project(),
-		direction = Vector3.new(0, -1, 0), -- downwards
-		color = Color3.new(1, 0, 0),
-		damage = 10,
-		speed = 500,
-		width = 0.5,
-		life_time = 0.5,
-	})
+	events.FireGroundCrack:FireServer("crack", root.CFrame)
 
 	--hud:Hide()
 end)

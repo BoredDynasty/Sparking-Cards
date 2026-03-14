@@ -8847,6 +8847,13 @@
               ]
             }
           ]
+        },
+        {
+          "name": "FirstPerson",
+          "className": "LocalScript",
+          "filePaths": [
+            "sync/Workspace/FirstPerson.client.luau"
+          ]
         }
       ]
     },
@@ -9566,6 +9573,13 @@
                   ]
                 },
                 {
+                  "name": "health-bar",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/health-bar.luau"
+                  ]
+                },
+                {
                   "name": "Sequences",
                   "className": "Folder",
                   "children": [
@@ -9716,6 +9730,20 @@
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Interface/fade.luau"
                   ]
+                },
+                {
+                  "name": "expressive-shapes",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/expressive-shapes.luau"
+                  ]
+                },
+                {
+                  "name": "drag",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Interface/drag.luau"
+                  ]
                 }
               ]
             },
@@ -9863,24 +9891,22 @@
       "className": "StarterGui",
       "children": [
         {
-          "name": "CombatButtons",
+          "name": "Keybindlink",
           "className": "ScreenGui",
           "children": [
             {
-              "name": "Frame",
-              "className": "Frame",
+              "name": "CanvasGroup",
+              "className": "CanvasGroup",
               "children": [
                 {
-                  "name": "UICorner",
-                  "className": "UICorner"
-                },
-                {
-                  "name": "ImageLabel",
-                  "className": "ImageLabel"
-                },
-                {
-                  "name": "UIStroke",
-                  "className": "UIStroke"
+                  "name": "Frame",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UIListLayout",
+                      "className": "UIListLayout"
+                    }
+                  ]
                 }
               ]
             }
@@ -9979,16 +10005,6 @@
                       "className": "UICorner"
                     },
                     {
-                      "name": "Pulse",
-                      "className": "ImageButton",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
                       "name": "AspectRatio",
                       "className": "UIAspectRatioConstraint"
                     },
@@ -10009,6 +10025,20 @@
                         {
                           "name": "UICorner",
                           "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Shape",
+                      "className": "ImageButton",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        },
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel"
                         }
                       ]
                     }
@@ -10401,10 +10431,6 @@
                         {
                           "name": "TextBox",
                           "className": "TextBox"
-                        },
-                        {
-                          "name": "UIStroke",
-                          "className": "UIStroke"
                         }
                       ]
                     }
@@ -12044,53 +12070,115 @@
         },
         {
           "name": "Dialogue",
+          "className": "ScreenGui"
+        },
+        {
+          "name": "Healthbar",
           "className": "ScreenGui",
           "children": [
             {
-              "name": "Snackbar",
+              "name": "CanvasGroup",
               "className": "CanvasGroup",
               "children": [
                 {
-                  "name": "TextLabel",
-                  "className": "TextLabel",
-                  "children": [
-                    {
-                      "name": "UIPadding",
-                      "className": "UIPadding"
-                    }
-                  ]
+                  "name": "UIAspectRatioConstraint",
+                  "className": "UIAspectRatioConstraint"
                 },
                 {
-                  "name": "ActionHolder",
+                  "name": "Frame 3",
                   "className": "Frame",
                   "children": [
                     {
-                      "name": "ActionButton",
-                      "className": "TextButton",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
+                      "name": "UIAspectRatioConstraint",
                       "className": "UIAspectRatioConstraint"
                     }
                   ]
                 },
                 {
-                  "name": "UICorner",
-                  "className": "UICorner"
-                },
-                {
-                  "name": "ImageLabel",
-                  "className": "ImageLabel",
+                  "name": "Frame 2",
+                  "className": "Frame",
                   "children": [
                     {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel"
+                      "name": "UIAspectRatioConstraint",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "MainBar",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UIAspectRatioConstraint",
+                      "className": "UIAspectRatioConstraint"
+                    },
+                    {
+                      "name": "Main",
+                      "className": "Frame"
+                    },
+                    {
+                      "name": "Decrease",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UIGradient",
+                          "className": "UIGradient"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "PlayerName",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "UIAspectRatioConstraint",
+                      "className": "UIAspectRatioConstraint"
+                    },
+                    {
+                      "name": "Padding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "UIStroke",
+                      "className": "UIStroke"
+                    }
+                  ]
+                },
+                {
+                  "name": "Energy",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "3",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UIAspectRatioConstraint",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "2",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UIAspectRatioConstraint",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "1",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UIAspectRatioConstraint",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
                     }
                   ]
                 }
@@ -12109,6 +12197,19 @@
           "className": "ModuleScript",
           "filePaths": [
             "sync/ReplicatedStorage/Packet.luau"
+          ]
+        },
+        {
+          "name": "Types",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "typemarshaller",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Types/typemarshaller.luau"
+              ]
+            }
           ]
         },
         {
@@ -15190,6 +15291,10 @@
             },
             {
               "name": "FireBeam",
+              "className": "RemoteEvent"
+            },
+            {
+              "name": "FireGroundCrack",
               "className": "RemoteEvent"
             }
           ]
@@ -18421,6 +18526,98 @@
           "className": "Folder",
           "children": [
             {
+              "name": "DialogBar",
+              "className": "CanvasGroup",
+              "children": [
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "ActionHolder",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "ActionButton",
+                      "className": "TextButton",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "ImageLabel",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
+              "name": "ProxyPrompt",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "TextButton",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "Key",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "Details",
+                      "className": "TextLabel"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "name": "BadgeTemplate",
               "className": "Frame",
               "children": [
@@ -20072,24 +20269,20 @@
               ]
             },
             {
-              "name": "ProxyPrompt",
-              "className": "BillboardGui",
+              "name": "CombatButton",
+              "className": "TextButton",
               "children": [
                 {
-                  "name": "TextButton",
-                  "className": "TextButton",
+                  "name": "ImageLabel",
+                  "className": "ImageLabel"
+                },
+                {
+                  "name": "TextLabel",
+                  "className": "TextLabel",
                   "children": [
                     {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "Key",
-                      "className": "TextLabel"
-                    },
-                    {
-                      "name": "Details",
-                      "className": "TextLabel"
+                      "name": "UIStroke",
+                      "className": "UIStroke"
                     }
                   ]
                 }
@@ -20233,19 +20426,6 @@
         {
           "name": "Audio",
           "className": "Folder"
-        },
-        {
-          "name": "Types",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "typemarshaller",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Types/typemarshaller.luau"
-              ]
-            }
-          ]
         }
       ]
     },
@@ -23022,6 +23202,10 @@
               ]
             }
           ]
+        },
+        {
+          "name": "__Rojo_SessionLock",
+          "className": "ObjectValue"
         }
       ]
     },

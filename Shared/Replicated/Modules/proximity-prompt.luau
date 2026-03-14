@@ -17,7 +17,7 @@ local pool = PoolerPlus:CreatePool("ProxyPool", function()
 end)
 pool:AdaptivePreload()
 
-export type ProximityPrompt = setmetatable<{
+export type ProximityPrompt_impl = setmetatable<{
 	keybind: Enum.KeyCode,
 	adornee: Instance?,
 	interaction_name: string,
@@ -34,8 +34,8 @@ export type ProximityPrompt = setmetatable<{
 	_hold_time: number,
 	_player: Player,
 
-	Holding: any,
-	Triggered: any,
+	Holding: SignalPlus.Signal<>,
+	Triggered: SignalPlus.Signal<>,
 
 	SetAdornee: (self: ProximityPrompt, adornee: Instance) -> (),
 	SetKeybind: (self: ProximityPrompt, keycode: Enum.KeyCode) -> (),
@@ -51,7 +51,7 @@ export type ProximityPrompt = setmetatable<{
 	Destroy: (self: ProximityPrompt) -> (),
 }, typeof(module)>
 
-function module.new()
+function module.new(): ProximityPrompt_impl
 	return setmetatable({
 		keybind = Enum.KeyCode.E,
 		adornee = nil,
@@ -75,28 +75,28 @@ function module.new()
 	}, module)
 end
 
-function module.SetAdornee(self: ProximityPrompt, adornee: Instance)
+function module:SetAdornee(adornee: Instance)
 	self.adornee = adornee
 	if self._prompt then
 		self._prompt.Adornee = adornee
 	end
 end
 
-function module.SetKeybind(self: ProximityPrompt, keycode: Enum.KeyCode)
+function module:SetKeybind(keycode: Enum.KeyCode)
 	self.keybind = keycode
 	if self._prompt and self._is_showing then
 		self:_UpdatePromptUI()
 	end
 end
 
-function module.SetName(self: ProximityPrompt, str: string)
+function module:SetName(str: string)
 	self.interaction_name = str
 	if self._prompt and self._is_showing then
 		self:_UpdatePromptUI()
 	end
 end
 
-function module.SetAction(self: ProximityPrompt, str: string, fn: (() -> ())?)
+function module:SetAction(str: string, fn: (() -> ())?)
 	self.action = str
 	self.fn = fn
 	if self._prompt and self._is_showing then
@@ -104,15 +104,15 @@ function module.SetAction(self: ProximityPrompt, str: string, fn: (() -> ())?)
 	end
 end
 
-function module.SetHoldDuration(self: ProximityPrompt, duration: number)
+function module:SetHoldDuration(duration: number)
 	self.hold_duration = duration
 end
 
-function module.SetMaxDistance(self: ProximityPrompt, distance: number)
+function module:SetMaxDistance(distance: number)
 	self.max_distance = distance
 end
 
-function module.Show(self: ProximityPrompt)
+function module:Show()
 	if self._is_showing or not self.adornee then
 		return
 	end
@@ -126,7 +126,7 @@ function module.Show(self: ProximityPrompt)
 	self:_SetupProximityDetection()
 end
 
-function module.Hide(self: ProximityPrompt)
+function module:Hide()
 	if not self._is_showing then
 		return
 	end
@@ -144,14 +144,14 @@ function module.Hide(self: ProximityPrompt)
 	self._trove:Clean()
 end
 
-function module.Destroy(self: ProximityPrompt)
+function module:Destroy()
 	self:Hide()
 	self.Holding:Destroy()
 	self.Triggered:Destroy()
 	self._trove:Destroy()
 end
 
-function module._UpdatePromptUI(self: ProximityPrompt)
+function module:_UpdatePromptUI()
 	if not self._prompt then
 		return
 	end
@@ -172,7 +172,7 @@ function module._UpdatePromptUI(self: ProximityPrompt)
 	button.Key.Text = keycode_name
 end
 
-function module._SetupInputHandling(self: ProximityPrompt)
+function module:_SetupInputHandling()
 	if not self._prompt then
 		return
 	end
@@ -224,7 +224,7 @@ function module._SetupInputHandling(self: ProximityPrompt)
 	end))
 end
 
-function module._SetupProximityDetection(self: ProximityPrompt)
+function module:_SetupProximityDetection()
 	local character = self._player.Character
 	if not character then
 		return
