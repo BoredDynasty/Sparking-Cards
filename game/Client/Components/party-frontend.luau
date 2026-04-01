@@ -215,6 +215,9 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 						local hint_ = hint.new()
 						hint_:SetText("Failed to delete your party.")
 						hint_:SetCanClick(false)
+					else
+						local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+						toggle:Fire(false)
 					end
 				else
 					local ok = PartyRemotes.Leave:InvokeServer({ party_id = party.party_id })
@@ -223,6 +226,9 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 						local hint_ = hint.new()
 						hint_:SetText("Failed to leave party.")
 						hint_:SetCanClick(false)
+					else
+						local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+						toggle:Fire(false)
 					end
 				end
 
@@ -379,6 +385,9 @@ party_frame.Create.Activated:Connect(function()
 			pop(party_frame.Create)
 
 			audio:PlaySFX("click")
+
+			local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+			toggle:Fire(false)
 		end
 	end
 end)

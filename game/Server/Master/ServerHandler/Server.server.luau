@@ -383,7 +383,7 @@ local function enterMatch(player: Player)
 	end
 end
 
-local function cancelMatch(player: Player)
+local function cancelMatch(player: Player, suppress_notification: boolean?)
 	--print("cancel match")
 
 	if not player then
@@ -396,7 +396,9 @@ local function cancelMatch(player: Player)
 		if pty.leader_id ~= player.UserId then
 			local msg = "Only the party leader can cancel matchmaking for the party."
 
-			Packet.SendNotification.sendTo({ message = msg }, player)
+			if not suppress_notification then
+				Packet.SendNotification.sendTo({ message = msg }, player)
+			end
 
 			return { success = false, message = msg }
 		end
@@ -404,18 +406,22 @@ local function cancelMatch(player: Player)
 		-- TODO: Implement or use the correct party method to stop searching state
 		matchmaker:LeaveQueueForParty(pty)
 
-		Packet.SendNotification.sendTo({ message = "Party left matchmaking queue", duration = 5 }, player)
+		if not suppress_notification then
+			Packet.SendNotification.sendTo({ message = "Party left matchmaking queue", duration = 5 }, player)
+		end
 
 		return { success = true, message = "Party left queue" }
 	else
 		local ok = matchmaker:LeaveQueueForPlayer(player)
 
 		if ok then
-			Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
+			if not suppress_notification then
+				Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
+			end
 
 			return { success = true, message = "Player left queue" }
 		else
-			return { success = false, message = "Failed to leave player queue." }
+			return { success = true, message = "Player not in queue" }
 		end
 	end
 end
@@ -986,6 +992,8 @@ Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instanc
 	setNetworkOwner(data.player, data.object)
 end)
 PartyRemotes.Create.OnServerInvoke = function(player: Player, settings: { [string]: any }?)
+	cancelMatch(player, true)
+
 	local pty = party.new(player.UserId)
 
 	if pty and settings then
@@ -1017,6 +1025,8 @@ PartyRemotes.Delete.OnServerInvoke = function(player: Player, data: { party_id: 
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
 				if party_obj.leader_id == player.UserId then
+					cancelMatch(player, true)
+
 					party:RemovePartyById(party_obj.party_id)
 					-- we added this function because `party_obj:Destroy()` throws an error
 
@@ -1036,6 +1046,9 @@ PartyRemotes.Join.OnServerInvoke = function(player: Player, data: { party_id: st
 
 	if party_obj then
 		print("got party obj")
+
+		cancelMatch(player, true)
+
 		local ok = party:AddPlayerToPartyById(data.party_id, player.UserId)
 
 		if ok then
@@ -1055,6 +1068,8 @@ PartyRemotes.Leave.OnServerInvoke = function(player: Player, data: { party_id: s
 	if party_obj then
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
+				cancelMatch(player, true)
+
 				party:RemovePlayerFromPartyById(data.party_id, player.UserId)
 
 				return true
