@@ -1,16 +1,15 @@
 --!nonstrict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
+local UserInputService = game:GetService("UserInputService")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
 local property = require(ReplicatedStorage.Utility.property)
-local spr = require(ReplicatedStorage.Modules.spr)
 
 -- ripple.luau
-
-local mouse = input.Mouse.new()
 
 local pool = PoolerPlus:CreatePool("RipplePool", function()
 	local object = Instance.new("Frame")
@@ -35,9 +34,14 @@ return function(object: GuiObject, duration: number?)
 		object.AutoButtonColor = false
 	end
 
-	duration = duration or 0.5
+	duration = duration or 0.8
 
-	local mouse_position = mouse:GetPosition()
+	local mouse_location = UserInputService:GetMouseLocation()
+
+	local mouse_position = Vector2.new(
+		mouse_location.X - object.AbsolutePosition.X,
+		mouse_location.Y - object.AbsolutePosition.Y
+	)
 
 	local absolute_size = object.AbsoluteSize
 
@@ -47,19 +51,21 @@ return function(object: GuiObject, duration: number?)
 	local ripple = pool:Get()
 	ripple.Position = UDim2.fromScale(x_scale, y_scale)
 	ripple.Size = UDim2.fromScale(0, 0)
+	ripple.BackgroundTransparency = 0
 
 	local max_size = math.max(absolute_size.X, absolute_size.Y) * 3
 
 	ripple.Parent = object
 
-	spr.target(ripple, 0.8, math.max(1 / duration, 6), {
+	local t_info = TweenInfo.new(duration, Enum.EasingStyle.Linear)
+
+	local tween = TweenService:Create(ripple, t_info, {
 		Size = UDim2.fromOffset(max_size, max_size),
-		Transparency = 1,
+		BackgroundTransparency = 1,
 	})
+	tween:Play()
 
-	spr.completed(ripple, function()
-		task.wait(0.1)
-
+	tween.Completed:Connect(function()
 		pool:Return(ripple)
 	end)
 end

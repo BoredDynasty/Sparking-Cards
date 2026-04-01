@@ -6,7 +6,6 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local future = require(ReplicatedStorage.Packages.future)
 local input_icons = require(StarterPlayer.StarterPlayerScripts.Interface["input-icons"])
-local retryer = require(ReplicatedStorage.Utility.retryer)
 
 -- keybindlink.luau
 
@@ -35,17 +34,17 @@ function module.register(key: number, name: string)
 
 	data.button.TextLabel.Text = name
 
-	local enum_key = Enum.KeyCode:FromValue(key)
-	if not enum_key then
-		enum_key = Enum.UserInputType:FromValue(key)
-	end
+	local enum_key = Enum.KeyCode:FromValue(key) or Enum.UserInputType:FromValue(key)
 
 	assert(enum_key, "invalid value for keycode")
 	print(enum_key, icons[enum_key])
 
-	future.Try(function(...)
-		data.button.ImageLabel.Image = icons[enum_key]
-	end)
+	future
+		.Try(function(...)
+			data.button.ImageLabel.Image = icons[enum_key]
+			return true
+		end)
+		:After(print)
 
 	data.button.Parent = keybind_gui.CanvasGroup.Frame
 

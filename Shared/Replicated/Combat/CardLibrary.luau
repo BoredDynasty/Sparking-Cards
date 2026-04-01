@@ -35,7 +35,7 @@ local CardLibrary = {
 		Moveset = {
 			M1 = "CryoGauntlet_M1_1",
 			Skill = "CryoGauntlet_IceShard_Skill",
-			Ultimate = "CryoGauntlet_Blizzard_Ultimate",
+			Ultimate = "CryoGauntlet_GlacialDestruction_Ultimate",
 			Support = "CryoGauntlet_Aegis_Support",
 		},
 	},
@@ -150,8 +150,8 @@ local CardLibrary = {
 		Moveset = {
 			M1 = "PoisonDagger_Venom_Lash_1",
 			Skill = "PoisonDagger_Toxic_Spiral_Skill",
-			Ultimate = "PoisonDagger_Acid_Bloom_Ultimate",
-			Supprt = "PoisonDagger_Plague_Waltz_Support",
+			Ultimate = "PoisonDagger_AcidBloom_Ultimate",
+			Supprt = "PoisonDagger_PlagueWaltz_Support",
 		},
 	},
 

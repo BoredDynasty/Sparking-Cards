@@ -10,18 +10,19 @@ local Packet = require(ReplicatedStorage.Packet)
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
+local fade = require(StarterPlayer.StarterPlayerScripts.Interface.fade)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local lucide = require(ReplicatedStorage.Packages.lucide)
-local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local tab = require(StarterPlayer.StarterPlayerScripts.Components.tab)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 
@@ -52,7 +53,7 @@ local module = {}
 
 shadow(template)
 
-local navigation = navigation_rail.new()
+local tabs = tab.new(shopFrame.Tabs.TabHolder)
 
 local profile = fetchProfile()
 
@@ -94,22 +95,19 @@ function module:DisplaySpendings()
 	end
 end
 
-function module:StartNavigation()
-	navigation:Button("Home", "home", function()
-		-- this is already running along the main thread
-		market:LoadItems()
-	end)
-	navigation:Button("Inventory", "backpack", function()
-		market:LoadInventory()
-	end)
+function module:InitializeTabs()
+	tabs:AddTab("Shop")
+	tabs:AddTab("Inventory")
 
-	navigation:SetAdornee(shopGui)
-	navigation:SetActionIcon("ticket")
-	navigation:Render()
-end
+	tabs:SelectTab("Shop")
 
-function module:GetNavigation()
-	return navigation
+	tabs.Changed:Connect(function(name)
+		if name == "Shop" then
+			self:LoadItems()
+		elseif name == "Inventory" then
+			self:LoadInventory()
+		end
+	end)
 end
 
 function module:LoadItems<K, V>(items)
@@ -171,7 +169,7 @@ function module:LoadItems<K, V>(items)
 
 					local snackbar = hint.new()
 					snackbar:SetText("You're too broke to afford this.")
-					snackbar:SetExpiry(2)
+					snackbar:SetExpiry(1)
 					audio:PlayVariation("cancel", 1)
 				end
 			end)
@@ -444,7 +442,27 @@ function module:LoadInventory()
 				return
 			end
 
+			local max = 1000
+			max = profile.Data.cards[i]
+
+			if quantity:Get() == max then
+				audio:PlayVariation("cancel", 1)
+
+				print("attempted setting quantity over max")
+
+				fade.fade(
+					quantity_frame.Remove.ImageLabel,
+					{ duration = 0.5, transparency = { start = 0.5, target = 1 } }
+				)
+			end
+
+			quantity:Map(function(current)
+				return math.clamp(current + 1, 1, max)
+			end)
+
 			audio:PlaySFX("hover")
+
+			pop(quantity_frame.Add)
 		end)
 
 		quantity_frame.Remove.Activated:Connect(function()
@@ -452,7 +470,24 @@ function module:LoadInventory()
 				return
 			end
 
+			if quantity:Get() == 1 then
+				audio:PlayVariation("cancel", 1)
+
+				print("attempted setting quantity below 1")
+
+				fade.fade(quantity_frame.Remove.ImageLabel, {
+					duration = 0.5,
+					transparency = { start = quantity_frame.Remove.ImageLabel.Transparency, target = 0.5 },
+				})
+			end
+
+			quantity:Map(function(current)
+				return math.clamp(current - 1, 1, 1000)
+			end)
+
 			audio:PlaySFX("hover")
+
+			pop(quantity_frame.Remove)
 		end)
 
 		quantity_frame.Remove.MouseEnter:Connect(function()
@@ -487,7 +522,7 @@ function module:LoadInventory()
 			end
 
 			for j = 1, quantity:Get() do
-				Packet.BuyCard.send({ card_name = i })
+				Packet.SellCard.send({ card_name = i })
 			end
 			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 
@@ -509,5 +544,7 @@ function module:LoadInventory()
 		template.Parent = itemHolder
 	end
 end
+
+print(events.GetGamepasses:InvokeServer())
 
 return module

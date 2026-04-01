@@ -33,7 +33,7 @@ function animation_event.hit(
 				hit_signal:Destroy()
 			end)
 		end)
-	else
+	elseif time_position then
 		local conn = nil
 		conn = RunService.PreAnimation:Connect(function()
 			if not animation.IsPlaying then
@@ -54,6 +54,12 @@ function animation_event.hit(
 					conn:Disconnect()
 				end
 			end
+		end)
+	else
+		hit_signal:Fire(animation.TimePosition)
+
+		task.delay(2, function()
+			hit_signal:Destroy()
 		end)
 	end
 

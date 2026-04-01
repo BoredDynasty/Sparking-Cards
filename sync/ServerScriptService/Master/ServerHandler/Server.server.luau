@@ -131,7 +131,7 @@ local function loadProfile(player: Player)
 			profiles[player] = profile
 
 			profile.Data.last_login = DateTime.now().UnixTimestampMillis
-			profile.Data.name = player.Name
+			profile.Data.name = player.Name -- just for me to see with my datastore editor.
 
 			profile:Reconcile()
 			profile:Save()
@@ -334,13 +334,14 @@ local function executeAttack(player: Player, attack_type: typemarshaller.AttackT
 		return
 	end
 
-	return module.moveset[attack_type](player)
+	local attack_func = module.moveset[attack_type]
+	if attack_func ~= nil then
+		return attack_func(player)
+	else
+		warn(`Attack function for type '{attack_type}' not found in module '{equipped_card}'`)
+		return
+	end
 end
-
--- TODO) add the products
-
-local ServerAsset = assets.Server:Clone()
-ServerAsset.Parent = game.Workspace
 
 local function enterMatch(player: Player)
 	--print("player entered match")
@@ -446,7 +447,6 @@ local function onPlayerAdded(player: Player)
 		addHighlight(character)
 	end)
 
-	addHighlight(player.Character or player.CharacterAdded:Wait() :: any)
 	batch(player:GetDescendants())
 	local profile = loadProfile(player)
 
@@ -542,7 +542,15 @@ local function streamArea(player: Player, area: Vector3)
 		return
 	end
 
-	area = area or Vector3.one
+	local character = player.Character
+	if character and not area then
+		local primary_part = character.PrimaryPart
+		if primary_part then
+			area = primary_part.Position
+		end
+	elseif not character and not area then
+		area = Vector3.one
+	end
 
 	task.spawn(function()
 		player:RequestStreamAroundAsync(area)
@@ -719,24 +727,6 @@ local function insertShopBookmark(player: Player, card_name: string)
 	end
 end
 
-local function addQuest(player: Player, quest_data: string)
-	-- deserialize
-	local deserialized_data = messagepack.decode(quest_data) :: {
-		name: string,
-		description: string,
-		inquirer_img: number | Instance, -- img id or a model
-		progress: number,
-		date_acquired: number, -- unix timestamp millis
-		date_completed: number?,
-		completed: boolean?,
-		module: ModuleScript?,
-	}
-
-	InsertQuestData(player, deserialized_data)
-
-	print("server: added quest")
-end
-
 local function initializeAudio()
 	--print("init audio")
 
@@ -765,8 +755,71 @@ local function initializeAudio()
 	end)
 end
 
-local function addProducts()
-	-- TODO) add the product thingies
+local match_waiting_time = {}
+local player_match_waiting_time = {}
+
+local function logMatchWaitingTime(player: Player, seconds: number)
+	local max_indexes = 100
+	if #match_waiting_time > max_indexes then
+		table.remove(match_waiting_time, 1)
+	end
+
+	table.insert(match_waiting_time, seconds)
+
+	local mean = 0
+
+	-- find the mean
+	local sum = 0
+	for j, t in ipairs(match_waiting_time) do
+		sum += t
+	end
+
+	mean = sum / #match_waiting_time
+
+	--print(`Server mean matchmaking waiting time: {mean} seconds ({#match_waiting_time} samples)`)
+
+	player_match_waiting_time[player] = mean
+
+	-- log to analytics
+	log_analytics.custom(player, {
+		name = "Match Waiting Time",
+		value = mean,
+		custom_fields = {
+			sample_size = tostring(#match_waiting_time),
+			server_mean_waiting_time = tostring(mean),
+		},
+		-- no item_sku or transaction type since this isn't an economy event
+	})
+end
+
+local function getGamepasses()
+	local universeId = game.GameId
+	if universeId == 0 then
+		warn("Universe ID is 0, cannot fetch gamepasses.")
+
+		return nil
+	end
+
+	local url = "https://games.roproxy.com/v1/games/" .. universeId .. "/game-passes?limit=100&sortOrder=Asc"
+
+	local success, response = future
+		.Try(function()
+			return HttpService:GetAsync(url)
+		end)
+		:Await()
+
+	if success and response then
+		local data = HttpService:JSONDecode(response)
+		for _, pass in pairs(data.data) do
+			print("Pass Name: " .. pass.name .. " | Price: " .. pass.price)
+		end
+
+		return data.data
+	else
+		warn("no sir: " .. response)
+
+		return nil
+	end
 end
 
 -- Set the callback; this can only be done once by one server-side script
@@ -947,7 +1000,11 @@ PartyRemotes.Create.OnServerInvoke = function(player: Player, settings: { [strin
 			then settings.friends_only
 			else pty.settings.friends_only
 
+		party:SetSettingsById(pty.party_id, new_settings)
+		--[[
+		-- deprecated, use the above function instead
 		pty:SetSettings(new_settings)
+		--]]
 	end
 
 	Packet.SendNotification.sendTo({ message = "Party created." }, player)
@@ -1011,10 +1068,14 @@ end
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
 
+Events.GetGamepasses.OnServerInvoke = getGamepasses
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
+Events.SendMatchmakingTime.OnServerEvent:Connect(function(player: Player, seconds: number)
+	logMatchWaitingTime(player, seconds)
+end)
 Events.FireBeam.OnServerEvent:Connect(function(player, params)
 	print("firing beam")
 	beam.fire(params)
@@ -1027,7 +1088,6 @@ Events.FireGroundCrack.OnServerEvent:Connect(function(player, type: keyof<typeof
 end)
 initializeAudio()
 startLightingCycle()
--- quest:StartTracking() -- deprecated; no longer necessary
 -- TODO) add player saving options
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)

@@ -32,7 +32,7 @@ local function onHealthUpdate(health: number)
 	spr.stop(decrease)
 	spr.stop(main)
 
-	spr.target(decrease, 0.6, 5, {
+	spr.target(decrease, 0.8, 2, {
 		Size = UDim2.fromScale(health_percent * max_size, 0.381),
 	})
 	spr.completed(decrease, function()
@@ -48,7 +48,7 @@ local function onHealthUpdate(health: number)
 	audio:PlaySFX("bass-1")
 end
 
-health_canvas.PlayerName.Text = "@" .. player.Name
+health_canvas.PlayerName.Text = player.DisplayName
 
 humanoid.HealthChanged:Connect(onHealthUpdate)
 

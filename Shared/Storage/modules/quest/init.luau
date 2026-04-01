@@ -5,6 +5,7 @@ local ServerStorage = game:GetService("ServerStorage")
 local _Players = game:GetService("Players")
 local _RunService = game:GetService("RunService")
 
+local future = require(ReplicatedStorage.Packages.future)
 local leventine = require(ReplicatedStorage.Utility.leventine)
 local registered = require(ServerStorage.modules.quest.registered)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
@@ -79,7 +80,16 @@ function module:GetPlayerQuests(player: Player): { typemarshaller.Quest }
 	local out = {}
 
 	for i, q in ipairs(profile.quests or {}) do
-		local copy = tablekit.DeepCopy(q :: any) :: typemarshaller.Quest
+		local fut = future.Try(function()
+			return tablekit.DeepCopy(q :: any) :: typemarshaller.Quest
+		end)
+
+		local ok, copy = fut:Await()
+		if not ok then
+			warn(copy)
+		else
+			print("ok: ", ok, copy)
+		end
 
 		print("quest copy: ", tablekit.ToString(copy :: any))
 
@@ -87,7 +97,7 @@ function module:GetPlayerQuests(player: Player): { typemarshaller.Quest }
 		out[i] = copy
 	end
 
-	print("out: ", tablekit.ToString(out :: any))
+	print("out: ", out)
 
 	return out
 end

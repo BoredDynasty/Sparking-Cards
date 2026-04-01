@@ -14,6 +14,7 @@ local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local leventine = require(ReplicatedStorage.Utility.leventine)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
@@ -78,7 +79,7 @@ local function isRegisteredBadge(badge: typemarshaller.Badge)
 	return false
 end
 
-local function getBadgeDataFromName(name: string): typemarshaller.Badge?
+local function getBadgeDataFromName(name: string): typeof(badges)?
 	for i, badge_data in ipairs(badges) do
 		if badge_data.name == name then
 			return badge_data
@@ -127,7 +128,7 @@ function module:DisplayTotalAchievements()
 
 		-- gradually change the text to the total amount of achievements
 		local current_amount = math.floor((i / 50) * total_achievements)
-		template.Text = current_amount
+		template.Text = tostring(current_amount)
 
 		template.Parent = scrolling_frame
 
@@ -171,7 +172,7 @@ function module:DisplayTotalPoints()
 		local template = amount_pool:Get()
 
 		local current_points = math.floor((i / 50) * total_points)
-		template.Text = current_points
+		template.Text = tostring(current_points)
 
 		template.Parent = scrolling_frame
 
@@ -189,16 +190,18 @@ function module:DisplayTotalPoints()
 	tween:Play()
 end
 
-function module:LoadItems()
+function module:LoadItems<V>(sorted_table: { V })
 	profile = fetchProfile()
 
 	module:Unload()
 
-	local items = {}
+	local items = sorted_table or {}
 
-	future.Try(function()
-		items = profile.Data.achievements or {}
-	end)
+	if not sorted_table or next(sorted_table) == nil then
+		future.Try(function()
+			items = profile.Data.achievements or {}
+		end)
+	end
 
 	for i, item in ipairs(items) do
 		if not item.name or not item.description or not item.points then
@@ -295,33 +298,14 @@ function module:LoadItems()
 	end
 end
 
--- TODO: implement a searchbar for searching badges by name or description. this will be a bit tricky, but it should be doable.
 local function initializeSearchbar()
 	-- use a levenshtien or smth
 
 	local searchbar = shopFrame.Frame
 	local text_box = searchbar.TextBox
 
-	local badge_names = {}
-
-	local last_text = ""
-
-	text_box.Changed:Connect(function()
-		local current_text = text_box.Text
-		if current_text == last_text then
-			return
-		end
-
-		last_text = current_text
-
-		table.clear(badge_names)
-
-		for i, badge in ipairs(badges) do
-			table.insert(badge_names, badge.name)
-		end
-
-		local map = leventine.map(current_text, badge_names)
-		print(table.concat(map, ", "))
+	text_box.Focused:Connect(function()
+		ripple(text_box)
 	end)
 end
 

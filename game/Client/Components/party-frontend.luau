@@ -5,15 +5,23 @@ local SocialService = game:GetService("SocialService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local Packet = require(ReplicatedStorage.Packet)
+local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
+local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 local fade = require(StarterPlayer.StarterPlayerScripts.Interface.fade)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
+local image_mask = require(ReplicatedStorage.Modules.Imagery["image-mask"])
+local lucide = require(ReplicatedStorage.Packages.lucide)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local rbx_thumb = require(ReplicatedStorage.Modules.Serialization["rbx-thumb"])
+local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
+local throbber = require(StarterPlayer.StarterPlayerScripts.Components.throbber)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
@@ -32,9 +40,13 @@ local templates = ReplicatedStorage.Interfaces
 local events = ReplicatedStorage.Events
 local PartyRemotes = events:WaitForChild("Party")
 
+local internal_remotes = player.PlayerScripts.Remotes
+
 local party_gui = player_gui.Party
 local party_canvas = party_gui.CanvasGroup
 local party_frame = party_canvas.Frame
+
+local is_creating_party = false
 
 shadow(party_frame.Create)
 shadow(party_frame.InviteFriend)
@@ -49,6 +61,11 @@ local function inviteFriend()
 
 	if ok and can_send then
 		SocialService:PromptGameInvite(player)
+
+		local snackbar = hint.new()
+		snackbar:SetText("Invite someone to your party!")
+		snackbar:SetCanDismiss(false)
+		snackbar:SetExpiry(3)
 
 		--print("prompting game invite")
 	else
@@ -75,7 +92,15 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 		display.Parent = party_frame.Holder
 
 		local leader = Players:GetPlayerByUserId(party.leader_id) :: Player
-		assert(leader, "Couldn't fetch party leader: " .. party.leader_id)
+		if not leader then
+			local snackbar = hint.new()
+			snackbar:SetText("Couldn't fetch party leader.")
+			snackbar:SetAction(function()
+				leader = Players:GetPlayerByUserId(party.leader_id) :: Player
+			end, "Retry")
+			snackbar:SetCanClick(true)
+			snackbar:SetCanDismiss(true)
+		end
 
 		-- [party_name], [#players or max_players], [friends_only], [mode/modifiers]
 		local str = "%s<br/><font weight='Regular'><font transparency='0.5'>%s<br/>%s<br/>%s</font></font>"
@@ -86,6 +111,35 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 			else "Idle"
 
 		-- Obsidian's Party<br/><font weight="Regular"><font transparency="0.5">+4<br/>Friends only<br/>Diddy Rush, Outrageous, Armored Fist</font></font>
+		local members = {}
+		for i, member in ipairs(party.members) do
+			local plr = Players:GetPlayerByUserId(member)
+			if plr then
+				table.insert(members, plr)
+			else
+				warn("what happened?")
+			end
+		end
+
+		-- add player images to the holder
+		local member_holder = display.MemberHolder
+		member_holder.BackgroundTransparency = 1
+		for i, member in ipairs(members) do
+			local thumb = rbx_thumb.avatar_headshot(member.UserId)
+
+			local img = templates.Party.PlayerImage:Clone()
+			img.BackgroundTransparency = 1
+			-- use an image mask
+
+			local uri = thumb.Uri
+
+			local clipped = image_mask.new(uri, "Rhombus")
+			clipped.Parent = img
+			clipped.SizeConstraint = Enum.SizeConstraint.RelativeYY
+			clipped.Size = UDim2.new(1, 0, 1, 0)
+
+			img.Parent = member_holder
+		end
 
 		future.Try(function()
 			display.Title.Text = string.format(
@@ -110,15 +164,15 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 
 			shadow(display.Image)
 
-			local avatar_headshot = rbx_thumb.avatar_headshot(leader.UserId)
+			local avatar_headshot = rbx_thumb.avatar_headshot(player.UserId)
 
 			--print(avatar_headshot.Uri, avatar_headshot.Object, avatar_headshot.SourceType)
 
+			display.Image.ImageColor3 = Color3.new(255, 255, 255) -- ez fix
 			display.Image.ImageContent = avatar_headshot
 			display.Image.Image = avatar_headshot.Uri :: string
 		end)
 
-		pop(display)
 		shadow(display)
 
 		display:SetAttribute("leader", leader.UserId)
@@ -142,6 +196,10 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 					pop(display.Enter)
 
 					audio:PlaySFX("success")
+
+					local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+
+					toggle:Fire(true)
 				end
 			end
 		end)
@@ -171,7 +229,7 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 				-- we can no longer use any interface effects
 				-- because the gui has been destroyed
 
-				audio:PlaySFX("success")
+				audio:PlayVariation("cancel", 1)
 			end
 		end)
 	end
@@ -206,7 +264,7 @@ task.spawn(function()
 	end
 end)
 
-party_frame.InviteFriend.MouseButton1Click:Connect(function()
+party_frame.InviteFriend.Activated:Connect(function()
 	if debounce(party_frame.InviteFriend) then
 		inviteFriend()
 
@@ -216,9 +274,96 @@ party_frame.InviteFriend.MouseButton1Click:Connect(function()
 	end
 end)
 
-party_frame.Create.MouseButton1Click:Connect(function()
+party_frame.Create.Activated:Connect(function()
+	if is_creating_party then
+		warn("the player is still in the process of creating a party.")
+		return
+	end
+
 	if debounce(party_frame.Create) then
-		local res = PartyRemotes.Create:InvokeServer()
+		ripple(party_frame.Create)
+
+		-- use dialogues to ask the player about the kind of party they want.
+		-- e.g friends only, duos or squads etc.
+		-- TODO: for more complex options like modifiers, use some other module.
+
+		is_creating_party = true
+
+		local dialogue_ = dialogue.new()
+		local pty_settings = {}
+
+		dialogue_.Dialogs = {
+			{
+				Character = "System",
+				Text = "What type of party would you like?",
+				TypewriterOpts = {
+					cps = 50,
+				},
+			},
+			{
+				Character = "System",
+				Text = "Friends only?",
+				Actions = {
+					["Yes"] = function()
+						pty_settings.friends_only = true
+						print(true)
+					end,
+					["No"] = function()
+						pty_settings.friends_only = false
+						print(false)
+					end,
+				},
+				TypewriterOpts = {
+					cps = 50,
+				},
+			},
+			{
+				Character = "System",
+				Text = "Allow spectators?",
+				Actions = {
+					["Yes"] = function()
+						pty_settings.allow_spectators = true
+						print(true)
+					end,
+					["No"] = function()
+						pty_settings.allow_spectators = false
+						print(false)
+					end,
+				},
+				TypewriterOpts = {
+					cps = 50,
+				},
+			},
+			{
+				Character = "System",
+				Text = "Select a mode.",
+				Actions = {
+					["Solo"] = function()
+						pty_settings.mode = "Solo"
+						print("Solo")
+					end,
+					["Duo"] = function()
+						pty_settings.mode = "Duo"
+						print("Duo")
+					end,
+					["Squad"] = function()
+						pty_settings.mode = "Squad"
+						print("Squad")
+					end,
+				},
+				TypewriterOpts = {
+					cps = 50,
+				},
+			},
+		}
+		local controller = dialogue.start(dialogue_)
+		controller.Dismissed:Wait()
+
+		is_creating_party = false
+
+		print("creating party with settings: ", tablekit.ToString(pty_settings))
+
+		local res = PartyRemotes.Create:InvokeServer(pty_settings)
 
 		if res and not res.success then
 			local hint_ = hint.new()
@@ -255,6 +400,21 @@ events.UpdatePartyList.OnClientEvent:Connect(function(data: { typemarshaller.Par
 		if in_party then
 			break
 		end
+	end
+
+	local default_color = Color3.fromRGB(216, 197, 141)
+	local dark_color = default_color:Lerp(Color3.new(), 0.5)
+	print(default_color, dark_color)
+
+	spr.target(party_frame.Create, 0.8, 5, {
+		BackgroundColor3 = if in_party then dark_color else default_color,
+	})
+
+	if in_party then
+		party_frame.Create.ImageLabel.Image = "rbxassetid://10734962600" -- a "cancel slash" typa image.
+		ripple(party_frame.Create)
+	else
+		party_frame.Create.ImageLabel.Image = "rbxassetid://10734924532"
 	end
 
 	party_frame.Create.Interactable = not in_party

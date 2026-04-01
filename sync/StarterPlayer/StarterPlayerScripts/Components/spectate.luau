@@ -9,7 +9,6 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
-local transition = require(StarterPlayer.StarterPlayerScripts.Interface.transition)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- spectate.luau
@@ -95,10 +94,6 @@ function module:Back()
 end
 
 function module:On()
-	transition:Circle({
-		duration = 2,
-	})
-
 	updatePlayerList()
 	updateSpectator()
 

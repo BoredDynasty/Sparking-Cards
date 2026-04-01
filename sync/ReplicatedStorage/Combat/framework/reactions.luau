@@ -26,7 +26,7 @@ local reaction_chart = {
 		},
 		reaction = "Melt",
 		description = [[
-         Freezes the target for 1.5 seconds or until hit; shatter damage when broken.
+         Increases damage taken by 50% for 15 seconds; can be refreshed.
       ]],
 		duration = 1.5,
 		module = nil,
@@ -55,14 +55,12 @@ local reaction_chart = {
 		duration = 4.6,
 		module = nil,
 	},
-} :: reaction_chart
+}
 
-export type reaction_chart = {
-	{
-		elements: { string }, -- usually 2
-		reaction: string,
-		description: string,
-		duration: number?,
-		module: ModuleScript?,
-	}
+export type Reaction = {
+	elements: { string }, -- usually 2
+	reaction: string,
+	description: string,
+	duration: number?,
+	module: ModuleScript?,
 }

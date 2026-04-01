@@ -1,8 +1,5 @@
 --!strict
-
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
+local Players = game:GetService("Players")
 
 -- nearest
 -- a function for finding the nearest player within a radius
@@ -10,7 +7,7 @@ local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
 return function(root: BasePart, max_distance: number)
 	local nearest_players: { Player }, distances: { number } = {}, {}
 
-	for i, player in ipairs(playerMarshaller.all()) do
+	for i, player in ipairs(Players:GetPlayers()) do
 		local character = player.Character
 		if not character then
 			continue

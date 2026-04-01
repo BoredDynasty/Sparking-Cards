@@ -63,6 +63,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 
 local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
 local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
+local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
@@ -75,6 +76,7 @@ local tooltip = require("../Components/tooltip")
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 
 local spr = require(ReplicatedStorage.Modules.spr)
 
@@ -82,6 +84,7 @@ local swipe = require("../Interface/swipe")
 
 local audio = require(ReplicatedStorage.Modules.audio)
 
+local crosshair_service = require(ReplicatedStorage.Services["crosshair-service"])
 local proximity_prompt = require(ReplicatedStorage.Modules["proximity-prompt"])
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
@@ -92,6 +95,7 @@ local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
+local expressive_shapes = require(StarterPlayer.StarterPlayerScripts.Interface["expressive-shapes"])
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
@@ -99,10 +103,6 @@ local keyboard = input.Keyboard.new()
 local mouse = input.Mouse.new()
 
 print("Client Requirements")
-
--- // Events -- //
-local events = ReplicatedStorage.Events
-local get_profile = events.GetProfile
 
 -- // Variables -- //
 
@@ -112,15 +112,24 @@ local profile = nil
 local character = player.Character or player.CharacterAdded:Wait() :: typemarshaller.Character
 local humanoid = character.Humanoid
 
+-- // Events -- //
+local events = ReplicatedStorage.Events
+local internal_remotes = player.PlayerScripts.Remotes
+local get_profile = events.GetProfile
+
 ---------------------------------- Client --------------------------------
 
 local PlayerGui = player.PlayerGui
 
-if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
-	logger.new()
-end
-
 print("client starting")
+
+local function initializeRemotes()
+	do
+		local toggle_matchmaking_re = Instance.new("BindableEvent")
+		toggle_matchmaking_re.Name = "ToggleMatchmakingUI"
+		toggle_matchmaking_re.Parent = player.PlayerScripts.Remotes
+	end
+end
 
 local function initializeCommands()
 	--print("init commands")
@@ -135,6 +144,9 @@ local function initializeCommands()
 		Cmdr:Show()
 	end
 
+	local log = logger.new()
+	log:disable()
+
 	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
 		task.spawn(function()
 			frame_rate:WaitUntilFramesAreStable(0.03)
@@ -144,7 +156,21 @@ local function initializeCommands()
 			snack_bar:SetAction(showUI, "Cmdr")
 			snack_bar:SetCanDismiss(true)
 			snack_bar:SetCanClick(true)
+
+			log:enable()
 		end)
+
+		local is_log_enabled = true
+
+		--[[
+		hud.new("Log", function()
+			if is_log_enabled then
+				log:disable()
+			else
+				log:enable()
+			end
+		end, lucide.GetAsset("clipboard-list"))
+		--]]
 	end
 end
 
@@ -187,7 +213,7 @@ local function initializeMarket()
 
 	local spendings_icon = spendings.SpendingsIcon
 
-	local navigation = market:GetNavigation()
+	market:InitializeTabs()
 
 	local function callback()
 		displayorder:Toggle(shopCanvas)
@@ -195,30 +221,13 @@ local function initializeMarket()
 		if displayorder:GetState(shopCanvas) then
 			market:LoadItems()
 
-			navigation:Show()
-
 			market:DisplaySpendings()
 
 			wiggle(spendings_icon, function()
 				--print("completed wiggle")
 			end)
-		else
-			navigation:Hide()
-			market:Unload()
 		end
 	end
-
-	displayorder.Changed:Connect(function(canvas_data, visible)
-		if canvas_data.canvas == shopCanvas then
-			if visible then
-				return
-			end
-
-			navigation:Hide()
-		end
-	end)
-
-	market:StartNavigation()
 
 	hud.new("Market", callback, lucide.GetAsset("shopping-cart"))
 end
@@ -256,7 +265,9 @@ local function initializeMatchmaking()
 	local matchmakingFrame = matchmakingCanvas.Frame
 
 	local statusText = matchmakingFrame.Time
-	local pulseImage = matchmakingFrame.Pulse
+
+	local shape = matchmakingFrame.Shape
+	local shape_image = shape.ImageLabel
 
 	shadow(matchmakingFrame)
 
@@ -266,30 +277,43 @@ local function initializeMatchmaking()
 	local interval_thread
 	local performed_hint = 0
 
-	local function showMatchmakingFrame()
+	local function showMatchmakingFrame(is_party)
 		if interval_thread then
 			task.cancel(interval_thread)
 		end
 
 		-- send request to server to join matchmaking
-		local join_res = events.Matchmaking.JoinQueue:InvokeServer()
-		if join_res and not join_res.success then
-			local hint_ = hint.new()
-			hint_:SetText(join_res.message or "Failed to join matchmaking.")
-			hint_:SetCanClick(false)
+		if not is_party then
+			local join_res = events.Matchmaking.JoinQueue:InvokeServer()
+			if join_res and not join_res.success then
+				local hint_ = hint.new()
+				hint_:SetText(join_res.message or "Failed to join matchmaking.")
+				hint_:SetCanClick(false)
 
-			return
+				audio:PlaySFX("cancel-1")
+
+				return
+			elseif join_res and join_res.success then
+				if string.find(string.lower(join_res.message), "party") then
+					-- if it says something about a party then...
+					is_party = true
+				end
+			end
 		end
 
 		-- request a snapshot of the queue for the frontend
 		local info = events.Matchmaking.RequestQueueInfo:InvokeServer()
 		print(tablekit.ToString(info))
+		if string.find(tablekit.ToString(info):lower(), "party_id") then
+			-- if it says something about a party then...
+			is_party = true
+		end
 
-		spr.target(matchmakingFrame, 0.6, 8, {
-			Position = UDim2.fromScale(0.5, 0.1),
+		spr.target(matchmakingFrame, 0.6, 4, {
+			Position = UDim2.fromScale(0.5, 0.115),
 		})
 
-		if performed_hint <= 2 then
+		if performed_hint <= 3 then
 			local new_hint = hint.new()
 			new_hint:SetText("Swipe up on the bar to cancel matchmaking. [" .. performed_hint .. "/3]")
 			new_hint:SetExpiry(3)
@@ -299,43 +323,62 @@ local function initializeMatchmaking()
 
 		state:Set(true)
 
+		expressive_shapes.register(shape, shape_image)
+
+		if is_party then
+			shape_image.Image = "rbxassetid://115169602847111"
+			shape_image.Frame.Visible = true
+		else
+			shape_image.Image = "rbxassetid://118451897423804"
+			shape_image.Frame.Visible = false
+		end
+
 		clock:Start()
 		-- every 0.33_ seconds
 		interval_thread = clock:interval(1 / 3, function()
 			local total_seconds = clock:GetTime()
+
+			-- maybe we should buffer serialize this later...
+			events.SendMatchmakingTime:FireServer(total_seconds)
 
 			local minutes = math.floor(total_seconds / 60)
 			local hours = math.floor(minutes / 60) -- its very unlikely we will reach this
 			minutes = minutes % 60
 
 			local seconds = total_seconds % 60
+
+			-- add in the loading dots "." ".." "..." effect thingy
+			local dots = string.rep(".", math.floor(total_seconds * 3) % 4)
 			statusText.Text = string.format(
-				'Searching...<br/><font transparency="0.5"><font size="14">%02d:%02d:%02d</font></font>',
+				'Searching%s<br/><font transparency="0.5"><font size="14">%02d:%02d:%02d</font></font>',
+				dots,
 				hours,
 				minutes,
 				seconds
 			)
-
-			pop(pulseImage, 1.8)
 		end)
 
 		audio:PlaySFX("success")
 	end
 
-	local function hideMatchmakingFrame()
-		-- notify server to cancel matchmaking
-		local leave_res = events.Matchmaking.LeaveQueue:InvokeServer()
-		if leave_res and not leave_res.success then
-			local hint_ = hint.new()
-			hint_:SetText("Failed to leave matchmaking.")
-			hint_:SetCanClick(false)
+	local function hideMatchmakingFrame(is_party)
+		if not is_party then
+			-- notify server to cancel matchmaking
+			local leave_res = events.Matchmaking.LeaveQueue:InvokeServer()
+			if leave_res and not leave_res.success then
+				local hint_ = hint.new()
+				hint_:SetText("Failed to leave matchmaking.")
+				hint_:SetCanClick(false)
 
-			return
+				audio:PlaySFX("cancel-1")
+
+				return
+			end
 		end
 
 		task.wait(1 / 8)
 
-		spr.target(matchmakingFrame, 1, 2.5, {
+		spr.target(matchmakingFrame, 0.6, 2.5, {
 			Position = UDim2.fromScale(0.5, -0.5),
 		})
 
@@ -344,12 +387,24 @@ local function initializeMatchmaking()
 		clock:Reset()
 		clock:Stop()
 
+		expressive_shapes.unregister(shape)
+
 		if interval_thread then
 			task.cancel(interval_thread)
 		end
 
 		audio:PlaySFX("leave")
 	end
+
+	local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+
+	toggle.Event:Connect(function(boolean: boolean)
+		if boolean then
+			showMatchmakingFrame(boolean)
+		else
+			hideMatchmakingFrame(true)
+		end
+	end)
 
 	state:Watch(function(newValue)
 		matchmakingCanvas.Visible = newValue
@@ -366,7 +421,17 @@ local function initializeMatchmaking()
 		if direction == "up" then
 			future.Try(hideMatchmakingFrame)
 		else
-			return
+			-- nudge the frame towards the delta direction as a fun little effect
+			spr.target(matchmakingFrame, 0.3, 3, {
+				Position = matchmakingFrame.Position + UDim2.fromOffset(delta.X * 0.1, delta.Y * 0.1),
+			})
+
+			-- then spring back to the center
+			task.wait(1 / 8)
+			spr.stop(matchmakingFrame, "Position")
+			spr.target(matchmakingFrame, 0.5, 5, {
+				Position = UDim2.fromScale(0.5, 0.115),
+			})
 		end
 	end)
 
@@ -393,12 +458,12 @@ local function initializeBadges()
 		end
 	end
 
-	hud.new("Badges", callback, lucide.GetAsset("trophy", 48), true)
+	hud.new("Badges", callback, lucide.GetAsset("award", 48), true)
 end
 local function initializeNotifiers()
 	--print("init notifiers")
 
-	Packet.SendNotification.listen(function(data)
+	local function handleNotification(data)
 		if RunService:IsStudio() then
 			print("Notification received: ", tablekit.ToString(data))
 		else
@@ -406,8 +471,36 @@ local function initializeNotifiers()
 			hint_:SetText(data.message)
 			hint_:SetExpiry(data.duration or 4)
 			hint_:SetCanClick(false)
+
+			local negative_outcomes = {
+				"failed",
+				"couldnt",
+				"couldn't",
+				"could not",
+				"attempted",
+				"tried",
+				"no",
+				"not",
+				"n't",
+				"unsuccessful",
+				"error",
+				"mistake",
+				"wrong",
+				"declined",
+				"refused",
+			}
+			-- if we find these words in the data message, play the 'cancel' sound
+
+			for i, word in ipairs(negative_outcomes) do
+				if string.find(string.lower(data.message), word) then
+					audio:PlaySFX("cancel-1")
+					return
+				end
+			end
 		end
-	end)
+	end
+
+	Packet.SendNotification.listen(handleNotification)
 end
 local function initializeMusic()
 	--print("init music")
@@ -671,6 +764,7 @@ local function initializeSpectating()
 	end)
 end
 
+initializeRemotes()
 initializeCommands()
 initializeMarket()
 initializeOptions()
@@ -696,11 +790,6 @@ movement_controller:Add(script.Parent.Parent.Movement["stamina-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["walk-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["joint-controller"])
 movement_controller:Start()
-
--- local rain_controller = rain.new()
--- rain_controller:Start(rain_controller)
-
--- control
 
 local function getAttackTypeFromKey(key: Enum.KeyCode): string?
 	profile = fetchProfile()
@@ -731,7 +820,14 @@ do
 	end
 
 	for i, value in pairs(profile.Data.keybinds) do
-		keybindlink.register(value, i)
+		-- if needed, format the name
+		-- e.g "enable_spectating" to "Enable Spectating"
+		-- switch the cases and replace underscores with spaces
+		local formatted_name = i:gsub("_", " "):gsub("(%a)(%a*)", function(first, rest)
+			return first:upper() .. rest:lower()
+		end)
+
+		keybindlink.register(value, formatted_name)
 	end
 end
 
@@ -781,7 +877,7 @@ mouse.LeftDown:Connect(function(processed: boolean)
 		return
 	end
 
-	events.FireGroundCrack:FireServer("crack", root.CFrame)
+	--events.FireGroundCrack:FireServer("crack", root.CFrame)
 
 	--hud:Hide()
 end)
@@ -843,27 +939,22 @@ do
 
 		local snack_bar = hint.new()
 		snack_bar:SetText(string.format(str, min_quality_level))
-		snack_bar:SetExpiry(7)
+		snack_bar:SetExpiry(4)
 		snack_bar:SetCanClick(true)
 		snack_bar:SetAction(function()
 			future.Try(function()
-				user_game_settings.SavedQualityLevel = min_quality_enum
+				--user_game_settings.SavedQualityLevel = min_quality_enum
 			end)
 		end, "Set")
 	end)
 end
 
+--[[
 do
-	local prompt = proximity_prompt.new()
-	prompt:SetName("aa")
-	prompt:SetAction("please speed")
-	prompt:SetAdornee(workspace.TestPart)
-	prompt:SetHoldDuration(3)
-	prompt:SetKeybind(Enum.KeyCode.E)
-	prompt:SetMaxDistance(20)
-
-	prompt:Show()
+	local crosshair = crosshair_service.new(4)
+	crosshair:Enable()
 end
+--]]
 
 -- over_shoulder:Enable()
 

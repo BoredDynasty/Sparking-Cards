@@ -16,6 +16,7 @@ local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local settings_data = require(ReplicatedStorage.Structures["settings-data"])
 local shadow = require("../Interface/shadow")
+local switch = require(StarterPlayer.StarterPlayerScripts.Components.switch)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
@@ -51,7 +52,7 @@ local optionsGui = player_gui.Options
 local optionsCanvas = optionsGui.CanvasGroup
 local optionsFrame = optionsCanvas.Frame
 
-local templates = ReplicatedStorage.Interfaces.Settings
+local templates = ReplicatedStorage.Interfaces
 
 local events = ReplicatedStorage.Events
 local get_profile = events.GetProfile
@@ -144,31 +145,6 @@ local function booleanToString(boolean: boolean): "on" | "off"
 	end
 end
 
-local function updateIcon(btn_icon: ImageLabel, boolean_state: boolean, icon_data: Icons)
-	assert(typeof(boolean_state) == "boolean", "State is not a boolean: " .. typeof(boolean_state))
-
-	local current_icon = select(
-		2,
-		future
-			.Try(function()
-				local str = booleanToString(boolean_state)
-
-				return icon_data[str]
-			end)
-			:Unwrap()
-	)
-
-	assert(current_icon, "Could not fetch icon from data table: " .. tablekit.ToString(icon_data :: any))
-
-	task.spawn(function()
-		btn_icon.ImageContent = select(2, future.Try(Content.fromAssetId, current_icon.Id):Await())
-		btn_icon.ImageRectOffset = current_icon.ImageRectOffset
-		btn_icon.ImageRectSize = current_icon.ImageRectSize
-	end)
-
-	return true
-end
-
 function module:Get(name: string): Option?
 	for i, option in ipairs(module.tracked) do
 		if string.lower(name) == string.lower(option.name) then
@@ -207,51 +183,44 @@ function module:LoadItems()
 		local icon_data = option.icons
 		local value = option.value
 
-		assert(icon_data, "Where is the icon data?: " .. tablekit.ToString(option :: any))
-
-		if type(value:Get()) == "boolean" then
-			future.new(updateIcon, btn_icon, value:Get(), icon_data)
-		end
-
 		local fancy = [[
 		<b>%s</b><br/>%s
 		]]
 
 		text_display.Text = string.format(fancy :: any, option.name, option.details)
 
-		toggle_btn.Visible = true
+		toggle_btn.Visible = false
 
 		--tooltip.register(toggle_btn, booleanToString(value:Get()))
-		value.Changed:Connect(function()
-			--tooltip.unregister(toggle_btn)
-			task.wait()
-			--tooltip.register(toggle_btn, booleanToString(value:Get()))
+		value.Changed:Connect(function(new)
+			tooltip.new(toggle_btn, booleanToString(new))
 		end)
 
-		toggle_btn.Activated:Connect(function()
-			if module.limit(option.name) then
-				return
-			end
+		local switch_ = switch.new()
+		switch_:BindToGui(option_template)
+		switch_.switch.Position = UDim2.fromScale(0.975, 0.5)
+		switch_:SetScale(2)
+		if type(value:Get()) == "boolean" then
+			switch_:Toggle()
+		end
 
-			pop(toggle_btn)
+		switch_.Changed:Connect(function(state)
+			value:Set(state)
 
-			value:Map(function(current)
-				return not current
-			end)
-
-			local boolean_state = value:Get()
-			local str_state = booleanToString(boolean_state)
+			local str_state = booleanToString(state)
 
 			local next_callback = callbacks[str_state]
 			if next_callback then
 				task.spawn(future.new, next_callback)
 
 				if type(value:Get()) == "boolean" then
-					future.new(updateIcon, btn_icon, value:Get(), icon_data)
-
 					save_setting:InvokeServer(option.name, value:Get())
 				end
 			end
+		end)
+
+		option_template.Destroying:Connect(function(...)
+			switch_:Destroy()
 		end)
 
 		option_template.Parent = holder

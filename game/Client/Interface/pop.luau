@@ -24,9 +24,9 @@ return function(object: Instance | { Instance }, ratio: number?)
 		uiScale.Scale = 1
 
 		-- Animate to ratio (squeeze), then back to 1 (pop)
-		spr.target(uiScale, 1, 20, { Scale = ratio })
+		spr.target(uiScale, 0.52, 5.2, { Scale = ratio })
 		spr.completed(uiScale, function()
-			spr.target(uiScale, 1, 12, { Scale = 1 })
+			spr.target(uiScale, 0.8, 5.2, { Scale = 1 })
 		end)
 	end
 end

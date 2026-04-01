@@ -3,8 +3,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local temporary_layer_collector = require(StarterPlayer.StarterPlayerScripts.Utilities["temporary-layer-collector"])
 local spr = require(ReplicatedStorage.Modules.spr)
-local temporary_layer_collector = require(script.Parent.Parent.Utilities["temporary-layer-collector"])
 
 -- indicate-damage.luau
 -- not to be confused with damage-indicator.
@@ -59,9 +59,9 @@ local function calculateAngle(centre: CFrame, point: Vector3)
 end
 
 --[[
-   @param origin `Vector3` - The origin of the damage
+   @param origin `Vector3` - The origin
 ]]
-function module:OnDamaged(origin: Vector3)
+function module:Indicate(origin: Vector3)
 	local centre_coordinate = getCentreCoordinate()
 	local angle = calculateAngle(centre_coordinate, origin)
 

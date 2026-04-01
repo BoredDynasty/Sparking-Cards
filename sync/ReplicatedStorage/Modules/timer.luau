@@ -21,7 +21,7 @@ export type Timer = {
 	GetTime: (self: Timer) -> number,
 	FormatTime: (self: Timer) -> string,
 	FormatCustom: (self: Timer, format: string) -> string,
-	interval: <T...>(self: Timer, duration: number, f: (T...) -> (), ...any) -> thread,
+	interval: <T...>(self: Timer, duration: number, f: (T...) -> (), ...any) -> SignalPlus.Signal<>,
 
 	cancel_interval: SignalPlus.Signal<>,
 

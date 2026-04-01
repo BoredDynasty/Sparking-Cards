@@ -1,9 +1,11 @@
 --!strict
 local HttpService = game:GetService("HttpService")
+-- TODO: next step, be able to do global matchmaking.
 local MemoryStoreService = game:GetService("MemoryStoreService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
+local Packet = require(ReplicatedStorage.Packet)
 local rbx_deeplink = require(ReplicatedStorage.Utility["rbx-deeplink"])
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
@@ -156,6 +158,27 @@ function module:AddMember(self: self, player_id: number): boolean
 		end
 	end
 
+	local leader = Players:GetPlayerByUserId(self.leader_id)
+	if not leader then
+		warn(self.leader_id, "Leader does not exist in-game")
+
+		for _, member in ipairs(self.members) do
+			local player = Players:GetPlayerByUserId(player_id)
+
+			if player then
+				Packet.SendNotification.sendTo({
+					duration = 3,
+					message = "Your party leader has left the game.",
+				}, player)
+			end
+		end
+
+		-- might as well try to delete the party if the leader left, since the party is pretty much useless without the leader
+		module:RemovePartyById(self.party_id)
+
+		return false -- leader not found
+	end
+
 	if #self.members >= 4 then
 		return false -- party full
 	end
@@ -166,7 +189,6 @@ function module:AddMember(self: self, player_id: number): boolean
 
 	if self.settings.friends_only then
 		-- perform a friends check here
-		local leader = Players:GetPlayerByUserId(self.leader_id)
 
 		-- Example friend check logic (this is a placeholder)
 		if player_id and leader then
@@ -178,6 +200,20 @@ function module:AddMember(self: self, player_id: number): boolean
 		else
 			return false -- player id or leader not found
 		end
+	end
+
+	local player = Players:GetPlayerByUserId(player_id)
+	if not player then
+		warn(player_id, "Does not exist in-game")
+
+		return false
+	end
+
+	if self.leader_id ~= player_id then
+		Packet.SendNotification.sendTo({
+			duration = 1.8,
+			message = player.DisplayName .. " has joined your party.",
+		}, leader)
 	end
 
 	table.insert(self.members, player_id)
@@ -216,6 +252,18 @@ function module:SetSettings(self: self, settings: Settings)
 	end
 
 	events.UpdatePartyList:FireAllClients(module:GetParties())
+end
+
+function module:SetSettingsById(party_id: string, settings: Settings): boolean
+	for i, party in ipairs(queued_parties) do
+		if party.party_id == party_id then
+			module:SetSettings(party, settings)
+
+			return true
+		end
+	end
+
+	return false
 end
 
 function module:GenerateSpectateCode(self: self): string

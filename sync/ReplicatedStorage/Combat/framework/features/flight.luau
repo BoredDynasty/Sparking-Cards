@@ -49,12 +49,18 @@ local function getCameraRelativeDirection()
 end
 
 function module.setup(character: typemarshaller.Character)
+	local primary_part = character.PrimaryPart or character:WaitForChild("HumanoidRootPart", 3)
+	if not primary_part then
+		print("no root")
+		return
+	end
+
 	local velocity = Instance.new("BodyVelocity")
 	velocity.Name = "FlightVelocity"
 	velocity.MaxForce = Vector3.one * 1e5
 	velocity.Velocity = Vector3.zero
 	velocity.P = 1e4
-	velocity.Parent = character.PrimaryPart
+	velocity.Parent = primary_part
 
 	local gyro = Instance.new("BodyGyro")
 	gyro.Name = "FlightGyro"
@@ -62,7 +68,7 @@ function module.setup(character: typemarshaller.Character)
 	gyro.CFrame = character.PrimaryPart.CFrame
 	gyro.P = 3000
 	gyro.D = 500
-	gyro.Parent = character.PrimaryPart
+	gyro.Parent = primary_part
 
 	character:SetAttribute("Flying", false)
 end

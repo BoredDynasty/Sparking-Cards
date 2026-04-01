@@ -49,7 +49,6 @@ local FAILED_RESULT: SafeTeleportResult = table.freeze({
 	private_server_id = "0",
 	access_code = "",
 })
-local TELEPORT_ASYNC = TeleportService.TeleportAsync
 local ATTEMPT_LIMIT = 5
 local FLOOD_DELAY = 15
 local RETRY_DELAY = 1
@@ -59,10 +58,17 @@ local function TELEPORT(
 	players: { Player },
 	opts: TeleportOptions?
 ): (boolean, SafeTeleportResult)
-	local success, result =
-		retryer.delay(RETRY_DELAY, ATTEMPT_LIMIT, TELEPORT_ASYNC, TeleportService, placeid, players, opts)
+	local success, result = retryer.delay(
+		RETRY_DELAY,
+		ATTEMPT_LIMIT,
+		TeleportService.TeleportAsync,
+		TeleportService,
+		placeid,
+		players,
+		opts
+	)
 
-	if success then
+	if success and result then
 		return success,
 			table.freeze({
 				access_code = result.ReservedServerAccessCode,
