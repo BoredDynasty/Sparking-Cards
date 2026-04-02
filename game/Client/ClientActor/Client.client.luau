@@ -18,6 +18,7 @@ task.wait(5) -- wait for the player to load
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
+local dialog = require(StarterPlayer.StarterPlayerScripts.Components.dialog)
 local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 
 local Packet = require(ReplicatedStorage.Packet)
@@ -219,8 +220,6 @@ local function initializeMarket()
 		displayorder:Toggle(shopCanvas)
 
 		if displayorder:GetState(shopCanvas) then
-			market:LoadItems()
-
 			market:DisplaySpendings()
 
 			wiggle(spendings_icon, function()

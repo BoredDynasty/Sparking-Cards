@@ -317,7 +317,7 @@ end
 function module:AddPlayerToPartyById(party_id: string, player_id: number)
 	for i, party in ipairs(queued_parties) do
 		if party.party_id == party_id then
-			for _, member in ipairs(self.members) do
+			for _, member in ipairs(party.members) do
 				if member == player_id then
 					return false -- already in party
 				end

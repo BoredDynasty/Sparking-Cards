@@ -59,6 +59,25 @@ export type GlidingConfig = {
 	glider_model: Model?,
 }
 
+-- settings
+
+export type SettingType = "boolean" | "number"
+
+export type SettingValue = boolean | number
+
+export type SettingId = "background_music" | "gui_sound" | "background_music_volume" | "fov"
+
+export type SettingDefinition = {
+	identifier: SettingId,
+	name: string,
+	details: string,
+	value_type: SettingType,
+	default: SettingValue,
+	min: number?,
+	max: number?,
+	step: number?,
+}
+
 -- player related
 
 export type Character = Model & {
@@ -112,7 +131,7 @@ export type ProfileData = {
 	equipped_card: string,
 	victories: number,
 	options: {
-		[string]: any,
+		[string]: SettingValue,
 	},
 	emotes: {
 		{

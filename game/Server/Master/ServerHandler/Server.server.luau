@@ -41,10 +41,9 @@ local quest = require(ServerStorage.modules.quest)
 local random = require(ReplicatedStorage.Utility.random)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local settings_schema = require(ReplicatedStorage.Structures["settings-schema"])
 local skill_chart = require(ReplicatedStorage.Structures["skill-chart"])
 local spr = require(ReplicatedStorage.Modules.spr)
-local star = require(ReplicatedStorage.Environment.star)
-local starsStructure = require(ReplicatedStorage.Structures.starsStructure)
 local sword = require(ReplicatedStorage.Combat["combat-styles"].sword)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local train = require(ServerStorage.modules.train)
@@ -105,6 +104,7 @@ end
 local profiles = {}
 local profile_key = "playerdata"
 local player_related = profilestore.New(profile_key, profilestructure)
+local pending_setting_saves = {} :: { [Player]: thread }
 
 local function loadProfile(player: Player)
 	local profile = retryer.infdelay(10, function(...)
@@ -173,6 +173,8 @@ local function SaveProfileData(player: Player)
 	local profile = profiles[player] -- we need the full table
 	if not profile then
 		warn("Cannot save profile; couldn't find one.")
+
+		return
 	end
 
 	profile:Reconcile()
@@ -468,6 +470,13 @@ end
 
 local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
+
+	local pending_setting_save = pending_setting_saves[player]
+	if pending_setting_save then
+		task.cancel(pending_setting_save)
+		pending_setting_saves[player] = nil
+	end
+
 	local profile = profiles[player]
 
 	if profile ~= nil then
@@ -731,6 +740,95 @@ local function insertShopBookmark(player: Player, card_name: string)
 	else
 		table.insert(profile.bookmarked_shop_items, card_name)
 	end
+end
+
+local function sanitizeSettingValue(
+	definition: typemarshaller.SettingDefinition,
+	value: typemarshaller.SettingValue
+): typemarshaller.SettingValue?
+	if definition.value_type == "boolean" then
+		if type(value) ~= "boolean" then
+			return nil
+		end
+
+		return value
+	end
+
+	if type(value) ~= "number" then
+		return nil
+	end
+
+	if value ~= value then
+		return nil
+	end
+
+	local min_value = definition.min
+	local max_value = definition.max
+
+	if min_value ~= nil and max_value ~= nil and max_value < min_value then
+		min_value, max_value = max_value, min_value
+	end
+
+	if min_value ~= nil then
+		value = math.max(value, min_value)
+	end
+
+	if max_value ~= nil then
+		value = math.min(value, max_value)
+	end
+
+	local step = definition.step
+	if step ~= nil and step > 0 then
+		value = math.round(value / step) * step
+	end
+
+	if min_value ~= nil then
+		value = math.max(value, min_value)
+	end
+
+	if max_value ~= nil then
+		value = math.min(value, max_value)
+	end
+
+	return value
+end
+
+local function scheduleSettingSave(player: Player)
+	local existing = pending_setting_saves[player]
+	if existing then
+		task.cancel(existing)
+	end
+
+	pending_setting_saves[player] = task.delay(2, function()
+		pending_setting_saves[player] = nil
+		SaveProfileData(player)
+	end)
+end
+
+local function saveSetting(player: Player, identifier: string, value: typemarshaller.SettingValue): boolean
+	if type(identifier) ~= "string" or identifier == "" then
+		return false
+	end
+
+	local profile = FetchProfileData(player)
+	if not profile then
+		return false
+	end
+
+	local definition = settings_schema.map[identifier] :: typemarshaller.SettingDefinition?
+	if definition == nil then
+		return false
+	end
+
+	local sanitized = sanitizeSettingValue(definition, value)
+	if sanitized == nil then
+		return false
+	end
+
+	profile.options[identifier] = sanitized
+	scheduleSettingSave(player)
+
+	return true
 end
 
 local function initializeAudio()
@@ -1085,6 +1183,12 @@ ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
 
 Events.GetGamepasses.OnServerInvoke = getGamepasses
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
+local save_setting_remote = Events:FindFirstChild("SaveSetting")
+if save_setting_remote and save_setting_remote:IsA("RemoteFunction") then
+	save_setting_remote.OnServerInvoke = saveSetting
+else
+	warn("Events.SaveSetting remote is missing or invalid; settings will not persist.")
+end
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
@@ -1103,7 +1207,6 @@ Events.FireGroundCrack.OnServerEvent:Connect(function(player, type: keyof<typeof
 end)
 initializeAudio()
 startLightingCycle()
--- TODO) add player saving options
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
 windshake:Init({

@@ -133,6 +133,7 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 
 			local uri = thumb.Uri
 
+			-- TODO: expand this to support more shapes and stuff.
 			local clipped = image_mask.new(uri, "Rhombus")
 			clipped.Parent = img
 			clipped.SizeConstraint = Enum.SizeConstraint.RelativeYY
@@ -283,6 +284,10 @@ end)
 party_frame.Create.Activated:Connect(function()
 	if is_creating_party then
 		warn("the player is still in the process of creating a party.")
+		local hint_ = hint.new()
+		hint_:SetText("Still creating your party...")
+		hint_:SetCanClick(false)
+		hint_:SetExpiry(2)
 		return
 	end
 

@@ -12,6 +12,7 @@ local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 local fade = require(StarterPlayer.StarterPlayerScripts.Interface.fade)
 local future = require(ReplicatedStorage.Packages.future)
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
+local image_mask = require(ReplicatedStorage.Modules.Imagery["image-mask"])
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
@@ -120,6 +121,27 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 			end
 		end
 
+		-- add player images to the holder
+		local member_holder = display.MemberHolder
+		member_holder.BackgroundTransparency = 1
+		for i, member in ipairs(members) do
+			local thumb = rbx_thumb.avatar_headshot(member.UserId)
+
+			local img = templates.Party.PlayerImage:Clone()
+			img.BackgroundTransparency = 1
+			-- use an image mask
+
+			local uri = thumb.Uri
+
+			-- TODO: expand this to support more shapes and stuff.
+			local clipped = image_mask.new(uri, "Rhombus")
+			clipped.Parent = img
+			clipped.SizeConstraint = Enum.SizeConstraint.RelativeYY
+			clipped.Size = UDim2.new(1, 0, 1, 0)
+
+			img.Parent = member_holder
+		end
+
 		future.Try(function()
 			display.Title.Text = string.format(
 				str :: any,
@@ -194,6 +216,9 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 						local hint_ = hint.new()
 						hint_:SetText("Failed to delete your party.")
 						hint_:SetCanClick(false)
+					else
+						local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+						toggle:Fire(false)
 					end
 				else
 					local ok = PartyRemotes.Leave:InvokeServer({ party_id = party.party_id })
@@ -202,6 +227,9 @@ local function onPartiesChanged(data: { typemarshaller.Party })
 						local hint_ = hint.new()
 						hint_:SetText("Failed to leave party.")
 						hint_:SetCanClick(false)
+					else
+						local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+						toggle:Fire(false)
 					end
 				end
 
@@ -256,6 +284,10 @@ end)
 party_frame.Create.Activated:Connect(function()
 	if is_creating_party then
 		warn("the player is still in the process of creating a party.")
+		local hint_ = hint.new()
+		hint_:SetText("Still creating your party...")
+		hint_:SetCanClick(false)
+		hint_:SetExpiry(2)
 		return
 	end
 
@@ -358,6 +390,9 @@ party_frame.Create.Activated:Connect(function()
 			pop(party_frame.Create)
 
 			audio:PlaySFX("click")
+
+			local toggle = internal_remotes:WaitForChild("ToggleMatchmakingUI")
+			toggle:Fire(false)
 		end
 	end
 end)

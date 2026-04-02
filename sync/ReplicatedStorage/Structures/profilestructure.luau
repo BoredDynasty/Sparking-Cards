@@ -26,6 +26,7 @@ return {
 		background_music = true,
 		gui_sound = true,
 		background_music_volume = 1,
+		fov = 70,
 	},
 	equipped_emotes = {
 		17782874968,

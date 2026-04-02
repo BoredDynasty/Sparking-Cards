@@ -1,11 +1,13 @@
 --!strict
 
+local LocalizationService = game:GetService("LocalizationService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
+local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 
 local future = require(ReplicatedStorage.Packages.future)
 
@@ -31,8 +33,8 @@ local disallowed_whitespace = { "\n", "\r", "\t", "\v", "\f" }
 
 -- Queue manager for hints - only one active at a time
 local snackbar_queue = {
-	active = nil :: Hint?,
-	incoming = {} :: { Hint },
+	active = nil :: Snackbar?,
+	incoming = {} :: { Snackbar },
 }
 
 -- Debounce flag: prevents new hints from processing until active hint finishes dismissing
@@ -72,6 +74,7 @@ local function show_hint(snackbar_obj: Snackbar)
 		scale.Parent = snackbar_obj.hint
 	end
 
+	assert(scale, "Scale not found")
 	-- pop effect: start bigger
 	scale.Scale = 1.25
 
@@ -95,7 +98,7 @@ local function show_hint(snackbar_obj: Snackbar)
 	-- Start expiry timer after hint becomes fully visible (animation completes)
 	spr.completed(snackbar_obj.hint, function()
 		task.delay(snackbar_obj.expiry, function()
-			pcall(function()
+			future.Try(function()
 				snackbar_obj:Dismiss()
 			end)
 		end)
@@ -137,6 +140,14 @@ local function process_queue()
 	table.sort(snackbar_queue.incoming, function(a: Snackbar, b: Snackbar)
 		return string.len(a.hint.TextLabel.Text) > string.len(b.hint.TextLabel.Text)
 	end)
+
+	-- check if anything external is happening.
+	-- e.g a dialogue.
+	if dialogue:IsActive() then
+		repeat
+			task.wait(1)
+		until not dialogue:IsActive()
+	end
 
 	-- if debounce is locked, don't process (wait for active hint to fully dismiss)
 	if debounce_locked then
@@ -265,8 +276,47 @@ function module.SetText(self: Snackbar, text: string, translate_text: boolean?)
 		end
 	end
 
+	-- if the hint is repeated in the incoming queue, show a amount of time increase instead of spamming the same hint multiple times
+	local repeated = 0
+	for _, hint in ipairs(snackbar_queue.incoming) do
+		if hint.hint.TextLabel.Text == text then
+			repeated += 1
+			-- now remove the repeated hint from the queue, since we are just going to increase the time of the existing one
+			dequeue_hint(hint)
+			-- also destroy the hint to clean up.
+			-- but we also gotta wait for the other scripts to compute their stuff
+			-- ... ever so pointlessly! to avoid errors ofcourse.
+			task.delay(60, function()
+				hint:Destroy()
+			end)
+			-- if the repeated hint is the active one, increase the time of the active hint
+			if snackbar_queue.active == hint then
+				self.expiry += 2
+			end
+		end
+	end
+
 	future.Try(function()
-		self.hint.TextLabel.Text = text
+		if translate_text then
+			-- translate the text using the localization service
+			local ok, translator = future
+				.Try(function()
+					return LocalizationService:GetTranslatorForPlayerAsync(player)
+				end)
+				:Await()
+
+			if ok then
+				text = translator:Translate(self.hint.TextLabel, text)
+			else
+				warn("failed to translate text: ", text)
+			end
+		end
+
+		if repeated > 0 then
+			self.hint.TextLabel.Text = text .. " (x" .. tostring(repeated + 1) .. ")"
+		else
+			self.hint.TextLabel.Text = text
+		end
 	end)
 
 	return self

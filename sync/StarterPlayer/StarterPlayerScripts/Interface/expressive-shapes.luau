@@ -22,15 +22,6 @@ local shapes = {
 	114671850438094,
 }
 
-do
-	local shapes_transformed = {}
-	for i, id in ipairs(shapes) do
-		table.insert(shapes_transformed, "rbxassetid://" .. tostring(id))
-	end
-
-	ContentProvider:PreloadAsync({ shapes_transformed })
-end
-
 local tracked = {}
 
 function module.register(shape: GuiObject, inside: GuiObject)

@@ -21,7 +21,7 @@ function module:Spawn(position: Vector3)
 	hydration(prism_model) {
 		Parent = Workspace,
 		CFrame = CFrame.new(position),
-		Name = url.generateShortUniqueId(),
+		Name = DateTime.now().UnixTimestampMillis,
 		Anchored = true,
 	}
 

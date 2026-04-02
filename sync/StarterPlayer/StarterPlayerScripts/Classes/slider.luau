@@ -79,7 +79,7 @@ function SliderClass.new(sliderFrame, axis)
 
 	self._Maid = Maid.new()
 	self._Spring = Spring.new(1, 0.1, 1, 0)
-	self._Axis = Spring or "x"
+	self._Axis = axis or "x"
 	self._ChangedBind = Instance.new("BindableEvent")
 	self._ClickedBind = Instance.new("BindableEvent")
 
@@ -108,22 +108,22 @@ end
 
 function init(self)
 	local frame = self.Frame
-	local dragger = frame.Dragger
+	local dragger_handle = frame.Dragger
 	local background = frame.Background
 
 	local axis = self._Axis
 	local maid = self._Maid
 	local spring = self._Spring
-	local dragTracker = dragger.new(dragger)
+	local drag_tracker = dragger.new(dragger_handle)
 
-	self.DragStart = dragTracker.DragStart
-	self.DragStop = dragTracker.DragStop
+	self.DragStart = drag_tracker.DragStart
+	self.DragStop = drag_tracker.DragStop
 
 	maid:Mark(frame)
 	maid:Mark(self._ChangedBind)
 	maid:Mark(self._ClickedBind)
 	maid:Mark(function()
-		dragTracker:Destroy()
+		drag_tracker:Destroy()
 	end)
 
 	-- Get bounds and background size scaled accordingly for calculations
@@ -152,11 +152,11 @@ function init(self)
 	local xboxTick = 0
 	local xboxSelected = false
 
-	maid:Mark(dragger.SelectionGained:Connect(function()
+	maid:Mark(dragger_handle.SelectionGained:Connect(function()
 		xboxSelected = true
 	end))
 
-	maid:Mark(dragger.SelectionLost:Connect(function()
+	maid:Mark(dragger_handle.SelectionLost:Connect(function()
 		xboxSelected = false
 	end))
 
@@ -168,7 +168,7 @@ function init(self)
 	end))
 
 	-- Move the slider when we drag it
-	maid:Mark(dragTracker.DragChanged:Connect(function(element, input, delta)
+	maid:Mark(drag_tracker.DragChanged:Connect(function(element, input, delta)
 		if self.IsActive then
 			self:Set((input.Position[axis] - bPos) / bSize, false)
 		end
@@ -204,7 +204,7 @@ function init(self)
 		local x = spring.x
 		if x ~= last then
 			local scalePos = (bPos + (x * bSize) - frame.AbsolutePosition[axis]) / frame.AbsoluteSize[axis]
-			dragger.Position = setUdim2(scalePos, 0.5)
+			dragger_handle.Position = setUdim2(scalePos, 0.5)
 			self._ChangedBind:Fire(self:Get())
 			last = x
 		end
@@ -249,8 +249,8 @@ function SliderClass:Destroy()
 	self.Frame:Destroy()
 	self.Changed = nil
 	self.Clicked = nil
-	self.StartDrag = nil
-	self.StopDrag = nil
+	self.DragStart = nil
+	self.DragStop = nil
 	self.Frame = nil
 end
 

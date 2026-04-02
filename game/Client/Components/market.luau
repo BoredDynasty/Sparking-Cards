@@ -95,6 +95,8 @@ function module:DisplaySpendings()
 	end
 end
 
+local ignore_tab_switch = false
+
 function module:InitializeTabs()
 	tabs:AddTab("Shop")
 	tabs:AddTab("Inventory")
@@ -376,11 +378,13 @@ function module:LoadInventory()
 
 	if not profile then
 		local snackbar = hint.new()
-		snackbar:SetText("Couldn't fetch inventory.")
-		snackbar:SetCanClick(true)
-		snackbar:SetAction(function()
-			module:LoadInventory()
-		end, "Retry")
+		future.Try(function()
+			snackbar:SetText("Couldn't fetch inventory.")
+			snackbar:SetCanClick(true)
+			snackbar:SetAction(function()
+				module:LoadInventory()
+			end, "Retry")
+		end)
 
 		return
 	end
@@ -408,16 +412,29 @@ function module:LoadInventory()
 		local sell_btn = template.Buy
 		local experimentButton = template.Test
 
+		local item_data = Items[i]
+		if not item_data then
+			warn("Couldn't find item data for " .. i)
+			item_data = {
+				Name = i,
+				Price = 0,
+				Details = {
+					TextColor = Color3.new(1, 1, 1),
+				},
+			}
+		end
+		local title_color = item_data.Details.TextColor
+
 		local str = [[
-			%s
+			<font color="%s">%s</font>
 			<br/>
 			<font weight="Regular">
-			<font transparency="0.5"
+			<font transparency="0.5">
 			%s
 			</font></font>
 		]]
 
-		title.Text = string.format(str :: any, i, item)
+		title.Text = string.format(str :: any, title_color:ToHex(), i, item)
 
 		template.Visible = true
 		experimentButton.Visible = false
@@ -437,7 +454,10 @@ function module:LoadInventory()
 			Text = quantity,
 		}
 
-		quantity_frame.Add.Activated:Connect(function()
+		local quantity_add = quantity_frame:WaitForChild("Add")
+		local quantity_remove = quantity_frame:WaitForChild("Remove")
+
+		quantity_add.Activated:Connect(function()
 			if not alter_quantity_limit(quantity_frame.Add) then
 				return
 			end
@@ -465,7 +485,7 @@ function module:LoadInventory()
 			pop(quantity_frame.Add)
 		end)
 
-		quantity_frame.Remove.Activated:Connect(function()
+		quantity_remove.Activated:Connect(function()
 			if not alter_quantity_limit(quantity_frame.Remove) then
 				return
 			end

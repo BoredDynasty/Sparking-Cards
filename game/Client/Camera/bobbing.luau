@@ -27,7 +27,7 @@ return function(deltaTime: number)
 	deltaTime *= 60
 
 	if humanoid.Health <= 0 then
-		return CFrame.new()
+		return CFrame.identity
 	end
 
 	local root_velocity = root_part.AssemblyLinearVelocity

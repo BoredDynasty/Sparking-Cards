@@ -1,65 +1,80 @@
 --!strict
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
-local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local fetch_profile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local future = require(ReplicatedStorage.Packages.future)
-local leventine = require(ReplicatedStorage.Utility.leventine)
-local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
-local pop = require("../Interface/pop")
-local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
-local retryer = require(ReplicatedStorage.Utility.retryer)
 local settings_data = require(ReplicatedStorage.Structures["settings-data"])
 local shadow = require("../Interface/shadow")
+local slider = require(StarterPlayer.StarterPlayerScripts.Classes.slider)
 local switch = require(StarterPlayer.StarterPlayerScripts.Components.switch)
-local tablekit = require(ReplicatedStorage.Packages.tablekit)
-local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
+type SettingCallbacks = {
+	on: ((boolean) -> ())?,
+	off: ((boolean) -> ())?,
+	change: ((number) -> ())?,
+}
+
+type SettingUiDefinition = {
+	identifier: typemarshaller.SettingId,
+	name: string,
+	details: string,
+	value_type: typemarshaller.SettingType,
+	default: typemarshaller.SettingValue,
+	min: number?,
+	max: number?,
+	step: number?,
+	callbacks: SettingCallbacks?,
+	icons: {
+		on: string,
+		off: string,
+	}?,
+}
+
+type Option = {
+	identifier: string,
+	name: string,
+	details: string?,
+	value_type: typemarshaller.SettingType,
+	default: typemarshaller.SettingValue,
+	min: number?,
+	max: number?,
+	step: number?,
+	callbacks: SettingCallbacks?,
+	icons: {
+		on: string,
+		off: string,
+	}?,
+	value: observer.Observer<typemarshaller.SettingValue>,
+}
+
 -- options.luau
--- only supports toggling options on and off.
+-- supports boolean and number settings.
 
 local module = {
 	tracked = {} :: { Option },
-	limit = ratelimit(2, 0.5),
-}
-export type OptionCallbacks = {
-	on: (...unknown) -> ...unknown,
-	off: (...unknown) -> ...unknown,
-}
-
-type Icons = {
-	[string]: typemarshaller.LucideIcon,
-}
-
-export type Option = {
-	name: string,
-	details: string?,
-	callbacks: OptionCallbacks,
-	icons: Icons?,
-	value: observer.Observer<any>,
+	limit = ratelimit(8, 0.33),
 }
 
 local player = Players.LocalPlayer
 local player_gui = player.PlayerGui
 
-local optionsGui = player_gui.Options
-local optionsCanvas = optionsGui.CanvasGroup
-local optionsFrame = optionsCanvas.Frame
+local options_gui = player_gui.Options
+local options_canvas = options_gui.CanvasGroup
+local options_frame = options_canvas.Frame
 
 local templates = ReplicatedStorage.Interfaces
 
 local events = ReplicatedStorage.Events
-local get_profile = events.GetProfile
-local save_setting = events.SaveSetting
+local save_setting = events:FindFirstChild("SaveSetting")
 
 shadow(templates.OptionTemplate.Toggle)
-shadow(optionsFrame)
+shadow(options_frame)
 
 local pool = PoolerPlus:CreatePool("OptionsPool", function()
 	return templates.OptionTemplate:Clone()
@@ -67,87 +82,213 @@ end)
 
 pool:AdaptivePreload()
 
-local last_check: number = 0.0
-local check_interval = 5
+local function round_to_step(value: number, step: number?): number
+	if step == nil or step <= 0 then
+		return value
+	end
 
--- unfortunately,
--- i will have to figure out just HOW
--- to implement such.
--- hint: use RbxGuiLib by EgoMoose.
-local unsupported_types = {
-	"number",
-}
+	return math.round(value / step) * step
+end
 
-local function insertData(profile: typemarshaller.Profile)
-	for i, saved_option in pairs(profile.Data.options) do
-		-- remove this code block once we figure more out.
-		if table.find(unsupported_types, type(saved_option)) then
-			continue
+local function normalize_number(option: Option, value: number): number
+	local min_value = option.min
+	local max_value = option.max
+
+	if min_value ~= nil and max_value ~= nil and max_value < min_value then
+		min_value, max_value = max_value, min_value
+	end
+
+	if min_value ~= nil then
+		value = math.max(value, min_value)
+	end
+
+	if max_value ~= nil then
+		value = math.min(value, max_value)
+	end
+
+	value = round_to_step(value, option.step)
+
+	if min_value ~= nil then
+		value = math.max(value, min_value)
+	end
+
+	if max_value ~= nil then
+		value = math.min(value, max_value)
+	end
+
+	return value
+end
+
+local function sanitize_value(option: Option, value: any): typemarshaller.SettingValue
+	if option.value_type == "boolean" then
+		if type(value) ~= "boolean" then
+			return option.default :: boolean
 		end
 
-		local all_option_names = {}
+		return value
+	end
 
-		for j, option_data in ipairs(settings_data) do
-			table.insert(all_option_names, option_data.name)
+	if type(value) ~= "number" then
+		return normalize_number(option, option.default :: number)
+	end
+
+	if value ~= value then
+		return normalize_number(option, option.default :: number)
+	end
+
+	return normalize_number(option, value)
+end
+
+local function format_number(value: number, step: number?): string
+	if step ~= nil and step >= 1 then
+		return tostring(math.round(value))
+	end
+
+	local formatted = string.format("%.2f", value)
+	formatted = formatted:gsub("0+$", "")
+	formatted = formatted:gsub("%.$", "")
+
+	return formatted
+end
+
+local function format_option_text(option: Option, value: typemarshaller.SettingValue): string
+	local details = option.details or ""
+	local header = `<b>{option.name}</b><br/>`
+
+	if option.value_type == "number" then
+		local numeric_value = value :: number
+		return header .. details .. ` <font transparency="0.25">({format_number(numeric_value, option.step)})</font>`
+	end
+
+	return header .. details
+end
+
+local function run_callback(option: Option, value: typemarshaller.SettingValue)
+	local callbacks = option.callbacks
+	if callbacks == nil then
+		return
+	end
+
+	if option.value_type == "boolean" then
+		local state = value :: boolean
+		local next_callback = if state then callbacks.on else callbacks.off
+
+		if next_callback then
+			task.spawn(future.new, next_callback, state)
 		end
-
-		for j, option_data in ipairs(settings_data) do
-			local str = leventine.closest(i, all_option_names)
-
-			local is_similar = str == option_data.name
-
-			if i == option_data.identifier or is_similar then
-				local data = {}
-
-				data.value = observer.new(saved_option or option_data.default)
-				data.icons = {}
-
-				data.icons.on = lucide.GetAsset(option_data.icons.on)
-				data.icons.off = lucide.GetAsset(option_data.icons.off)
-
-				data.callbacks = option_data.callbacks
-				data.details = option_data.details
-				data.name = option_data.name
-
-				table.insert(module.tracked, data)
-			end
+	else
+		local numeric_value = value :: number
+		local next_callback = callbacks.change
+		if next_callback then
+			task.spawn(future.new, next_callback, numeric_value)
 		end
 	end
 end
 
-RunService.Heartbeat:Connect(function(dt)
-	-- requires 300 "heartbeats" to run this.
-
-	last_check += dt
-
-	if last_check < check_interval then
+local function save_setting_to_server(option: Option, value: typemarshaller.SettingValue, force: boolean?)
+	if not save_setting or not save_setting:IsA("RemoteFunction") then
 		return
 	end
 
-	last_check = 0
-
-	local profile = fetchProfile()
-
-	if not profile then
+	if not force and not module.limit(option.identifier) then
 		return
 	end
 
-	module:Clear()
+	task.spawn(function()
+		future.Try(function()
+			save_setting:InvokeServer(option.identifier, value)
+		end)
+	end)
+end
 
-	future.Try(insertData, profile)
-end)
+local function get_number_bounds(option: Option): (number, number)
+	local min_value = option.min or 0
+	local max_value = option.max or 1
 
-local function booleanToString(boolean: boolean): "on" | "off"
-	if boolean then
-		return "on"
-	else
-		return "off"
+	if max_value <= min_value then
+		max_value = min_value + 1
 	end
+
+	return min_value, max_value
+end
+
+local function render_boolean(option: Option, option_template: Frame, toggle_btn: TextButton, slider_frame: Frame)
+	toggle_btn.Visible = false
+	slider_frame.Visible = false
+
+	local switch_ = switch.new()
+	switch_:BindToGui(option_template)
+	switch_.switch.Position = UDim2.fromScale(0.975, 0.5)
+	switch_:SetScale(2)
+
+	local current_value = option.value:Get() :: boolean
+
+	if current_value then
+		switch_:Toggle()
+	end
+
+	switch_.Changed:Connect(function(state)
+		option.value:Set(state)
+		run_callback(option, state)
+		save_setting_to_server(option, state, true)
+	end)
+
+	option_template.Destroying:Connect(function()
+		switch_:Destroy()
+	end)
+end
+
+local function render_number(option: Option, option_template: Frame, toggle_btn: TextButton, slider_frame: Frame)
+	toggle_btn.Visible = false
+	slider_frame.Visible = true
+
+	local slider_control = slider.new(slider_frame, "x")
+	slider_control.TweenClick = false
+
+	local min_value, max_value = get_number_bounds(option)
+	local range = max_value - min_value
+
+	if option.step and option.step > 0 then
+		slider_control.Interval = math.clamp(option.step / range, 0, 1)
+	end
+
+	local initial_value = option.value:Get() :: number
+	local alpha = (initial_value - min_value) / range
+	slider_control:Set(alpha, false)
+
+	local function sync_slider(force_save: boolean?)
+		local slider_alpha = slider_control:Get()
+		local numeric_value = min_value + slider_alpha * range
+		numeric_value = normalize_number(option, numeric_value)
+
+		local current = option.value:Get() :: number
+		if current ~= numeric_value then
+			option.value:Set(numeric_value)
+			run_callback(option, numeric_value)
+		end
+
+		save_setting_to_server(option, numeric_value, force_save)
+	end
+
+	slider_control.Changed:Connect(function()
+		sync_slider(false)
+	end)
+
+	if slider_control.DragStop then
+		slider_control.DragStop:Connect(function()
+			sync_slider(true)
+		end)
+	end
+
+	option_template.Destroying:Connect(function()
+		slider_control:Destroy()
+	end)
 end
 
 function module:Get(name: string): Option?
-	for i, option in ipairs(module.tracked) do
-		if string.lower(name) == string.lower(option.name) then
+	local lowered_name = string.lower(name)
+	for _, option in ipairs(module.tracked) do
+		if lowered_name == string.lower(option.name) or lowered_name == string.lower(option.identifier) then
 			return option
 		end
 	end
@@ -156,79 +297,107 @@ function module:Get(name: string): Option?
 end
 
 function module:Unload()
-	local holder = optionsFrame.Holder
+	local holder = options_frame.Holder
 
-	-- cleanup existing
-	for i, object in ipairs(holder:GetChildren()) do
+	for _, object in ipairs(holder:GetChildren()) do
 		if object:IsA("Frame") then
 			object:Destroy()
 		end
 	end
 end
 
-function module:LoadItems()
-	local holder = optionsFrame.Holder
+function module:Clear()
+	for _, option in ipairs(module.tracked) do
+		option.value:Destroy()
+	end
 
-	module:Unload()
+	table.clear(module.tracked)
+end
 
-	-- render
-	for i, option in ipairs(module.tracked) do
-		local option_template = pool:Get()
+function module:Hydrate(profile: typemarshaller.Profile?)
+	module:Clear()
 
-		local text_display = option_template:FindFirstChild("TextDisplay", true) :: TextLabel
-		local toggle_btn = option_template:FindFirstChild("Toggle", true) :: TextButton
-		local btn_icon = option_template:FindFirstChild("Icon", true) :: ImageLabel
+	local saved_options = {} :: { [string]: typemarshaller.SettingValue }
 
-		local callbacks = option.callbacks :: { [string]: (...unknown) -> () }
-		local icon_data = option.icons
-		local value = option.value
+	if profile and profile.Data and type(profile.Data.options) == "table" then
+		saved_options = profile.Data.options
+	end
 
-		local fancy = [[
-		<b>%s</b><br/>%s
-		]]
+	for _, definition in ipairs(settings_data :: { SettingUiDefinition }) do
+		local option = {
+			identifier = definition.identifier,
+			name = definition.name,
+			details = definition.details,
+			value_type = definition.value_type,
+			default = definition.default,
+			min = definition.min,
+			max = definition.max,
+			step = definition.step,
+			callbacks = definition.callbacks,
+			icons = definition.icons,
+			value = observer.new(definition.default),
+		} :: Option
 
-		text_display.Text = string.format(fancy :: any, option.name, option.details)
+		local saved_value = saved_options[option.identifier]
+		option.value:Set(sanitize_value(option, saved_value))
 
-		toggle_btn.Visible = false
-
-		--tooltip.register(toggle_btn, booleanToString(value:Get()))
-		value.Changed:Connect(function(new)
-			tooltip.new(toggle_btn, booleanToString(new))
-		end)
-
-		local switch_ = switch.new()
-		switch_:BindToGui(option_template)
-		switch_.switch.Position = UDim2.fromScale(0.975, 0.5)
-		switch_:SetScale(2)
-		if type(value:Get()) == "boolean" then
-			switch_:Toggle()
-		end
-
-		switch_.Changed:Connect(function(state)
-			value:Set(state)
-
-			local str_state = booleanToString(state)
-
-			local next_callback = callbacks[str_state]
-			if next_callback then
-				task.spawn(future.new, next_callback)
-
-				if type(value:Get()) == "boolean" then
-					save_setting:InvokeServer(option.name, value:Get())
-				end
-			end
-		end)
-
-		option_template.Destroying:Connect(function(...)
-			switch_:Destroy()
-		end)
-
-		option_template.Parent = holder
+		table.insert(module.tracked, option)
 	end
 end
 
-function module:Clear()
-	table.clear(module.tracked)
+function module:LoadItems()
+	local holder = options_frame.Holder
+	local profile = fetch_profile()
+
+	module:Hydrate(profile)
+	module:Unload()
+
+	for _, option in ipairs(module.tracked) do
+		local option_template = pool:Get()
+
+		local text_display = option_template:FindFirstChild("TextDisplay", true)
+		local toggle_btn = option_template:FindFirstChild("Toggle", true)
+		local slider_frame = option_template:FindFirstChild("SliderFrame", true)
+
+		if not text_display or not text_display:IsA("TextLabel") then
+			option_template:Destroy()
+			continue
+		end
+
+		if not toggle_btn or not toggle_btn:IsA("TextButton") then
+			option_template:Destroy()
+			continue
+		end
+
+		if not slider_frame or not slider_frame:IsA("Frame") then
+			option_template:Destroy()
+			continue
+		end
+
+		text_display.Text = format_option_text(option, option.value:Get())
+		option.value.Changed:Connect(function(next_value)
+			text_display.Text = format_option_text(option, next_value)
+		end)
+
+		if option.value_type == "boolean" then
+			render_boolean(option, option_template, toggle_btn, slider_frame)
+		else
+			render_number(option, option_template, toggle_btn, slider_frame)
+		end
+
+		option_template.Parent = holder
+
+		run_callback(option, option.value:Get())
+	end
 end
+
+task.spawn(function()
+	local profile = fetch_profile()
+	module:Hydrate(profile)
+
+	for _, option in ipairs(module.tracked) do
+		run_callback(option, option.value:Get())
+	end
+end)
 
 return module

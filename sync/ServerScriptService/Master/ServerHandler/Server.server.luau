@@ -41,6 +41,7 @@ local quest = require(ServerStorage.modules.quest)
 local random = require(ReplicatedStorage.Utility.random)
 local retryer = require(ReplicatedStorage.Utility.retryer)
 local safeteleport = require(ReplicatedStorage.Modules.safeteleport)
+local settings_schema = require(ReplicatedStorage.Structures["settings-schema"])
 local skill_chart = require(ReplicatedStorage.Structures["skill-chart"])
 local spr = require(ReplicatedStorage.Modules.spr)
 local star = require(ReplicatedStorage.Environment.star)
@@ -105,6 +106,7 @@ end
 local profiles = {}
 local profile_key = "playerdata"
 local player_related = profilestore.New(profile_key, profilestructure)
+local pending_setting_saves = {} :: { [Player]: thread }
 
 local function loadProfile(player: Player)
 	local profile = retryer.infdelay(10, function(...)
@@ -173,6 +175,8 @@ local function SaveProfileData(player: Player)
 	local profile = profiles[player] -- we need the full table
 	if not profile then
 		warn("Cannot save profile; couldn't find one.")
+
+		return
 	end
 
 	profile:Reconcile()
@@ -383,7 +387,7 @@ local function enterMatch(player: Player)
 	end
 end
 
-local function cancelMatch(player: Player)
+local function cancelMatch(player: Player, suppress_notification: boolean?)
 	--print("cancel match")
 
 	if not player then
@@ -396,7 +400,9 @@ local function cancelMatch(player: Player)
 		if pty.leader_id ~= player.UserId then
 			local msg = "Only the party leader can cancel matchmaking for the party."
 
-			Packet.SendNotification.sendTo({ message = msg }, player)
+			if not suppress_notification then
+				Packet.SendNotification.sendTo({ message = msg }, player)
+			end
 
 			return { success = false, message = msg }
 		end
@@ -404,18 +410,22 @@ local function cancelMatch(player: Player)
 		-- TODO: Implement or use the correct party method to stop searching state
 		matchmaker:LeaveQueueForParty(pty)
 
-		Packet.SendNotification.sendTo({ message = "Party left matchmaking queue", duration = 5 }, player)
+		if not suppress_notification then
+			Packet.SendNotification.sendTo({ message = "Party left matchmaking queue", duration = 5 }, player)
+		end
 
 		return { success = true, message = "Party left queue" }
 	else
 		local ok = matchmaker:LeaveQueueForPlayer(player)
 
 		if ok then
-			Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
+			if not suppress_notification then
+				Packet.SendNotification.sendTo({ message = "Left matchmaking queue", duration = 5 }, player)
+			end
 
 			return { success = true, message = "Player left queue" }
 		else
-			return { success = false, message = "Failed to leave player queue." }
+			return { success = true, message = "Player not in queue" }
 		end
 	end
 end
@@ -462,6 +472,13 @@ end
 
 local function onPlayerRemoving(player: Player)
 	GameAnalytics:PlayerRemoved(player)
+
+	local pending_setting_save = pending_setting_saves[player]
+	if pending_setting_save then
+		task.cancel(pending_setting_save)
+		pending_setting_saves[player] = nil
+	end
+
 	local profile = profiles[player]
 
 	if profile ~= nil then
@@ -727,6 +744,95 @@ local function insertShopBookmark(player: Player, card_name: string)
 	end
 end
 
+local function sanitizeSettingValue(
+	definition: typemarshaller.SettingDefinition,
+	value: typemarshaller.SettingValue
+): typemarshaller.SettingValue?
+	if definition.value_type == "boolean" then
+		if type(value) ~= "boolean" then
+			return nil
+		end
+
+		return value
+	end
+
+	if type(value) ~= "number" then
+		return nil
+	end
+
+	if value ~= value then
+		return nil
+	end
+
+	local min_value = definition.min
+	local max_value = definition.max
+
+	if min_value ~= nil and max_value ~= nil and max_value < min_value then
+		min_value, max_value = max_value, min_value
+	end
+
+	if min_value ~= nil then
+		value = math.max(value, min_value)
+	end
+
+	if max_value ~= nil then
+		value = math.min(value, max_value)
+	end
+
+	local step = definition.step
+	if step ~= nil and step > 0 then
+		value = math.round(value / step) * step
+	end
+
+	if min_value ~= nil then
+		value = math.max(value, min_value)
+	end
+
+	if max_value ~= nil then
+		value = math.min(value, max_value)
+	end
+
+	return value
+end
+
+local function scheduleSettingSave(player: Player)
+	local existing = pending_setting_saves[player]
+	if existing then
+		task.cancel(existing)
+	end
+
+	pending_setting_saves[player] = task.delay(2, function()
+		pending_setting_saves[player] = nil
+		SaveProfileData(player)
+	end)
+end
+
+local function saveSetting(player: Player, identifier: string, value: typemarshaller.SettingValue): boolean
+	if type(identifier) ~= "string" or identifier == "" then
+		return false
+	end
+
+	local profile = FetchProfileData(player)
+	if not profile then
+		return false
+	end
+
+	local definition = settings_schema.map[identifier] :: typemarshaller.SettingDefinition?
+	if definition == nil then
+		return false
+	end
+
+	local sanitized = sanitizeSettingValue(definition, value)
+	if sanitized == nil then
+		return false
+	end
+
+	profile.options[identifier] = sanitized
+	scheduleSettingSave(player)
+
+	return true
+end
+
 local function initializeAudio()
 	--print("init audio")
 
@@ -986,6 +1092,8 @@ Packet.SetNetworkOwner.listen(function(data: { object: Instance, player: Instanc
 	setNetworkOwner(data.player, data.object)
 end)
 PartyRemotes.Create.OnServerInvoke = function(player: Player, settings: { [string]: any }?)
+	cancelMatch(player, true)
+
 	local pty = party.new(player.UserId)
 
 	if pty and settings then
@@ -1017,6 +1125,8 @@ PartyRemotes.Delete.OnServerInvoke = function(player: Player, data: { party_id: 
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
 				if party_obj.leader_id == player.UserId then
+					cancelMatch(player, true)
+
 					party:RemovePartyById(party_obj.party_id)
 					-- we added this function because `party_obj:Destroy()` throws an error
 
@@ -1036,6 +1146,9 @@ PartyRemotes.Join.OnServerInvoke = function(player: Player, data: { party_id: st
 
 	if party_obj then
 		print("got party obj")
+
+		cancelMatch(player, true)
+
 		local ok = party:AddPlayerToPartyById(data.party_id, player.UserId)
 
 		if ok then
@@ -1055,6 +1168,8 @@ PartyRemotes.Leave.OnServerInvoke = function(player: Player, data: { party_id: s
 	if party_obj then
 		for i, member_id in ipairs(party_obj.members) do
 			if member_id == player.UserId then
+				cancelMatch(player, true)
+
 				party:RemovePlayerFromPartyById(data.party_id, player.UserId)
 
 				return true
@@ -1070,6 +1185,12 @@ ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
 
 Events.GetGamepasses.OnServerInvoke = getGamepasses
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
+local save_setting_remote = Events:FindFirstChild("SaveSetting")
+if save_setting_remote and save_setting_remote:IsA("RemoteFunction") then
+	save_setting_remote.OnServerInvoke = saveSetting
+else
+	warn("Events.SaveSetting remote is missing or invalid; settings will not persist.")
+end
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
@@ -1088,7 +1209,6 @@ Events.FireGroundCrack.OnServerEvent:Connect(function(player, type: keyof<typeof
 end)
 initializeAudio()
 startLightingCycle()
--- TODO) add player saving options
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
 windshake:Init({

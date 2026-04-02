@@ -29,19 +29,10 @@ return {
 		},
 	},
 	ClientRun = function(_, target: Player, amount: number)
-		local player = playerMarshaller.getByName(target.Name)
-		local character = player.Character or player.CharacterAdded:Wait()
-
-		if character then
-			-- local humanoid = character.Humanoid
-			damage.__call({
-				amount = amount,
-				source = Players.LocalPlayer,
-				target = target, -- lol
-			})
-		else
-			return "Couldn't get character"
-		end
+		damage:apply({
+			target = target,
+			amount = amount,
+		})
 
 		return "Damage dealt, youch!"
 	end,

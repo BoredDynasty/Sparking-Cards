@@ -396,6 +396,12 @@ function module.start(dialogue: Dialogue)
 	return self
 end
 
+-- an "IsActive" function for external scripts.
+-- to check if any dialogue is currently active (being shown).
+function module.IsActive()
+	return dialogue_queue.active ~= nil
+end
+
 function module.Destroy(self: DialogueController)
 	spr.stop(self.instance)
 

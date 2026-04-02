@@ -17,9 +17,6 @@ export type Observer<T> = {
 	Get: (self: Observer<T>) -> T,
 	Set: (self: Observer<T>, value: T) -> (),
 	Watch: (self: Observer<T>, callback: (newValue: T, oldValue: T) -> ()) -> SignalPlus.Connection,
-	Insert: (self: Observer<T>, key: any?, value: any) -> (),
-	Remove: (self: Observer<T>, key: number | any) -> (),
-	Find: (self: Observer<T>, predicate: (value: any, key: any) -> boolean) -> (any?, any?),
 	Map: (self: Observer<T>, fn: (current: T) -> T) -> (),
 	Destroy: (self: Observer<T>) -> (),
 	__concat: (self: Observer<T>, ...Observer<T>) -> string,
@@ -43,11 +40,11 @@ export type observer_mt<T> = setmetatable<Observer<T>, typeof(Observer)>
     local counter = Observer.new(0)
     ```
 ]]
-function Observer.new<T>(initialValue: T?): observer_mt<T?>
+function Observer.new<T>(initialValue: T): observer_mt<T>
 	return setmetatable({
 		_value = initialValue,
-		Changed = SignalPlus() :: SignalPlus.Signal<T, T>,
-		_connections = table.create(1e2) :: { SignalPlus.Connection },
+		Changed = SignalPlus() :: SignalPlus.Signal<(newValue: T, oldValue: T) -> ()>,
+		_connections = {} :: { SignalPlus.Connection },
 	}, Observer)
 end
 
@@ -145,72 +142,6 @@ function Observer:Watch<T>(callback: (newValue: T, oldValue: T) -> ()): SignalPl
 	table.insert(self._connections, conn)
 
 	return conn
-end
-
---[[
-	Insert a value into the internal value
-
-	When using, the internal value should be a table.
-]]
-function Observer:Insert(key: any?, value: any)
-	assert(type(self._value) == "table", "Cannot use :Insert, Observer value isn't a table.")
-
-	if key then
-		local old_value = self._value
-
-		self._value[key] = value
-
-		self.Changed:Fire(self._value, old_value)
-	elseif not key then
-		local old_value = self._value
-
-		table.insert(self._value, value)
-
-		self.Changed:Fire(self._value, old_value)
-	end
-end
-
---[[
-	Remove a value from the internal table value
-
-	When using, the internal value should be a table.
-]]
-function Observer:Remove(key: number | any)
-	assert(type(self._value) == "table", "Cannot use :Remove, Observer value isn't a table.")
-
-	local oldValue = self._value
-
-	if type(key) == "number" then
-		table.remove(self._value, key)
-	else
-		self._value[key] = nil
-	end
-
-	self.Changed:Fire(self._value, oldValue)
-end
-
---[[
-	Find a value in the internal table value using a predicate function
-
-	Returns the first matching element, or nil if not found.
-
-	```luau
-
-	local object = Instance.new("Part")
-
-	local obj = _observer:Find(function(dictionary)
-		return dictionary.object == object
-	end)
-	```
-]]
-function Observer:Find(predicate: (value: any, key: any) -> boolean): (any?, any?)
-	assert(type(self._value) == "table", "Cannot use :Find, Observer value isn't a table.")
-	for key, value in pairs(self._value) do
-		if predicate(value, key) then
-			return value, key
-		end
-	end
-	return nil
 end
 
 --[[
