@@ -3,9 +3,12 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
+local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local skill_functions = require(ReplicatedStorage.Modules["skill-functions"])
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- sprint-controller.luau
@@ -39,6 +42,8 @@ local function setupCharacter(new_character: Model)
 	end)
 end
 
+player.CharacterAdded:Connect(setupCharacter)
+
 local function sigmoid(x: number)
 	return 1 / (1 + math.exp(-x))
 end
@@ -54,10 +59,32 @@ local default_keybinds = {
 	sprint = Enum.KeyCode.LeftShift,
 }
 
+local function updateInternalValues()
+	-- get how many stamina upgrades the player has and apply it
+	local profile = fetchProfile()
+	if not profile then
+		print("no profile found for sprint controller, defaulting to 0 upgrades.")
+		return
+	end
+
+	local stamina_upgrades = skill_functions:GetTechniquesUnlocked(profile, "Stamina")
+	if stamina_upgrades > 0 then
+		local multiplier = skill_functions:GetTotalMultiplierFromTechniques(profile, "Stamina")
+		max_stamina = max_stamina * (1 + multiplier)
+
+		print("max stamina after applying upgrades: ", max_stamina)
+	else
+		print("no stamina upgrades found, using default max stamina: ", max_stamina)
+	end
+end
+
+task.spawn(updateInternalValues)
+
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
 		return
 	end
+
 	if humanoid.MoveDirection == Vector3.zero then
 		return
 	end
@@ -83,6 +110,12 @@ function module:Update(delta_time: number)
 		-- 2. deduct stamina from character using :SetAttribute
 		-- 3. set walkspeed
 
+		if humanoid.MoveDirection == Vector3.zero then
+			is_sprinting = false
+
+			return
+		end
+
 		local current_stamina = character:GetAttribute("Stamina") :: number or 0
 		-- TODO) add a skill tree multipliier for stamina and drain rate.
 		local drain_rate = MovementConfig.Sprint.StaminaDrainRate
@@ -99,6 +132,8 @@ function module:Update(delta_time: number)
 		-- the stamina-controller already handles most of this
 
 		character:SetAttribute("AntiRegenerate", false)
+		-- smoothly transition back to normal speed when stopping sprinting
+		humanoid.WalkSpeed = humanoid.WalkSpeed - ((humanoid.WalkSpeed - 12) * 0.1)
 	end
 end
 

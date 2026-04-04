@@ -20,30 +20,35 @@ export type SettingUiDefinition = typemarshaller.SettingDefinition & {
 	}?,
 }
 
+local events = ReplicatedStorage.Events
+
 local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks } = {
 	background_music = {
 		on = function()
-			-- Utility for later:
-			-- Create a dedicated music sound group and unmute it here.
+			print("Background music turned on.")
+			events.ToggleMusic:FireServer(true)
 		end,
 		off = function()
-			-- Utility for later:
-			-- Create a dedicated music sound group and mute it here.
+			print("Background music turned off.")
+			events.ToggleMusic:FireServer(false)
 		end,
 	},
 	gui_sound = {
 		on = function()
 			print("GUI sound effects turned on.")
+			events.ToggleGUISound:FireServer(true)
 		end,
 		off = function()
 			print("GUI sound effects turned off.")
+			events.ToggleGUISound:FireServer(false)
 		end,
 	},
 	background_music_volume = {
 		change = function(volume: number)
-			-- Utility for later:
-			-- Iterate music tracks from your music manager and set their volume to this value.
-			local _ = volume
+			events.SetMusicVolume:FireServer(volume)
+			--- IGNORE ---
+			-- This will trigger a client event that all clients listen to, which will update the volume of all music tracks accordingly.
+			-- We have to do it this way because the music tracks are stored on the client, so the server can't directly update their volume.
 		end,
 	},
 	fov = {

@@ -1,6 +1,5 @@
 --!strict
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 
 -- Cmdr Command
@@ -44,27 +43,25 @@ return {
 			local current_position = rootPart.Position :: Vector3
 
 			while target:GetAttribute("Flying") do
-				local dt = RunService.Heartbeat:Wait()
-
 				local add = Vector3.zero
 
 				if UserInputService:IsKeyDown(Enum.KeyCode.W) then
-					add += camera.CFrame.LookVector * dt
+					add += camera.CFrame.LookVector
 				end
 				if UserInputService:IsKeyDown(Enum.KeyCode.S) then
-					add -= camera.CFrame.LookVector * dt
+					add -= camera.CFrame.LookVector
 				end
 				if UserInputService:IsKeyDown(Enum.KeyCode.D) then
-					add += camera.CFrame.RightVector * dt
+					add += camera.CFrame.RightVector
 				end
 				if UserInputService:IsKeyDown(Enum.KeyCode.A) then
-					add -= camera.CFrame.RightVector * dt
+					add -= camera.CFrame.RightVector
 				end
 				if UserInputService:IsKeyDown(Enum.KeyCode.E) then
-					add += camera.CFrame.UpVector * dt
+					add += camera.CFrame.UpVector
 				end
 				if UserInputService:IsKeyDown(Enum.KeyCode.Q) then
-					add -= camera.CFrame.UpVector * dt
+					add -= camera.CFrame.UpVector
 				end
 
 				rootPart.AssemblyAngularVelocity = Vector3.zero
@@ -72,7 +69,7 @@ return {
 
 				current_position += add
 				rootPart.CFrame =
-					CFrame.lookAt(current_position, current_position + (camera.CFrame.LookVector * 1000))
+					CFrame.lookAt(current_position, current_position + (camera.CFrame.LookVector * 5))
 			end
 		else
 			return "Couldn't get character"

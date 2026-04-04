@@ -143,7 +143,6 @@ function module:LoadCatagories()
 		table.insert(visited_techniques, technique)
 
 		local catagory = catagory_pool:Get()
-		catagory.Parent = holder
 
 		local total_upgrades = getTotalUpgrades(technique)
 
@@ -301,7 +300,22 @@ function module:LoadCatagories()
 				end
 			end)
 		end
+
+		catagory.Parent = holder
 	end
+
+	-- expand the Holder CanvasSize to fit the catagories
+	-- note: the holder is a ScrollingFrame
+	local layout = holder.UIListLayout
+	local padding = layout.Padding.Offset
+	local total_height = padding
+	for i, catagory in ipairs(holder:GetChildren()) do
+		if catagory:IsA("Frame") then
+			total_height += catagory.AbsoluteSize.Y + padding
+		end
+	end
+
+	holder.CanvasSize = UDim2.new(0, 0, 0, total_height)
 
 	print(tablekit.ToString(visited_techniques :: any))
 end

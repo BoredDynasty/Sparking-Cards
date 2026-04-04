@@ -95,6 +95,8 @@ function module:DisplaySpendings()
 	end
 end
 
+local ignore_tab_switch = false
+
 function module:InitializeTabs()
 	tabs:AddTab("Shop")
 	tabs:AddTab("Inventory")

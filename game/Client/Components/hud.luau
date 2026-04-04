@@ -94,8 +94,6 @@ function module:Render()
 		return (a.is_large and 1 or 0) < (b.is_large and 1 or 0)
 	end)
 
-	task.wait(1)
-
 	for i, button: Button in ipairs(module.buttons) do
 		local icon = button.icon and button.icon.IconName or "file"
 

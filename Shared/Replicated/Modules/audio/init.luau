@@ -123,6 +123,18 @@ function module:ConfigureSFX(name: string, config)
 	end
 end
 
+function module:SetMusicEnabled(enabled: boolean)
+	for _, track in pairs(music_tracks) do
+		track.Playing = enabled and track.Playing or false
+	end
+end
+
+function module:SetSFXEnabled(enabled: boolean)
+	for _, sfx in pairs(sound_effects) do
+		sfx.Playing = enabled and sfx.Playing or false
+	end
+end
+
 -- GLOBAL CONTROLS (optional but useful)
 
 function module:StopAll()

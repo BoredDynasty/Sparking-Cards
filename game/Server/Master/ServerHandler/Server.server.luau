@@ -155,13 +155,17 @@ local function FetchProfileData(player: Player): typemarshaller.ProfileData?
 	local profile = profiles[player] :: typemarshaller.Profile?
 
 	if not profile and profile == nil then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-		}, player)
+		if not RunService:IsStudio() then
+			-- i really need a break from seeing ts.
 
-		local list = tablekit.Values(profiles :: any)
+			Packet.SendNotification.sendTo({
+				message = "Couldn't get data",
+			}, player)
 
-		warn("Couldn't fetch profile from table: ", table.unpack(list))
+			local list = tablekit.Values(profiles :: any)
+
+			warn("Couldn't fetch profile from table: ", table.unpack(list))
+		end
 
 		return nil
 	end
@@ -1204,6 +1208,16 @@ Events.FireGroundCrack.OnServerEvent:Connect(function(player, type: keyof<typeof
 	print("firing ground crack")
 	ground_crack[type](...)
 	print("ground crack fired!")
+end)
+Events.SetMusicVolume.OnServerEvent:Connect(function(player, volume)
+	-- send it right back!
+	Events.SetMusicVolume:FireClient(player, volume)
+end)
+Events.ToggleGUISound.OnServerEvent:Connect(function(player, volume)
+	Events.ToggleGUISound:FireClient(player, volume)
+end)
+Events.ToggleMusic.OnServerEvent:Connect(function(player, is_on)
+	Events.ToggleMusic:FireClient(player, is_on)
 end)
 initializeAudio()
 startLightingCycle()

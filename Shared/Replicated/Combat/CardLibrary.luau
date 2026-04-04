@@ -10,6 +10,7 @@ export type Card = {
 	MaxCombo: number, -- Max M1 combo count for this weapon/card
 	MovesetName: string,
 	TextColor: Color3,
+	ArtId: string?, -- Asset ID for the card's art/illustration
 	Moveset: {
 		M1: string,
 		Skill: string,
@@ -30,6 +31,7 @@ local CardLibrary = {
 		WeaponType = "Gauntlet",
 		MovesetName = "Glacial Emperor's Decree",
 		TextColor = Color3.fromRGB(100, 193, 255),
+		ArtId = "122779434780061",
 		BaseDamageMultiplier = 1.15,
 		MaxCombo = 7,
 		Moveset = {

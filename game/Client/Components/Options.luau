@@ -56,6 +56,10 @@ type Option = {
 -- options.luau
 -- supports boolean and number settings.
 
+-- TODO: allow for dropdown support, checkboxes, and keybinds in the future. for now this is just a simple slider and toggle system.
+-- e.g keybinds are a bit more complex since we need to listen for the next key input after clicking the bind button,
+-- and we also need to handle mouse buttons and possibly controller buttons in the future.
+
 local module = {
 	tracked = {} :: { Option },
 	limit = ratelimit(8, 0.33),
@@ -157,7 +161,9 @@ local function format_option_text(option: Option, value: typemarshaller.SettingV
 
 	if option.value_type == "number" then
 		local numeric_value = value :: number
-		return header .. details .. ` <font transparency="0.25">({format_number(numeric_value, option.step)})</font>`
+		return header
+			.. details
+			.. ` <font transparency="0.25">({format_number(numeric_value, option.step)})</font>`
 	end
 
 	return header .. details
@@ -212,7 +218,12 @@ local function get_number_bounds(option: Option): (number, number)
 	return min_value, max_value
 end
 
-local function render_boolean(option: Option, option_template: Frame, toggle_btn: TextButton, slider_frame: Frame)
+local function render_boolean(
+	option: Option,
+	option_template: Frame,
+	toggle_btn: TextButton,
+	slider_frame: Frame
+)
 	toggle_btn.Visible = false
 	slider_frame.Visible = false
 
@@ -238,7 +249,12 @@ local function render_boolean(option: Option, option_template: Frame, toggle_btn
 	end)
 end
 
-local function render_number(option: Option, option_template: Frame, toggle_btn: TextButton, slider_frame: Frame)
+local function render_number(
+	option: Option,
+	option_template: Frame,
+	toggle_btn: TextButton,
+	slider_frame: Frame
+)
 	toggle_btn.Visible = false
 	slider_frame.Visible = true
 

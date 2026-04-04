@@ -1,15 +1,16 @@
 --!strict
 local Lighting = game:GetService("Lighting")
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
+local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local hydration = require(ReplicatedStorage.Utility.hydration)
+local settings_data = require(ReplicatedStorage.Structures["settings-data"])
 local spr = require(ReplicatedStorage.Modules.spr)
-
-local playerMarshaller = require(ReplicatedStorage.Utility.playerMarshaller)
-
 local trove = require(ReplicatedStorage.Packages.trove)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- health-pulse.luau
 -- a pulse effect for when you're low on health
@@ -30,7 +31,7 @@ local tag = "Pulse"
 
 local camera = workspace.CurrentCamera
 
-local player = playerMarshaller.get()
+local player = Players.LocalPlayer
 local player_gui = player.PlayerGui
 
 function module:On()
@@ -81,8 +82,16 @@ end
 function module:Off()
 	_trove:Clean()
 
+	local profile = fetchProfile()
+
+	local saved_options = {} :: { [string]: typemarshaller.SettingValue }
+
+	if profile and profile.Data and type(profile.Data.options) == "table" then
+		saved_options = profile.Data.options
+	end
+
 	spr.target(camera, 0.4, pulse_speed, {
-		FieldOfView = 70,
+		FieldOfView = saved_options.fov or 70,
 	})
 end
 

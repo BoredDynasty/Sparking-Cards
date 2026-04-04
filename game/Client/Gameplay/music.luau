@@ -17,12 +17,14 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 local module = {
 	biomes = {},
-	Playing = observer.new() :: observer.Observer<Track?>,
+	Playing = observer.new(nil) :: observer.Observer<Track?>,
 	_trove = trove.new(),
 	current_biome = "" :: string?,
 	current_track = nil :: Track?,
 	added_music = {}, -- Track which music IDs have been added to audio
 }
+
+local events = ReplicatedStorage.Events
 
 export type Track = {
 	id: number,
@@ -216,5 +218,33 @@ function module:Destroy()
 
 	module._trove:Clean()
 end
+
+events.SetMusicVolume.OnClientEvent:Connect(function(volume: number)
+	for name, data in pairs(module.biomes) do
+		for _, track in ipairs(data.tracks) do
+			local trackName = tostring(track.id)
+			audio:ConfigureMusic(trackName, {
+				volume = volume,
+			})
+		end
+	end
+end)
+
+events.ToggleMusic.OnClientEvent:Connect(function(enabled: boolean)
+	if not enabled then
+		module:StopCurrentTrack()
+		audio:SetMusicEnabled(false)
+	else
+		audio:SetMusicEnabled(true)
+		-- Re-play current track if music is enabled again
+		if module.current_biome and module.current_biome ~= "" then
+			module:PlayRandomTrack(module.current_biome)
+		end
+	end
+end)
+
+events.ToggleGUISound.OnClientEvent:Connect(function(enabled: boolean)
+	audio:SetSFXEnabled(enabled)
+end)
 
 return module

@@ -18,6 +18,7 @@ task.wait(5) -- wait for the player to load
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
+local dialog = require(StarterPlayer.StarterPlayerScripts.Components.dialog)
 local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
 
 local Packet = require(ReplicatedStorage.Packet)
@@ -149,7 +150,7 @@ local function initializeCommands()
 
 	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
 		task.spawn(function()
-			frame_rate:WaitUntilFramesAreStable(0.03)
+			frame_rate:WaitUntilFramesAreStable(0.025)
 
 			local snack_bar = hint.new()
 			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
@@ -219,8 +220,6 @@ local function initializeMarket()
 		displayorder:Toggle(shopCanvas)
 
 		if displayorder:GetState(shopCanvas) then
-			market:LoadItems()
-
 			market:DisplaySpendings()
 
 			wiggle(spendings_icon, function()
@@ -469,7 +468,7 @@ local function initializeNotifiers()
 		else
 			local hint_ = hint.new()
 			hint_:SetText(data.message)
-			hint_:SetExpiry(data.duration or 4)
+			hint_:SetExpiry(data.duration or 3)
 			hint_:SetCanClick(false)
 
 			local negative_outcomes = {
@@ -890,25 +889,6 @@ mouse.LeftUp:Connect(function(processed: boolean)
 	hud:Show()
 end)
 --]]
-
-local health_bar = physical_bar.new()
-health_bar:SetAdornee(humanoid.RootPart :: BasePart)
-
-local health_thread = nil
-
-humanoid.HealthChanged:Connect(function(health)
-	if health_thread then
-		task.cancel(health_thread)
-	else
-		health_bar:Show()
-	end
-
-	health_bar:SetValue(health)
-
-	health_thread = task.delay(4, function()
-		health_bar:Hide()
-	end)
-end)
 
 glove:Apply(character)
 

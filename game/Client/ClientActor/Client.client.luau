@@ -65,6 +65,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
 local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
 local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
+local loadout_frontend = require(StarterPlayer.StarterPlayerScripts.Components["loadout-frontend"])
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
@@ -150,7 +151,7 @@ local function initializeCommands()
 
 	if RunService:IsStudio() or table.find(command_whitelist, player.UserId) then
 		task.spawn(function()
-			frame_rate:WaitUntilFramesAreStable(0.03)
+			frame_rate:WaitUntilFramesAreStable(0.025)
 
 			local snack_bar = hint.new()
 			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
@@ -468,7 +469,7 @@ local function initializeNotifiers()
 		else
 			local hint_ = hint.new()
 			hint_:SetText(data.message)
-			hint_:SetExpiry(data.duration or 4)
+			hint_:SetExpiry(data.duration or 3)
 			hint_:SetCanClick(false)
 
 			local negative_outcomes = {
@@ -594,13 +595,6 @@ end
 
 local function initializeLoadouts()
 	--print("init loadouts")
-	local loadoutsGui = PlayerGui.Loadout
-	local loadoutCanvas = loadoutsGui.CanvasGroup
-
-	local sample_card = loadoutCanvas.Card
-
-	local arc = 60
-	local radius = 80
 end
 
 local function initializeObjectives()
@@ -890,25 +884,6 @@ mouse.LeftUp:Connect(function(processed: boolean)
 end)
 --]]
 
-local health_bar = physical_bar.new()
-health_bar:SetAdornee(humanoid.RootPart :: BasePart)
-
-local health_thread = nil
-
-humanoid.HealthChanged:Connect(function(health)
-	if health_thread then
-		task.cancel(health_thread)
-	else
-		health_bar:Show()
-	end
-
-	health_bar:SetValue(health)
-
-	health_thread = task.delay(4, function()
-		health_bar:Hide()
-	end)
-end)
-
 glove:Apply(character)
 
 do
@@ -938,15 +913,12 @@ do
 
 		local snack_bar = hint.new()
 		snack_bar:SetText(string.format(str, min_quality_level))
-		snack_bar:SetExpiry(4)
-		snack_bar:SetCanClick(true)
-		snack_bar:SetAction(function()
-			future.Try(function()
-				--user_game_settings.SavedQualityLevel = min_quality_enum
-			end)
-		end, "Set")
+		snack_bar:SetExpiry(3)
+		snack_bar:SetCanClick(false)
 	end)
 end
+
+loadout_frontend:HydrateCards()
 
 --[[
 do
