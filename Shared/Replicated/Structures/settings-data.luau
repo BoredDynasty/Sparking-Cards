@@ -10,6 +10,8 @@ export type SettingCallbacks = {
 	on: ((boolean) -> ())?,
 	off: ((boolean) -> ())?,
 	change: ((number) -> ())?,
+	select: ((string) -> ())?,
+	rebind: ((number) -> ())?,
 }
 
 export type SettingUiDefinition = typemarshaller.SettingDefinition & {
@@ -22,7 +24,7 @@ export type SettingUiDefinition = typemarshaller.SettingDefinition & {
 
 local events = ReplicatedStorage.Events
 
-local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks } = {
+local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks? } = {
 	background_music = {
 		on = function()
 			print("Background music turned on.")
@@ -59,6 +61,16 @@ local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks } 
 			end
 		end,
 	},
+	movement_mode = {
+		select = function(mode: string)
+			print(`Movement mode set to {mode}.`)
+		end,
+	},
+	dash_keybind = {
+		rebind = function(next_key_code: number)
+			print(`Dash keybind updated to {next_key_code}.`)
+		end,
+	},
 }
 
 local icons_by_identifier: { [typemarshaller.SettingId]: { on: string, off: string } } = {
@@ -92,6 +104,8 @@ for _, definition in ipairs(settings_schema.list) do
 		min = definition.min,
 		max = definition.max,
 		step = definition.step,
+		control_type = definition.control_type,
+		choices = definition.choices,
 		callbacks = callbacks_by_identifier[definition.identifier],
 		icons = icons_by_identifier[definition.identifier],
 	} :: SettingUiDefinition

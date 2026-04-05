@@ -61,21 +61,37 @@ export type GlidingConfig = {
 
 -- settings
 
-export type SettingType = "boolean" | "number"
+export type SettingType = "boolean" | "number" | "string"
 
-export type SettingValue = boolean | number
+export type SettingControlType = "toggle" | "slider" | "checkbox" | "dropdown" | "keybind"
 
-export type SettingId = "background_music" | "gui_sound" | "background_music_volume" | "fov"
+export type SettingValue = boolean | number | string
+
+export type SettingChoice = {
+	label: string,
+	value: SettingValue,
+}
+
+export type SettingId =
+	"background_music"
+	| "gui_sound"
+	| "background_music_volume"
+	| "fov"
+	| "show_damage_numbers"
+	| "movement_mode"
+	| "dash_keybind"
 
 export type SettingDefinition = {
 	identifier: SettingId,
 	name: string,
 	details: string,
 	value_type: SettingType,
+	control_type: SettingControlType?,
 	default: SettingValue,
 	min: number?,
 	max: number?,
 	step: number?,
+	choices: { SettingChoice }?,
 }
 
 -- player related
