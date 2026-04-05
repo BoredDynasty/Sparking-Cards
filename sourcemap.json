@@ -11335,225 +11335,7 @@
         },
         {
           "name": "Camera",
-          "className": "Camera",
-          "children": [
-            {
-              "name": "RotationalAxises",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "Origin",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Sphere",
-                      "className": "SphereHandleAdornment"
-                    }
-                  ]
-                },
-                {
-                  "name": "HoverTransparency",
-                  "className": "NumberValue"
-                },
-                {
-                  "name": "FillTransparency",
-                  "className": "NumberValue"
-                },
-                {
-                  "name": "Sphere",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Z_Sphere1",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Z_Sphere2",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Y_Sphere2",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Y_Sphere1",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "X_Sphere1",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "X_Sphere2",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Z",
-                  "className": "MeshPart",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    },
-                    {
-                      "name": "FillColor",
-                      "className": "Color3Value"
-                    },
-                    {
-                      "name": "HoverColor",
-                      "className": "Color3Value"
-                    },
-                    {
-                      "name": "Sphere1",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Sphere2",
-                      "className": "Attachment"
-                    }
-                  ]
-                },
-                {
-                  "name": "Y",
-                  "className": "MeshPart",
-                  "children": [
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    },
-                    {
-                      "name": "FillColor",
-                      "className": "Color3Value"
-                    },
-                    {
-                      "name": "HoverColor",
-                      "className": "Color3Value"
-                    },
-                    {
-                      "name": "Sphere2",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Sphere1",
-                      "className": "Attachment"
-                    }
-                  ]
-                },
-                {
-                  "name": "X",
-                  "className": "MeshPart",
-                  "children": [
-                    {
-                      "name": "RigidConstraint",
-                      "className": "RigidConstraint"
-                    },
-                    {
-                      "name": "Attachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "FillColor",
-                      "className": "Color3Value"
-                    },
-                    {
-                      "name": "HoverColor",
-                      "className": "Color3Value"
-                    },
-                    {
-                      "name": "Sphere1",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "Sphere2",
-                      "className": "Attachment"
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
+          "className": "Camera"
         }
       ]
     },
@@ -12287,6 +12069,13 @@
                   ]
                 },
                 {
+                  "name": "loadout-frontend",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/loadout-frontend.luau"
+                  ]
+                },
+                {
                   "name": "Sequences",
                   "className": "Folder",
                   "children": [
@@ -12300,10 +12089,10 @@
                   ]
                 },
                 {
-                  "name": "loadout-frontend",
+                  "name": "feedback-frontend",
                   "className": "ModuleScript",
                   "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Components/loadout-frontend.luau"
+                    "sync/StarterPlayer/StarterPlayerScripts/Components/feedback-frontend.luau"
                   ]
                 }
               ]
@@ -12580,6 +12369,20 @@
                   "className": "ModuleScript",
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Classes/chip.luau"
+                  ]
+                },
+                {
+                  "name": "checkbox-label",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Classes/checkbox-label.luau"
+                  ]
+                },
+                {
+                  "name": "dropdown",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/StarterPlayer/StarterPlayerScripts/Classes/dropdown.luau"
                   ]
                 }
               ]
@@ -14447,6 +14250,38 @@
           ]
         },
         {
+          "name": "LoadoutScreen",
+          "className": "ScreenGui",
+          "children": [
+            {
+              "name": "CanvasGroup",
+              "className": "CanvasGroup",
+              "children": [
+                {
+                  "name": "CanvasGroup",
+                  "className": "CanvasGroup"
+                },
+                {
+                  "name": "CardHolder",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "Card",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "ImageLabel",
+                          "className": "ImageLabel"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
           "name": "Stats",
           "className": "ScreenGui",
           "children": [
@@ -15003,26 +14838,6 @@
                       "className": "UIAspectRatioConstraint"
                     },
                     {
-                      "name": "UserInput",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "TextLabel",
-                          "className": "TextBox",
-                          "children": [
-                            {
-                              "name": "UIPadding",
-                              "className": "UIPadding"
-                            },
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
                       "name": "Poll",
                       "className": "Frame",
                       "children": [
@@ -15037,6 +14852,26 @@
                             {
                               "name": "UIListLayout",
                               "className": "UIListLayout"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UserInput",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "TextBox",
+                          "className": "TextBox",
+                          "children": [
+                            {
+                              "name": "UIPadding",
+                              "className": "UIPadding"
+                            },
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
                             }
                           ]
                         }
@@ -15065,42 +14900,6 @@
               "className": "UIListLayout"
             }
           ]
-        },
-        {
-          "name": "LoadoutScreen",
-          "className": "ScreenGui",
-          "children": [
-            {
-              "name": "CanvasGroup",
-              "className": "CanvasGroup",
-              "children": [
-                {
-                  "name": "CanvasGroup",
-                  "className": "CanvasGroup"
-                },
-                {
-                  "name": "CardHolder",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "Card",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "ImageLabel",
-                          "className": "ImageLabel"
-                        },
-                        {
-                          "name": "UIScale",
-                          "className": "UIScale"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
         }
       ]
     },
@@ -15113,6 +14912,26 @@
           "className": "ModuleScript",
           "filePaths": [
             "sync/ReplicatedStorage/Packet.luau"
+          ]
+        },
+        {
+          "name": "Effects",
+          "className": "Folder",
+          "children": [
+            {
+              "name": "speed-lines",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Effects/speed-lines.luau"
+              ]
+            },
+            {
+              "name": "damage-indicator",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Effects/damage-indicator.luau"
+              ]
+            }
           ]
         },
         {
@@ -17016,6 +16835,20 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Modules/proximity-prompt.luau"
+              ]
+            },
+            {
+              "name": "skill-functions",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/skill-functions.luau"
+              ]
+            },
+            {
+              "name": "SkillFunctions",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/SkillFunctions.luau"
               ]
             },
             {
@@ -19676,6 +19509,80 @@
               ]
             },
             {
+              "name": "PhysicalBar1",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "Frame",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "InnerStroke",
+                      "className": "UIStroke"
+                    },
+                    {
+                      "name": "OuterStroke",
+                      "className": "UIStroke"
+                    },
+                    {
+                      "name": "Pattern",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Bar",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UICornerOverlayF",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Pattern",
+                          "className": "ImageLabel"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UIScale",
+                      "className": "UIScale"
+                    },
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "name": "Prism_OBJ",
               "className": "MeshPart"
             },
@@ -19912,80 +19819,6 @@
                     {
                       "name": "ParticleEmitter",
                       "className": "ParticleEmitter"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "PhysicalBar1",
-              "className": "BillboardGui",
-              "children": [
-                {
-                  "name": "Frame",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "InnerStroke",
-                      "className": "UIStroke"
-                    },
-                    {
-                      "name": "OuterStroke",
-                      "className": "UIStroke"
-                    },
-                    {
-                      "name": "Pattern",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Bar",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "UICornerOverlayF",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "Pattern",
-                          "className": "ImageLabel"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "UIScale",
-                      "className": "UIScale"
-                    },
-                    {
-                      "name": "UIPadding",
-                      "className": "UIPadding"
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
                     }
                   ]
                 }
@@ -22132,26 +21965,6 @@
         {
           "name": "Network",
           "className": "Folder"
-        },
-        {
-          "name": "Effects",
-          "className": "Folder",
-          "children": [
-            {
-              "name": "speed-lines",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Effects/speed-lines.luau"
-              ]
-            },
-            {
-              "name": "damage-indicator",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Effects/damage-indicator.luau"
-              ]
-            }
-          ]
         }
       ]
     },

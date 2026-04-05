@@ -12,8 +12,6 @@ local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
-task.wait(5) -- wait for the player to load
-
 -- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
@@ -65,6 +63,7 @@ local observer = require(ReplicatedStorage.Utility.observer)
 local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
 local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
 local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
+local loadout_frontend = require(StarterPlayer.StarterPlayerScripts.Components["loadout-frontend"])
 local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
@@ -594,13 +593,6 @@ end
 
 local function initializeLoadouts()
 	--print("init loadouts")
-	local loadoutsGui = PlayerGui.Loadout
-	local loadoutCanvas = loadoutsGui.CanvasGroup
-
-	local sample_card = loadoutCanvas.Card
-
-	local arc = 60
-	local radius = 80
 end
 
 local function initializeObjectives()
@@ -919,15 +911,12 @@ do
 
 		local snack_bar = hint.new()
 		snack_bar:SetText(string.format(str, min_quality_level))
-		snack_bar:SetExpiry(4)
-		snack_bar:SetCanClick(true)
-		snack_bar:SetAction(function()
-			future.Try(function()
-				--user_game_settings.SavedQualityLevel = min_quality_enum
-			end)
-		end, "Set")
+		snack_bar:SetExpiry(3)
+		snack_bar:SetCanClick(false)
 	end)
 end
+
+loadout_frontend:HydrateCards()
 
 --[[
 do

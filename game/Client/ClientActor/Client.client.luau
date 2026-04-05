@@ -12,8 +12,6 @@ local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
-task.wait(5) -- wait for the player to load
-
 -- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)

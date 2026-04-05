@@ -143,7 +143,6 @@ function module:LoadCatagories()
 		table.insert(visited_techniques, technique)
 
 		local catagory = catagory_pool:Get()
-		catagory.Parent = holder
 
 		local total_upgrades = getTotalUpgrades(technique)
 
@@ -204,32 +203,34 @@ function module:LoadCatagories()
 			)
 			print(button.Text)
 
-			if upgrade_number > techniques_unlocked then
-				-- this skill is locked
-				print("locked: ", skill.name)
+			task.spawn(function()
+				if upgrade_number > techniques_unlocked then
+					-- this skill is locked
+					print("locked: ", skill.name)
 
-				-- if we find the gradient spinning, we will stop it and hide the ui stroke.
-				local ui_stroke = button.Outline.UIStroke
-				ui_stroke.Enabled = false
-				local gradient = ui_stroke.UIGradient
-				gradient.Enabled = false
+					-- if we find the gradient spinning, we will stop it and hide the ui stroke.
+					local ui_stroke = button.Outline.UIStroke
+					ui_stroke.Enabled = false
+					local gradient = ui_stroke.UIGradient
+					gradient.Enabled = false
 
-				local index = table.find(spinning_gradients, gradient)
-				if index then
-					table.remove(spinning_gradients, index)
+					local index = table.find(spinning_gradients, gradient)
+					if index then
+						table.remove(spinning_gradients, index)
+					end
+				else
+					-- we will do a cool gradient spinning effect on the UIStroke.
+					local ui_stroke = button.Outline.UIStroke
+					ui_stroke.Enabled = true
+					local gradient = ui_stroke.UIGradient
+					gradient.Enabled = true
+
+					table.insert(spinning_gradients, gradient)
+					gradient.Destroying:Connect(function()
+						table.remove(spinning_gradients, table.find(spinning_gradients, gradient))
+					end)
 				end
-			else
-				-- we will do a cool gradient spinning effect on the UIStroke.
-				local ui_stroke = button.Outline.UIStroke
-				ui_stroke.Enabled = true
-				local gradient = ui_stroke.UIGradient
-				gradient.Enabled = true
-
-				table.insert(spinning_gradients, gradient)
-				gradient.Destroying:Connect(function()
-					table.remove(spinning_gradients, table.find(spinning_gradients, gradient))
-				end)
-			end
+			end)
 
 			-- since the UIListLayout is sorted by Name, we will use numbers to sort the buttons in the right order.
 			-- (including the connection visuals)
@@ -301,7 +302,22 @@ function module:LoadCatagories()
 				end
 			end)
 		end
+
+		catagory.Parent = holder
 	end
+
+	-- expand the Holder CanvasSize to fit the catagories
+	-- note: the holder is a ScrollingFrame
+	local layout = holder.UIListLayout
+	local padding = layout.Padding.Offset
+	local total_height = padding
+	for i, catagory in ipairs(holder:GetChildren()) do
+		if catagory:IsA("Frame") then
+			total_height += catagory.AbsoluteSize.Y + padding
+		end
+	end
+
+	holder.CanvasSize = UDim2.new(0, 0, 0, total_height)
 
 	print(tablekit.ToString(visited_techniques :: any))
 end

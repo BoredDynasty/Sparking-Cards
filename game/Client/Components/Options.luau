@@ -56,9 +56,11 @@ type Option = {
 -- options.luau
 -- supports boolean and number settings.
 
--- TODO: allow for dropdown support, checkboxes, and keybinds in the future. for now this is just a simple slider and toggle system.
+--[[
+TODO: allow for dropdown support, checkboxes, and keybinds in the future. for now this is just a simple slider and toggle system.
 -- e.g keybinds are a bit more complex since we need to listen for the next key input after clicking the bind button,
 -- and we also need to handle mouse buttons and possibly controller buttons in the future.
+--]]
 
 local module = {
 	tracked = {} :: { Option },

@@ -3,18 +3,15 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local observer = require(ReplicatedStorage.Utility.observer)
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
-local spr = require(ReplicatedStorage.Modules.spr)
-local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- stamina-controller.luau
 
 local _trove = trove.new()
 
-local controller = {}
-controller._trove = _trove
+local module = {}
+module._trove = _trove
 
 local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
@@ -25,8 +22,6 @@ local regeneration_delay = 1.5
 local regeneration_rate = 15
 local last_drain = 0
 local is_regenerating = false
-
-local bar_size = UDim2.fromScale(0.5, 0.97)
 
 local bar = physical_bar.new()
 local previous_stamina = max_stamina
@@ -45,6 +40,8 @@ local function setupCharacter(new_character: Model)
 
 	bar = physical_bar.new()
 	bar:SetAdornee(root_part)
+
+	bar:SetValue(character:GetAttribute("Stamina"))
 
 	previous_stamina = max_stamina
 	last_drain = 0
@@ -75,7 +72,7 @@ end
 
 player.CharacterAdded:Connect(setupCharacter)
 
-function controller:Update(deltaTime: number)
+function module:Update(deltaTime: number)
 	local anti_regenerate = character:GetAttribute("AntiRegenerate") :: boolean
 	local current_stamina = character:GetAttribute("Stamina") :: number or max_stamina
 
@@ -99,4 +96,4 @@ function controller:Update(deltaTime: number)
 	end
 end
 
-return controller
+return module

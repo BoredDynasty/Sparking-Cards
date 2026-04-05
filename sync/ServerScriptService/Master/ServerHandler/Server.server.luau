@@ -155,13 +155,17 @@ local function FetchProfileData(player: Player): typemarshaller.ProfileData?
 	local profile = profiles[player] :: typemarshaller.Profile?
 
 	if not profile and profile == nil then
-		Packet.SendNotification.sendTo({
-			message = "Couldn't get data",
-		}, player)
+		if not RunService:IsStudio() then
+			-- i really need a break from seeing ts.
 
-		local list = tablekit.Values(profiles :: any)
+			Packet.SendNotification.sendTo({
+				message = "Couldn't get data",
+			}, player)
 
-		warn("Couldn't fetch profile from table: ", table.unpack(list))
+			local list = tablekit.Values(profiles :: any)
+
+			warn("Couldn't fetch profile from table: ", table.unpack(list))
+		end
 
 		return nil
 	end
