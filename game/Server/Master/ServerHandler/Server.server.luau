@@ -750,8 +750,40 @@ local function sanitizeSettingValue(
 	definition: typemarshaller.SettingDefinition,
 	value: typemarshaller.SettingValue
 ): typemarshaller.SettingValue?
+	local choices = definition.choices
+
+	local function value_in_choices(candidate: typemarshaller.SettingValue): boolean
+		if choices == nil then
+			return true
+		end
+
+		for _, choice in ipairs(choices) do
+			if choice.value == candidate then
+				return true
+			end
+		end
+
+		return false
+	end
+
 	if definition.value_type == "boolean" then
 		if type(value) ~= "boolean" then
+			return nil
+		end
+
+		if not value_in_choices(value) then
+			return nil
+		end
+
+		return value
+	end
+
+	if definition.value_type == "string" then
+		if type(value) ~= "string" then
+			return nil
+		end
+
+		if not value_in_choices(value) then
 			return nil
 		end
 
@@ -792,6 +824,10 @@ local function sanitizeSettingValue(
 
 	if max_value ~= nil then
 		value = math.min(value, max_value)
+	end
+
+	if not value_in_choices(value) then
+		return nil
 	end
 
 	return value

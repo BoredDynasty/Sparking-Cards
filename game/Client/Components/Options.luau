@@ -2,6 +2,7 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
+local UserInputService = game:GetService("UserInputService")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local fetch_profile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
@@ -18,6 +19,8 @@ type SettingCallbacks = {
 	on: ((boolean) -> ())?,
 	off: ((boolean) -> ())?,
 	change: ((number) -> ())?,
+	select: ((string) -> ())?,
+	rebind: ((number) -> ())?,
 }
 
 type SettingUiDefinition = {
@@ -25,10 +28,12 @@ type SettingUiDefinition = {
 	name: string,
 	details: string,
 	value_type: typemarshaller.SettingType,
+	control_type: typemarshaller.SettingControlType?,
 	default: typemarshaller.SettingValue,
 	min: number?,
 	max: number?,
 	step: number?,
+	choices: { typemarshaller.SettingChoice }?,
 	callbacks: SettingCallbacks?,
 	icons: {
 		on: string,
@@ -41,10 +46,12 @@ type Option = {
 	name: string,
 	details: string?,
 	value_type: typemarshaller.SettingType,
+	control_type: typemarshaller.SettingControlType,
 	default: typemarshaller.SettingValue,
 	min: number?,
 	max: number?,
 	step: number?,
+	choices: { typemarshaller.SettingChoice }?,
 	callbacks: SettingCallbacks?,
 	icons: {
 		on: string,
@@ -54,13 +61,7 @@ type Option = {
 }
 
 -- options.luau
--- supports boolean and number settings.
-
---[[
-TODO: allow for dropdown support, checkboxes, and keybinds in the future. for now this is just a simple slider and toggle system.
--- e.g keybinds are a bit more complex since we need to listen for the next key input after clicking the bind button,
--- and we also need to handle mouse buttons and possibly controller buttons in the future.
---]]
+-- supports toggle, slider, checkbox, dropdown, and keybind settings.
 
 local module = {
 	tracked = {} :: { Option },
@@ -126,9 +127,41 @@ local function normalize_number(option: Option, value: number): number
 end
 
 local function sanitize_value(option: Option, value: any): typemarshaller.SettingValue
+	local choices = option.choices
+
+	local function value_in_choices(candidate: typemarshaller.SettingValue): boolean
+		if choices == nil then
+			return true
+		end
+
+		for _, choice in ipairs(choices) do
+			if choice.value == candidate then
+				return true
+			end
+		end
+
+		return false
+	end
+
 	if option.value_type == "boolean" then
 		if type(value) ~= "boolean" then
 			return option.default :: boolean
+		end
+
+		if not value_in_choices(value) then
+			return option.default
+		end
+
+		return value
+	end
+
+	if option.value_type == "string" then
+		if type(value) ~= "string" then
+			return option.default :: string
+		end
+
+		if not value_in_choices(value) then
+			return option.default
 		end
 
 		return value
@@ -142,7 +175,12 @@ local function sanitize_value(option: Option, value: any): typemarshaller.Settin
 		return normalize_number(option, option.default :: number)
 	end
 
-	return normalize_number(option, value)
+	local normalized = normalize_number(option, value)
+	if not value_in_choices(normalized) then
+		return option.default
+	end
+
+	return normalized
 end
 
 local function format_number(value: number, step: number?): string
@@ -157,15 +195,50 @@ local function format_number(value: number, step: number?): string
 	return formatted
 end
 
+local function format_keybind(value: number): string
+	local key_code = Enum.KeyCode:FromValue(value)
+	if key_code ~= nil then
+		return key_code.Name
+	end
+
+	local input_type = Enum.UserInputType:FromValue(value)
+	if input_type ~= nil then
+		return input_type.Name
+	end
+
+	return tostring(value)
+end
+
 local function format_option_text(option: Option, value: typemarshaller.SettingValue): string
 	local details = option.details or ""
 	local header = `<b>{option.name}</b><br/>`
 
 	if option.value_type == "number" then
 		local numeric_value = value :: number
+		local formatted_value = format_number(numeric_value, option.step)
+		if option.control_type == "keybind" then
+			formatted_value = format_keybind(numeric_value)
+		end
 		return header
 			.. details
-			.. ` <font transparency="0.25">({format_number(numeric_value, option.step)})</font>`
+			.. ` <font transparency="0.25">({formatted_value})</font>`
+	end
+
+	if option.value_type == "string" then
+		local string_value = value :: string
+		local label = string_value
+		local choices = option.choices
+
+		if choices then
+			for _, choice in ipairs(choices) do
+				if choice.value == string_value then
+					label = choice.label
+					break
+				end
+			end
+		end
+
+		return header .. details .. ` <font transparency="0.25">({label})</font>`
 	end
 
 	return header .. details
@@ -184,13 +257,36 @@ local function run_callback(option: Option, value: typemarshaller.SettingValue)
 		if next_callback then
 			task.spawn(future.new, next_callback, state)
 		end
-	else
-		local numeric_value = value :: number
-		local next_callback = callbacks.change
-		if next_callback then
-			task.spawn(future.new, next_callback, numeric_value)
-		end
+		return
 	end
+
+	if option.value_type == "number" then
+		local numeric_value = value :: number
+		if callbacks.change then
+			task.spawn(future.new, callbacks.change, numeric_value)
+		end
+		if option.control_type == "keybind" and callbacks.rebind then
+			task.spawn(future.new, callbacks.rebind, numeric_value)
+		end
+		return
+	end
+
+	local string_value = value :: string
+	if callbacks.select then
+		task.spawn(future.new, callbacks.select, string_value)
+	end
+end
+
+local function get_control_type(option: Option): typemarshaller.SettingControlType
+	if option.control_type ~= nil then
+		return option.control_type
+	end
+
+	if option.value_type == "number" then
+		return "slider"
+	end
+
+	return "toggle"
 end
 
 local function save_setting_to_server(option: Option, value: typemarshaller.SettingValue, force: boolean?)
@@ -303,6 +399,168 @@ local function render_number(
 	end)
 end
 
+local function render_checkbox(
+	option: Option,
+	toggle_btn: TextButton,
+	slider_frame: Frame,
+	text_display: TextLabel
+)
+	slider_frame.Visible = false
+	toggle_btn.Visible = true
+
+	local function sync_button()
+		local enabled = option.value:Get() :: boolean
+		local symbol = if enabled then "☑" else "☐"
+		text_display.Text = format_option_text(option, enabled) .. ` <font transparency="0.15">{symbol}</font>`
+	end
+
+	sync_button()
+
+	toggle_btn.Activated:Connect(function()
+		local next_value = not (option.value:Get() :: boolean)
+		option.value:Set(next_value)
+		run_callback(option, next_value)
+		save_setting_to_server(option, next_value, true)
+		sync_button()
+	end)
+
+	option.value.Changed:Connect(sync_button)
+end
+
+local function get_choice_label(option: Option, value: typemarshaller.SettingValue): string
+	local choices = option.choices
+	if choices == nil then
+		return tostring(value)
+	end
+
+	for _, choice in ipairs(choices) do
+		if choice.value == value then
+			return choice.label
+		end
+	end
+
+	return tostring(value)
+end
+
+local function render_dropdown(
+	option: Option,
+	toggle_btn: TextButton,
+	slider_frame: Frame
+)
+	slider_frame.Visible = false
+	toggle_btn.Visible = true
+
+	local choices = option.choices
+	if choices == nil or #choices == 0 then
+		toggle_btn.Text = "No Options"
+		toggle_btn.Active = false
+		return
+	end
+
+	local function find_choice_index(value: typemarshaller.SettingValue): number
+		for i, choice in ipairs(choices) do
+			if choice.value == value then
+				return i
+			end
+		end
+
+		return 1
+	end
+
+	local function sync_button()
+		local current_value = option.value:Get()
+		local label = get_choice_label(option, current_value)
+		toggle_btn.Text = `Next: {label}`
+	end
+
+	sync_button()
+
+	toggle_btn.Activated:Connect(function()
+		local current_index = find_choice_index(option.value:Get())
+		local next_index = current_index + 1
+		if next_index > #choices then
+			next_index = 1
+		end
+
+		local next_choice = choices[next_index]
+		option.value:Set(next_choice.value)
+		run_callback(option, next_choice.value)
+		save_setting_to_server(option, next_choice.value, true)
+		sync_button()
+	end)
+
+	option.value.Changed:Connect(sync_button)
+end
+
+local function render_keybind(
+	option: Option,
+	option_template: Frame,
+	toggle_btn: TextButton,
+	slider_frame: Frame
+)
+	slider_frame.Visible = false
+	toggle_btn.Visible = true
+
+	local is_listening = false
+	local input_connection: RBXScriptConnection? = nil
+
+	local function stop_listening()
+		if input_connection then
+			input_connection:Disconnect()
+			input_connection = nil
+		end
+		is_listening = false
+	end
+
+	local function sync_button()
+		local current_value = option.value:Get() :: number
+		if is_listening then
+			toggle_btn.Text = "Press any key..."
+			return
+		end
+		toggle_btn.Text = `Rebind: {format_keybind(current_value)}`
+	end
+
+	sync_button()
+
+	toggle_btn.Activated:Connect(function()
+		if is_listening then
+			stop_listening()
+			sync_button()
+			return
+		end
+
+		is_listening = true
+		sync_button()
+
+		input_connection = UserInputService.InputBegan:Connect(function(input, game_processed)
+			if game_processed then
+				return
+			end
+
+			local next_value = input.KeyCode.Value
+			if input.KeyCode == Enum.KeyCode.Unknown then
+				next_value = input.UserInputType.Value
+			end
+
+			local sanitized_value = sanitize_value(option, next_value)
+			local numeric_value = sanitized_value :: number
+			option.value:Set(numeric_value)
+			run_callback(option, numeric_value)
+			save_setting_to_server(option, numeric_value, true)
+
+			stop_listening()
+			sync_button()
+		end)
+	end)
+
+	option_template.Destroying:Connect(function()
+		stop_listening()
+	end)
+
+	option.value.Changed:Connect(sync_button)
+end
+
 function module:Get(name: string): Option?
 	local lowered_name = string.lower(name)
 	for _, option in ipairs(module.tracked) do
@@ -347,10 +605,12 @@ function module:Hydrate(profile: typemarshaller.Profile?)
 			name = definition.name,
 			details = definition.details,
 			value_type = definition.value_type,
+			control_type = definition.control_type or (if definition.value_type == "number" then "slider" else "toggle"),
 			default = definition.default,
 			min = definition.min,
 			max = definition.max,
 			step = definition.step,
+			choices = definition.choices,
 			callbacks = definition.callbacks,
 			icons = definition.icons,
 			value = observer.new(definition.default),
@@ -397,10 +657,20 @@ function module:LoadItems()
 			text_display.Text = format_option_text(option, next_value)
 		end)
 
-		if option.value_type == "boolean" then
+		local control_type = get_control_type(option)
+
+		if control_type == "toggle" then
 			render_boolean(option, option_template, toggle_btn, slider_frame)
-		else
+		elseif control_type == "slider" then
 			render_number(option, option_template, toggle_btn, slider_frame)
+		elseif control_type == "checkbox" then
+			render_checkbox(option, toggle_btn, slider_frame, text_display)
+		elseif control_type == "dropdown" then
+			render_dropdown(option, toggle_btn, slider_frame)
+		elseif control_type == "keybind" then
+			render_keybind(option, option_template, toggle_btn, slider_frame)
+		else
+			render_boolean(option, option_template, toggle_btn, slider_frame)
 		end
 
 		option_template.Parent = holder
