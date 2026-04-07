@@ -1,10 +1,14 @@
 --!strict
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 
 local audio = require(ReplicatedStorage.Modules.audio)
+local boundingbox = require(ReplicatedStorage.Classes.boundingbox)
+local space = require(ReplicatedStorage.Modules.Serialization.space)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
+local weld_utility = require(ReplicatedStorage.Environment["weld-utility"])
 
 -- train.luau
 -- a server manager for the ingame train.
@@ -21,13 +25,16 @@ local LIGHT_COLOR_REVERSE = Color3.new(0.66, 0, 0)
 local LIGHT_COLOR_OFF = Color3.new(0.1, 0.1, 0.1)
 
 local carriage = workspace:WaitForChild("Train")
+local engine = carriage:WaitForChild("Engine")
+
+weld_utility:Weld(carriage, engine)
+
+local events = ReplicatedStorage.Events
 
 local seat = carriage:WaitForChild("VehicleSeat")
 
 local left_doors = carriage.LeftDoors
 local right_doors = carriage.RightDoors
-
-local engine = carriage.Engine
 
 local engine_velocity = engine.BodyVelocity
 
@@ -81,9 +88,13 @@ end
 
 local function update_destination_display(station_sensor: BasePart): ()
 	local line_name = station_sensor:GetAttribute("LineName") :: string?
-	local line_number = station_sensor:GetAttribute("LineNumber") :: number?
+	local line_number = station_sensor:GetAttribute("SetLine") :: number?
 
-	for _, panel in ipairs(panels:GetChildren()) do
+	if not line_name or not line_number then
+		warn("missing line name and or line number: ", line_name, line_number)
+	end
+
+	for _, panel in ipairs(panels:GetDescendants()) do
 		if line_name then
 			local line_name_display = panel:FindFirstChild("LineName") :: Frame?
 			if line_name_display then
@@ -119,12 +130,36 @@ local function handle_door_animation(open_left_doors: boolean): ()
 			end
 		end
 
-		door.CanCollide = false
-		door.Transparency = 1
+		audio:PlaySFX("train_door_open", door.Position)
+
+		local tween_info_1 = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		local tween1 = TweenService:Create(door, tween_info_1, {
+			Position = door.Position + Vector3.new(1, 0, 0),
+		})
+		tween1:Play()
+		tween1.Completed:Connect(function()
+			local tween_info_2 = TweenInfo.new(2, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
+			local tween2 = TweenService:Create(door, tween_info_2, {
+				Position = door.Position + Vector3.new(0, 0, 6),
+			})
+			tween2:Play()
+		end)
 
 		task.delay(DOOR_OPEN_DURATION, function()
-			door.CanCollide = true
-			door.Transparency = 0
+			audio:PlaySFX("train_door_close", door.Position)
+
+			local tween_info_3 = TweenInfo.new(0.8, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+			local tween3 = TweenService:Create(door, tween_info_3, {
+				Position = door.Position + Vector3.new(-1, 0, 0),
+			})
+			tween3:Play()
+			tween3.Completed:Connect(function()
+				local tween_info_4 = TweenInfo.new(2.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+				local tween4 = TweenService:Create(door, tween_info_4, {
+					Position = door.Position + Vector3.new(0, 0, -6),
+				})
+				tween4:Play()
+			end)
 		end)
 	end
 end
@@ -138,7 +173,7 @@ seat.Touched:Connect(function(base_part)
 		return
 	end
 
-	local T_info = TweenInfo.new(4, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	local T_info = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 
 	last_station = base_part
 
@@ -163,19 +198,59 @@ seat.Touched:Connect(function(base_part)
 	task.wait(STATION_STOP_DURATION)
 
 	-- Resume movement in departure direction
-	T_info = TweenInfo.new(5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+	T_info = TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 	TweenService:Create(seat, T_info, { Throttle = depart_throttle }):Play()
+
+	audio:PlaySFX("train_starting", engine.Position)
+
+	-- lets add a special camera effect when departing the station
+	-- we will zoom the camera in on the train for a moment to add some excitement to the departure
+	-- remember, this is on the server so we need a remote event to tell the clients to do this
+	local remote_event = events:WaitForChild("TrainDepartureCamera") :: RemoteEvent
+	task.delay(5, function()
+		-- try to find out which players are actually on the train and only send to them
+		-- maybe we can use bounding boxes
+
+		local players_found: { Player } = {}
+
+		local overlap_param = OverlapParams.new()
+		overlap_param.FilterType = Enum.RaycastFilterType.Include
+
+		local parts = workspace:GetPartBoundsInBox(engine.CFrame, engine.Size, overlap_param)
+
+		for _, part in ipairs(parts) do
+			local character = part:FindFirstAncestorOfClass("Model")
+			if not character then
+				continue
+			end
+
+			local player = Players:GetPlayerFromCharacter(character)
+			if not player then
+				continue
+			end
+
+			if table.find(players_found, player) then
+				continue
+			end
+
+			table.insert(players_found, player)
+		end
+
+		for _, player in ipairs(players_found) do
+			remote_event:FireClient(player)
+		end
+	end)
 end)
 
 -- Initialize direction based on initial throttle
 set_direction(seat.Throttle)
 
 -- Setup looping audio
-audio:ConfigureSFX("train_clattering", {
+audio:ConfigureSFX("train_ambient", {
 	looped = true,
 })
 
-audio:PlaySFX("train_clattering", engine.Position)
+audio:PlaySFX("train_ambient")
 
 -- Update physics and audio based on movement
 RunService.Heartbeat:Connect(function()
@@ -184,7 +259,7 @@ RunService.Heartbeat:Connect(function()
 
 	-- Adjust train sound volume based on current speed
 	local speed_ratio = engine.AssemblyLinearVelocity.Magnitude / seat.MaxSpeed
-	audio:ConfigureMusic("train_clattering", {
+	audio:ConfigureSFX("train_ambient", {
 		volume = speed_ratio,
 	})
 end)

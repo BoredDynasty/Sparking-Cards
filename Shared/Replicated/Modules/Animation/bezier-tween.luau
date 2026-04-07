@@ -53,7 +53,7 @@ function module.new<I, P>(instance: { [P]: I }, property: P, duration: number, p
 	_trove:Add(completed)
 
 	return {
-		Completed = completed,
+		Signal = completed,
 		Destroy = function()
 			_trove:Destroy()
 		end,

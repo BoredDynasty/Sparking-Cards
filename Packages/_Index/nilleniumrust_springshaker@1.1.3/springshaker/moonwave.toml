@@ -1,0 +1,20 @@
+title = "SpringShaker"
+gitRepoUrl = "https://github.com/nilleniumrust/SpringShaker"
+gitSourceBranch = "main"
+changelog = true
+
+classOrder = ["SpringShaker", "ShakerInstances", "Batch"]
+code = ["src/SpringShaker"]
+
+[docusaurus]
+onBrokenLinks = "warn" 
+onBrokenMarkdownLinks = "warn"
+
+organizationName = "nilleniumrust"
+projectName = "SpringShaker"
+url = "https://nilleniumrust.github.io" 
+baseUrl = "/SpringShaker/" 
+tagline = "Physics-based camera shaking for Roblox"
+
+[footer]
+style = "dark"

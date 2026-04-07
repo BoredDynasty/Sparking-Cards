@@ -135,7 +135,7 @@ end
 
 function Utils.getMemoryPressure(): Types.MemoryPressure
 	local totalMemory = Stats:GetTotalMemoryUsageMb()
-	print(("DEBUG: Current memory usage: %.1f MB"):format(totalMemory))
+	--print(("DEBUG: Current memory usage: %.1f MB"):format(totalMemory))
 
 	if totalMemory > Constants.MEMORY_PRESSURE_CRITICAL then
 		return "critical"

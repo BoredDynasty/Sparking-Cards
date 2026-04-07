@@ -20,7 +20,7 @@ end
 
 local conn = nil
 
-conn = RunService.PreRender:Connect(function(delta_time)
+local function onPreRender(delta_time)
 	if not next(module.effects) then
 		return
 	end
@@ -32,6 +32,23 @@ conn = RunService.PreRender:Connect(function(delta_time)
 
 		debug.profileend()
 	end
-end)
+end
+
+function module:Enable()
+	if conn then
+		return
+	end
+
+	conn = RunService.PreRender:Connect(onPreRender)
+end
+
+function module:Disable()
+	if conn then
+		conn:Disconnect()
+		conn = nil
+	end
+end
+
+conn = RunService.PreRender:Connect(onPreRender)
 
 return module

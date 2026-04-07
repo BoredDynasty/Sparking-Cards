@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" dir="ltr" class="plugin-moonwave plugin-id-moonwave" data-has-hydrated="false">
+<head>
+<meta charset="UTF-8">
+<meta name="generator" content="Docusaurus v3.7.0">
+<title data-rh="true">SpringShaker | SpringShaker</title><meta data-rh="true" name="viewport" content="width=device-width,initial-scale=1"><meta data-rh="true" name="twitter:card" content="summary_large_image"><meta data-rh="true" property="og:url" content="https://nilleniumrust.github.io/SpringShaker/api/SpringShaker"><meta data-rh="true" property="og:locale" content="en"><meta data-rh="true" name="docusaurus_locale" content="en"><meta data-rh="true" name="docusaurus_tag" content="default"><meta data-rh="true" name="docsearch:language" content="en"><meta data-rh="true" name="docsearch:docusaurus_tag" content="default"><meta data-rh="true" property="og:title" content="SpringShaker | SpringShaker"><meta data-rh="true" name="description" content="A physics-based camera shaker for Roblox built on a damped harmonic oscillator. Unlike noise-only shakers, SpringShaker simulates real mass and resistance — giving shakes a natural ring-down and weight."><meta data-rh="true" property="og:description" content="A physics-based camera shaker for Roblox built on a damped harmonic oscillator. Unlike noise-only shakers, SpringShaker simulates real mass and resistance — giving shakes a natural ring-down and weight."><link data-rh="true" rel="canonical" href="https://nilleniumrust.github.io/SpringShaker/api/SpringShaker"><link data-rh="true" rel="alternate" href="https://nilleniumrust.github.io/SpringShaker/api/SpringShaker" hreflang="en"><link data-rh="true" rel="alternate" href="https://nilleniumrust.github.io/SpringShaker/api/SpringShaker" hreflang="x-default"><link rel="stylesheet" href="/SpringShaker/assets/css/styles.b9f2c64d.css">
+<script src="/SpringShaker/assets/js/runtime~main.65300da4.js" defer="defer"></script>
+<script src="/SpringShaker/assets/js/main.9280ab90.js" defer="defer"></script>
+</head>
+<body class="navigation-with-keyboard">
+<script>!function(){function t(t){document.documentElement.setAttribute("data-theme",t)}var e=function(){try{return new URLSearchParams(window.location.search).get("docusaurus-theme")}catch(t){}}()||function(){try{return window.localStorage.getItem("theme")}catch(t){}}();null!==e?t(e):window.matchMedia("(prefers-color-scheme: dark)").matches?t("dark"):(window.matchMedia("(prefers-color-scheme: light)").matches,t("light"))}(),function(){try{const c=new URLSearchParams(window.location.search).entries();for(var[t,e]of c)if(t.startsWith("docusaurus-data-")){var a=t.replace("docusaurus-data-","data-");document.documentElement.setAttribute(a,e)}}catch(t){}}()</script><div id="__docusaurus"><div role="region" aria-label="Skip to main content"><a class="skipToContent_fXgn" href="#__docusaurus_skipToContent_fallback">Skip to main content</a></div><nav aria-label="Main" class="navbar navbar--fixed-top"><div class="navbar__inner"><div class="navbar__items"><button aria-label="Toggle navigation bar" aria-expanded="false" class="navbar__toggle clean-btn" type="button"><svg width="30" height="30" viewBox="0 0 30 30" aria-hidden="true"><path stroke="currentColor" stroke-linecap="round" stroke-miterlimit="10" stroke-width="2" d="M4 7h22M4 15h22M4 23h22"></path></svg></button><a class="navbar__brand" href="/SpringShaker/"><b class="navbar__title text--truncate">SpringShaker</b></a><a aria-current="page" class="navbar__item navbar__link navbar__link--active" href="/SpringShaker/api/">API</a></div><div class="navbar__items navbar__items--right"><a href="https://github.com/nilleniumrust/SpringShaker" target="_blank" rel="noopener noreferrer" class="navbar__item navbar__link">GitHub<svg width="13.5" height="13.5" aria-hidden="true" viewBox="0 0 24 24" class="iconExternalLink_nPIU"><path fill="currentColor" d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z"></path></svg></a><div class="toggle_vylO colorModeToggle_DEke"><button class="clean-btn toggleButton_gllP toggleButtonDisabled_aARS" type="button" disabled="" title="Switch between dark and light mode (currently light mode)" aria-label="Switch between dark and light mode (currently light mode)" aria-live="polite" aria-pressed="false"><svg viewBox="0 0 24 24" width="24" height="24" class="lightToggleIcon_pyhR"><path fill="currentColor" d="M12,9c1.65,0,3,1.35,3,3s-1.35,3-3,3s-3-1.35-3-3S10.35,9,12,9 M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5 S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1 s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0 c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95 c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41 L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41 s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06 c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"></path></svg><svg viewBox="0 0 24 24" width="24" height="24" class="darkToggleIcon_wfgR"><path fill="currentColor" d="M9.37,5.51C9.19,6.15,9.1,6.82,9.1,7.5c0,4.08,3.32,7.4,7.4,7.4c0.68,0,1.35-0.09,1.99-0.27C17.45,17.19,14.93,19,12,19 c-3.86,0-7-3.14-7-7C5,9.07,6.81,6.55,9.37,5.51z M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36 c-0.98,1.37-2.58,2.26-4.4,2.26c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"></path></svg></button></div><div class="navbarSearchContainer_Bca1"><div class="navbar__search"><span aria-label="expand searchbar" role="button" class="search-icon" tabindex="0"></span><input id="search_input_react" type="search" placeholder="Loading..." aria-label="Search" class="navbar__search-input search-bar" disabled=""></div></div></div></div><div role="presentation" class="navbar-sidebar__backdrop"></div></nav><div id="__docusaurus_skipToContent_fallback" class="main-wrapper mainWrapper_z2l0 docPageContainer_wNNk"><div class="docPage_Dpn1"><div class="docSidebarContainer_o_re"><div class="sidebar_njMd"><nav aria-label="Docs sidebar" class="menu thin-scrollbar menu_SIkG"><ul class="theme-doc-sidebar-menu menu__list"><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link menu__link--active" aria-current="page" href="/SpringShaker/api/SpringShaker">​Spring​Shaker</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/SpringShaker/api/ShakerInstances">​Shaker​Instances</a></li><li class="theme-doc-sidebar-item-link theme-doc-sidebar-item-link-level-1 menu__list-item"><a class="menu__link" href="/SpringShaker/api/Batch">​Batch</a></li></ul></nav></div></div><main class="docMainContainer_HJE1"><div class="container padding-vert--lg"><div class="row"><div class="col docItemCol_MU3C"><div class="docItemContainer_Wv98"><article><div class="member_J0w1 markdown"><div class="tocCollapsible_ETCw theme-doc-toc-mobile tocMobile_oUs_"><button type="button" class="clean-btn tocCollapsibleButton_TO0P">On this page</button></div><header><h1 class="docTitle_mZRt" style="text-decoration:none"><span style="display:inline-block">Spring</span><span style="display:inline-block">Shaker</span></h1><div class="luaClassTags_EipM"></div><div>
+<p>A physics-based camera shaker for Roblox built on a damped harmonic oscillator. Unlike noise-only shakers, SpringShaker simulates real mass and resistance — giving shakes a natural ring-down and weight.</p>
+</div></header><h2 class="anchor anchorWithStickyNavbar_LWe7" id="types">Types<a href="#types" class="hash-link" aria-label="Direct link to Types" title="Direct link to Types">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="__SpringShakerClassDef"><code style="text-decoration:none">__SpringShakerClassDef</code><a href="#__SpringShakerClassDef" class="hash-link" aria-label="Direct link to __SpringShakerClassDef" title="Direct link to __SpringShakerClassDef">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L35"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code class="purple_ieR2">type</code> <code>__SpringShakerClassDef<!-- --> = </code> <code class="blue_P4bS">table</code></div><div>
+<p>Combined type of the preset configuration and the shaker instance methods.</p>
+</div><h2 class="anchor anchorWithStickyNavbar_LWe7" id="functions">Functions<a href="#functions" class="hash-link" aria-label="Direct link to Functions" title="Direct link to Functions">​</a></h2><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="new"><code style="text-decoration:none">new</code><a href="#new" class="hash-link" aria-label="Direct link to new" title="Direct link to new">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L101"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->.</code><code class="green_DgR4">new</code><code>(</code><div class="inset_uKQm"><div><code>__SpringShakeDefClass<!-- -->: </code><code class="blue_P4bS">Batch.__camShakePreset</code><span class="inlineDescription_G7Er">-- <span>
+<p>The configuration table for the shaker.</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>Returns the shaker class object.</p>
+</span></span></div><div>
+<p>Creates a brand new Springy camera shaker instance.</p>
+<p>Usage:</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> MySpringShaker <span class="token operator">=</span> SpringShaker<span class="token punctuation">.</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token punctuation">{</span>
+    Magnitude <span class="token operator">=</span> <span class="token number">0.5</span><span class="token punctuation">,</span>
+    Roughness <span class="token operator">=</span> <span class="token number">0.3</span><span class="token punctuation">,</span>
+    FadeInTime <span class="token operator">=</span> <span class="token number">0.2</span><span class="token punctuation">,</span>
+    FadeOutTime <span class="token operator">=</span> <span class="token number">0.6</span><span class="token punctuation">,</span>
+    Tension <span class="token operator">=</span> <span class="token number">120</span><span class="token punctuation">,</span>
+    Damping <span class="token operator">=</span> <span class="token number">8</span><span class="token punctuation">,</span>
+    Velocity <span class="token operator">=</span> Vector3<span class="token punctuation">.</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">,</span> <span class="token number">0</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+    RotationInfluence <span class="token operator">=</span> Vector3<span class="token punctuation">.</span><span class="token function">new</span><span class="token punctuation">(</span><span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">,</span> <span class="token number">1</span><span class="token punctuation">)</span><span class="token punctuation">,</span>
+<span class="token punctuation">}</span><span class="token punctuation">)</span>
+SpringShaker<span class="token punctuation">:</span><span class="token function">ShakeOnce</span><span class="token punctuation">(</span>MySpringShaker<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span> <span class="token comment">-- Shakes for apparent 2 seconds.</span>
+</code></pre>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="GetPreset"><code style="text-decoration:none">GetPreset</code><a href="#GetPreset" class="hash-link" aria-label="Direct link to GetPreset" title="Direct link to GetPreset">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L140"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">GetPreset</code><code>(</code><div class="inset_uKQm"><div><code>PresetName<!-- -->: </code><code class="blue_P4bS">string</code><span class="inlineDescription_G7Er">-- <span>
+<p>The key name of the preset.</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef?</a></code></div><div>
+<p>Retrieves a preset by name and returns a new Shaker instance.</p>
+<p>Usage:</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> SpringShaker <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>to<span class="token punctuation">.</span>SpringShaker<span class="token punctuation">)</span>
+<span class="token keyword">local</span> ExplosionShake <span class="token operator">=</span> SpringShaker<span class="token punctuation">:</span><span class="token function">GetPreset</span><span class="token punctuation">(</span><span class="token string">"Explosion"</span><span class="token punctuation">)</span>
+
+SpringShaker<span class="token punctuation">:</span><span class="token function">ShakeOnce</span><span class="token punctuation">(</span>ExplosionShake<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Start"><code style="text-decoration:none">Start</code><a href="#Start" class="hash-link" aria-label="Direct link to Start" title="Direct link to Start">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L152"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">Start</code><code>(</code><div class="inset_uKQm"><div><code>SpringDef<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>The instance to start rendering.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Internal method to bind the shaker update loop to RenderStep.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Halt"><code style="text-decoration:none">Halt</code><a href="#Halt" class="hash-link" aria-label="Direct link to Halt" title="Direct link to Halt">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L189"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">Halt</code><code>(</code><div class="inset_uKQm"><div><code>SpringDef<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>The instance to halt.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Forces a specific shaker instance to stop rendering immediately.</p>
+<p>
+  This does not use FadeOut method unlike :HaltDurationWise, so it will just stop the shaker without any fade effect.
+  Used in benchmarking or emergency stops.
+</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="HaltAll"><code style="text-decoration:none">HaltAll</code><a href="#HaltAll" class="hash-link" aria-label="Direct link to HaltAll" title="Direct link to HaltAll">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L199"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">HaltAll</code><code>(</code><div class="inset_uKQm"><div><code>FadeOutTime<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>Optional time to override the preset's FadeOutTime.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Iterates through all active shakers and triggers their FadeOut.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="RecycleAll"><code style="text-decoration:none">RecycleAll</code><a href="#RecycleAll" class="hash-link" aria-label="Direct link to RecycleAll" title="Direct link to RecycleAll">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L210"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">RecycleAll</code><code>(</code><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Immediately stops all rendering and cleans up all memory.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="HaltDurationWise"><code style="text-decoration:none">HaltDurationWise</code><a href="#HaltDurationWise" class="hash-link" aria-label="Direct link to HaltDurationWise" title="Direct link to HaltDurationWise">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L233"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">HaltDurationWise</code><code>(</code><div class="inset_uKQm"><div><code>Time<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>Optional override for the FadeOut duration.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Fades out all active shakers based on their current state.</p>
+<p>Usage:</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> SpringShaker <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>to<span class="token punctuation">.</span>SpringShaker<span class="token punctuation">)</span>
+<span class="token keyword">local</span> ExplosionShake <span class="token operator">=</span> SpringShaker<span class="token punctuation">:</span><span class="token function">GetPreset</span><span class="token punctuation">(</span><span class="token string">"Explosion"</span><span class="token punctuation">)</span>
+SpringShaker<span class="token punctuation">:</span><span class="token function">ShakeSustained</span><span class="token punctuation">(</span>ExplosionShake<span class="token punctuation">)</span>
+
+task<span class="token punctuation">.</span><span class="token function">delay</span><span class="token punctuation">(</span><span class="token number">3</span><span class="token punctuation">,</span> <span class="token keyword">function</span><span class="token punctuation">(</span><span class="token punctuation">)</span>
+    SpringShaker<span class="token punctuation">:</span><span class="token function">HaltDurationWise</span><span class="token punctuation">(</span>ExplosionShake<span class="token punctuation">.</span>FadeOutTime<span class="token punctuation">)</span> <span class="token comment">-- Smoothly fades out after 3 seconds.</span>
+<span class="token keyword">end</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="UpdateAll"><code style="text-decoration:none">UpdateAll</code><a href="#UpdateAll" class="hash-link" aria-label="Direct link to UpdateAll" title="Direct link to UpdateAll">​</a></h3><div class="repositoryDetailsContainer_BPdw"><span class="releaseVersion_EonW">since <!-- -->v1.1</span><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L254"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">UpdateAll</code><code>(</code><div class="inset_uKQm"><div><code>dx<!-- -->: </code><code class="blue_P4bS">number</code><span class="inlineDescription_G7Er">-- <span>
+<p>Delta time taken from each frames. Average (0.016 for 60fps).</p>
+</span></span></div></div><code>) → </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="https://developer.roblox.com/en-us/api-reference/datatype/CFrame" target="_blank" rel="noopener noreferrer">CFrame?<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" x="0px" y="0px" viewBox="0 0 100 100" width="15" height="15" class="icon outbound" style="color:gray;vertical-align:middle;margin-left:2px"><path fill="currentColor" d="M18.8,85.1h56l0,0c2.2,0,4-1.8,4-4v-32h-8v28h-48v-48h28v-8h-32l0,0c-2.2,0-4,1.8-4,4v56C14.8,83.3,16.6,85.1,18.8,85.1z"></path> <polygon fill="currentColor" points="45.7,48.7 51.3,54.3 77.2,28.5 77.2,37.2 85.2,37.2 85.2,14.9 62.8,14.9 62.8,22.9 71.5,22.9"></polygon></svg></a></code><span class="inlineDescription_G7Er">-- <span>
+<p>It returns the CFrame of the both EulerAngles and the default positional influence CFrame. Or it could return nothing.</p>
+</span></span></div><div>
+
+  
+    
+    
+      <div class="admonition admonition-caution alert alert--warning">
+        <div class="admonition-heading">
+          <h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
+                <path d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path>
+              </svg></span><span class="admonition-title">CAUTION</span></h5>
+        </div>
+        <div class="admonition-content">
+          <p><strong>DO NOT USE</strong> - NOT INTENDED FOR GENERAL USE.</p>
+          <ul>
+            <li><strong>SpringShaker</strong> automatically runs this upon use!</li>
+          </ul>
+        </div>
+      </div>
+    
+  
+
+<p>Internal core loop that calculates the combined CFrame of all active springs.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Recycle"><code style="text-decoration:none">Recycle</code><a href="#Recycle" class="hash-link" aria-label="Direct link to Recycle" title="Direct link to Recycle">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L304"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">Recycle</code><code>(</code><div class="inset_uKQm"><div><code>__SpringShakerClass<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>The specific instance to recycle.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Cleans up an individual shaker instance and its Janitor class.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="Append"><code style="text-decoration:none">Append</code><a href="#Append" class="hash-link" aria-label="Direct link to Append" title="Direct link to Append">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L318"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">Append</code><code>(</code><div class="inset_uKQm"><div><code>__SpringShakeInstance<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>The instance to append.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Adds a shaker instance to the active stack.</p>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="ShakeSustained"><code style="text-decoration:none">ShakeSustained</code><a href="#ShakeSustained" class="hash-link" aria-label="Direct link to ShakeSustained" title="Direct link to ShakeSustained">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L333"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">ShakeSustained</code><code>(</code><div class="inset_uKQm"><div><code>__SpringShakeInstance<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><span class="inlineDescription_G7Er">-- <span>
+<p>The instance to use.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Starts a shaker that lasts until manually stopped.
+  Usage:
+</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> SpringShaker <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>to<span class="token punctuation">.</span>SpringShaker<span class="token punctuation">)</span>
+<span class="token keyword">local</span> ExplosionShake <span class="token operator">=</span> SpringShaker<span class="token punctuation">:</span><span class="token function">GetPreset</span><span class="token punctuation">(</span><span class="token string">"Explosion"</span><span class="token punctuation">)</span>
+SpringShaker<span class="token punctuation">:</span><span class="token function">ShakeSustained</span><span class="token punctuation">(</span>ExplosionShake<span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="ShakeOnce"><code style="text-decoration:none">ShakeOnce</code><a href="#ShakeOnce" class="hash-link" aria-label="Direct link to ShakeOnce" title="Direct link to ShakeOnce">​</a></h3><div class="repositoryDetailsContainer_BPdw"><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L354"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">ShakeOnce</code><code>(</code><div class="inset_uKQm"><div><code>SpringDef<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>The instance configuration.</p>
+</span></span></div><div><code>Duration<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>How long the shake should stay active.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>Plays a shaker once for a specific duration.</p>
+<p>Usage:</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> SpringShaker <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>to<span class="token punctuation">.</span>SpringShaker<span class="token punctuation">)</span>
+<span class="token keyword">local</span> ExplosionShake <span class="token operator">=</span> SpringShaker<span class="token punctuation">:</span><span class="token function">GetPreset</span><span class="token punctuation">(</span><span class="token string">"Explosion"</span><span class="token punctuation">)</span>
+SpringShaker<span class="token punctuation">:</span><span class="token function">ShakeOnce</span><span class="token punctuation">(</span>ExplosionShake<span class="token punctuation">,</span> <span class="token number">2</span><span class="token punctuation">)</span>
+</code></pre>
+</div><div class="divider_rE5g"></div><h3 class="anchor anchorWithStickyNavbar_LWe7" id="ShakeIndividual"><code style="text-decoration:line-through">ShakeIndividual</code><a href="#ShakeIndividual" class="hash-link" aria-label="Direct link to ShakeIndividual" title="Direct link to ShakeIndividual">​</a></h3><div class="repositoryDetailsContainer_BPdw"><span class="releaseVersion_EonW">deprecated in <!-- -->v1.1.3</span><a class="sourceButton_sEho" href="https://github.com/nilleniumrust/SpringShaker/blob/main/src/SpringShaker/init.luau#L383"><div class="sourceButtonText_Vh0m">&lt;/&gt;</div></a></div><div class="admonition admonition-caution alert alert--warning"><div class="admonition-heading"><h5><span class="admonition-icon"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16"><path fill-rule="evenodd" d="M8.893 1.5c-.183-.31-.52-.5-.887-.5s-.703.19-.886.5L.138 13.499a.98.98 0 0 0 0 1.001c.193.31.53.501.886.501h13.964c.367 0 .704-.19.877-.5a1.03 1.03 0 0 0 .01-1.002L8.893 1.5zm.133 11.497H6.987v-2.003h2.039v2.003zm0-3.004H6.987V5.987h2.039v4.006z"></path></svg></span><span class="admonition-title">This was deprecated in v1.1.3</span></h5></div><div class="admonition-content">This function is standard but it has complex issues over architecture. It can be usable, but for now it is deprecated.</div></div><div class="memberString_GwaU"><code>SpringShaker<!-- -->:</code><code class="green_DgR4">ShakeIndividual</code><code>(</code><div class="inset_uKQm"><div><code>SpringDef<!-- -->: </code><code class="blue_P4bS"><a style="text-decoration:underline;color:inherit" href="/SpringShaker/api/SpringShaker#__SpringShakerClassDef">__SpringShakerClassDef</a></code><code>,</code><span class="inlineDescription_G7Er">-- <span>
+<p>The preset configuration.</p>
+</span></span></div><div><code>Duration<!-- -->: </code><code class="blue_P4bS">number?</code><span class="inlineDescription_G7Er">-- <span>
+<p>How long before fadeout triggers.</p>
+</span></span></div></div><code>) → </code><code>(</code><code>)</code></div><div>
+<p>
+  Plays a shake once, but creates a fully independent instance per call.
+  Safe for rapid fire — each call lives and dies on its own without stomping previous shakes.
+  Useful for gun recoil, footsteps, or any shake that may be triggered multiple times in quick succession.
+</p>
+<p>Usage:</p>
+<pre class="language-lua"><code class="language-lua"><span class="token keyword">local</span> SpringShaker <span class="token operator">=</span> <span class="token function">require</span><span class="token punctuation">(</span>path<span class="token punctuation">.</span>to<span class="token punctuation">.</span>SpringShaker<span class="token punctuation">)</span>
+SpringShaker<span class="token punctuation">:</span><span class="token function">ShakeIndividual</span><span class="token punctuation">(</span>SpringShaker<span class="token punctuation">:</span><span class="token function">GetPreset</span><span class="token punctuation">(</span><span class="token string">"M2Recoil"</span><span class="token punctuation">)</span><span class="token punctuation">,</span> <span class="token number">0.3</span><span class="token punctuation">)</span>
+</code></pre>
+</div></div></article></div><details><summary>Show raw api</summary><pre style="max-width:100%;white-space:pre-wrap">{
+    &quot;functions&quot;: [
+        {
+            &quot;name&quot;: &quot;new&quot;,
+            &quot;desc&quot;: &quot;Creates a brand new Springy camera shaker instance.\n\nUsage: \n```lua \nlocal MySpringShaker = SpringShaker.new({\n    Magnitude = 0.5,\n    Roughness = 0.3,\n    FadeInTime = 0.2,\n    FadeOutTime = 0.6,\n    Tension = 120,\n    Damping = 8,\n    Velocity = Vector3.new(0, 0, 0),\n    RotationInfluence = Vector3.new(1, 1, 1),\n})\nSpringShaker:ShakeOnce(MySpringShaker, 2) -- Shakes for apparent 2 seconds.\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;__SpringShakeDefClass&quot;,
+                    &quot;desc&quot;: &quot;The configuration table for the shaker.&quot;,
+                    &quot;lua_type&quot;: &quot;Batch.__camShakePreset&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;Returns the shaker class object.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;static&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 101,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;GetPreset&quot;,
+            &quot;desc&quot;: &quot;Retrieves a preset by name and returns a new Shaker instance.\n\nUsage: \n```lua \nlocal SpringShaker = require(path.to.SpringShaker)\nlocal ExplosionShake = SpringShaker:GetPreset(\&quot;Explosion\&quot;)\n\nSpringShaker:ShakeOnce(ExplosionShake, 2)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;PresetName&quot;,
+                    &quot;desc&quot;: &quot;The key name of the preset.&quot;,
+                    &quot;lua_type&quot;: &quot;string&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 140,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Start&quot;,
+            &quot;desc&quot;: &quot;Internal method to bind the shaker update loop to RenderStep.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;SpringDef&quot;,
+                    &quot;desc&quot;: &quot;The instance to start rendering.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 152,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Halt&quot;,
+            &quot;desc&quot;: &quot;Forces a specific shaker instance to stop rendering immediately.\n\nThis does not use FadeOut method unlike :HaltDurationWise, so it will just stop the shaker without any fade effect.\nUsed in benchmarking or emergency stops.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;SpringDef&quot;,
+                    &quot;desc&quot;: &quot;The instance to halt.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 189,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;HaltAll&quot;,
+            &quot;desc&quot;: &quot;Iterates through all active shakers and triggers their FadeOut.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;FadeOutTime&quot;,
+                    &quot;desc&quot;: &quot;Optional time to override the preset&#x27;s FadeOutTime.&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 199,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;RecycleAll&quot;,
+            &quot;desc&quot;: &quot;Immediately stops all rendering and cleans up all memory.&quot;,
+            &quot;params&quot;: [],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 210,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;HaltDurationWise&quot;,
+            &quot;desc&quot;: &quot;Fades out all active shakers based on their current state.\n\nUsage: \n```lua \nlocal SpringShaker = require(path.to.SpringShaker)\nlocal ExplosionShake = SpringShaker:GetPreset(\&quot;Explosion\&quot;)\nSpringShaker:ShakeSustained(ExplosionShake)\n\ntask.delay(3, function()\n    SpringShaker:HaltDurationWise(ExplosionShake.FadeOutTime) -- Smoothly fades out after 3 seconds.\nend)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;Time&quot;,
+                    &quot;desc&quot;: &quot;Optional override for the FadeOut duration.&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 233,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;UpdateAll&quot;,
+            &quot;desc&quot;: &quot;:::caution\n**DO NOT USE** - NOT INTENDED FOR GENERAL USE.\n* **SpringShaker** automatically runs this upon use!\n:::\n\nInternal core loop that calculates the combined CFrame of all active springs.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;dx&quot;,
+                    &quot;desc&quot;: &quot;Delta time taken from each frames. Average (0.016 for 60fps).&quot;,
+                    &quot;lua_type&quot;: &quot;number&quot;
+                }
+            ],
+            &quot;returns&quot;: [
+                {
+                    &quot;desc&quot;: &quot;It returns the CFrame of the both EulerAngles and the default positional influence CFrame. Or it could return nothing.&quot;,
+                    &quot;lua_type&quot;: &quot;CFrame?&quot;
+                }
+            ],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;since&quot;: &quot;v1.1&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 254,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Recycle&quot;,
+            &quot;desc&quot;: &quot;Cleans up an individual shaker instance and its Janitor class.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;__SpringShakerClass&quot;,
+                    &quot;desc&quot;: &quot;The specific instance to recycle.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 304,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;Append&quot;,
+            &quot;desc&quot;: &quot;Adds a shaker instance to the active stack.&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;__SpringShakeInstance&quot;,
+                    &quot;desc&quot;: &quot;The instance to append.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 318,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ShakeSustained&quot;,
+            &quot;desc&quot;: &quot;Starts a shaker that lasts until manually stopped.\nUsage: \n```lua \nlocal SpringShaker = require(path.to.SpringShaker)\nlocal ExplosionShake = SpringShaker:GetPreset(\&quot;Explosion\&quot;)\nSpringShaker:ShakeSustained(ExplosionShake)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;__SpringShakeInstance&quot;,
+                    &quot;desc&quot;: &quot;The instance to use.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 333,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ShakeOnce&quot;,
+            &quot;desc&quot;: &quot;Plays a shaker once for a specific duration.\n\nUsage: \n```lua \nlocal SpringShaker = require(path.to.SpringShaker)\nlocal ExplosionShake = SpringShaker:GetPreset(\&quot;Explosion\&quot;)\nSpringShaker:ShakeOnce(ExplosionShake, 2)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;SpringDef&quot;,
+                    &quot;desc&quot;: &quot;The instance configuration.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Duration&quot;,
+                    &quot;desc&quot;: &quot;How long the shake should stay active.&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 354,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        },
+        {
+            &quot;name&quot;: &quot;ShakeIndividual&quot;,
+            &quot;desc&quot;: &quot;Plays a shake once, but creates a fully independent instance per call.\nSafe for rapid fire — each call lives and dies on its own without stomping previous shakes.\nUseful for gun recoil, footsteps, or any shake that may be triggered multiple times in quick succession.\n\nUsage:\n```lua\nlocal SpringShaker = require(path.to.SpringShaker)\nSpringShaker:ShakeIndividual(SpringShaker:GetPreset(\&quot;M2Recoil\&quot;), 0.3)\n```&quot;,
+            &quot;params&quot;: [
+                {
+                    &quot;name&quot;: &quot;SpringDef&quot;,
+                    &quot;desc&quot;: &quot;The preset configuration.&quot;,
+                    &quot;lua_type&quot;: &quot;__SpringShakerClassDef&quot;
+                },
+                {
+                    &quot;name&quot;: &quot;Duration&quot;,
+                    &quot;desc&quot;: &quot;How long before fadeout triggers.&quot;,
+                    &quot;lua_type&quot;: &quot;number?&quot;
+                }
+            ],
+            &quot;returns&quot;: [],
+            &quot;function_type&quot;: &quot;method&quot;,
+            &quot;deprecated&quot;: {
+                &quot;version&quot;: &quot;v1.1.3&quot;,
+                &quot;desc&quot;: &quot;This function is standard but it has complex issues over architecture. It can be usable, but for now it is deprecated.&quot;
+            },
+            &quot;source&quot;: {
+                &quot;line&quot;: 383,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        }
+    ],
+    &quot;properties&quot;: [],
+    &quot;types&quot;: [
+        {
+            &quot;name&quot;: &quot;__SpringShakerClassDef&quot;,
+            &quot;desc&quot;: &quot;Combined type of the preset configuration and the shaker instance methods.&quot;,
+            &quot;lua_type&quot;: &quot;table&quot;,
+            &quot;source&quot;: {
+                &quot;line&quot;: 35,
+                &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+            }
+        }
+    ],
+    &quot;name&quot;: &quot;SpringShaker&quot;,
+    &quot;desc&quot;: &quot;A physics-based camera shaker for Roblox built on a damped harmonic oscillator. Unlike noise-only shakers, SpringShaker simulates real mass and resistance — giving shakes a natural ring-down and weight.&quot;,
+    &quot;source&quot;: {
+        &quot;line&quot;: 5,
+        &quot;path&quot;: &quot;src/SpringShaker/init.luau&quot;
+    }
+}</pre></details></div><div class="col col--3"><div class="tableOfContents_bqdL thin-scrollbar"><ul class="table-of-contents table-of-contents__left-border"><li><a href="#types" class="table-of-contents__link toc-highlight">Types</a><ul><li><a href="#__SpringShakerClassDef" class="table-of-contents__link toc-highlight">__SpringShakerClassDef</a></li></ul></li><li><a href="#functions" class="table-of-contents__link toc-highlight">Functions</a><ul><li><a href="#Append" class="table-of-contents__link toc-highlight">:Append</a></li><li><a href="#GetPreset" class="table-of-contents__link toc-highlight">:GetPreset</a></li><li><a href="#Halt" class="table-of-contents__link toc-highlight">:Halt</a></li><li><a href="#HaltAll" class="table-of-contents__link toc-highlight">:HaltAll</a></li><li><a href="#HaltDurationWise" class="table-of-contents__link toc-highlight">:HaltDurationWise</a></li><li><a href="#Recycle" class="table-of-contents__link toc-highlight">:Recycle</a></li><li><a href="#RecycleAll" class="table-of-contents__link toc-highlight">:RecycleAll</a></li><li><a href="#ShakeIndividual" class="table-of-contents__link toc-highlight">:ShakeIndividual</a></li><li><a href="#ShakeOnce" class="table-of-contents__link toc-highlight">:ShakeOnce</a></li><li><a href="#ShakeSustained" class="table-of-contents__link toc-highlight">:ShakeSustained</a></li><li><a href="#Start" class="table-of-contents__link toc-highlight">:Start</a></li><li><a href="#UpdateAll" class="table-of-contents__link toc-highlight">:UpdateAll</a></li><li><a href="#new" class="table-of-contents__link toc-highlight">.new</a></li></ul></li></ul></div></div></div></div></main></div></div><footer class="footer footer--dark"><div class="container container-fluid"><div class="footer__bottom text--center"><div class="footer__copyright">Copyright © 2026 nilleniumrust. Built with Moonwave and Docusaurus.</div></div></div></footer></div>
+</body>
+</html>

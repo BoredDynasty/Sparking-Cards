@@ -1,6 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local settings_schema = require(ReplicatedStorage.Structures["settings-schema"])
+local spr = require(ReplicatedStorage.Modules.spr)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- settings-data.luau
@@ -10,6 +12,8 @@ export type SettingCallbacks = {
 	on: ((boolean) -> ())?,
 	off: ((boolean) -> ())?,
 	change: ((number) -> ())?,
+	select: ((string) -> ())?,
+	rebind: ((number) -> ())?,
 }
 
 export type SettingUiDefinition = typemarshaller.SettingDefinition & {
@@ -22,7 +26,7 @@ export type SettingUiDefinition = typemarshaller.SettingDefinition & {
 
 local events = ReplicatedStorage.Events
 
-local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks } = {
+local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks? } = {
 	background_music = {
 		on = function()
 			print("Background music turned on.")
@@ -55,8 +59,21 @@ local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks } 
 		change = function(next_fov: number)
 			local camera = workspace.CurrentCamera
 			if camera then
-				camera.FieldOfView = next_fov
+				spr.stop(camera, "FieldOfView")
+				spr.target(camera, 0.8, 5, {
+					FieldOfView = next_fov,
+				})
 			end
+		end,
+	},
+	movement_mode = {
+		select = function(mode: string)
+			print(`Movement mode set to {mode}.`)
+		end,
+	},
+	dash_keybind = {
+		rebind = function(next_key_code: number)
+			print(`Dash keybind updated to {next_key_code}.`)
 		end,
 	},
 }
@@ -92,6 +109,8 @@ for _, definition in ipairs(settings_schema.list) do
 		min = definition.min,
 		max = definition.max,
 		step = definition.step,
+		control_type = definition.control_type,
+		choices = definition.choices,
 		callbacks = callbacks_by_identifier[definition.identifier],
 		icons = icons_by_identifier[definition.identifier],
 	} :: SettingUiDefinition

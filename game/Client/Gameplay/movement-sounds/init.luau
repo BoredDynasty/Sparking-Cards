@@ -4,11 +4,8 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local SoundService = game:GetService("SoundService")
 
-local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
-local hydration = require(ReplicatedStorage.Utility.hydration)
 local sound_ids = require("@self/sound-ids")
 local spr = require(ReplicatedStorage.Modules.spr)
-local url = require(ReplicatedStorage.Modules.Serialization.url)
 
 -- movement-sounds.luau
 -- excluded from audio.luau.
@@ -156,3 +153,5 @@ player.CharacterAdded:Connect(function()
 end)
 
 RunService.Heartbeat:Connect(updateVolume)
+
+return module

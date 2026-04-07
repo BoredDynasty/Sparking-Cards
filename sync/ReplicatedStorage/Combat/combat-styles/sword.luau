@@ -57,7 +57,7 @@ export type Sword = setmetatable<{
 }, typeof(module)>
 
 function module.new(player: Player, sword_name: string)
-	local sword_model = fetchAsset(sword_name) :: BaseSword
+	local sword_model = ReplicatedStorage.Assets.Weaponry:FindFirstChild(sword_name) :: BaseSword
 	assert(sword_model, "Couldn't fetch sword model: " .. sword_name)
 
 	local self = setmetatable({}, module)
@@ -86,19 +86,17 @@ function module:GetGripData(): grip.GripInfo
 end
 
 function module:Activate()
-	local orion = require(ReplicatedStorage.Combat.orion)
-
 	-- swing the sword (client animation + server hit window)
 	print(string.format("%s swings the sword!", tostring(self.player and self.player.Name)))
 
-	local player_data = orion.get_player_data()
-	assert(player_data, "no player data???????")
+	local combat_data = events.GetPlayerCombatData:Invoke(self.player) :: typemarshaller.PlayerData
+	assert(combat_data, "no player data???????")
 
-	combo:increment(player_data.combo_info, os.clock())
+	combo:increment(combat_data.combo_info, os.clock())
 
 	-- get the corresponding animation from this weapon's animation set
 	local animations = self:GetAnimations()
-	local animation = animations[player_data.combo_info.CurrentCombo]
+	local animation = animations[combat_data.combo_info.CurrentCombo]
 
 	if animation then
 		events.PlayAnimation:FireClient(self.player, animation)

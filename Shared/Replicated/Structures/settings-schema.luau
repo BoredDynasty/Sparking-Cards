@@ -82,7 +82,6 @@ local list: { SettingDefinition } = {
 			{ label = "Left Shift", value = Enum.KeyCode.LeftShift.Value },
 			{ label = "Q", value = Enum.KeyCode.Q.Value },
 			{ label = "F", value = Enum.KeyCode.F.Value },
-			{ label = "Mouse Button 4", value = Enum.UserInputType.MouseButton4.Value },
 		},
 	},
 }

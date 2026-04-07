@@ -290,7 +290,7 @@ function module:LoadItems<V>(sorted_table: { V })
 				snackbar:SetText("You have not unlocked this badge yet.")
 				snackbar:SetCanDismiss(true)
 				snackbar:SetExpiry(2)
-				snackbar:SetCanClick(true)
+				snackbar:SetCanClick(false)
 			end)
 
 			template.Parent = itemHolder

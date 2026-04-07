@@ -33,8 +33,9 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 local matchmaker = require(ReplicatedStorage.Modules.matchmaker)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
+local pages = require(ReplicatedStorage.Utility.pages)
 local party = require(ReplicatedStorage.Modules.party)
-local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
+local product_manager = require(ServerStorage.modules.Products["product-manager"])
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local quest = require(ServerStorage.modules.quest)
@@ -93,7 +94,6 @@ Cmdr:RegisterHooksIn(ReplicatedStorage.Hooks)
 -- selene:allow(mixed_table)
 GameAnalytics:initialize(gameAnalyticsConfig :: any)
 GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
--- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 
 -- change this if i want data to save in studio
 --[[
@@ -107,13 +107,14 @@ local player_related = profilestore.New(profile_key, profilestructure)
 local pending_setting_saves = {} :: { [Player]: thread }
 
 local function loadProfile(player: Player)
-	local profile = retryer.infdelay(10, function(...)
-		return player_related:StartSessionAsync(`player_{player.UserId}`, {
-			Cancel = function()
-				return player.Parent ~= Players
-			end,
-		})
-	end)
+	local profile = player_related:StartSessionAsync(`player_{player.UserId}`, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	})
+
+	print(profile)
+	print("profile active: ", profile:IsActive())
 
 	if profile then
 		profile:AddUserId(player.UserId)
@@ -122,6 +123,7 @@ local function loadProfile(player: Player)
 		profile.OnSessionEnd:Connect(function()
 			profiles[player] = nil
 
+			print("Session Locked for: ", player.Name)
 			player:Kick("Session Locked, rejoin")
 		end)
 
@@ -142,9 +144,7 @@ local function loadProfile(player: Player)
 
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
-	elseif not profile and not RunService:IsStudio() then
-		player:Kick("The Roblox Servers are on fire, try rejoining.")
-	elseif RunService:IsStudio() and not profile then
+	else
 		print("The Roblox Servers are on fire.")
 	end
 
@@ -154,17 +154,18 @@ end
 local function FetchProfileData(player: Player): typemarshaller.ProfileData?
 	local profile = profiles[player] :: typemarshaller.Profile?
 
-	if not profile and profile == nil then
+	if not profile then
 		if not RunService:IsStudio() then
 			-- i really need a break from seeing ts.
 
 			Packet.SendNotification.sendTo({
 				message = "Couldn't get data",
+				duration = 1.5,
 			}, player)
 
-			local list = tablekit.Values(profiles :: any)
+			local list = tablekit.ToString(profiles :: any)
 
-			warn("Couldn't fetch profile from table: ", table.unpack(list))
+			warn("Couldn't fetch profile from table: ", list)
 		end
 
 		return nil
@@ -500,6 +501,12 @@ local function onPlayerRemoving(player: Player)
 	task.defer(player.Destroy, player)
 end
 
+game:BindToClose(function()
+	for _, player in ipairs(Players:GetPlayers()) do
+		onPlayerRemoving(player)
+	end
+end)
+
 local function purchaseCard(player: Player, card_name: string)
 	-- TODO)  attempt to index nil with 'Price'
 
@@ -750,8 +757,40 @@ local function sanitizeSettingValue(
 	definition: typemarshaller.SettingDefinition,
 	value: typemarshaller.SettingValue
 ): typemarshaller.SettingValue?
+	local choices = definition.choices
+
+	local function value_in_choices(candidate: typemarshaller.SettingValue): boolean
+		if choices == nil then
+			return true
+		end
+
+		for _, choice in ipairs(choices) do
+			if choice.value == candidate then
+				return true
+			end
+		end
+
+		return false
+	end
+
 	if definition.value_type == "boolean" then
 		if type(value) ~= "boolean" then
+			return nil
+		end
+
+		if not value_in_choices(value) then
+			return nil
+		end
+
+		return value
+	end
+
+	if definition.value_type == "string" then
+		if type(value) ~= "string" then
+			return nil
+		end
+
+		if not value_in_choices(value) then
 			return nil
 		end
 
@@ -792,6 +831,10 @@ local function sanitizeSettingValue(
 
 	if max_value ~= nil then
 		value = math.min(value, max_value)
+	end
+
+	if not value_in_choices(value) then
+		return nil
 	end
 
 	return value
@@ -857,9 +900,14 @@ local function initializeAudio()
 		audio:AddSFX("ice-blast", 77805087245612)
 
 		audio:AddMusic("train_brakes", 185857550)
-		audio:AddMusic("train_clattering", 149026377, {
+		audio:AddMusic("train_clattering", 113519632244308, {
 			looped = true,
 		})
+		audio:AddSFX("train_ambient", 133261320841417, {
+			looped = true,
+		})
+		audio:AddSFX("train_starting", 107540416784700)
+		audio:AddSFX("train_door_open", 98411275767590)
 	end)
 end
 
@@ -900,39 +948,19 @@ local function logMatchWaitingTime(player: Player, seconds: number)
 	})
 end
 
-local function getGamepasses()
-	local universeId = game.GameId
-	if universeId == 0 then
-		warn("Universe ID is 0, cannot fetch gamepasses.")
+local function getGamepasses(player: Player): { [number]: boolean }
+	local gamepasses = product_manager:FetchAllFromModule()
 
-		return nil
-	end
+	if gamepasses then
+		local gamepass_table = {}
 
-	local url = "https://games.roproxy.com/v1/games/" .. universeId .. "/game-passes?limit=100&sortOrder=Asc"
+		local array = pages.toarray(gamepasses)
 
-	local success, response = future
-		.Try(function()
-			return HttpService:GetAsync(url)
-		end)
-		:Await()
-
-	if success and response then
-		local data = HttpService:JSONDecode(response)
-		for _, pass in pairs(data.data) do
-			print("Pass Name: " .. pass.name .. " | Price: " .. pass.price)
-		end
-
-		return data.data
+		return gamepass_table
 	else
-		warn("no sir: " .. response)
-
-		return nil
+		warn("Failed to get gamepasses for player: " .. player.Name)
+		return {}
 	end
-end
-
--- Set the callback; this can only be done once by one server-side script
-MarketplaceService.ProcessReceipt = function(receiptInfo: typemarshaller.ReceiptInfo)
-	productMarshaller._call(receiptInfo)
 end
 
 Packet.SetTime.listen(function(data, player: Player?)

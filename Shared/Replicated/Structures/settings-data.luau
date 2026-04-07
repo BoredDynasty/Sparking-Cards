@@ -1,6 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
 local settings_schema = require(ReplicatedStorage.Structures["settings-schema"])
+local spr = require(ReplicatedStorage.Modules.spr)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- settings-data.luau
@@ -57,7 +59,10 @@ local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks? }
 		change = function(next_fov: number)
 			local camera = workspace.CurrentCamera
 			if camera then
-				camera.FieldOfView = next_fov
+				spr.stop(camera, "FieldOfView")
+				spr.target(camera, 0.8, 5, {
+					FieldOfView = next_fov,
+				})
 			end
 		end,
 	},

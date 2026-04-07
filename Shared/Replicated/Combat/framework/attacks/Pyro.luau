@@ -36,7 +36,7 @@ function pyro.moveset:M1(player: Player)
 
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local combat_data = events.GetPlayerCombatData:Invoke() :: typemarshaller.PlayerData
+	local combat_data = events.GetPlayerCombatData:Invoke(player) :: typemarshaller.PlayerData
 
 	local singleton = combat_data.style :: sword.Sword
 

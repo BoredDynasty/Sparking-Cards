@@ -1,5 +1,4 @@
 --!nonstrict
---!optimize 2
 
 -- Client.client.luau
 
@@ -14,89 +13,62 @@ local UserInputService = game:GetService("UserInputService")
 
 -- // Requires -- //
 local Cmdr = require(ReplicatedStorage:WaitForChild("CmdrClient") :: ModuleScript) :: any
+local Packet = require(ReplicatedStorage.Packet)
+local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
+local animate = require("../Utilities/animate")
+local audio = require(ReplicatedStorage.Modules.audio)
+local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
+local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
+local crosshair_service = require(ReplicatedStorage.Services["crosshair-service"])
 local dialog = require(StarterPlayer.StarterPlayerScripts.Components.dialog)
 local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
-
-local Packet = require(ReplicatedStorage.Packet)
-
-local animate = require("../Utilities/animate")
-
 local displayorder = require(StarterPlayer.StarterPlayerScripts.Interface.displayorder)
-
+local expressive_shapes = require(StarterPlayer.StarterPlayerScripts.Interface["expressive-shapes"])
+local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local flight = require(ReplicatedStorage.Combat.framework.features.flight)
+local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local future = require(ReplicatedStorage.Packages.future)
-
 local glove = require(StarterPlayer.StarterPlayerScripts.Gameplay.glove)
-
+local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
 local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health-pulse"])
-
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
-local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
-
-local input = require(ReplicatedStorage.Packages.input)
-
-local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
-
-local flight = require(ReplicatedStorage.Combat.framework.features.flight)
-local logger = require(ReplicatedStorage.ClientModules.logger)
-
-local lucide = require(ReplicatedStorage.Packages.lucide)
-
--- local markdown = require(ReplicatedStorage.ClientModules.markdown)
-
-local market = require("../Components/market")
-
-local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
-
-local movement_controller = require(StarterPlayer.StarterPlayerScripts.Movement["movement-controller"])
-
-local music = require("../Gameplay/music")
-
-local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
-
-local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
-
-local observer = require(ReplicatedStorage.Utility.observer)
-
-local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["badge-frontend"])
-local health_bar = require(StarterPlayer.StarterPlayerScripts.Components["health-bar"])
 local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
+local input = require(ReplicatedStorage.Packages.input)
+local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
+local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
 local loadout_frontend = require(StarterPlayer.StarterPlayerScripts.Components["loadout-frontend"])
-local options = require(StarterPlayer.StarterPlayerScripts.Components.options)
+local logger = require(ReplicatedStorage.ClientModules.logger)
+local lucide = require(ReplicatedStorage.Packages.lucide)
+local market = require("../Components/market")
+local motion_blur = require(StarterPlayer.StarterPlayerScripts.Graphics["motion-blur"])
+local movement_controller = require(StarterPlayer.StarterPlayerScripts.Movement["movement-controller"])
+local movement_sounds = require(StarterPlayer.StarterPlayerScripts.Gameplay["movement-sounds"])
+local music = require("../Gameplay/music")
+local navigation_rail = require(StarterPlayer.StarterPlayerScripts.Components["navigation-rail"])
+local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["number-abbreviation"])
+local object_zoom = require(StarterPlayer.StarterPlayerScripts.Gameplay["object-zoom"])
+local observer = require(ReplicatedStorage.Utility.observer)
+local options_frontend = require(StarterPlayer.StarterPlayerScripts.Components["options-frontend"])
 local party_frontend = require(StarterPlayer.StarterPlayerScripts.Components["party-frontend"])
 local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local proximity_prompt = require(ReplicatedStorage.Modules["proximity-prompt"])
 local quest_frontend = require(StarterPlayer.StarterPlayerScripts.Components["quest-frontend"])
+local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local skill_frontend = require(StarterPlayer.StarterPlayerScripts.Components["skill-frontend"])
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
-local tooltip = require("../Components/tooltip")
-
-local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
-
-local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
-local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
-
 local spr = require(ReplicatedStorage.Modules.spr)
-
+local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 local swipe = require("../Interface/swipe")
-
-local audio = require(ReplicatedStorage.Modules.audio)
-
-local crosshair_service = require(ReplicatedStorage.Services["crosshair-service"])
-local proximity_prompt = require(ReplicatedStorage.Modules["proximity-prompt"])
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
-
-local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
-
-local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
+local tooltip = require("../Components/tooltip")
+local transition = require(StarterPlayer.StarterPlayerScripts.Components.transitions)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
-
-local ability_controller = require(StarterPlayer.StarterPlayerScripts.Movement["ability-controller"])
-local expressive_shapes = require(StarterPlayer.StarterPlayerScripts.Interface["expressive-shapes"])
-local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 local keyboard = input.Keyboard.new()
@@ -123,11 +95,17 @@ local PlayerGui = player.PlayerGui
 
 print("client starting")
 
+local transition_manager = transition.TransitionManager.new(PlayerGui)
+
 local function initializeRemotes()
 	do
 		local toggle_matchmaking_re = Instance.new("BindableEvent")
 		toggle_matchmaking_re.Name = "ToggleMatchmakingUI"
 		toggle_matchmaking_re.Parent = player.PlayerScripts.Remotes
+
+		local do_transition_re = Instance.new("BindableFunction")
+		do_transition_re.Name = "Transition"
+		do_transition_re.Parent = player.PlayerScripts.Remotes
 	end
 end
 
@@ -243,7 +221,7 @@ local function initializeOptions()
 		displayorder:Toggle(optionsCanvas)
 
 		if displayorder:GetState(optionsCanvas) then
-			options:LoadItems()
+			options_frontend:LoadItems()
 		end
 	end
 
@@ -755,6 +733,44 @@ local function initializeSpectating()
 	end)
 end
 
+local function initializeTransitions()
+	local remote = player.PlayerScripts:WaitForChild("Transition") :: BindableFunction
+	remote.OnInvoke = function(name, ...)
+		return transition_manager[name](...)
+	end
+end
+
+local function initializeCamera()
+	-- special camera effects!
+	camera_controller.new("bobbing", bobbing)
+
+	local train_departure_camera = events:WaitForChild("TrainDepartureCamera")
+
+	local function handleTrainDeparture(engine: BasePart)
+		-- it should be like a mini-cutscene.
+
+		camera_controller:Disable()
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+
+		local offset = engine.CFrame.Position + Vector3.new(0, 10, -10) -- offset the camera forward and up a bit for a better view of the train
+
+		object_zoom:Zoom(engine, offset)
+
+		task.delay(4, function()
+			transition_manager:Play("Out", 2, "Center", "Hexagon")
+			task.wait(1)
+			object_zoom:Revert()
+
+			camera_controller:Enable()
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+		end)
+	end
+
+	train_departure_camera.OnClientEvent:Connect(handleTrainDeparture)
+end
+
 initializeRemotes()
 initializeCommands()
 initializeMarket()
@@ -767,13 +783,12 @@ initializeLoadouts()
 initializeObjectives()
 initializeSkills()
 initializeParties()
+initializeCamera()
 initializeSpectating()
 initializeAudio()
 
 hud:Render()
 --motion_blur:On()
-
-camera_controller.new("bobbing", bobbing)
 
 movement_controller:Add(script.Parent.Parent.Movement["sprint-controller"])
 movement_controller:Add(script.Parent.Parent.Movement["jump-controller"])
@@ -943,7 +958,6 @@ end)
 
 Packet.CleanupCharacter.listen(function()
 	music:Destroy()
-	options:Clear()
 	hud:Clear()
 end)
 

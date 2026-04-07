@@ -80,21 +80,7 @@ function module:GetPlayerQuests(player: Player): { typemarshaller.Quest }
 	local out = {}
 
 	for i, q in ipairs(profile.quests or {}) do
-		local fut = future.Try(function()
-			return tablekit.DeepCopy(q :: any) :: typemarshaller.Quest
-		end)
-
-		local ok, copy = fut:Await()
-		if not ok then
-			warn(copy)
-		else
-			print("ok: ", ok, copy)
-		end
-
-		print("quest copy: ", tablekit.ToString(copy :: any))
-
-		-- module fields are not serialised to the client
-		out[i] = copy
+		out[i] = q
 	end
 
 	print("out: ", out)

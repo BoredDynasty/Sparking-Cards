@@ -61,20 +61,15 @@ local events = ReplicatedStorage.Events
 
 local pool = PoolerPlus:CreatePool("MarketPool", function()
 	return template:Clone()
-end, function(object: Frame)
-	object.Visible = false
-
-	if limit.count_map[object] then
-		limit.count_map[object] = nil
-	end
-end, function(object: Frame)
-	future.Try(object.Destroy, object)
 end)
 
 pool:AdaptivePreload()
 
 function module:Unload()
-	pool:ReturnAll()
+	local active = pool:GetActiveObjects()
+	for i, frame in ipairs(active) do
+		frame:Destroy()
+	end
 end
 
 function module:DisplaySpendings()
@@ -113,7 +108,7 @@ function module:InitializeTabs()
 end
 
 function module:LoadItems<K, V>(items)
-	pool:ReturnAll()
+	module:Unload()
 
 	items = items or Items
 
@@ -372,7 +367,7 @@ function module:LoadItems<K, V>(items)
 end
 
 function module:LoadInventory()
-	pool:ReturnAll()
+	module:Unload()
 
 	profile = fetchProfile()
 
@@ -412,7 +407,7 @@ function module:LoadInventory()
 		local sell_btn = template.Buy
 		local experimentButton = template.Test
 
-		local item_data = Items[i]
+		local item_data = Items[item]
 		if not item_data then
 			warn("Couldn't find item data for " .. i)
 			item_data = {
@@ -425,16 +420,10 @@ function module:LoadInventory()
 		end
 		local title_color = item_data.Details.TextColor
 
-		local str = [[
-			<font color="%s">%s</font>
-			<br/>
-			<font weight="Regular">
-			<font transparency="0.5">
-			%s
-			</font></font>
-		]]
+		local str =
+			'<font color="%s">%s</font><br/><font weight="Regular"><font transparency="0.5">%s</font></font>'
 
-		title.Text = string.format(str :: any, title_color:ToHex(), i, item)
+		title.Text = string.format(str :: any, "#" .. title_color:ToHex(), i, item)
 
 		template.Visible = true
 		experimentButton.Visible = false
@@ -510,11 +499,14 @@ function module:LoadInventory()
 			pop(quantity_frame.Remove)
 		end)
 
-		quantity_frame.Remove.MouseEnter:Connect(function()
+		local remove_btn = quantity_frame:FindFirstChild("Remove")
+		-- we gotta do this because `Instance.Remove` == function
+
+		remove_btn.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
 		end)
 
-		quantity_frame.Remove.MouseLeave:Connect(function()
+		remove_btn.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
 		end)
 
@@ -546,7 +538,7 @@ function module:LoadInventory()
 			end
 			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 
-			local value = Items[i].Price
+			local value = Items[item].Price
 			local floor = math.floor(value / 10)
 
 			prism_awarder.award(floor, true)
@@ -558,7 +550,7 @@ function module:LoadInventory()
 			if new ~= itemHolder then
 				-- cleanup the observer
 
-				quantity:Destroy()
+				future.Try(quantity.Destroy, quantity)
 			end
 		end)
 		template.Parent = itemHolder

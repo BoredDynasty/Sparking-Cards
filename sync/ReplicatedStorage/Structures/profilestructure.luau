@@ -27,6 +27,9 @@ return {
 		gui_sound = true,
 		background_music_volume = 1,
 		fov = 70,
+		show_damage_numbers = true,
+		movement_mode = "classic",
+		dash_keybind = Enum.KeyCode.LeftShift.Value,
 	},
 	equipped_emotes = {
 		17782874968,

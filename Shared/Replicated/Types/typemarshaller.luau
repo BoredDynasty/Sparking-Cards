@@ -13,13 +13,11 @@ export type ReceiptInfo = {
 }
 
 export type Product = {
-	[string]: {
-		Name: string,
-		Details: string,
-		Id: number,
-		Cost: number,
-		Callback: (...unknown) -> ...unknown,
-	},
+	Name: string,
+	Details: string,
+	Id: number,
+	Cost: number,
+	Callback: (...unknown) -> ...unknown,
 }
 
 export type ProductInfo = {

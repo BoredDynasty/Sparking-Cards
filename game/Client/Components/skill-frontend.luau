@@ -131,6 +131,8 @@ function module:DisplaySpendings()
 end
 
 function module:LoadCatagories()
+	module:Unload()
+
 	local visited_techniques = {}
 
 	for i, skill_data in ipairs(skill_chart) do
@@ -323,11 +325,17 @@ function module:LoadCatagories()
 end
 
 function module:Unload()
-	catagory_pool:Clear()
-	connection_pool:Clear()
-	button_pool:Clear()
-
 	table.clear(spinning_gradients)
+
+	for i, object in ipairs(catagory_pool:GetActiveObjects()) do
+		object:Destroy()
+	end
+	for i, object in ipairs(connection_pool:GetActiveObjects()) do
+		object:Destroy()
+	end
+	for i, object in ipairs(button_pool:GetActiveObjects()) do
+		object:Destroy()
+	end
 end
 
 return module

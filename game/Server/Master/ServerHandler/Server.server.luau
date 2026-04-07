@@ -27,14 +27,16 @@ local beam = require(ReplicatedStorage.Combat.framework.gameplay.beam)
 local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
 local combo = require(ReplicatedStorage.Combat.framework.utils.combo)
 local future = require(ReplicatedStorage.Packages.future)
+local grip = require(ReplicatedStorage.Combat.framework.utils.grip)
 local ground_crack = require(ReplicatedStorage.Combat.framework.effects["ground-crack"])
 local log_analytics = require(ReplicatedStorage.Utility["log-analytics"])
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local matchmaker = require(ReplicatedStorage.Modules.matchmaker)
 local messagepack = require(ReplicatedStorage.Modules.Serialization.messagepack)
 local observer = require(ReplicatedStorage.Utility.observer)
+local pages = require(ReplicatedStorage.Utility.pages)
 local party = require(ReplicatedStorage.Modules.party)
-local productMarshaller = require(ReplicatedStorage.Products.productMarshaller)
+local product_manager = require(ServerStorage.modules.Products["product-manager"])
 local profilestore = require(ReplicatedStorage.Packages.profilestore)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local quest = require(ServerStorage.modules.quest)
@@ -48,7 +50,6 @@ local sword = require(ReplicatedStorage.Combat["combat-styles"].sword)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local train = require(ServerStorage.modules.train)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
-local windshake = require(ReplicatedStorage.Packages.windshake)
 
 local assets = ReplicatedStorage.Assets
 
@@ -93,7 +94,6 @@ Cmdr:RegisterHooksIn(ReplicatedStorage.Hooks)
 -- selene:allow(mixed_table)
 GameAnalytics:initialize(gameAnalyticsConfig :: any)
 GameAnalytics:configureAvailableResourceItemTypes(resourceItemTypes)
--- GameAnalytics:initServer(gameAnalyticsConfig.gameKey, gameAnalyticsConfig.secretKey)
 
 -- change this if i want data to save in studio
 --[[
@@ -107,13 +107,14 @@ local player_related = profilestore.New(profile_key, profilestructure)
 local pending_setting_saves = {} :: { [Player]: thread }
 
 local function loadProfile(player: Player)
-	local profile = retryer.infdelay(10, function(...)
-		return player_related:StartSessionAsync(`player_{player.UserId}`, {
-			Cancel = function()
-				return player.Parent ~= Players
-			end,
-		})
-	end)
+	local profile = player_related:StartSessionAsync(`player_{player.UserId}`, {
+		Cancel = function()
+			return player.Parent ~= Players
+		end,
+	})
+
+	print(profile)
+	print("profile active: ", profile:IsActive())
 
 	if profile then
 		profile:AddUserId(player.UserId)
@@ -122,6 +123,10 @@ local function loadProfile(player: Player)
 		profile.OnSessionEnd:Connect(function()
 			profiles[player] = nil
 
+			print(
+				`Profile session has ended ({profile.Key}) - Profile.Data will no longer be saved to the DataStore`
+			)
+			print("Session Locked for: ", player.Name)
 			player:Kick("Session Locked, rejoin")
 		end)
 
@@ -142,9 +147,7 @@ local function loadProfile(player: Player)
 
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
-	elseif not profile and not RunService:IsStudio() then
-		player:Kick("The Roblox Servers are on fire, try rejoining.")
-	elseif RunService:IsStudio() and not profile then
+	else
 		print("The Roblox Servers are on fire.")
 	end
 
@@ -154,17 +157,18 @@ end
 local function FetchProfileData(player: Player): typemarshaller.ProfileData?
 	local profile = profiles[player] :: typemarshaller.Profile?
 
-	if not profile and profile == nil then
+	if not profile then
 		if not RunService:IsStudio() then
 			-- i really need a break from seeing ts.
 
 			Packet.SendNotification.sendTo({
 				message = "Couldn't get data",
+				duration = 1.5,
 			}, player)
 
-			local list = tablekit.Values(profiles :: any)
+			local list = tablekit.ToString(profiles :: any)
 
-			warn("Couldn't fetch profile from table: ", table.unpack(list))
+			warn("Couldn't fetch profile from table: ", list)
 		end
 
 		return nil
@@ -288,20 +292,30 @@ local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 end
 
 local function registerCombatPlayer(player: Player)
+	local style = sword.new(player, "Katana") -- change this later
+	local combo_info = combo.new(3)
+
+	style:Equip()
+	style:CreateTrail()
+
+	print(style:GetGripData())
+
 	local data = {
 		player = player,
 		damage_multiplier = 1.00,
-		style = sword.new(player, "Katana"),
-		combo_info = combo.new(3),
+		style = style,
+		combo_info = combo_info,
 		card_name = "Pyro",
 	} :: PlayerData
 
 	table.insert(combat_data, data)
+
+	print("registered combat player")
 end
 
 local function indexCombatPlayer(player: Player): PlayerData?
 	for i, data in ipairs(combat_data) do
-		if player.UserId == data.player.UserId then
+		if (player.UserId == data.player.UserId) or player.Name == data.player.Name then
 			return data
 		end
 	end
@@ -433,8 +447,8 @@ local function cancelMatch(player: Player, suppress_notification: boolean?)
 end
 
 local function onPlayerAdded(player: Player)
+	loadProfile(player)
 	GameAnalytics:PlayerJoined(player)
-	future.Try(GameAnalytics.PlayerJoined, GameAnalytics, player)
 
 	local function addHighlight(character: Model)
 		if character:FindFirstChildOfClass("Highlight") then
@@ -453,23 +467,10 @@ local function onPlayerAdded(player: Player)
 	end
 
 	player.CharacterAdded:Connect(function(character)
-		character:SetAttribute("Stamina", 100)
-		character:SetAttribute("MaxStamina", 100)
-
 		addHighlight(character)
 	end)
 
-	batch(player:GetDescendants())
-	local profile = loadProfile(player)
-
 	registerCombatPlayer(player)
-end
-
--- just in case the players have joined the server before the script loaded
-for i, player in ipairs(Players:GetPlayers()) do
-	if player.Parent == Players then
-		task.spawn(onPlayerAdded, player)
-	end
 end
 
 local function onPlayerRemoving(player: Player)
@@ -483,7 +484,7 @@ local function onPlayerRemoving(player: Player)
 
 	local profile = profiles[player]
 
-	if profile ~= nil then
+	if profile then
 		SaveProfileData(player)
 
 		print("saved data for " .. player.Name)
@@ -499,6 +500,12 @@ local function onPlayerRemoving(player: Player)
 
 	task.defer(player.Destroy, player)
 end
+
+game:BindToClose(function()
+	for _, player in ipairs(Players:GetPlayers()) do
+		onPlayerRemoving(player)
+	end
+end)
 
 local function purchaseCard(player: Player, card_name: string)
 	-- TODO)  attempt to index nil with 'Price'
@@ -893,9 +900,14 @@ local function initializeAudio()
 		audio:AddSFX("ice-blast", 77805087245612)
 
 		audio:AddMusic("train_brakes", 185857550)
-		audio:AddMusic("train_clattering", 149026377, {
+		audio:AddMusic("train_clattering", 113519632244308, {
 			looped = true,
 		})
+		audio:AddSFX("train_ambient", 133261320841417, {
+			looped = true,
+		})
+		audio:AddSFX("train_starting", 107540416784700)
+		audio:AddSFX("train_door_open", 98411275767590)
 	end)
 end
 
@@ -936,39 +948,24 @@ local function logMatchWaitingTime(player: Player, seconds: number)
 	})
 end
 
-local function getGamepasses()
-	local universeId = game.GameId
-	if universeId == 0 then
-		warn("Universe ID is 0, cannot fetch gamepasses.")
+local function getGamepasses(player: Player)
+	local gamepasses = product_manager:FetchAllFromModule()
 
-		return nil
-	end
+	if gamepasses then
+		local owned = {}
 
-	local url = "https://games.roproxy.com/v1/games/" .. universeId .. "/game-passes?limit=100&sortOrder=Asc"
-
-	local success, response = future
-		.Try(function()
-			return HttpService:GetAsync(url)
-		end)
-		:Await()
-
-	if success and response then
-		local data = HttpService:JSONDecode(response)
-		for _, pass in pairs(data.data) do
-			print("Pass Name: " .. pass.name .. " | Price: " .. pass.price)
+		for i, gamepass in ipairs(gamepasses) do
+			local player_owns = MarketplaceService:PlayerOwnsAssetAsync(player, gamepass.Id)
+			if player_owns then
+				table.insert(owned, gamepass)
+			end
 		end
 
-		return data.data
+		return owned
 	else
-		warn("no sir: " .. response)
-
-		return nil
+		warn("Failed to get gamepasses for player: " .. player.Name)
+		return {}
 	end
-end
-
--- Set the callback; this can only be done once by one server-side script
-MarketplaceService.ProcessReceipt = function(receiptInfo: typemarshaller.ReceiptInfo)
-	productMarshaller._call(receiptInfo)
 end
 
 Packet.SetTime.listen(function(data, player: Player?)
@@ -1221,6 +1218,10 @@ end
 ReplicatedStorage.Events.GetProfile.OnServerInvoke = getProfile
 ReplicatedStorage.Events.GetProfileServer.OnInvoke = FetchProfileData
 
+MarketplaceService.ProcessReceipt = function(receipt)
+	product_manager:ProcessReceipt(receipt)
+end
+
 Events.GetGamepasses.OnServerInvoke = getGamepasses
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 local save_setting_remote = Events:FindFirstChild("SaveSetting")
@@ -1232,6 +1233,7 @@ end
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
+Events.GetPlayerCombatData.OnInvoke = indexCombatPlayer
 Events.SendMatchmakingTime.OnServerEvent:Connect(function(player: Player, seconds: number)
 	logMatchWaitingTime(player, seconds)
 end)
@@ -1257,10 +1259,8 @@ Events.ToggleMusic.OnServerEvent:Connect(function(player, is_on)
 end)
 initializeAudio()
 startLightingCycle()
+grip.auto_update()
 Players.PlayerAdded:Connect(onPlayerAdded)
 Players.PlayerRemoving:Connect(onPlayerRemoving)
-windshake:Init({
-	MatchWorkspaceWind = true,
-})
 
 print("The server completed execution.")
