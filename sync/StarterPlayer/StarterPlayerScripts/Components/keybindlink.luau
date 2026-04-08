@@ -37,14 +37,12 @@ function module.register(key: number, name: string)
 	local enum_key = Enum.KeyCode:FromValue(key) or Enum.UserInputType:FromValue(key)
 
 	assert(enum_key, "invalid value for keycode")
-	print(enum_key, icons[enum_key])
+	--print(enum_key, icons[enum_key])
 
-	future
-		.Try(function(...)
-			data.button.ImageLabel.Image = icons[enum_key]
-			return true
-		end)
-		:After(print)
+	future.Try(function(...)
+		data.button.ImageLabel.Image = icons[enum_key]
+		return true
+	end)
 
 	data.button.Parent = keybind_gui.CanvasGroup.Frame
 

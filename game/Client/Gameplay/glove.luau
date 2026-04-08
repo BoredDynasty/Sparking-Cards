@@ -2,7 +2,6 @@
 local CollectionService = game:GetService("CollectionService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local fetchAsset = require(ReplicatedStorage.Combat.framework.utils.fetchAsset)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- glove.luau
@@ -93,7 +92,7 @@ function module:Apply(character: typemarshaller.Character)
 		warn("could not apply gloves, missing hands")
 	end
 
-	character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+	character.Humanoid:ChangeState(Enum.HumanoidStateType.None)
 end
 
 return module

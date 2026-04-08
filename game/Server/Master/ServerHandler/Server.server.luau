@@ -66,8 +66,6 @@ type PlayerData = {
 
 local combat_data = {} :: { PlayerData }
 
-print("GameAnalytics is enabled.")
-
 local gameAnalyticsConfig = {
 	enableInfoLog = false,
 	enableVerboseLog = false,
@@ -113,7 +111,6 @@ local function loadProfile(player: Player)
 		end,
 	})
 
-	print(profile)
 	print("profile active: ", profile:IsActive())
 
 	if profile then
@@ -298,7 +295,7 @@ local function registerCombatPlayer(player: Player)
 	style:Equip()
 	style:CreateTrail()
 
-	print(style:GetGripData())
+	print("grip data: ", style:GetGripData())
 
 	local data = {
 		player = player,
@@ -355,7 +352,8 @@ local function executeAttack(player: Player, attack_type: typemarshaller.AttackT
 	end
 
 	local attack_func = module.moveset[attack_type]
-	if attack_func ~= nil then
+	if attack_func then
+		print("executing attack")
 		return attack_func(player)
 	else
 		warn(`Attack function for type '{attack_type}' not found in module '{equipped_card}'`)
@@ -470,6 +468,11 @@ local function onPlayerAdded(player: Player)
 		addHighlight(character)
 	end)
 
+	log_analytics.onboarding_funnel_step(player, {
+		step_name = "Joined",
+		step = 1,
+	})
+
 	registerCombatPlayer(player)
 end
 
@@ -556,6 +559,11 @@ local function purchaseCard(player: Player, card_name: string)
 		Packet.SendNotification.sendTo({
 			message = `You purchased a {card_name} Card.`,
 		}, player)
+
+		log_analytics.onboarding_funnel_step(player, {
+			step_name = "First Purchase",
+			step = 2,
+		})
 	else
 		Packet.SendNotification.sendTo({
 			message = `Could not buy {card_name}`,
@@ -751,6 +759,11 @@ local function insertShopBookmark(player: Player, card_name: string)
 	else
 		table.insert(profile.bookmarked_shop_items, card_name)
 	end
+
+	log_analytics.onboarding_funnel_step(player, {
+		step_name = "Wishlist",
+		step = 3,
+	})
 end
 
 local function sanitizeSettingValue(
@@ -874,6 +887,11 @@ local function saveSetting(player: Player, identifier: string, value: typemarsha
 
 	profile.options[identifier] = sanitized
 	scheduleSettingSave(player)
+
+	log_analytics.onboarding_funnel_step(player, {
+		step_name = "Personalization",
+		step = 4,
+	})
 
 	return true
 end
@@ -1031,6 +1049,11 @@ Packet.BuySkill.listen(function(data, player: Player)
 	SaveProfileData(player)
 
 	Packet.SendNotification.sendTo({ message = "Skill unlocked: " .. skill_name }, player)
+
+	log_analytics.onboarding_funnel_step(player, {
+		step_name = "First Skill",
+		step = 5,
+	})
 end)
 
 Packet.SellSkill.listen(function(data, player: Player)
@@ -1151,6 +1174,12 @@ PartyRemotes.Create.OnServerInvoke = function(player: Player, settings: { [strin
 	end
 
 	Packet.SendNotification.sendTo({ message = "Party created." }, player)
+
+	log_analytics.onboarding_funnel_step(player, {
+		step_name = "Create a Party",
+		step = 6,
+	})
+
 	return { success = true, party_id = pty and pty.party_id or nil }
 end
 PartyRemotes.Delete.OnServerInvoke = function(player: Player, data: { party_id: string })

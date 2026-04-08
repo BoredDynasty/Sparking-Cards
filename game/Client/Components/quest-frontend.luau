@@ -8,6 +8,7 @@ local audio = require(ReplicatedStorage.Modules.audio)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- quest-frontend.luau
@@ -41,6 +42,8 @@ local pool = PoolerPlus:CreatePool("ObjectivePool", function()
 	return ReplicatedStorage.Interfaces.ObjectiveTemplate:Clone()
 end)
 
+pool:AdaptivePreload()
+
 function module:DisplayCompletions()
 	local player_quests = get_quest_data:InvokeServer() :: { typemarshaller.Quest }
 
@@ -68,12 +71,8 @@ function module:DisplayCompletions()
 end
 
 function module:Unload()
-	pool:ReturnAll()
-
-	for i, child in ipairs(quest_frame.Holder:GetChildren()) do
-		if child:IsA("Frame") then
-			child:Destroy()
-		end
+	for i, object in ipairs(pool:GetActiveObjects()) do
+		object:Destroy()
 	end
 end
 
@@ -85,24 +84,11 @@ function module:LoadItems()
 		return
 	end
 
-	print(player_quests)
+	print(tablekit.ToString(player_quests :: any))
 
-	local title_str = [[
-		%s<br/><font weight="Regular"><font transparency="0.5">%s%</font></font>
-	]]
-	local acquired_str = [[
-		<font family=
-		"rbxasset://
-		LuaPackages/
-		Packages/
-		_Index/
-		BuilderIcons/
-		BuilderIcons/
-		BuilderIcons.json"
-		>clock<
-		/font> 
-		Acquired %s
-	]]
+	local title_str = '%s<br/><font weight="Regular"><font transparency="0.5">%s%</font></font>'
+	local acquired_str =
+		'<font family="rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json">clock</font> Acquired %s'
 
 	local holder = quest_frame.Holder
 
@@ -110,15 +96,15 @@ function module:LoadItems()
 
 	for i, quest in ipairs(player_quests) do
 		local card = pool:Get()
-		card.Name = quest.name
+		card.Parent = holder
 
-		card.Title.Text = string.format(title_str :: any, quest.name, quest.progress)
+		card.Title.Text = string.format(title_str, quest.name, quest.progress)
 
 		local deserialized_date_acquired = DateTime.fromUnixTimestampMillis(quest.date_acquired)
-			:FormatLocalTime("MMM D, YYYY", "en-us") or "Unknown date"
+			:FormatLocalTime("MMM D, YYYY", "en-us") or "(unknown)"
+		print(deserialized_date_acquired)
 
-		card.Description.Text = string.format(acquired_str :: any, deserialized_date_acquired)
-		card.Parent = holder
+		card.Description.Text = string.format(acquired_str, deserialized_date_acquired)
 
 		card.Cancel.Activated:Connect(function()
 			-- this doesnt work yet.

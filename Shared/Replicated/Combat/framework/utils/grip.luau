@@ -53,6 +53,11 @@ local function createGrip(character: Model, model: Model, hand: "Left" | "Right"
 	joint.C1 = CFrame.new()
 	joint.Parent = handPart
 
+	local weld_constraint = Instance.new("WeldConstraint")
+	weld_constraint.Part0 = handPart
+	weld_constraint.Part1 = model.PrimaryPart :: BasePart
+	weld_constraint.Parent = character
+
 	local gripInfo: GripInfo = {
 		offset = offset or CFrame.new(),
 		joint = joint,

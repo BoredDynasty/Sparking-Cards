@@ -9,7 +9,6 @@ local Items = require(ReplicatedStorage.Market.Items)
 local Packet = require(ReplicatedStorage.Packet)
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
-local confetti = require(StarterPlayer.StarterPlayerScripts.Interface.confetti)
 local fade = require(StarterPlayer.StarterPlayerScripts.Interface.fade)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
 local future = require(ReplicatedStorage.Packages.future)
@@ -18,13 +17,14 @@ local hydration = require(ReplicatedStorage.Utility.hydration)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
-local prism_awarder = require(StarterPlayer.StarterPlayerScripts.Gameplay["prism-awarder"])
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
 local tab = require(StarterPlayer.StarterPlayerScripts.Components.tab)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
+local typewriter = require(ReplicatedStorage.ClientModules.markdown.typewriter)
 
 -- market.luau
 
@@ -206,6 +206,18 @@ function module:LoadItems<K, V>(items)
 
 		local bookmark_button = template.Bookmark
 
+		local bookmarked_tbl = profile.Data.bookmarked_shop_items
+		local already_bookmarked = table.find(bookmarked_tbl, item.Name)
+		if already_bookmarked then
+			is_bookmarked:Set(true)
+
+			task.spawn(function()
+				local content = Content.fromAssetId(10709782154)
+
+				bookmark_button.ImageLabel.ImageContent = content
+			end)
+		end
+
 		bookmark_button.MouseEnter:Connect(function()
 			task.spawn(function()
 				if not is_bookmarked:Get() then
@@ -259,6 +271,9 @@ function module:LoadItems<K, V>(items)
 
 		local quantity_add = quantity_frame:WaitForChild("Add")
 		local quantity_remove = quantity_frame:WaitForChild("Remove")
+
+		local default_color = purchaseButton.BackgroundColor3
+		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
 
 		--tooltip.register(quantity_add, "Increase quantity")
 		--tooltip.register(quantity_remove, "Decrease quantity")
@@ -319,10 +334,20 @@ function module:LoadItems<K, V>(items)
 
 		purchaseButton.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
+
+			spr.stop(purchaseButton, "BackgroundColor3")
+			spr.target(purchaseButton, 0.7, 5, {
+				BackgroundColor3 = lighter_color,
+			})
 		end)
 
 		purchaseButton.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
+
+			spr.stop(purchaseButton, "BackgroundColor3")
+			spr.target(purchaseButton, 0.7, 5, {
+				BackgroundColor3 = default_color,
+			})
 		end)
 
 		purchaseButton.Activated:Connect(function()
@@ -338,7 +363,10 @@ function module:LoadItems<K, V>(items)
 				Packet.BuyCard.send({ card_name = item.Name })
 			end
 
-			confetti(nil, shopCanvas)
+			spr.stop(purchaseButton, "BackgroundColor3")
+			spr.target(purchaseButton, 0.7, 5, {
+				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+			})
 
 			pop(purchaseButton)
 
@@ -409,7 +437,7 @@ function module:LoadInventory()
 
 		local item_data = Items[item]
 		if not item_data then
-			warn("Couldn't find item data for " .. i)
+			--warn("Couldn't find item data for " .. i)
 			item_data = {
 				Name = i,
 				Price = 0,
@@ -427,6 +455,11 @@ function module:LoadInventory()
 
 		template.Visible = true
 		experimentButton.Visible = false
+
+		sell_btn.AutoButtonColor = false
+
+		local default_color = sell_btn.BackgroundColor3
+		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
 
 		--print("setting up buttons")
 
@@ -460,7 +493,7 @@ function module:LoadInventory()
 				print("attempted setting quantity over max")
 
 				fade.fade(
-					quantity_frame.Remove.ImageLabel,
+					quantity_remove.ImageLabel,
 					{ duration = 0.5, transparency = { start = 0.5, target = 1 } }
 				)
 			end
@@ -469,13 +502,18 @@ function module:LoadInventory()
 				return math.clamp(current + 1, 1, max)
 			end)
 
-			audio:PlaySFX("hover")
+			spr.stop(quantity_add, "BackgroundColor3")
+			spr.target(quantity_add, 0.7, 5, {
+				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+			})
+
+			audio:PlaySFX("continue")
 
 			pop(quantity_frame.Add)
 		end)
 
 		quantity_remove.Activated:Connect(function()
-			if not alter_quantity_limit(quantity_frame.Remove) then
+			if not alter_quantity_limit(quantity_remove) then
 				return
 			end
 
@@ -484,9 +522,9 @@ function module:LoadInventory()
 
 				print("attempted setting quantity below 1")
 
-				fade.fade(quantity_frame.Remove.ImageLabel, {
+				fade.fade(quantity_remove.ImageLabel, {
 					duration = 0.5,
-					transparency = { start = quantity_frame.Remove.ImageLabel.Transparency, target = 0.5 },
+					transparency = { start = quantity_remove.ImageLabel.Transparency, target = 0.5 },
 				})
 			end
 
@@ -494,36 +532,49 @@ function module:LoadInventory()
 				return math.clamp(current - 1, 1, 1000)
 			end)
 
-			audio:PlaySFX("hover")
+			spr.stop(quantity_add, "BackgroundColor3")
+			spr.target(quantity_add, 0.7, 5, {
+				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+			})
 
-			pop(quantity_frame.Remove)
+			audio:PlaySFX("continue")
+
+			pop(quantity_remove)
 		end)
-
-		local remove_btn = quantity_frame:FindFirstChild("Remove")
 		-- we gotta do this because `Instance.Remove` == function
 
-		remove_btn.MouseEnter:Connect(function()
+		quantity_remove.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
 		end)
 
-		remove_btn.MouseLeave:Connect(function()
+		quantity_remove.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
 		end)
 
-		quantity_frame.Add.MouseEnter:Connect(function()
+		quantity_add.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
 		end)
 
-		quantity_frame.Add.MouseLeave:Connect(function()
+		quantity_add.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
 		end)
 
 		sell_btn.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
+
+			spr.stop(sell_btn, "BackgroundColor3")
+			spr.target(sell_btn, 0.7, 5, {
+				BackgroundColor3 = lighter_color,
+			})
 		end)
 
 		sell_btn.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
+
+			spr.stop(sell_btn, "BackgroundColor3")
+			spr.target(sell_btn, 0.7, 5, {
+				BackgroundColor3 = default_color,
+			})
 		end)
 
 		sell_btn.Activated:Connect(function()
@@ -533,17 +584,29 @@ function module:LoadInventory()
 				return
 			end
 
+			spr.stop(sell_btn, "BackgroundColor3")
+			spr.target(sell_btn, 0.7, 5, {
+				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+			})
+
 			for j = 1, quantity:Get() do
 				Packet.SellCard.send({ card_name = i })
 			end
-			--notify.success("Sold Card", `Successfully sold card`, 5, "success")
 
-			local value = Items[item].Price
-			local floor = math.floor(value / 10)
+			task.delay(1, function()
+				module:DisplaySpendings()
+				local total_quantity = item
+				total_quantity = profile.Data.cards[i]
 
-			prism_awarder.award(floor, true)
+				local formatted = string.format(str :: any, "#" .. title_color:ToHex(), i, total_quantity)
+				local controller = typewriter.play(title, formatted, {
+					cps = 25,
+				})
 
-			module:DisplaySpendings()
+				task.delay(10, function()
+					controller:Destroy()
+				end)
+			end)
 		end)
 
 		template.AncestryChanged:Connect(function(k, new)

@@ -36,7 +36,6 @@ local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
 local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
-local input = require(ReplicatedStorage.Packages.input)
 local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
 local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
 local loadout_frontend = require(StarterPlayer.StarterPlayerScripts.Components["loadout-frontend"])
@@ -71,9 +70,6 @@ local transition = require(StarterPlayer.StarterPlayerScripts.Components.transit
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 local windshake = require(ReplicatedStorage.Packages.windshake)
-
-local keyboard = input.Keyboard.new()
-local mouse = input.Mouse.new()
 
 print("Client Requirements")
 
@@ -131,6 +127,7 @@ local function initializeCommands()
 			frame_rate:WaitUntilFramesAreStable(0.025)
 
 			local snack_bar = hint.new()
+
 			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
 			snack_bar:SetAction(showUI, "Cmdr")
 			snack_bar:SetCanDismiss(true)
@@ -229,12 +226,10 @@ local function initializeOptions()
 	hud.new("Options", toggleUI, lucide.GetAsset("settings"))
 end
 local function initializeMatchmaking()
-	print("init matchmaking")
-
 	local queue_updated = events.Matchmaking.QueueUpdated
 
 	queue_updated.OnClientEvent:Connect(function(info)
-		print("Matchmaking.QueueUpdated:", tablekit.ToString(info))
+		--print("Matchmaking.QueueUpdated:", tablekit.ToString(info))
 	end)
 
 	local matchmakingGui = PlayerGui.NewMatch
@@ -280,7 +275,6 @@ local function initializeMatchmaking()
 
 		-- request a snapshot of the queue for the frontend
 		local info = events.Matchmaking.RequestQueueInfo:InvokeServer()
-		print(tablekit.ToString(info))
 		if string.find(tablekit.ToString(info):lower(), "party_id") then
 			-- if it says something about a party then...
 			is_party = true
@@ -442,7 +436,7 @@ local function initializeNotifiers()
 
 	local function handleNotification(data)
 		if RunService:IsStudio() then
-			print("Notification received: ", tablekit.ToString(data))
+			--print("Notification received: ", tablekit.ToString(data))
 		else
 			local hint_ = hint.new()
 			hint_:SetText(data.message)
@@ -583,7 +577,6 @@ local function initializeObjectives()
 
 		if displayorder:GetState(objectiveGui.CanvasGroup) then
 			quest_frontend:LoadItems()
-			quest_frontend:DisplayCompletions()
 		else
 			quest_frontend:Unload()
 		end
@@ -701,7 +694,7 @@ end
 local function initializeSpectating()
 	local spectate_gui = PlayerGui.Spectate
 
-	keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
+	UserInputService.InputBegan:Connect(function(key, processed)
 		if processed then
 			return
 		end
@@ -837,65 +830,29 @@ do
 	end
 end
 
-keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
-	if processed then
-		return
-	end
-
+local function invokeAttack(key)
 	local attack_type = getAttackTypeFromKey(key)
 	if attack_type then
 		events.ExecuteAttack:InvokeServer(attack_type)
-
-		--hud:Hide()
 	end
-end)
+end
 
-keyboard.KeyDown:Connect(function(key: Enum.KeyCode, processed: boolean)
-	if processed then
-		return
-	end
-
+local function invokeJuke(key: Enum.KeyCode)
 	if key == Enum.KeyCode.K then
 		ability_controller:Juke("Left")
 	elseif key == Enum.KeyCode.L then
 		ability_controller:Juke("Right")
 	end
-end)
+end
 
---[[
-keyboard.KeyUp:Connect(function(key: Enum.KeyCode, processed: boolean)
+UserInputService.InputBegan:Connect(function(key, processed)
 	if processed then
 		return
 	end
 
-	task.wait(2)
-
-	hud:Show()
+	invokeAttack(key)
+	invokeJuke(key)
 end)
---]]
-mouse.LeftDown:Connect(function(processed: boolean)
-	if processed then
-		return
-	end
-
-	local root = humanoid.RootPart
-	if not root then
-		return
-	end
-
-	--events.FireGroundCrack:FireServer("crack", root.CFrame)
-
-	--hud:Hide()
-end)
---[[
-mouse.LeftUp:Connect(function(processed: boolean)
-	if processed then
-		return
-	end
-
-	hud:Show()
-end)
---]]
 
 glove:Apply(character)
 

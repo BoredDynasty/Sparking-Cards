@@ -28,6 +28,8 @@ local carriage = workspace:WaitForChild("Train")
 local engine = carriage:WaitForChild("Engine")
 
 weld_utility:Weld(carriage, engine)
+weld_utility:Weld(workspace.MetroTrain, workspace.MetroTrain.Bogey1.Engine) -- we're lowk gonna add another one
+-- this is gonna be some sortof a story game anyway so..
 
 local events = ReplicatedStorage.Events
 

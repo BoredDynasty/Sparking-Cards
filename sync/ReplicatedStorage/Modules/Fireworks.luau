@@ -46,7 +46,7 @@ local function MakeFirework(position: Vector3, colors: { Color3 }?)
 		local height = random.integer(4, 7)
 
 		spr.target(firework, 1, 1 / (time / 10), {
-			Position = position + vector.create(0, height, 0),
+			Position = position + Vector3.new(0, height, 0),
 		})
 
 		--audio:SFX("blastoff")
@@ -78,7 +78,7 @@ local function set_off(object: BasePart, colors: { Color3 }?)
 	local WhenToStop = 0
 
 	while WhenToStop < NumberOfFireworks do
-		MakeFirework(object.CFrame + Vector3.new(random.float(-4, 4), -2, random.float(-4, 4)), colors)
+		MakeFirework(object.Position + Vector3.new(random.float(-4, 4), -2, random.float(-4, 4)), colors)
 		WhenToStop += 1
 	end
 end

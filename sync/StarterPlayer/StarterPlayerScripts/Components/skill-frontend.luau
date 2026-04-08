@@ -8,6 +8,7 @@ local Packet = require(ReplicatedStorage.Packet)
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local future = require(ReplicatedStorage.Packages.future)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local skill_chart = require(ReplicatedStorage.Structures["skill-chart"])
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
@@ -49,6 +50,10 @@ local button_pool = PoolerPlus:CreatePool("SkillInfoPool", function()
 	return templates.SkillLevelInfo:Clone()
 end)
 
+catagory_pool:Preload(30)
+connection_pool:Preload(50)
+button_pool:Preload(100)
+
 local spinning_gradients = {} :: { UIGradient }
 
 RunService.Heartbeat:Connect(function(delta)
@@ -82,6 +87,7 @@ local function getTechniquesUnlocked(technique: string)
 
 	if not profile then
 		print("no player data to get techniques unlocked.")
+
 		return 1
 	end
 
@@ -131,6 +137,8 @@ function module:DisplaySpendings()
 end
 
 function module:LoadCatagories()
+	module:Unload()
+
 	local visited_techniques = {}
 
 	for i, skill_data in ipairs(skill_chart) do
@@ -149,7 +157,7 @@ function module:LoadCatagories()
 		local title = catagory.TextLabel
 
 		local title_str = "%s<br/><font size='14'><font transparency='0.5'>%s Upgrades - %s</font></font>"
-		print(title_str)
+		--print(title_str)
 
 		local techniques_unlocked = getTechniquesUnlocked(technique)
 		local techniques_unlocked_str = tostring(techniques_unlocked)
@@ -162,13 +170,15 @@ function module:LoadCatagories()
 				and skill.upgrade_number == techniques_unlocked
 			then
 				techniques_unlocked_str = skill.name
-				print(techniques_unlocked_str)
+				--print(techniques_unlocked_str)
 				break
 			end
 		end
 
-		title.Text = string.format(title_str :: any, technique, total_upgrades, techniques_unlocked_str)
-		print(title.Text)
+		task.spawn(function()
+			title.Text = string.format(title_str :: any, technique, total_upgrades, techniques_unlocked_str)
+		end)
+		--print(title.Text)
 
 		for j, skill in ipairs(skill_chart) do
 			if j > getTotalUpgrades(skill.technique) then
@@ -178,35 +188,36 @@ function module:LoadCatagories()
 			end
 
 			local button = button_pool:Get()
-			button.Parent = catagory.Frame
 
 			shadow(button)
 
 			local info_str = "<font transparency='.5'>Lv. %s</font> > + %s"
-			print("info str: ", info_str)
+			--print("info str: ", info_str)
 
 			local upgrade_number = skill.upgrade_number
-			print("upgrade #: ", upgrade_number)
+			--print("upgrade #: ", upgrade_number)
 
 			-- the multiplier is like "1.05" or "1.2"
 			-- we want it like "5%" or "20%"
-			local multiplier = skill.multiplier or 1.05
+			task.spawn(function()
+				local multiplier = skill.multiplier or 1.05
 
-			local formatted_multiplier = math.floor((multiplier - 1) * 100)
-			print(tablekit.ToString(skill :: any), formatted_multiplier)
+				local formatted_multiplier = math.floor((multiplier - 1) * 100)
+				--print(tablekit.ToString(skill :: any), formatted_multiplier)
 
-			button.Text = string.format(
-				info_str :: any,
-				upgrade_number,
-				formatted_multiplier,
-				tostring(upgrade_number) .. "%"
-			)
-			print(button.Text)
+				button.Text = string.format(
+					info_str :: any,
+					upgrade_number,
+					formatted_multiplier,
+					tostring(upgrade_number) .. "%"
+				)
+			end)
+			--print(button.Text)
 
 			task.spawn(function()
 				if upgrade_number > techniques_unlocked then
 					-- this skill is locked
-					print("locked: ", skill.name)
+					--print("locked: ", skill.name)
 
 					-- if we find the gradient spinning, we will stop it and hide the ui stroke.
 					local ui_stroke = button.Outline.UIStroke
@@ -236,20 +247,28 @@ function module:LoadCatagories()
 			-- (including the connection visuals)
 			-- the connection visual should be in between the buttons, so we will use decimal numbers for them.
 
-			button.Name = string.format("%02d", upgrade_number)
+			task.spawn(function()
+				button.Name = string.format("%02d", upgrade_number)
+			end)
 
 			-- connection visuals
 
-			if j < total_upgrades then
-				local connection_visual = connection_pool:Get()
+			task.spawn(function()
+				future.Try(function()
+					if j < total_upgrades then
+						local connection_visual = connection_pool:Get()
 
-				connection_visual.Name = string.format("%02d.5", upgrade_number)
-				connection_visual.Visible = true
-				connection_visual.Parent = catagory.Frame
-			end
+						connection_visual.Name = string.format("%02d.5", upgrade_number)
+						connection_visual.Visible = true
+						connection_visual.Parent = catagory.Frame
+					end
+				end)
+			end)
 
 			-- Add clicking functionality
 			button.Activated:Connect(function()
+				button.Interactable = false -- hey pal, we dont want any errors.
+
 				if upgrade_number > techniques_unlocked then
 					-- Buy the skill
 					Packet.BuySkill.send({ skill_name = skill.name })
@@ -265,6 +284,8 @@ function module:LoadCatagories()
 			end)
 
 			button.MouseButton2Click:Connect(function()
+				button.Interactable = false -- same here
+
 				if upgrade_number <= techniques_unlocked then
 					-- Sell the skill
 					Packet.SellSkill.send({ skill_name = skill.name })
@@ -278,7 +299,7 @@ function module:LoadCatagories()
 				end
 			end)
 
-			tooltip.new(button, "RMB or swipe down on mobile to sell.")
+			tooltip.new(button, "RMB or swipe down to sell.")
 
 			button.MouseEnter:Connect(function()
 				audio:PlaySFX("hover")
@@ -288,7 +309,7 @@ function module:LoadCatagories()
 				audio:PlaySFX("leave")
 			end)
 
-			-- for mobile
+			-- for mobile (and maybe PC)
 			button.TouchSwipe:Connect(function(direction, delta)
 				if direction == Enum.SwipeDirection.Down then
 					if upgrade_number <= techniques_unlocked then
@@ -301,6 +322,8 @@ function module:LoadCatagories()
 					end
 				end
 			end)
+
+			button.Parent = catagory.Frame
 		end
 
 		catagory.Parent = holder
@@ -308,26 +331,34 @@ function module:LoadCatagories()
 
 	-- expand the Holder CanvasSize to fit the catagories
 	-- note: the holder is a ScrollingFrame
-	local layout = holder.UIListLayout
-	local padding = layout.Padding.Offset
-	local total_height = padding
-	for i, catagory in ipairs(holder:GetChildren()) do
-		if catagory:IsA("Frame") then
-			total_height += catagory.AbsoluteSize.Y + padding
+	task.spawn(function()
+		local layout = holder.UIListLayout
+		local padding = layout.Padding.Offset
+		local total_height = padding
+		for i, catagory in ipairs(holder:GetChildren()) do
+			if catagory:IsA("Frame") then
+				total_height += catagory.AbsoluteSize.Y + padding
+			end
 		end
-	end
 
-	holder.CanvasSize = UDim2.new(0, 0, 0, total_height)
+		holder.CanvasSize = UDim2.new(0, 0, 0, total_height)
+	end)
 
-	print(tablekit.ToString(visited_techniques :: any))
+	--print(tablekit.ToString(visited_techniques :: any))
 end
 
 function module:Unload()
-	catagory_pool:Clear()
-	connection_pool:Clear()
-	button_pool:Clear()
-
 	table.clear(spinning_gradients)
+
+	for i, object in ipairs(catagory_pool:GetActiveObjects()) do
+		object:Destroy()
+	end
+	for i, object in ipairs(connection_pool:GetActiveObjects()) do
+		object:Destroy()
+	end
+	for i, object in ipairs(button_pool:GetActiveObjects()) do
+		object:Destroy()
+	end
 end
 
 return module

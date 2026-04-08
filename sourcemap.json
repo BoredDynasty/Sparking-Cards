@@ -7,68 +7,6 @@
       "className": "Workspace",
       "children": [
         {
-          "name": "Roof",
-          "className": "MeshPart"
-        },
-        {
-          "name": "Camera",
-          "className": "Camera"
-        },
-        {
-          "name": "StationSensor",
-          "className": "Part",
-          "children": [
-            {
-              "name": "DepartDirection",
-              "className": "IntValue"
-            },
-            {
-              "name": "DoorLeft",
-              "className": "BoolValue"
-            },
-            {
-              "name": "Decal",
-              "className": "Decal"
-            },
-            {
-              "name": "SetLine",
-              "className": "StringValue"
-            },
-            {
-              "name": "SetName",
-              "className": "StringValue"
-            }
-          ]
-        },
-        {
-          "name": "Baseplate",
-          "className": "Part",
-          "children": [
-            {
-              "name": "GridTexture",
-              "className": "Texture"
-            },
-            {
-              "name": "Texture",
-              "className": "Texture"
-            }
-          ]
-        },
-        {
-          "name": "SpawnLocation",
-          "className": "SpawnLocation",
-          "children": [
-            {
-              "name": "Decal",
-              "className": "Decal"
-            },
-            {
-              "name": "Weld",
-              "className": "Weld"
-            }
-          ]
-        },
-        {
           "name": "Snowball",
           "className": "MeshPart",
           "children": [
@@ -99,6 +37,10 @@
               "className": "Folder",
               "children": [
                 {
+                  "name": "Part",
+                  "className": "Part"
+                },
+                {
                   "name": "Model",
                   "className": "Model",
                   "children": [
@@ -107,16 +49,16 @@
                       "className": "Part",
                       "children": [
                         {
-                          "name": "Weld",
-                          "className": "Weld"
-                        },
-                        {
                           "name": "Texture",
                           "className": "Texture"
                         },
                         {
                           "name": "Mesh",
                           "className": "BlockMesh"
+                        },
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
                         },
                         {
                           "name": "Decal",
@@ -215,6 +157,16 @@
                       ]
                     },
                     {
+                      "name": "Leaves",
+                      "className": "MeshPart",
+                      "children": [
+                        {
+                          "name": "SurfaceAppearance",
+                          "className": "SurfaceAppearance"
+                        }
+                      ]
+                    },
+                    {
                       "name": "Bush",
                       "className": "MeshPart"
                     }
@@ -248,7 +200,13 @@
                 },
                 {
                   "name": "Leaves",
-                  "className": "Part"
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "ParticleEmitter",
+                      "className": "ParticleEmitter"
+                    }
+                  ]
                 }
               ]
             },
@@ -2207,116 +2165,16 @@
           ]
         },
         {
-          "name": "TestPart",
-          "className": "Part",
+          "name": "Track",
+          "className": "Model",
           "children": [
             {
-              "name": "ImageLabel",
-              "className": "ImageLabel",
+              "name": "Part",
+              "className": "Part",
               "children": [
                 {
-                  "name": "UIAspectRatioConstraint",
-                  "className": "UIAspectRatioConstraint"
-                }
-              ]
-            },
-            {
-              "name": "Trail",
-              "className": "Trail"
-            },
-            {
-              "name": "Attachment",
-              "className": "Attachment"
-            },
-            {
-              "name": "Light",
-              "className": "BillboardGui",
-              "children": [
-                {
-                  "name": "Container",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "KeyBG",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Key",
-                      "className": "TextLabel"
-                    },
-                    {
-                      "name": "KeyShadowBG",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "ActionText",
-                      "className": "TextLabel"
-                    },
-                    {
-                      "name": "ObjectText",
-                      "className": "TextLabel"
-                    },
-                    {
-                      "name": "HoldDurationLine",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "HoldDurationValue",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "UIListLayout",
-                          "className": "UIListLayout"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "HoldDurationDecor",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UICorner",
-                          "className": "UICorner"
-                        },
-                        {
-                          "name": "Line",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "UICorner",
-                              "className": "UICorner"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "UIListLayout",
-                          "className": "UIListLayout"
-                        }
-                      ]
-                    }
-                  ]
+                  "name": "Weld",
+                  "className": "Weld"
                 }
               ]
             }
@@ -2329,356 +2187,6 @@
             {
               "name": "Blade",
               "className": "MeshPart"
-            }
-          ]
-        },
-        {
-          "name": "Obsidian",
-          "className": "Model",
-          "children": [
-            {
-              "name": "NPC_Config",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Animations",
-                  "className": "Configuration"
-                }
-              ]
-            },
-            {
-              "name": "black version realistic puffer",
-              "className": "Shirt"
-            },
-            {
-              "name": "Highlight",
-              "className": "Highlight"
-            },
-            {
-              "name": "Accessories",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "[Head] Silver Cross Earrings",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "SpecialMesh",
-                      "className": "SpecialMesh"
-                    },
-                    {
-                      "name": "AvatarPartScaleType",
-                      "className": "StringValue"
-                    },
-                    {
-                      "name": "HatAttachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "OriginalSize",
-                      "className": "Vector3Value"
-                    },
-                    {
-                      "name": "AccessoryWeld",
-                      "className": "Weld"
-                    }
-                  ]
-                },
-                {
-                  "name": "[Torso] Dark Chain Belt [1.0]",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "SpecialMesh",
-                      "className": "SpecialMesh"
-                    },
-                    {
-                      "name": "AvatarPartScaleType",
-                      "className": "StringValue"
-                    },
-                    {
-                      "name": "WaistCenterAttachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "OriginalSize",
-                      "className": "Vector3Value"
-                    },
-                    {
-                      "name": "AccessoryWeld",
-                      "className": "Weld"
-                    }
-                  ]
-                },
-                {
-                  "name": "Dreads",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "SpecialMesh",
-                      "className": "SpecialMesh"
-                    },
-                    {
-                      "name": "AvatarPartScaleType",
-                      "className": "StringValue"
-                    },
-                    {
-                      "name": "HairAttachment",
-                      "className": "Attachment"
-                    },
-                    {
-                      "name": "OriginalSize",
-                      "className": "Vector3Value"
-                    },
-                    {
-                      "name": "WeldConstraint",
-                      "className": "WeldConstraint"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Body Colors",
-              "className": "BodyColors"
-            },
-            {
-              "name": "Black Jeans with White Shoes",
-              "className": "Pants"
-            },
-            {
-              "name": "Humanoid",
-              "className": "Humanoid",
-              "children": [
-                {
-                  "name": "HumanoidDescription",
-                  "className": "HumanoidDescription",
-                  "children": [
-                    {
-                      "name": "BodyPartDescription",
-                      "className": "BodyPartDescription"
-                    }
-                  ]
-                },
-                {
-                  "name": "Animator",
-                  "className": "Animator"
-                }
-              ]
-            },
-            {
-              "name": "HumanoidRootPart",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "RootAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "RootJoint",
-                  "className": "Motor6D"
-                }
-              ]
-            },
-            {
-              "name": "Right Leg",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "RightFootAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "Snap",
-                  "className": "Snap"
-                }
-              ]
-            },
-            {
-              "name": "Left Leg",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "LeftFootAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "Snap",
-                  "className": "Snap"
-                }
-              ]
-            },
-            {
-              "name": "Right Arm",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "RightShoulderAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "RightGripAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "WeldConstraint",
-                  "className": "WeldConstraint"
-                },
-                {
-                  "name": "GloveR",
-                  "className": "MeshPart"
-                }
-              ]
-            },
-            {
-              "name": "Left Arm",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "LeftShoulderAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "LeftGripAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "WeldConstraint",
-                  "className": "WeldConstraint"
-                },
-                {
-                  "name": "GloveL",
-                  "className": "MeshPart"
-                }
-              ]
-            },
-            {
-              "name": "Torso",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "NeckAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "BodyFrontAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "BodyBackAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "LeftCollarAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "RightCollarAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "WaistFrontAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "WaistCenterAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "WaistBackAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "Right Shoulder",
-                  "className": "Motor6D"
-                },
-                {
-                  "name": "Left Shoulder",
-                  "className": "Motor6D"
-                },
-                {
-                  "name": "Right Hip",
-                  "className": "Motor6D"
-                },
-                {
-                  "name": "Left Hip",
-                  "className": "Motor6D"
-                },
-                {
-                  "name": "Neck",
-                  "className": "Motor6D"
-                },
-                {
-                  "name": "Weld",
-                  "className": "Weld"
-                }
-              ]
-            },
-            {
-              "name": "Head",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "Mesh",
-                  "className": "SpecialMesh"
-                },
-                {
-                  "name": "HairAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "HatAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "FaceFrontAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "FaceCenterAttachment",
-                  "className": "Attachment"
-                },
-                {
-                  "name": "OldFace",
-                  "className": "Folder",
-                  "children": [
-                    {
-                      "name": "face",
-                      "className": "Decal"
-                    }
-                  ]
-                },
-                {
-                  "name": "WeldConstraint",
-                  "className": "WeldConstraint"
-                },
-                {
-                  "name": "FaceDecals",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Mesh",
-                      "className": "SpecialMesh"
-                    },
-                    {
-                      "name": "HeadWeld",
-                      "className": "Weld"
-                    },
-                    {
-                      "name": "Overlay",
-                      "className": "Decal"
-                    },
-                    {
-                      "name": "Mouth",
-                      "className": "Decal"
-                    },
-                    {
-                      "name": "Eyes",
-                      "className": "Decal"
-                    }
-                  ]
-                }
-              ]
             }
           ]
         },
@@ -4093,16 +3601,6 @@
                   "className": "Motor6D"
                 }
               ]
-            },
-            {
-              "name": "Model",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Handle",
-                  "className": "Part"
-                }
-              ]
             }
           ]
         },
@@ -5407,22 +4905,6 @@
           "className": "Folder"
         },
         {
-          "name": "Track",
-          "className": "Model",
-          "children": [
-            {
-              "name": "Part",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "Weld",
-                  "className": "Weld"
-                }
-              ]
-            }
-          ]
-        },
-        {
           "name": "Model",
           "className": "Model",
           "children": [
@@ -5449,256 +4931,6 @@
                   "className": "Decal"
                 }
               ]
-            },
-            {
-              "name": "Nest",
-              "className": "MeshPart",
-              "children": [
-                {
-                  "name": "Weld",
-                  "className": "Weld"
-                }
-              ]
-            }
-          ]
-        },
-        {
-          "name": "Train",
-          "className": "Model",
-          "children": [
-            {
-              "name": "Unions",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Part",
-                  "className": "Part"
-                },
-                {
-                  "name": "Union",
-                  "className": "UnionOperation"
-                },
-                {
-                  "name": "Wedge",
-                  "className": "WedgePart"
-                }
-              ]
-            },
-            {
-              "name": "Destination",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "Front",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Screen",
-                      "className": "SurfaceGui",
-                      "children": [
-                        {
-                          "name": "LineName",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "LineNumber",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Back",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "Screen",
-                      "className": "SurfaceGui",
-                      "children": [
-                        {
-                          "name": "LineName",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "LineNumber",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "TextLabel",
-                              "className": "TextLabel"
-                            }
-                          ]
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "InteriorLights",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "CeilingLight",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Design",
-                      "className": "Folder",
-                      "children": [
-                        {
-                          "name": "Part",
-                          "className": "Part",
-                          "children": [
-                            {
-                              "name": "Weld",
-                              "className": "Weld"
-                            }
-                          ]
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Light",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "SurfaceLight",
-                          "className": "SurfaceLight"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Part",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "Seats",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Seat",
-                  "className": "Seat"
-                }
-              ]
-            },
-            {
-              "name": "Folder",
-              "className": "Folder"
-            },
-            {
-              "name": "RightDoors",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "Part",
-                  "className": "Part"
-                }
-              ]
-            },
-            {
-              "name": "Lights",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "Part",
-                  "className": "Part",
-                  "children": [
-                    {
-                      "name": "SurfaceGui",
-                      "className": "SurfaceGui",
-                      "children": [
-                        {
-                          "name": "White",
-                          "className": "ImageLabel"
-                        },
-                        {
-                          "name": "Red",
-                          "className": "ImageLabel"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "SpotLight",
-                      "className": "SpotLight"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "LeftDoors",
-              "className": "Model",
-              "children": [
-                {
-                  "name": "Part",
-                  "className": "Part"
-                }
-              ]
-            },
-            {
-              "name": "Part",
-              "className": "Part"
-            },
-            {
-              "name": "Engine",
-              "className": "Part",
-              "children": [
-                {
-                  "name": "Clattering",
-                  "className": "Sound"
-                },
-                {
-                  "name": "Brake",
-                  "className": "Sound"
-                },
-                {
-                  "name": "BodyVelocity",
-                  "className": "BodyVelocity"
-                }
-              ]
-            },
-            {
-              "name": "VehicleSeat",
-              "className": "VehicleSeat"
-            },
-            {
-              "name": "Wedge",
-              "className": "WedgePart"
-            },
-            {
-              "name": "Roof",
-              "className": "Part"
             }
           ]
         },
@@ -5781,10 +5013,6 @@
           ]
         },
         {
-          "name": "PROXY_ICON",
-          "className": "MeshPart"
-        },
-        {
           "name": "Terrain",
           "className": "Terrain",
           "children": [
@@ -5839,6 +5067,202 @@
         {
           "name": "GloveR",
           "className": "MeshPart"
+        },
+        {
+          "name": "Baseplate",
+          "className": "Part",
+          "children": [
+            {
+              "name": "GridTexture",
+              "className": "Texture"
+            },
+            {
+              "name": "Texture",
+              "className": "Texture"
+            }
+          ]
+        },
+        {
+          "name": "TestPart",
+          "className": "Part",
+          "children": [
+            {
+              "name": "ImageLabel",
+              "className": "ImageLabel",
+              "children": [
+                {
+                  "name": "UIAspectRatioConstraint",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
+              "name": "Trail",
+              "className": "Trail"
+            },
+            {
+              "name": "Attachment",
+              "className": "Attachment"
+            },
+            {
+              "name": "Light",
+              "className": "BillboardGui",
+              "children": [
+                {
+                  "name": "Container",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "KeyBG",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Key",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "KeyShadowBG",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "ActionText",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "ObjectText",
+                      "className": "TextLabel"
+                    },
+                    {
+                      "name": "HoldDurationLine",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "HoldDurationValue",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "HoldDurationDecor",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UICorner",
+                          "className": "UICorner"
+                        },
+                        {
+                          "name": "Line",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "PROXY_ICON",
+          "className": "MeshPart"
+        },
+        {
+          "name": "SpawnLocation",
+          "className": "SpawnLocation",
+          "children": [
+            {
+              "name": "Decal",
+              "className": "Decal"
+            },
+            {
+              "name": "Weld",
+              "className": "Weld"
+            }
+          ]
+        },
+        {
+          "name": "StationSensor",
+          "className": "Part",
+          "children": [
+            {
+              "name": "DepartDirection",
+              "className": "IntValue"
+            },
+            {
+              "name": "DoorLeft",
+              "className": "BoolValue"
+            },
+            {
+              "name": "Decal",
+              "className": "Decal"
+            },
+            {
+              "name": "SetLine",
+              "className": "StringValue"
+            },
+            {
+              "name": "SetName",
+              "className": "StringValue"
+            }
+          ]
+        },
+        {
+          "name": "Roof",
+          "className": "MeshPart"
+        },
+        {
+          "name": "Camera",
+          "className": "Camera"
+        },
+        {
+          "name": "MetroTrain",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Bogey1",
+              "className": "Folder"
+            },
+            {
+              "name": "Bogey2",
+              "className": "Folder"
+            }
+          ]
         }
       ]
     },
@@ -6007,6 +5431,13 @@
       "className": "ReplicatedFirst",
       "children": [
         {
+          "name": "DataModel",
+          "className": "LocalScript",
+          "filePaths": [
+            "sync/ReplicatedFirst/DataModel.client.luau"
+          ]
+        },
+        {
           "name": "Loading",
           "className": "ScreenGui",
           "children": [
@@ -6114,13 +5545,6 @@
                 }
               ]
             }
-          ]
-        },
-        {
-          "name": "DataModel",
-          "className": "LocalScript",
-          "filePaths": [
-            "sync/ReplicatedFirst/DataModel.client.luau"
           ]
         }
       ]
@@ -6230,13 +5654,6 @@
                   "className": "ModuleScript",
                   "filePaths": [
                     "sync/StarterPlayer/StarterPlayerScripts/Gameplay/music.luau"
-                  ]
-                },
-                {
-                  "name": "prism-awarder",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/StarterPlayer/StarterPlayerScripts/Gameplay/prism-awarder.luau"
                   ]
                 },
                 {
@@ -9653,6 +9070,13 @@
               ]
             },
             {
+              "name": "springshaker",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Packages/springshaker.luau"
+              ]
+            },
+            {
               "name": "_Index",
               "className": "Folder",
               "children": [
@@ -11254,6 +10678,13 @@
                           ]
                         },
                         {
+                          "name": "jest.config",
+                          "className": "ModuleScript",
+                          "filePaths": [
+                            "sync/ReplicatedStorage/Packages/_Index/howmanysmall_janitor@1.18.3/janitor/jest.config.luau"
+                          ]
+                        },
+                        {
                           "name": "__tests__",
                           "className": "Folder",
                           "children": [
@@ -11264,13 +10695,6 @@
                                 "sync/ReplicatedStorage/Packages/_Index/howmanysmall_janitor@1.18.3/janitor/__tests__/Janitor.test.luau"
                               ]
                             }
-                          ]
-                        },
-                        {
-                          "name": "jest.config",
-                          "className": "ModuleScript",
-                          "filePaths": [
-                            "sync/ReplicatedStorage/Packages/_Index/howmanysmall_janitor@1.18.3/janitor/jest.config.luau"
                           ]
                         }
                       ]
@@ -11297,13 +10721,6 @@
                     }
                   ]
                 }
-              ]
-            },
-            {
-              "name": "springshaker",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Packages/springshaker.luau"
               ]
             }
           ]
@@ -11467,16 +10884,10 @@
               ]
             },
             {
-              "name": "Imagery",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "image-mask",
-                  "className": "ModuleScript",
-                  "filePaths": [
-                    "sync/ReplicatedStorage/Modules/Imagery/image-mask.luau"
-                  ]
-                }
+              "name": "SkillFunctions",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Modules/SkillFunctions.luau"
               ]
             },
             {
@@ -11750,6 +11161,19 @@
                   ]
                 }
               ]
+            },
+            {
+              "name": "Imagery",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "image-mask",
+                  "className": "ModuleScript",
+                  "filePaths": [
+                    "sync/ReplicatedStorage/Modules/Imagery/image-mask.luau"
+                  ]
+                }
+              ]
             }
           ]
         },
@@ -11813,13 +11237,6 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/ClientModules/custom-lighting.luau"
-              ]
-            },
-            {
-              "name": "dropper",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/ClientModules/dropper.luau"
               ]
             },
             {
@@ -12760,13 +12177,7 @@
             },
             {
               "name": "Images",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "FireImg",
-                  "className": "Configuration"
-                }
-              ]
+              "className": "Folder"
             },
             {
               "name": "Paths",
@@ -14173,6 +13584,78 @@
               ]
             },
             {
+              "name": "Weaponry",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Gauntlet",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Value",
+                      "className": "CFrameValue"
+                    },
+                    {
+                      "name": "Handle",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "WeldConstraint",
+                          "className": "WeldConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Union",
+                      "className": "UnionOperation"
+                    },
+                    {
+                      "name": "Cage",
+                      "className": "UnionOperation"
+                    }
+                  ]
+                },
+                {
+                  "name": "Katana",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Handle",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "WeldConstraint",
+                          "className": "WeldConstraint"
+                        },
+                        {
+                          "name": "Model",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "trail",
+                              "className": "Trail"
+                            },
+                            {
+                              "name": "trailat1",
+                              "className": "Attachment"
+                            },
+                            {
+                              "name": "trailat2",
+                              "className": "Attachment"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
               "name": "Prism_OBJ",
               "className": "MeshPart"
             },
@@ -14411,48 +13894,6 @@
                       "className": "ParticleEmitter"
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "name": "Weaponry",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Gauntlet",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Value",
-                      "className": "CFrameValue"
-                    },
-                    {
-                      "name": "Handle",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "WeldConstraint",
-                          "className": "WeldConstraint"
-                        },
-                        {
-                          "name": "WeldConstraint",
-                          "className": "WeldConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Union",
-                      "className": "UnionOperation"
-                    },
-                    {
-                      "name": "Cage",
-                      "className": "UnionOperation"
-                    }
-                  ]
-                },
-                {
-                  "name": "Katana",
-                  "className": "Model"
                 }
               ]
             }
@@ -25318,6 +24759,382 @@
         {
           "name": "__Rojo_SessionLock",
           "className": "ObjectValue"
+        },
+        {
+          "name": "Model",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Part",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Weld",
+                  "className": "Weld"
+                }
+              ]
+            },
+            {
+              "name": "Nest",
+              "className": "MeshPart",
+              "children": [
+                {
+                  "name": "Weld",
+                  "className": "Weld"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Obsidian",
+          "className": "Model",
+          "children": [
+            {
+              "name": "NPC_Config",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Animations",
+                  "className": "Configuration"
+                }
+              ]
+            },
+            {
+              "name": "black version realistic puffer",
+              "className": "Shirt"
+            },
+            {
+              "name": "Highlight",
+              "className": "Highlight"
+            },
+            {
+              "name": "Accessories",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "[Head] Silver Cross Earrings",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SpecialMesh",
+                      "className": "SpecialMesh"
+                    },
+                    {
+                      "name": "AvatarPartScaleType",
+                      "className": "StringValue"
+                    },
+                    {
+                      "name": "HatAttachment",
+                      "className": "Attachment"
+                    },
+                    {
+                      "name": "OriginalSize",
+                      "className": "Vector3Value"
+                    },
+                    {
+                      "name": "AccessoryWeld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "[Torso] Dark Chain Belt [1.0]",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SpecialMesh",
+                      "className": "SpecialMesh"
+                    },
+                    {
+                      "name": "AvatarPartScaleType",
+                      "className": "StringValue"
+                    },
+                    {
+                      "name": "WaistCenterAttachment",
+                      "className": "Attachment"
+                    },
+                    {
+                      "name": "OriginalSize",
+                      "className": "Vector3Value"
+                    },
+                    {
+                      "name": "AccessoryWeld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Dreads",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SpecialMesh",
+                      "className": "SpecialMesh"
+                    },
+                    {
+                      "name": "AvatarPartScaleType",
+                      "className": "StringValue"
+                    },
+                    {
+                      "name": "HairAttachment",
+                      "className": "Attachment"
+                    },
+                    {
+                      "name": "OriginalSize",
+                      "className": "Vector3Value"
+                    },
+                    {
+                      "name": "WeldConstraint",
+                      "className": "WeldConstraint"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Body Colors",
+              "className": "BodyColors"
+            },
+            {
+              "name": "Black Jeans with White Shoes",
+              "className": "Pants"
+            },
+            {
+              "name": "Humanoid",
+              "className": "Humanoid",
+              "children": [
+                {
+                  "name": "HumanoidDescription",
+                  "className": "HumanoidDescription",
+                  "children": [
+                    {
+                      "name": "BodyPartDescription",
+                      "className": "BodyPartDescription"
+                    }
+                  ]
+                },
+                {
+                  "name": "Animator",
+                  "className": "Animator"
+                }
+              ]
+            },
+            {
+              "name": "HumanoidRootPart",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "RootAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "RootJoint",
+                  "className": "Motor6D"
+                }
+              ]
+            },
+            {
+              "name": "Right Leg",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "RightFootAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "Snap",
+                  "className": "Snap"
+                }
+              ]
+            },
+            {
+              "name": "Left Leg",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "LeftFootAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "Snap",
+                  "className": "Snap"
+                }
+              ]
+            },
+            {
+              "name": "Right Arm",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "RightShoulderAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "RightGripAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "WeldConstraint",
+                  "className": "WeldConstraint"
+                },
+                {
+                  "name": "GloveR",
+                  "className": "MeshPart"
+                }
+              ]
+            },
+            {
+              "name": "Left Arm",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "LeftShoulderAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "LeftGripAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "WeldConstraint",
+                  "className": "WeldConstraint"
+                },
+                {
+                  "name": "GloveL",
+                  "className": "MeshPart"
+                }
+              ]
+            },
+            {
+              "name": "Torso",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "NeckAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "BodyFrontAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "BodyBackAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "LeftCollarAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "RightCollarAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "WaistFrontAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "WaistCenterAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "WaistBackAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "Right Shoulder",
+                  "className": "Motor6D"
+                },
+                {
+                  "name": "Left Shoulder",
+                  "className": "Motor6D"
+                },
+                {
+                  "name": "Right Hip",
+                  "className": "Motor6D"
+                },
+                {
+                  "name": "Left Hip",
+                  "className": "Motor6D"
+                },
+                {
+                  "name": "Neck",
+                  "className": "Motor6D"
+                },
+                {
+                  "name": "Weld",
+                  "className": "Weld"
+                }
+              ]
+            },
+            {
+              "name": "Head",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Mesh",
+                  "className": "SpecialMesh"
+                },
+                {
+                  "name": "HairAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "HatAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "FaceFrontAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "FaceCenterAttachment",
+                  "className": "Attachment"
+                },
+                {
+                  "name": "OldFace",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "face",
+                      "className": "Decal"
+                    }
+                  ]
+                },
+                {
+                  "name": "WeldConstraint",
+                  "className": "WeldConstraint"
+                },
+                {
+                  "name": "FaceDecals",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Mesh",
+                      "className": "SpecialMesh"
+                    },
+                    {
+                      "name": "HeadWeld",
+                      "className": "Weld"
+                    },
+                    {
+                      "name": "Overlay",
+                      "className": "Decal"
+                    },
+                    {
+                      "name": "Mouth",
+                      "className": "Decal"
+                    },
+                    {
+                      "name": "Eyes",
+                      "className": "Decal"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
         }
       ]
     },

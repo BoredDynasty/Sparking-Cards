@@ -161,7 +161,7 @@ local function economy(player: Player, info: AnalyticsEconomyInfo)
 		info.currency_type,
 		info.amount,
 		info.ending_balance,
-		info.transaction_type :: any,
+		info.transaction_type.Name :: any,
 		info.item_sku,
 		INFO_TO_CUSTOM_FIELDS(info)
 	)
