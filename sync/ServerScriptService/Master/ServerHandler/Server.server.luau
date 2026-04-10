@@ -448,26 +448,6 @@ local function onPlayerAdded(player: Player)
 	loadProfile(player)
 	GameAnalytics:PlayerJoined(player)
 
-	local function addHighlight(character: Model)
-		if character:FindFirstChildOfClass("Highlight") then
-			return
-		end
-
-		local highlight = Instance.new("Highlight")
-		highlight.Adornee = character
-		highlight.Parent = character
-		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		highlight.FillColor = Color3.fromRGB(255, 255, 255)
-		highlight.FillTransparency = 0.95
-		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-		highlight.OutlineTransparency = 0.7
-		highlight.Enabled = true
-	end
-
-	player.CharacterAdded:Connect(function(character)
-		addHighlight(character)
-	end)
-
 	log_analytics.onboarding_funnel_step(player, {
 		step_name = "Joined",
 		step = 1,
@@ -986,6 +966,10 @@ local function getGamepasses(player: Player)
 	end
 end
 
+local function getAllGamepasses()
+	return product_manager:FetchAll()
+end
+
 Packet.SetTime.listen(function(data, player: Player?)
 	overideClocktime = true
 
@@ -1252,6 +1236,7 @@ MarketplaceService.ProcessReceipt = function(receipt)
 end
 
 Events.GetGamepasses.OnServerInvoke = getGamepasses
+Events.FetchAllProducts.OnServerInvoke = getAllGamepasses
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 local save_setting_remote = Events:FindFirstChild("SaveSetting")
 if save_setting_remote and save_setting_remote:IsA("RemoteFunction") then

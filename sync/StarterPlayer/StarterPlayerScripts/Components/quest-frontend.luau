@@ -86,27 +86,27 @@ function module:LoadItems()
 
 	print(tablekit.ToString(player_quests :: any))
 
-	local title_str = [[
-		%s<br/><font weight="Regular"><font transparency="0.5">%s%</font></font>
-	]]
-	local acquired_str = [[
-		<font family="rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json">clock</font> Acquired %s
-	]]
+	local title_str = '%s<br/><font weight="Regular"><font transparency="0.5">%s%</font></font>'
+	local acquired_str =
+		'<font family="rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json">clock</font> Acquired %s'
 
 	local holder = quest_frame.Holder
 
 	module:Unload()
 
 	for i, quest in ipairs(player_quests) do
+		-- get the quest data from the server idk
+
 		local card = pool:Get()
 		card.Parent = holder
 
-		card.Title.Text = string.format(title_str :: any, quest.name, quest.progress)
+		card.Title.Text = string.format(title_str, quest.name, quest.progress)
 
 		local deserialized_date_acquired = DateTime.fromUnixTimestampMillis(quest.date_acquired)
-			:FormatLocalTime("MMM D, YYYY", "en-us") or "Unknown date"
+			:FormatLocalTime("MMM D, YYYY", "en-us") or "(unknown)"
+		print(deserialized_date_acquired)
 
-		card.Description.Text = string.format(acquired_str :: any, deserialized_date_acquired)
+		card.Description.Text = string.format(acquired_str, deserialized_date_acquired)
 
 		card.Cancel.Activated:Connect(function()
 			-- this doesnt work yet.

@@ -47,7 +47,7 @@ local pool = PoolerPlus:CreatePool("HudPool", function()
 	return templates.HudButton:Clone()
 end)
 
-pool:AdaptivePreload()
+pool:Preload(15)
 
 export type Button = {
 	name: string,

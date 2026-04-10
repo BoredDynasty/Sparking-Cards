@@ -127,6 +127,7 @@ local function initializeCommands()
 			frame_rate:WaitUntilFramesAreStable(0.025)
 
 			local snack_bar = hint.new()
+
 			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
 			snack_bar:SetAction(showUI, "Cmdr")
 			snack_bar:SetCanDismiss(true)
@@ -576,7 +577,6 @@ local function initializeObjectives()
 
 		if displayorder:GetState(objectiveGui.CanvasGroup) then
 			quest_frontend:LoadItems()
-			quest_frontend:DisplayCompletions()
 		else
 			quest_frontend:Unload()
 		end

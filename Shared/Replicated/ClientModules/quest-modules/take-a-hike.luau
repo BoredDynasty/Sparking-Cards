@@ -2,6 +2,8 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 
+local bufferencoder = require(ReplicatedStorage.Packages.bufferencoder)
+
 -- take-a-hike.luau
 
 local constants = {
@@ -26,34 +28,38 @@ return function(player: Player, progress: number)
 
 	local max_position = 0
 
-	task.spawn(function()
-		while humanoid.WalkSpeed > 0 do
-			-- while we are still walking,
+	local conn = nil
 
-			RunService.Heartbeat:Wait()
+	conn = RunService.Heartbeat:Connect(function()
+		-- while we are still walking,
+		if humanoid.WalkSpeed <= 0 then
+			return
+		end
 
-			if humanoid.WalkSpeed <= 0 then
-				-- if we stopped walking, stop.
+		local current_position = primary_part.Position
+		local distance_traveled = (current_position - initial_position).Magnitude
 
-				break
-			end
+		max_position = math.clamp(distance_traveled, 1, 100)
 
-			local current_position = primary_part.Position
-			local distance_traveled = (current_position - initial_position).Magnitude
+		if distance_traveled >= constants.distance then
+			-- if we traveled more than the distance, we are done.
 
 			max_position = math.clamp(distance_traveled, 1, 100)
 
-			if distance_traveled > constants.distance then
-				-- if we traveled more than the distance, we are done.
+			print("completed take-a-hike.")
 
-				max_position = math.clamp(distance_traveled, 1, 100)
+			local serialized = bufferencoder.write({ name = "Take a Hike", progress = max_position })
+			report_progress:FireServer(serialized)
 
-				break
+			if conn then
+				conn:Disconnect()
 			end
 		end
+
+		local serialized = bufferencoder.write({ name = "Take a Hike", progress = max_position })
+		report_progress:FireServer(serialized)
+
+		-- if we're doing this every frame, it'd not be a bad idea to serialize this
 	end)
-
-	report_progress:FireServer("Take a Hike", max_position)
-
 	return max_position
 end

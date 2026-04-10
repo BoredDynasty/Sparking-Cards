@@ -1,5 +1,6 @@
 --!strict
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -16,12 +17,14 @@ local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
+local pages = require(ReplicatedStorage.Utility.pages)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local tab = require(StarterPlayer.StarterPlayerScripts.Components.tab)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typewriter = require(ReplicatedStorage.ClientModules.markdown.typewriter)
@@ -212,7 +215,7 @@ function module:LoadItems<K, V>(items)
 			is_bookmarked:Set(true)
 
 			task.spawn(function()
-				local content = Content.fromAssetId(10709781919)
+				local content = Content.fromAssetId(10709782154)
 
 				bookmark_button.ImageLabel.ImageContent = content
 			end)
@@ -493,7 +496,7 @@ function module:LoadInventory()
 				print("attempted setting quantity over max")
 
 				fade.fade(
-					quantity_frame.Remove.ImageLabel,
+					quantity_remove.ImageLabel,
 					{ duration = 0.5, transparency = { start = 0.5, target = 1 } }
 				)
 			end
@@ -513,7 +516,7 @@ function module:LoadInventory()
 		end)
 
 		quantity_remove.Activated:Connect(function()
-			if not alter_quantity_limit(quantity_frame.Remove) then
+			if not alter_quantity_limit(quantity_remove) then
 				return
 			end
 
@@ -522,9 +525,9 @@ function module:LoadInventory()
 
 				print("attempted setting quantity below 1")
 
-				fade.fade(quantity_frame.Remove.ImageLabel, {
+				fade.fade(quantity_remove.ImageLabel, {
 					duration = 0.5,
-					transparency = { start = quantity_frame.Remove.ImageLabel.Transparency, target = 0.5 },
+					transparency = { start = quantity_remove.ImageLabel.Transparency, target = 0.5 },
 				})
 			end
 
@@ -539,17 +542,15 @@ function module:LoadInventory()
 
 			audio:PlaySFX("continue")
 
-			pop(quantity_frame.Remove)
+			pop(quantity_remove)
 		end)
-
-		local remove_btn = quantity_frame:FindFirstChild("Remove")
 		-- we gotta do this because `Instance.Remove` == function
 
-		remove_btn.MouseEnter:Connect(function()
+		quantity_remove.MouseEnter:Connect(function()
 			audio:PlaySFX("hover")
 		end)
 
-		remove_btn.MouseLeave:Connect(function()
+		quantity_remove.MouseLeave:Connect(function()
 			audio:PlaySFX("leave")
 		end)
 
@@ -595,14 +596,14 @@ function module:LoadInventory()
 				Packet.SellCard.send({ card_name = i })
 			end
 
-			task.delay(2, function()
+			task.delay(1, function()
 				module:DisplaySpendings()
 				local total_quantity = item
 				total_quantity = profile.Data.cards[i]
 
-				local formatted = string.format(str :: any, "#" .. title_color:ToHex(), total_quantity, item)
+				local formatted = string.format(str :: any, "#" .. title_color:ToHex(), i, total_quantity)
 				local controller = typewriter.play(title, formatted, {
-					cps = 45,
+					cps = 25,
 				})
 
 				task.delay(10, function()
@@ -622,6 +623,26 @@ function module:LoadInventory()
 	end
 end
 
-print(events.GetGamepasses:InvokeServer())
+function module:LoadGamepasses()
+	module:Unload()
+
+	profile = fetchProfile()
+
+	local gamepasses = events.FetchAllProducts:InvokeServer() :: Pages
+	if not gamepasses then
+		print("no passes availiable")
+		local snackbar = hint.new()
+		snackbar:SetText("No passes availiable")
+		snackbar:SetCanClick(false)
+		snackbar:SetCanDismiss(true)
+
+		return
+	end
+	-- run a conversion
+
+	local gamepasses_array = pages.toarray(gamepasses)
+end
+
+print(tablekit.ToString(events.GetGamepasses:InvokeServer() :: any))
 
 return module

@@ -190,12 +190,12 @@ export type Profile = {
 export type Quest = {
 	name: string,
 	description: string,
-	inquirer_img: number | Instance, -- img id or a model
+	inquirer_img: number, -- img id
 	progress: number,
 	date_acquired: number, -- unix timestamp millis
-	date_completed: number?,
+	date_completed: number, -- if not completed, should resolve to 0.
 	completed: boolean?,
-	module: ModuleScript?,
+	module: string?,
 }
 
 export type Badge = {

@@ -278,6 +278,41 @@ local function DeductCards(player: Player, name: string, amount: number)
 	end)
 end
 
+local function AddExperience(player: Player, amount: number, reason: string?)
+	local profile = FetchProfileData(player)
+	if not profile then
+		--print("no profile found to perform action.")
+		return
+	end
+
+	Packet.SendNotification.sendTo({
+		message = `Gained {amount} EXP ` .. (reason and ` ({reason})` or ""),
+		duration = 2,
+	}, player)
+
+	Events.SendExpRewardClient:InvokeClient(player, amount) -- the client might wanna do a cool effect yknow
+
+	local formatted_reason = ""
+	-- e.g "Quest Completed" to "Quest_Completed" for better analytics formatting
+	if reason then
+		formatted_reason = string.gsub(reason, "%s+", "_")
+	else
+		formatted_reason = "Unknown"
+	end
+
+	-- do some analytics
+	log_analytics.economy(player, {
+		transaction_type = Enum.AnalyticsEconomyTransactionType.Gameplay,
+		amount = amount,
+		ending_balance = profile.experience + amount,
+		currency_type = "Experience",
+		item_sku = formatted_reason,
+	})
+
+	-- add it all up
+	profile.experience += amount
+end
+
 local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 	local profile = FetchProfileData(player)
 	if not profile then
@@ -285,7 +320,21 @@ local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 		return
 	end
 
-	future.Try(table.insert, profile.quests, quest)
+	-- this is really just an array push but whatever.
+	-- if there is a copy of the quest in the profile already, update it instead of inserting a new one.
+	local updated = false
+
+	for i, q in ipairs(profile.quests) do
+		if q.name == quest.name then
+			profile.quests[i] = quest
+			updated = true
+			break
+		end
+	end
+
+	if not updated then
+		table.insert(profile.quests, quest)
+	end
 end
 
 local function registerCombatPlayer(player: Player)
@@ -447,26 +496,6 @@ end
 local function onPlayerAdded(player: Player)
 	loadProfile(player)
 	GameAnalytics:PlayerJoined(player)
-
-	local function addHighlight(character: Model)
-		if character:FindFirstChildOfClass("Highlight") then
-			return
-		end
-
-		local highlight = Instance.new("Highlight")
-		highlight.Adornee = character
-		highlight.Parent = character
-		highlight.DepthMode = Enum.HighlightDepthMode.Occluded
-		highlight.FillColor = Color3.fromRGB(255, 255, 255)
-		highlight.FillTransparency = 0.95
-		highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
-		highlight.OutlineTransparency = 0.7
-		highlight.Enabled = true
-	end
-
-	player.CharacterAdded:Connect(function(character)
-		addHighlight(character)
-	end)
 
 	log_analytics.onboarding_funnel_step(player, {
 		step_name = "Joined",
@@ -896,6 +925,25 @@ local function saveSetting(player: Player, identifier: string, value: typemarsha
 	return true
 end
 
+local function saveQuest(player: Player, bfr: buffer)
+	local quest = bufferencoder.read(bfr) :: typemarshaller.Quest
+	if not quest then
+		return false
+	end
+
+	local profile = FetchProfileData(player)
+	if not profile then
+		return false
+	end
+
+	InsertQuestData(player, quest)
+	SaveProfileData(player)
+
+	--print("saved quest data for player: ", player.Name, " quest: ", quest.name)
+
+	return true
+end
+
 local function initializeAudio()
 	--print("init audio")
 
@@ -984,6 +1032,10 @@ local function getGamepasses(player: Player)
 		warn("Failed to get gamepasses for player: " .. player.Name)
 		return {}
 	end
+end
+
+local function getAllGamepasses()
+	return product_manager:FetchAll()
 end
 
 Packet.SetTime.listen(function(data, player: Player?)
@@ -1252,6 +1304,9 @@ MarketplaceService.ProcessReceipt = function(receipt)
 end
 
 Events.GetGamepasses.OnServerInvoke = getGamepasses
+Events.FetchAllProducts.OnServerInvoke = getAllGamepasses
+Events.ReportQuestProgressServer.OnInvoke = saveQuest
+Events.SendExpRewardServer.OnInvoke = AddExperience
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 local save_setting_remote = Events:FindFirstChild("SaveSetting")
 if save_setting_remote and save_setting_remote:IsA("RemoteFunction") then

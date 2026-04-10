@@ -16,9 +16,11 @@ local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
+local spr = require(ReplicatedStorage.Modules.spr)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 -- badge-frontend.luau
 
@@ -79,7 +81,7 @@ local function isRegisteredBadge(badge: typemarshaller.Badge)
 	return false
 end
 
-local function getBadgeDataFromName(name: string): typeof(badges)?
+local function getBadgeDataFromName(name: string): typemarsh
 	for i, badge_data in ipairs(badges) do
 		if badge_data.name == name then
 			return badge_data
@@ -103,6 +105,22 @@ function module:Unload()
 	end
 end
 
+local function doRocketAnimation()
+	local image_label = total.ImageLabel -- a rocket icon
+	-- so lets make a quick rocket effect
+
+	spr.stop(image_label)
+	wiggle(image_label)
+	spr.target(image_label, 0.8, 4, {
+		Position = image_label.Position + UDim2.fromOffset(5, -5),
+	})
+	spr.completed(image_label, function()
+		spr.target(image_label, 1, 5, {
+			Position = image_label.Position + UDim2.fromOffset(-5, 5),
+		})
+	end)
+end
+
 function module:DisplayTotalAchievements()
 	-- we want to achieve a sort of "vertical carousel" typa effect.
 	-- it looks like a typewriter effect, but cooler.
@@ -114,7 +132,7 @@ function module:DisplayTotalAchievements()
 		return
 	end
 
-	pop(total.ImageLabel)
+	doRocketAnimation()
 
 	local total_achievements = #profile.Data.achievements
 
@@ -141,7 +159,7 @@ function module:DisplayTotalAchievements()
 	local goal = scrolling_frame.CanvasPosition + Vector2.new(0, 100000)
 	local tween = TweenService:Create(
 		scrolling_frame,
-		TweenInfo.new(1, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		TweenInfo.new(1.5, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
 		{ CanvasPosition = goal }
 	)
 	tween:Play()
@@ -154,7 +172,7 @@ function module:DisplayTotalPoints()
 		return
 	end
 
-	pop(total.ImageLabel)
+	doRocketAnimation()
 
 	local total_points = 0
 
@@ -190,7 +208,7 @@ function module:DisplayTotalPoints()
 	tween:Play()
 end
 
-function module:LoadItems<V>(sorted_table: { V })
+function module:LoadItems<V>(sorted_table: { typemarshaller.Badge })
 	profile = fetchProfile()
 
 	module:Unload()
@@ -304,8 +322,57 @@ local function initializeSearchbar()
 	local searchbar = shopFrame.Frame
 	local text_box = searchbar.TextBox
 
+	local last_text = ""
+	local is_done_typing = true
+
+	text_box.PlaceholderText = "Search " .. tostring(#badges) .. " Achievements..."
+
 	text_box.Focused:Connect(function()
 		ripple(text_box)
+	end)
+
+	text_box.Changed:Connect(function()
+		if last_text == text_box.Text then
+			return
+		end
+
+		is_done_typing = false
+
+		-- get all badge names
+		local badge_names = {}
+		for i, badge in ipairs(badges) do
+			table.insert(badge_names, badge.name)
+		end
+
+		local map = leventine.map(text_box.Text, { table.unpack(badge_names) })
+
+		local conn = text_box.ReturnPressedFromOnScreenKeyboard:Connect(function()
+			task.wait(0.5)
+			is_done_typing = true
+		end)
+
+		task.delay(2, function()
+			is_done_typing = true
+		end)
+
+		if is_done_typing then
+			-- reconvert
+			local sorted = {}
+
+			for i, badge_name in ipairs(map) do
+				local badge = getBadgeDataFromName(badge_name)
+
+				if not badge then
+					continue
+				end
+
+				table.insert(sorted, badge)
+			end
+
+			conn:Disconnect()
+
+			module:LoadItems(sorted)
+		end
 	end)
 end
 

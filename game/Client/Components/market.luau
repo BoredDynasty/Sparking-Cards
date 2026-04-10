@@ -1,5 +1,6 @@
 --!strict
 
+local MarketplaceService = game:GetService("MarketplaceService")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
@@ -16,12 +17,14 @@ local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
+local pages = require(ReplicatedStorage.Utility.pages)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local tab = require(StarterPlayer.StarterPlayerScripts.Components.tab)
+local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typewriter = require(ReplicatedStorage.ClientModules.markdown.typewriter)
@@ -620,6 +623,26 @@ function module:LoadInventory()
 	end
 end
 
-print(events.GetGamepasses:InvokeServer())
+function module:LoadGamepasses()
+	module:Unload()
+
+	profile = fetchProfile()
+
+	local gamepasses = events.FetchAllProducts:InvokeServer() :: Pages
+	if not gamepasses then
+		print("no passes availiable")
+		local snackbar = hint.new()
+		snackbar:SetText("No passes availiable")
+		snackbar:SetCanClick(false)
+		snackbar:SetCanDismiss(true)
+
+		return
+	end
+	-- run a conversion
+
+	local gamepasses_array = pages.toarray(gamepasses)
+end
+
+print(tablekit.ToString(events.GetGamepasses:InvokeServer() :: any))
 
 return module

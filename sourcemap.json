@@ -7,24 +7,28 @@
       "className": "Workspace",
       "children": [
         {
-          "name": "Snowball",
-          "className": "MeshPart",
+          "name": "StationSensor",
+          "className": "Part",
           "children": [
             {
-              "name": "SurfaceAppearance",
-              "className": "SurfaceAppearance"
+              "name": "DepartDirection",
+              "className": "IntValue"
             },
             {
-              "name": "A1",
-              "className": "Attachment"
+              "name": "DoorLeft",
+              "className": "BoolValue"
             },
             {
-              "name": "A0",
-              "className": "Attachment"
+              "name": "Decal",
+              "className": "Decal"
             },
             {
-              "name": "Trail",
-              "className": "Trail"
+              "name": "SetLine",
+              "className": "StringValue"
+            },
+            {
+              "name": "SetName",
+              "className": "StringValue"
             }
           ]
         },
@@ -37,10 +41,6 @@
               "className": "Folder",
               "children": [
                 {
-                  "name": "Part",
-                  "className": "Part"
-                },
-                {
                   "name": "Model",
                   "className": "Model",
                   "children": [
@@ -48,10 +48,6 @@
                       "name": "Part",
                       "className": "Part",
                       "children": [
-                        {
-                          "name": "Texture",
-                          "className": "Texture"
-                        },
                         {
                           "name": "Mesh",
                           "className": "BlockMesh"
@@ -63,16 +59,10 @@
                         {
                           "name": "Decal",
                           "className": "Decal"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "Union",
-                      "className": "UnionOperation",
-                      "children": [
+                        },
                         {
-                          "name": "Weld",
-                          "className": "Weld"
+                          "name": "Texture",
+                          "className": "Texture"
                         }
                       ]
                     },
@@ -93,6 +83,16 @@
                           "className": "Weld"
                         }
                       ]
+                    },
+                    {
+                      "name": "Union",
+                      "className": "UnionOperation",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
                     }
                   ]
                 },
@@ -104,39 +104,7 @@
             },
             {
               "name": "Tunnels",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "Tunnel",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "Part",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "RoadMarking",
-                      "className": "Part",
-                      "children": [
-                        {
-                          "name": "Mesh",
-                          "className": "BlockMesh"
-                        },
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    }
-                  ]
-                }
-              ]
+              "className": "Folder"
             },
             {
               "name": "Trees",
@@ -304,72 +272,6 @@
               "name": "BusStop",
               "className": "Model",
               "children": [
-                {
-                  "name": "ThreeDTextObject",
-                  "className": "Model",
-                  "children": [
-                    {
-                      "name": "uni0042",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "uni0055",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "uni0053",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "uni0054",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "uni004F",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "uni0050",
-                      "className": "MeshPart",
-                      "children": [
-                        {
-                          "name": "Weld",
-                          "className": "Weld"
-                        }
-                      ]
-                    }
-                  ]
-                },
                 {
                   "name": "Part",
                   "className": "Part",
@@ -2187,6 +2089,484 @@
             {
               "name": "Blade",
               "className": "MeshPart"
+            }
+          ]
+        },
+        {
+          "name": "MetroTrain",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Bogey1",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "InteriorLights",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "CeilingLight",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Design",
+                          "className": "Folder",
+                          "children": [
+                            {
+                              "name": "Part",
+                              "className": "Part",
+                              "children": [
+                                {
+                                  "name": "Weld",
+                                  "className": "Weld"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Light",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "SurfaceLight",
+                              "className": "SurfaceLight"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Part",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Seats",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "Seat",
+                      "className": "Seat"
+                    }
+                  ]
+                },
+                {
+                  "name": "Unions",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Union",
+                      "className": "UnionOperation"
+                    },
+                    {
+                      "name": "Wedge",
+                      "className": "WedgePart"
+                    }
+                  ]
+                },
+                {
+                  "name": "Destination",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Front",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Screen",
+                          "className": "SurfaceGui",
+                          "children": [
+                            {
+                              "name": "LineName",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "LineNumber",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Back",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Screen",
+                          "className": "SurfaceGui",
+                          "children": [
+                            {
+                              "name": "LineName",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "LineNumber",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "LeftDoors",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "Lights",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "SurfaceGui",
+                          "className": "SurfaceGui",
+                          "children": [
+                            {
+                              "name": "White",
+                              "className": "ImageLabel"
+                            },
+                            {
+                              "name": "Red",
+                              "className": "ImageLabel"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "SpotLight",
+                          "className": "SpotLight"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "RightDoors",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "VehicleSeat",
+                  "className": "VehicleSeat"
+                },
+                {
+                  "name": "Engine",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Clattering",
+                      "className": "Sound"
+                    },
+                    {
+                      "name": "Brake",
+                      "className": "Sound"
+                    },
+                    {
+                      "name": "BodyVelocity",
+                      "className": "BodyVelocity"
+                    }
+                  ]
+                },
+                {
+                  "name": "Part",
+                  "className": "Part"
+                },
+                {
+                  "name": "Roof",
+                  "className": "Part"
+                },
+                {
+                  "name": "Wedge",
+                  "className": "WedgePart"
+                }
+              ]
+            },
+            {
+              "name": "Bogey2",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "InteriorLights",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "CeilingLight",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Design",
+                          "className": "Folder",
+                          "children": [
+                            {
+                              "name": "Part",
+                              "className": "Part",
+                              "children": [
+                                {
+                                  "name": "Weld",
+                                  "className": "Weld"
+                                }
+                              ]
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Light",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "SurfaceLight",
+                              "className": "SurfaceLight"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Part",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Seats",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "Seat",
+                      "className": "Seat"
+                    }
+                  ]
+                },
+                {
+                  "name": "Unions",
+                  "className": "Folder",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Union",
+                      "className": "UnionOperation"
+                    },
+                    {
+                      "name": "Wedge",
+                      "className": "WedgePart"
+                    }
+                  ]
+                },
+                {
+                  "name": "Destination",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Front",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Screen",
+                          "className": "SurfaceGui",
+                          "children": [
+                            {
+                              "name": "LineName",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "LineNumber",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Back",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Screen",
+                          "className": "SurfaceGui",
+                          "children": [
+                            {
+                              "name": "LineName",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "LineNumber",
+                              "className": "Frame",
+                              "children": [
+                                {
+                                  "name": "TextLabel",
+                                  "className": "TextLabel"
+                                }
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "LeftDoors",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "Lights",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "SurfaceGui",
+                          "className": "SurfaceGui",
+                          "children": [
+                            {
+                              "name": "White",
+                              "className": "ImageLabel"
+                            },
+                            {
+                              "name": "Red",
+                              "className": "ImageLabel"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "SpotLight",
+                          "className": "SpotLight"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "RightDoors",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Part",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "VehicleSeat",
+                  "className": "VehicleSeat"
+                },
+                {
+                  "name": "Engine",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Clattering",
+                      "className": "Sound"
+                    },
+                    {
+                      "name": "Brake",
+                      "className": "Sound"
+                    },
+                    {
+                      "name": "BodyVelocity",
+                      "className": "BodyVelocity"
+                    }
+                  ]
+                },
+                {
+                  "name": "Part",
+                  "className": "Part"
+                },
+                {
+                  "name": "Roof",
+                  "className": "Part"
+                },
+                {
+                  "name": "Wedge",
+                  "className": "WedgePart"
+                }
+              ]
             }
           ]
         },
@@ -4935,6 +5315,246 @@
           ]
         },
         {
+          "name": "Train",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Unions",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part"
+                },
+                {
+                  "name": "Union",
+                  "className": "UnionOperation"
+                },
+                {
+                  "name": "Wedge",
+                  "className": "WedgePart"
+                }
+              ]
+            },
+            {
+              "name": "Destination",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Front",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Screen",
+                      "className": "SurfaceGui",
+                      "children": [
+                        {
+                          "name": "LineName",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "LineNumber",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Back",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Screen",
+                      "className": "SurfaceGui",
+                      "children": [
+                        {
+                          "name": "LineName",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "LineNumber",
+                          "className": "Frame",
+                          "children": [
+                            {
+                              "name": "TextLabel",
+                              "className": "TextLabel"
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "InteriorLights",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "CeilingLight",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Design",
+                      "className": "Folder",
+                      "children": [
+                        {
+                          "name": "Part",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Light",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "SurfaceLight",
+                          "className": "SurfaceLight"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Part",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Seats",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "Seat",
+                  "className": "Seat"
+                }
+              ]
+            },
+            {
+              "name": "Folder",
+              "className": "Folder"
+            },
+            {
+              "name": "RightDoors",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "Lights",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "SurfaceGui",
+                      "className": "SurfaceGui",
+                      "children": [
+                        {
+                          "name": "White",
+                          "className": "ImageLabel"
+                        },
+                        {
+                          "name": "Red",
+                          "className": "ImageLabel"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "SpotLight",
+                      "className": "SpotLight"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "LeftDoors",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Part",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "Part",
+              "className": "Part"
+            },
+            {
+              "name": "Engine",
+              "className": "Part",
+              "children": [
+                {
+                  "name": "Clattering",
+                  "className": "Sound"
+                },
+                {
+                  "name": "Brake",
+                  "className": "Sound"
+                },
+                {
+                  "name": "BodyVelocity",
+                  "className": "BodyVelocity"
+                }
+              ]
+            },
+            {
+              "name": "VehicleSeat",
+              "className": "VehicleSeat"
+            },
+            {
+              "name": "Wedge",
+              "className": "WedgePart"
+            },
+            {
+              "name": "Roof",
+              "className": "Part"
+            }
+          ]
+        },
+        {
           "name": "Folder",
           "className": "Folder",
           "children": [
@@ -5063,10 +5683,6 @@
               "className": "ClickDetector"
             }
           ]
-        },
-        {
-          "name": "GloveR",
-          "className": "MeshPart"
         },
         {
           "name": "Baseplate",
@@ -5217,28 +5833,24 @@
           ]
         },
         {
-          "name": "StationSensor",
-          "className": "Part",
+          "name": "Snowball",
+          "className": "MeshPart",
           "children": [
             {
-              "name": "DepartDirection",
-              "className": "IntValue"
+              "name": "SurfaceAppearance",
+              "className": "SurfaceAppearance"
             },
             {
-              "name": "DoorLeft",
-              "className": "BoolValue"
+              "name": "A1",
+              "className": "Attachment"
             },
             {
-              "name": "Decal",
-              "className": "Decal"
+              "name": "A0",
+              "className": "Attachment"
             },
             {
-              "name": "SetLine",
-              "className": "StringValue"
-            },
-            {
-              "name": "SetName",
-              "className": "StringValue"
+              "name": "Trail",
+              "className": "Trail"
             }
           ]
         },
@@ -5249,20 +5861,6 @@
         {
           "name": "Camera",
           "className": "Camera"
-        },
-        {
-          "name": "MetroTrain",
-          "className": "Model",
-          "children": [
-            {
-              "name": "Bogey1",
-              "className": "Folder"
-            },
-            {
-              "name": "Bogey2",
-              "className": "Folder"
-            }
-          ]
         }
       ]
     },
@@ -7382,6 +7980,10 @@
                             {
                               "name": "UIAspectRatioConstraint",
                               "className": "UIAspectRatioConstraint"
+                            },
+                            {
+                              "name": "UIScale",
+                              "className": "UIScale"
                             }
                           ]
                         },
@@ -7410,6 +8012,10 @@
                             {
                               "name": "UIAspectRatioConstraint",
                               "className": "UIAspectRatioConstraint"
+                            },
+                            {
+                              "name": "UIScale",
+                              "className": "UIScale"
                             }
                           ]
                         },
@@ -8554,10 +9160,6 @@
           ]
         },
         {
-          "name": "Dialogue",
-          "className": "ScreenGui"
-        },
-        {
           "name": "Healthbar",
           "className": "ScreenGui",
           "children": [
@@ -8820,6 +9422,14 @@
               "className": "UIListLayout"
             }
           ]
+        },
+        {
+          "name": "Dialogue",
+          "className": "ScreenGui"
+        },
+        {
+          "name": "EffectHolder",
+          "className": "ScreenGui"
         }
       ]
     },
@@ -8934,6 +9544,13 @@
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Managers/rank-manager.luau"
+              ]
+            },
+            {
+              "name": "reward-manager",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Managers/reward-manager.luau"
               ]
             }
           ]
@@ -10884,13 +11501,6 @@
               ]
             },
             {
-              "name": "SkillFunctions",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Modules/SkillFunctions.luau"
-              ]
-            },
-            {
               "name": "Serialization",
               "className": "Folder",
               "children": [
@@ -12006,10 +12616,6 @@
               "className": "RemoteFunction"
             },
             {
-              "name": "GetProfileServer",
-              "className": "BindableFunction"
-            },
-            {
               "name": "GetAllProfiles",
               "className": "RemoteFunction"
             },
@@ -12080,10 +12686,6 @@
                   "className": "RemoteFunction"
                 }
               ]
-            },
-            {
-              "name": "SaveSetting",
-              "className": "RemoteFunction"
             },
             {
               "name": "RepositionCamera",
@@ -12164,6 +12766,30 @@
             {
               "name": "TrainDepartureCamera",
               "className": "RemoteEvent"
+            },
+            {
+              "name": "FetchAllProducts",
+              "className": "RemoteFunction"
+            },
+            {
+              "name": "GetProfileServer",
+              "className": "BindableFunction"
+            },
+            {
+              "name": "ReportQuestProgressServer",
+              "className": "BindableFunction"
+            },
+            {
+              "name": "SendExpRewardServer",
+              "className": "BindableFunction"
+            },
+            {
+              "name": "SaveSetting",
+              "className": "RemoteFunction"
+            },
+            {
+              "name": "SendExpRewardClient",
+              "className": "RemoteFunction"
             }
           ]
         },
@@ -14356,92 +14982,6 @@
               ]
             },
             {
-              "name": "BadgeTemplate",
-              "className": "Frame",
-              "children": [
-                {
-                  "name": "UICorner",
-                  "className": "UICorner"
-                },
-                {
-                  "name": "UIStroke",
-                  "className": "UIStroke"
-                },
-                {
-                  "name": "Details",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Share",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Image",
-                  "className": "ImageLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Title",
-                  "className": "TextLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "AspectRatio",
-                  "className": "UIAspectRatioConstraint"
-                }
-              ]
-            },
-            {
               "name": "Indicator",
               "className": "ImageLabel"
             },
@@ -15938,6 +16478,92 @@
                       "className": "UIAspectRatioConstraint"
                     }
                   ]
+                }
+              ]
+            },
+            {
+              "name": "BadgeTemplate",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                },
+                {
+                  "name": "Details",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Share",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Image",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Title",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
                 }
               ]
             }
@@ -24755,10 +25381,6 @@
               ]
             }
           ]
-        },
-        {
-          "name": "__Rojo_SessionLock",
-          "className": "ObjectValue"
         },
         {
           "name": "Model",

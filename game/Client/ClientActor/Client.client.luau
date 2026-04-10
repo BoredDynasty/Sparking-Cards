@@ -21,6 +21,7 @@ local badge_frontend = require(StarterPlayer.StarterPlayerScripts.Components["ba
 local bobbing = require(StarterPlayer.StarterPlayerScripts.Camera.bobbing)
 local camera_controller = require(StarterPlayer.StarterPlayerScripts.Camera["camera-controller"])
 local command_whitelist = require(ReplicatedStorage.Structures["command-whitelist"])
+local constellation = require(StarterPlayer.StarterPlayerScripts.Gameplay.constellation)
 local crosshair_service = require(ReplicatedStorage.Services["crosshair-service"])
 local dialog = require(StarterPlayer.StarterPlayerScripts.Components.dialog)
 local dialogue = require(StarterPlayer.StarterPlayerScripts.Components.dialogue)
@@ -38,6 +39,7 @@ local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
 local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
 local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
 local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
+local letterbox = require(StarterPlayer.StarterPlayerScripts.Components.letterbox)
 local loadout_frontend = require(StarterPlayer.StarterPlayerScripts.Components["loadout-frontend"])
 local logger = require(ReplicatedStorage.ClientModules.logger)
 local lucide = require(ReplicatedStorage.Packages.lucide)
@@ -576,6 +578,7 @@ local function initializeObjectives()
 		displayorder:Toggle(objectiveGui.CanvasGroup)
 
 		if displayorder:GetState(objectiveGui.CanvasGroup) then
+			quest_frontend:DisplayCompletions()
 			quest_frontend:LoadItems()
 		else
 			quest_frontend:Unload()
@@ -766,6 +769,29 @@ local function initializeCamera()
 	train_departure_camera.OnClientEvent:Connect(handleTrainDeparture)
 end
 
+local function onExpAwarded(amount: number)
+	-- light some fireworks
+
+	Packet.BlowFirework.send({
+		amount = 5,
+		position = character.PrimaryPart.Position,
+	})
+
+	-- constellation?
+
+	letterbox:On()
+
+	local constel = constellation.new(PlayerGui.EffectHolder)
+	constel:On(constel)
+	-- just for a tiny bit
+	task.delay(10, function()
+		constel:Off(constel)
+		letterbox:Off()
+	end)
+end
+
+events.SendExpRewardClient.OnClientInvoke = onExpAwarded
+
 initializeRemotes()
 initializeCommands()
 initializeMarket()
@@ -793,13 +819,6 @@ movement_controller:Add(script.Parent.Parent.Movement["joint-controller"])
 movement_controller:Start()
 
 local function getAttackTypeFromKey(key: Enum.KeyCode): string?
-	profile = fetchProfile()
-	if not profile or not profile.Data then
-		profile = {
-			Data = profilestructure,
-		}
-	end
-
 	local attack_types = {}
 	for i, value in pairs(profile.Data.keybinds) do
 		local j = Enum.KeyCode:FromValue(value)

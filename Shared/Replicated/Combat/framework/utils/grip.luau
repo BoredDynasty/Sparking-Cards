@@ -32,9 +32,10 @@ local function createGrip(character: Model, model: Model, hand: "Left" | "Right"
 		return nil
 	end
 
-	local handName = hand .. "Hand"
+	local handName = hand .. " Arm"
 	local handPart = character:FindFirstChild(handName)
 	if not handPart or not handPart:IsA("BasePart") then
+		print("couldnt get hand: ", handPart, handName)
 		return nil
 	end
 
@@ -67,6 +68,7 @@ local function createGrip(character: Model, model: Model, hand: "Left" | "Right"
 	}
 
 	motors[model] = gripInfo
+
 	return gripInfo
 end
 
