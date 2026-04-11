@@ -10,10 +10,12 @@ return {
 	{
 		name = "Take a Hike",
 		module = directory:FindFirstChild("take-a-hike") :: ModuleScript,
+		experience_reward = 20,
 	},
 } :: {
 	{
 		module: ModuleScript,
 		name: string,
+		experience_reward: number,
 	}
 }

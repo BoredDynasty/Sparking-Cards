@@ -130,7 +130,7 @@ local function initializeCommands()
 
 			local snack_bar = hint.new()
 
-			snack_bar:SetText("Welcome, Developer. Press the '=' to open Cmdr.")
+			snack_bar:SetText("Welcome, Developer. '=' to open Cmdr.")
 			snack_bar:SetAction(showUI, "Cmdr")
 			snack_bar:SetCanDismiss(true)
 			snack_bar:SetCanClick(true)
@@ -743,19 +743,62 @@ local function initializeCamera()
 	camera_controller.new("bobbing", bobbing)
 
 	local train_departure_camera = events:WaitForChild("TrainDepartureCamera")
+	local train_camera_active = false
 
-	local function handleTrainDeparture(engine: BasePart)
+	local function resolve_train_engine(payload: any): BasePart?
+		if typeof(payload) == "Instance" and payload:IsA("BasePart") then
+			return payload
+		end
+
+		if type(payload) ~= "table" then
+			return nil
+		end
+
+		local payload_engine = payload.engine
+		if typeof(payload_engine) == "Instance" and payload_engine:IsA("BasePart") then
+			return payload_engine
+		end
+
+		local payload_train_model = payload.train_model
+		if typeof(payload_train_model) ~= "Instance" or not payload_train_model:IsA("Model") then
+			return nil
+		end
+
+		local model_engine = payload_train_model:FindFirstChild("Engine", true)
+		if model_engine and model_engine:IsA("BasePart") then
+			return model_engine
+		end
+
+		return nil
+	end
+
+	local function handleTrainDeparture(payload: any)
 		-- it should be like a mini-cutscene.
+		if train_camera_active then
+			return
+		end
+
+		local engine = resolve_train_engine(payload)
+		if not engine then
+			return
+		end
+
+		train_camera_active = true
 
 		camera_controller:Disable()
 		humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
 		humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
 
-		local offset = engine.CFrame.Position + Vector3.new(0, 10, -10) -- offset the camera forward and up a bit for a better view of the train
+		local offset = (engine.CFrame * CFrame.new(0, 10, -10)).Position
 
 		object_zoom:Zoom(engine, offset)
 
-		task.delay(4, function()
+		local hold_duration = 4
+		if type(payload) == "table" and type(payload.duration) == "number" then
+			hold_duration = math.max(payload.duration, 0)
+		end
+
+		task.delay(hold_duration, function()
 			transition_manager:Play("Out", 2, "Center", "Hexagon")
 			task.wait(1)
 			object_zoom:Revert()
@@ -763,6 +806,7 @@ local function initializeCamera()
 			camera_controller:Enable()
 			humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
 			humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+			train_camera_active = false
 		end)
 	end
 

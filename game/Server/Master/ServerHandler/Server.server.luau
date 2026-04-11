@@ -145,7 +145,7 @@ local function loadProfile(player: Player)
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
 	else
-		print("The Roblox Servers are on fire.")
+		warn("The Roblox Servers are on fire.")
 	end
 
 	return profile
@@ -359,6 +359,17 @@ local function registerCombatPlayer(player: Player)
 	print("registered combat player")
 end
 
+local function unregisterCombatPlayer(player: Player)
+	for i, data in ipairs(combat_data) do
+		if player.UserId == data.player.UserId then
+			data.style:Destroy()
+			data.combo_info = nil
+
+			combat_data[i] = nil
+		end
+	end
+end
+
 local function indexCombatPlayer(player: Player): PlayerData?
 	for i, data in ipairs(combat_data) do
 		if (player.UserId == data.player.UserId) or player.Name == data.player.Name then
@@ -513,6 +524,8 @@ local function onPlayerRemoving(player: Player)
 		task.cancel(pending_setting_save)
 		pending_setting_saves[player] = nil
 	end
+
+	unregisterCombatPlayer(player)
 
 	local profile = profiles[player]
 

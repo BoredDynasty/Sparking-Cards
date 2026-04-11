@@ -84,6 +84,14 @@ local list: { SettingDefinition } = {
 			{ label = "F", value = Enum.KeyCode.F.Value },
 		},
 	},
+	{
+		identifier = "motion_blur",
+		name = "Motion Blur",
+		details = "Toggle motion blur on or off",
+		value_type = "boolean",
+		control_type = "toggle",
+		default = false,
+	},
 }
 
 --[=[

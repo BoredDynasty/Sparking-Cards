@@ -150,7 +150,9 @@ report_progress.OnServerEvent:Connect(function(player: Player, bfr: buffer)
 
 				if player then
 					task.wait(5)
-					send_reward_server:Invoke(player, reward or 5, "Quest Completion", name) -- experience, reason, quest name
+					-- this is currently erroring.
+					-- TODO: add this back!
+					--send_reward_server:Invoke(player, reward or 5, "Quest Completion", name) -- experience, reason, quest name
 				end
 			end
 

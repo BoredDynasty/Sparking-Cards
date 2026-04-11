@@ -5282,7 +5282,1650 @@
         },
         {
           "name": "AfterImageCache",
-          "className": "Folder"
+          "className": "Folder",
+          "children": [
+            {
+              "name": "NXTrack Track Crossing 1x1",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "rail",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Mesh",
+                      "className": "BlockMesh"
+                    },
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Track Crossing 1x1/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Curve",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Inner Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Outer Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Track Crossing 1x2",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "rail",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Mesh",
+                      "className": "BlockMesh"
+                    },
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Track Crossing 1x2/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Model",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "Outer Rail",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "One",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/Model/Switch part/Script.server.luau"
+                      ]
+                    },
+                    {
+                      "name": "Ca",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "Outer Rail",
+                          "className": "Part"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NXTrack Curve",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Outer Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Inner Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Tie",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "a",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Half Tie",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "b",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "NXTrack Track Crossing 1x1",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "rail",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "BlockMesh"
+                        },
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Half Tie",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Tie",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NXTrack Straight",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Half Tie",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Tie",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "One",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "Short NXTrack Straight",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Half Tie",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Tie",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "NXTransit RR Crossing 1 Track",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "NXTransit RR Crossing",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Wedge",
+                          "className": "WedgePart",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Brick",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "NXTrack Straight",
+                          "className": "Model",
+                          "children": [
+                            {
+                              "name": "Rail",
+                              "className": "Part",
+                              "children": [
+                                {
+                                  "name": "Weld",
+                                  "className": "Weld"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Half Tie",
+                              "className": "Part"
+                            },
+                            {
+                              "name": "Tie",
+                              "className": "Part"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Switch part",
+                          "className": "Model",
+                          "children": [
+                            {
+                              "name": "Show",
+                              "className": "Part",
+                              "children": [
+                                {
+                                  "name": "Mesh",
+                                  "className": "SpecialMesh"
+                                },
+                                {
+                                  "name": "Click",
+                                  "className": "ClickDetector"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "Aa",
+                              "className": "Model",
+                              "children": [
+                                {
+                                  "name": "a",
+                                  "className": "Part"
+                                }
+                              ]
+                            },
+                            {
+                              "name": "State",
+                              "className": "IntValue"
+                            },
+                            {
+                              "name": "Script",
+                              "className": "Script",
+                              "filePaths": [
+                                "sync/Workspace/AfterImageCache/Model/NXTransit RR Crossing 1 Track/NXTransit RR Crossing/Switch part/Script.server.luau"
+                              ]
+                            }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "NXTransit RR Crossing 2 Tracks",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "NXTransit RR Crossing",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "NXTrack Straight",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Rail",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "Half Tie",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "Tie",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Brick",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Weld",
+                          "className": "Weld"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ramp",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Wedge",
+                          "className": "WedgePart",
+                          "children": [
+                            {
+                              "name": "Weld",
+                              "className": "Weld"
+                            }
+                          ]
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Switch part",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "State",
+                          "className": "BoolValue"
+                        },
+                        {
+                          "name": "Show",
+                          "className": "Part",
+                          "children": [
+                            {
+                              "name": "Mesh",
+                              "className": "SpecialMesh"
+                            },
+                            {
+                              "name": "Click",
+                              "className": "ClickDetector"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "Script",
+                          "className": "Script",
+                          "filePaths": [
+                            "sync/Workspace/AfterImageCache/NXTransit RR Crossing 2 Tracks/NXTransit RR Crossing/Switch part/Script.server.luau"
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Up/Down Hill (15)",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Cross over Switch",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Show1",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Rail",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Rail",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Show2",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ca",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "Rail",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Cross over Switch/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Rail.",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "Short NXTrack Straight",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Track Crossing 2x2",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "rail",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Mesh",
+                      "className": "BlockMesh"
+                    },
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part",
+                  "children": [
+                    {
+                      "name": "Weld",
+                      "className": "Weld"
+                    }
+                  ]
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "h",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "h",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Track Crossing 2x2/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Left S Bend Switch",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "State",
+                      "className": "BoolValue"
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "One",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "b",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "c",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "d",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "e",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "f",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "g",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "h",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "i",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "j",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "k",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "a",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Left S Bend Switch/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Long NXTrack Straight",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "3 way Sbend switch",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "One",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "h",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ca",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "h",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/3 way Sbend switch/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Left Switch",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Inner Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Outer Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "State",
+                      "className": "BoolValue"
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "One",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "e",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "c",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "f",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "d",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "b",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "a",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Left Switch/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "NXTrack Straight",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Half Tie",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Tie",
+                      "className": "Part"
+                    }
+                  ]
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Right S Bend",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "2 way Sbend switch",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Aa",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "h",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "Ba",
+                      "className": "Model",
+                      "children": [
+                        {
+                          "name": "a",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "b",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "c",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "d",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "e",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "f",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "g",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "h",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "i",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "j",
+                          "className": "Part"
+                        },
+                        {
+                          "name": "k",
+                          "className": "Part"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "State",
+                      "className": "IntValue"
+                    }
+                  ]
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Left S Bend",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                }
+              ]
+            },
+            {
+              "name": "NXTrack Right S Bend Switch",
+              "className": "Model",
+              "children": [
+                {
+                  "name": "Switch part",
+                  "className": "Model",
+                  "children": [
+                    {
+                      "name": "State",
+                      "className": "BoolValue"
+                    },
+                    {
+                      "name": "Rail",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Show",
+                      "className": "Part",
+                      "children": [
+                        {
+                          "name": "Mesh",
+                          "className": "SpecialMesh"
+                        },
+                        {
+                          "name": "Click",
+                          "className": "ClickDetector"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "One",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "a",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "i",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "h",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "k",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "j",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "f",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "e",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "g",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "c",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "b",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "d",
+                      "className": "Part"
+                    },
+                    {
+                      "name": "Script",
+                      "className": "Script",
+                      "filePaths": [
+                        "sync/Workspace/AfterImageCache/NXTrack Right S Bend Switch/Switch part/Script.server.luau"
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Half Tie",
+                  "className": "Part"
+                },
+                {
+                  "name": "Rail",
+                  "className": "Part"
+                }
+              ]
+            }
+          ]
         },
         {
           "name": "Model",
@@ -5861,6 +7504,24 @@
         {
           "name": "Camera",
           "className": "Camera"
+        },
+        {
+          "name": "Up/Down Hill (15)",
+          "className": "Model",
+          "children": [
+            {
+              "name": "Tie",
+              "className": "Part"
+            },
+            {
+              "name": "Rail",
+              "className": "Part"
+            },
+            {
+              "name": "Half Tie",
+              "className": "Part"
+            }
+          ]
         }
       ]
     },
@@ -7760,204 +9421,6 @@
                         {
                           "name": "AspectRatio",
                           "className": "UIAspectRatioConstraint"
-                        },
-                        {
-                          "name": "ItemTemplate",
-                          "className": "Frame",
-                          "children": [
-                            {
-                              "name": "UICorner",
-                              "className": "UICorner"
-                            },
-                            {
-                              "name": "UIStroke",
-                              "className": "UIStroke"
-                            },
-                            {
-                              "name": "Cancel",
-                              "className": "TextButton",
-                              "children": [
-                                {
-                                  "name": "UICorner",
-                                  "className": "UICorner"
-                                },
-                                {
-                                  "name": "ImageLabel",
-                                  "className": "ImageLabel",
-                                  "children": [
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Test",
-                              "className": "TextButton",
-                              "children": [
-                                {
-                                  "name": "UICorner",
-                                  "className": "UICorner"
-                                },
-                                {
-                                  "name": "ImageLabel",
-                                  "className": "ImageLabel",
-                                  "children": [
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Image",
-                              "className": "ImageLabel",
-                              "children": [
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Title",
-                              "className": "TextLabel",
-                              "children": [
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                },
-                                {
-                                  "name": "UITextSizeConstraint",
-                                  "className": "UITextSizeConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Quantity",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "TextLabel",
-                                  "className": "TextLabel",
-                                  "children": [
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Add",
-                                  "className": "TextButton",
-                                  "children": [
-                                    {
-                                      "name": "ImageLabel",
-                                      "className": "ImageLabel",
-                                      "children": [
-                                        {
-                                          "name": "AspectRatio",
-                                          "className": "UIAspectRatioConstraint"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "Remove",
-                                  "className": "TextButton",
-                                  "children": [
-                                    {
-                                      "name": "ImageLabel",
-                                      "className": "ImageLabel",
-                                      "children": [
-                                        {
-                                          "name": "AspectRatio",
-                                          "className": "UIAspectRatioConstraint"
-                                        }
-                                      ]
-                                    },
-                                    {
-                                      "name": "AspectRatio",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Divider",
-                              "className": "Frame",
-                              "children": [
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Bookmark",
-                              "className": "TextButton",
-                              "children": [
-                                {
-                                  "name": "ImageLabel",
-                                  "className": "ImageLabel",
-                                  "children": [
-                                    {
-                                      "name": "UIAspectRatioConstraint",
-                                      "className": "UIAspectRatioConstraint"
-                                    }
-                                  ]
-                                },
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "Description",
-                              "className": "TextLabel",
-                              "children": [
-                                {
-                                  "name": "AspectRatio",
-                                  "className": "UIAspectRatioConstraint"
-                                },
-                                {
-                                  "name": "UITextSizeConstraint",
-                                  "className": "UITextSizeConstraint"
-                                },
-                                {
-                                  "name": "UIStroke",
-                                  "className": "UIStroke"
-                                }
-                              ]
-                            },
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
                         }
                       ]
                     },
@@ -9160,6 +10623,10 @@
           ]
         },
         {
+          "name": "Dialogue",
+          "className": "ScreenGui"
+        },
+        {
           "name": "Healthbar",
           "className": "ScreenGui",
           "children": [
@@ -9424,10 +10891,6 @@
           ]
         },
         {
-          "name": "Dialogue",
-          "className": "ScreenGui"
-        },
-        {
           "name": "EffectHolder",
           "className": "ScreenGui"
         }
@@ -9540,17 +11003,17 @@
           "className": "Folder",
           "children": [
             {
-              "name": "rank-manager",
-              "className": "ModuleScript",
-              "filePaths": [
-                "sync/ReplicatedStorage/Managers/rank-manager.luau"
-              ]
-            },
-            {
               "name": "reward-manager",
               "className": "ModuleScript",
               "filePaths": [
                 "sync/ReplicatedStorage/Managers/reward-manager.luau"
+              ]
+            },
+            {
+              "name": "story",
+              "className": "ModuleScript",
+              "filePaths": [
+                "sync/ReplicatedStorage/Managers/story.luau"
               ]
             }
           ]
@@ -12616,6 +14079,10 @@
               "className": "RemoteFunction"
             },
             {
+              "name": "GetProfileServer",
+              "className": "BindableFunction"
+            },
+            {
               "name": "GetAllProfiles",
               "className": "RemoteFunction"
             },
@@ -12686,6 +14153,10 @@
                   "className": "RemoteFunction"
                 }
               ]
+            },
+            {
+              "name": "SaveSetting",
+              "className": "RemoteFunction"
             },
             {
               "name": "RepositionCamera",
@@ -12772,20 +14243,12 @@
               "className": "RemoteFunction"
             },
             {
-              "name": "GetProfileServer",
-              "className": "BindableFunction"
-            },
-            {
               "name": "ReportQuestProgressServer",
               "className": "BindableFunction"
             },
             {
               "name": "SendExpRewardServer",
               "className": "BindableFunction"
-            },
-            {
-              "name": "SaveSetting",
-              "className": "RemoteFunction"
             },
             {
               "name": "SendExpRewardClient",
@@ -14530,6 +15993,92 @@
           "className": "Folder",
           "children": [
             {
+              "name": "BadgeTemplate",
+              "className": "Frame",
+              "children": [
+                {
+                  "name": "UICorner",
+                  "className": "UICorner"
+                },
+                {
+                  "name": "UIStroke",
+                  "className": "UIStroke"
+                },
+                {
+                  "name": "Details",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Share",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "ImageLabel",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Image",
+                  "className": "ImageLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Title",
+                  "className": "TextLabel",
+                  "children": [
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "AspectRatio",
+                  "className": "UIAspectRatioConstraint"
+                }
+              ]
+            },
+            {
               "name": "OptionTemplate",
               "className": "Frame",
               "children": [
@@ -14976,6 +16525,204 @@
                     {
                       "name": "Details",
                       "className": "TextLabel"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "name": "Dialogs",
+              "className": "Folder",
+              "children": [
+                {
+                  "name": "OptionButton",
+                  "className": "TextButton",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    }
+                  ]
+                },
+                {
+                  "name": "Basic2",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "Title",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "Holder",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "Description",
+                          "className": "TextLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "OptionHolder",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "TextButton",
+                          "className": "TextButton",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            },
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
+                    },
+                    {
+                      "name": "Image",
+                      "className": "ImageLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "name": "Basic1",
+                  "className": "Frame",
+                  "children": [
+                    {
+                      "name": "UICorner",
+                      "className": "UICorner"
+                    },
+                    {
+                      "name": "Title",
+                      "className": "TextLabel",
+                      "children": [
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "UIPadding",
+                      "className": "UIPadding"
+                    },
+                    {
+                      "name": "Holder",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "Description",
+                          "className": "TextLabel",
+                          "children": [
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "OptionHolder",
+                      "className": "Frame",
+                      "children": [
+                        {
+                          "name": "UIPadding",
+                          "className": "UIPadding"
+                        },
+                        {
+                          "name": "TextButton",
+                          "className": "TextButton",
+                          "children": [
+                            {
+                              "name": "UICorner",
+                              "className": "UICorner"
+                            },
+                            {
+                              "name": "AspectRatio",
+                              "className": "UIAspectRatioConstraint"
+                            }
+                          ]
+                        },
+                        {
+                          "name": "UIListLayout",
+                          "className": "UIListLayout"
+                        },
+                        {
+                          "name": "AspectRatio",
+                          "className": "UIAspectRatioConstraint"
+                        }
+                      ]
+                    },
+                    {
+                      "name": "AspectRatio",
+                      "className": "UIAspectRatioConstraint"
                     }
                   ]
                 }
@@ -16280,290 +18027,6 @@
                       ]
                     }
                   ]
-                }
-              ]
-            },
-            {
-              "name": "Dialogs",
-              "className": "Folder",
-              "children": [
-                {
-                  "name": "OptionButton",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Basic2",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "Title",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "UIPadding",
-                      "className": "UIPadding"
-                    },
-                    {
-                      "name": "Holder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UIPadding",
-                          "className": "UIPadding"
-                        },
-                        {
-                          "name": "Description",
-                          "className": "TextLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "OptionHolder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UIPadding",
-                          "className": "UIPadding"
-                        },
-                        {
-                          "name": "TextButton",
-                          "className": "TextButton",
-                          "children": [
-                            {
-                              "name": "UICorner",
-                              "className": "UICorner"
-                            },
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "UIListLayout",
-                          "className": "UIListLayout"
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    },
-                    {
-                      "name": "Image",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    }
-                  ]
-                },
-                {
-                  "name": "Basic1",
-                  "className": "Frame",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "Title",
-                      "className": "TextLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "UIPadding",
-                      "className": "UIPadding"
-                    },
-                    {
-                      "name": "Holder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UIPadding",
-                          "className": "UIPadding"
-                        },
-                        {
-                          "name": "Description",
-                          "className": "TextLabel",
-                          "children": [
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "OptionHolder",
-                      "className": "Frame",
-                      "children": [
-                        {
-                          "name": "UIPadding",
-                          "className": "UIPadding"
-                        },
-                        {
-                          "name": "TextButton",
-                          "className": "TextButton",
-                          "children": [
-                            {
-                              "name": "UICorner",
-                              "className": "UICorner"
-                            },
-                            {
-                              "name": "AspectRatio",
-                              "className": "UIAspectRatioConstraint"
-                            }
-                          ]
-                        },
-                        {
-                          "name": "UIListLayout",
-                          "className": "UIListLayout"
-                        },
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                }
-              ]
-            },
-            {
-              "name": "BadgeTemplate",
-              "className": "Frame",
-              "children": [
-                {
-                  "name": "UICorner",
-                  "className": "UICorner"
-                },
-                {
-                  "name": "UIStroke",
-                  "className": "UIStroke"
-                },
-                {
-                  "name": "Details",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Share",
-                  "className": "TextButton",
-                  "children": [
-                    {
-                      "name": "UICorner",
-                      "className": "UICorner"
-                    },
-                    {
-                      "name": "ImageLabel",
-                      "className": "ImageLabel",
-                      "children": [
-                        {
-                          "name": "AspectRatio",
-                          "className": "UIAspectRatioConstraint"
-                        }
-                      ]
-                    },
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Image",
-                  "className": "ImageLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "Title",
-                  "className": "TextLabel",
-                  "children": [
-                    {
-                      "name": "AspectRatio",
-                      "className": "UIAspectRatioConstraint"
-                    }
-                  ]
-                },
-                {
-                  "name": "AspectRatio",
-                  "className": "UIAspectRatioConstraint"
                 }
               ]
             }
@@ -25757,6 +27220,10 @@
               ]
             }
           ]
+        },
+        {
+          "name": "__Rojo_SessionLock",
+          "className": "ObjectValue"
         }
       ]
     },

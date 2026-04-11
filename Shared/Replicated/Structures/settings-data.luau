@@ -76,6 +76,14 @@ local callbacks_by_identifier: { [typemarshaller.SettingId]: SettingCallbacks? }
 			print(`Dash keybind updated to {next_key_code}.`)
 		end,
 	},
+	motion_blur = {
+		on = function()
+			-- toggle motion blur
+		end,
+		off = function()
+			--
+		end,
+	},
 }
 
 local icons_by_identifier: { [typemarshaller.SettingId]: { on: string, off: string } } = {

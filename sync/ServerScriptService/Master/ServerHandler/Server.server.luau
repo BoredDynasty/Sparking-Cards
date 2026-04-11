@@ -145,7 +145,7 @@ local function loadProfile(player: Player)
 			warn("Data not loaded for " .. player.DisplayName .. ", session ended.")
 		end
 	else
-		print("The Roblox Servers are on fire.")
+		warn("The Roblox Servers are on fire.")
 	end
 
 	return profile
@@ -278,6 +278,41 @@ local function DeductCards(player: Player, name: string, amount: number)
 	end)
 end
 
+local function AddExperience(player: Player, amount: number, reason: string?)
+	local profile = FetchProfileData(player)
+	if not profile then
+		--print("no profile found to perform action.")
+		return
+	end
+
+	Packet.SendNotification.sendTo({
+		message = `Gained {amount} EXP ` .. (reason and ` ({reason})` or ""),
+		duration = 2,
+	}, player)
+
+	Events.SendExpRewardClient:InvokeClient(player, amount) -- the client might wanna do a cool effect yknow
+
+	local formatted_reason = ""
+	-- e.g "Quest Completed" to "Quest_Completed" for better analytics formatting
+	if reason then
+		formatted_reason = string.gsub(reason, "%s+", "_")
+	else
+		formatted_reason = "Unknown"
+	end
+
+	-- do some analytics
+	log_analytics.economy(player, {
+		transaction_type = Enum.AnalyticsEconomyTransactionType.Gameplay,
+		amount = amount,
+		ending_balance = profile.experience + amount,
+		currency_type = "Experience",
+		item_sku = formatted_reason,
+	})
+
+	-- add it all up
+	profile.experience += amount
+end
+
 local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 	local profile = FetchProfileData(player)
 	if not profile then
@@ -285,7 +320,21 @@ local function InsertQuestData(player: Player, quest: typemarshaller.Quest)
 		return
 	end
 
-	future.Try(table.insert, profile.quests, quest)
+	-- this is really just an array push but whatever.
+	-- if there is a copy of the quest in the profile already, update it instead of inserting a new one.
+	local updated = false
+
+	for i, q in ipairs(profile.quests) do
+		if q.name == quest.name then
+			profile.quests[i] = quest
+			updated = true
+			break
+		end
+	end
+
+	if not updated then
+		table.insert(profile.quests, quest)
+	end
 end
 
 local function registerCombatPlayer(player: Player)
@@ -308,6 +357,17 @@ local function registerCombatPlayer(player: Player)
 	table.insert(combat_data, data)
 
 	print("registered combat player")
+end
+
+local function unregisterCombatPlayer(player: Player)
+	for i, data in ipairs(combat_data) do
+		if player.UserId == data.player.UserId then
+			data.style:Destroy()
+			data.combo_info = nil
+
+			combat_data[i] = nil
+		end
+	end
 end
 
 local function indexCombatPlayer(player: Player): PlayerData?
@@ -464,6 +524,8 @@ local function onPlayerRemoving(player: Player)
 		task.cancel(pending_setting_save)
 		pending_setting_saves[player] = nil
 	end
+
+	unregisterCombatPlayer(player)
 
 	local profile = profiles[player]
 
@@ -876,6 +938,25 @@ local function saveSetting(player: Player, identifier: string, value: typemarsha
 	return true
 end
 
+local function saveQuest(player: Player, bfr: buffer)
+	local quest = bufferencoder.read(bfr) :: typemarshaller.Quest
+	if not quest then
+		return false
+	end
+
+	local profile = FetchProfileData(player)
+	if not profile then
+		return false
+	end
+
+	InsertQuestData(player, quest)
+	SaveProfileData(player)
+
+	--print("saved quest data for player: ", player.Name, " quest: ", quest.name)
+
+	return true
+end
+
 local function initializeAudio()
 	--print("init audio")
 
@@ -1237,6 +1318,8 @@ end
 
 Events.GetGamepasses.OnServerInvoke = getGamepasses
 Events.FetchAllProducts.OnServerInvoke = getAllGamepasses
+Events.ReportQuestProgressServer.OnInvoke = saveQuest
+Events.SendExpRewardServer.OnInvoke = AddExperience
 Events.BookmarkShopCard.OnServerInvoke = insertShopBookmark
 local save_setting_remote = Events:FindFirstChild("SaveSetting")
 if save_setting_remote and save_setting_remote:IsA("RemoteFunction") then

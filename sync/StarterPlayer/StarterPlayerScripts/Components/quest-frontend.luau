@@ -6,9 +6,12 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local future = require(ReplicatedStorage.Packages.future)
+local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local tablekit = require(ReplicatedStorage.Packages.tablekit)
+local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 
 -- quest-frontend.luau
@@ -66,8 +69,20 @@ function module:DisplayCompletions()
 	print("completed quests: ", completed)
 	print("incomplete quests: ", incomplete)
 
-	quest_frame.Completed.Value.Text = tostring(completed)
-	quest_frame.Uncompleted.Value.Text = tostring(incomplete)
+	local completed_label = quest_frame.Completed
+	local uncompleted_label = quest_frame.Uncompleted
+
+	completed_label.Value.Text = "0"
+	uncompleted_label.Value.Text = "0"
+
+	task.spawn(function()
+		local counter = text_counter.new(completed_label.Value, completed, 3)
+		counter:Start(counter)
+	end)
+	task.spawn(function()
+		local counter = text_counter.new(uncompleted_label.Value, incomplete, 3)
+		counter:Start(counter)
+	end)
 end
 
 function module:Unload()
@@ -84,9 +99,7 @@ function module:LoadItems()
 		return
 	end
 
-	print(tablekit.ToString(player_quests :: any))
-
-	local title_str = '%s<br/><font weight="Regular"><font transparency="0.5">%s%</font></font>'
+	local title_str = '%s<br/><font weight="Regular"><font transparency="0.5">%s</font></font>'
 	local acquired_str =
 		'<font family="rbxasset://LuaPackages/Packages/_Index/BuilderIcons/BuilderIcons/BuilderIcons.json">clock</font> Acquired %s'
 
@@ -97,16 +110,40 @@ function module:LoadItems()
 	for i, quest in ipairs(player_quests) do
 		-- get the quest data from the server idk
 
+		print(tablekit.ToString(quest :: any))
+
 		local card = pool:Get()
 		card.Parent = holder
 
-		card.Title.Text = string.format(title_str, quest.name, quest.progress)
+		task.spawn(function()
+			while card ~= nil do
+				task.wait(1)
 
-		local deserialized_date_acquired = DateTime.fromUnixTimestampMillis(quest.date_acquired)
-			:FormatLocalTime("MMM D, YYYY", "en-us") or "(unknown)"
-		print(deserialized_date_acquired)
+				player_quests = get_quest_data:InvokeServer() :: { typemarshaller.Quest }
+				if not player_quests then
+					warn("couldnt pull player quests.")
 
-		card.Description.Text = string.format(acquired_str, deserialized_date_acquired)
+					return
+				end
+
+				quest = player_quests[i]
+
+				local title = card:WaitForChild("Title")
+				local description = card:WaitForChild("Description")
+
+				title.Text = string.format(title_str, quest.name, math.ceil(quest.progress) .. "%")
+
+				local date = DateTime.fromUnixTimestampMillis(quest.date_acquired)
+
+				local local_time = date:FormatLocalTime("MMM D, YYYY", "en-us") or "(unknown)"
+
+				description.Text = string.format(acquired_str, local_time)
+			end
+		end)
+
+		if quest.completed then
+			card.Cancel.Visible = false -- we'll do something with this later
+		end
 
 		card.Cancel.Activated:Connect(function()
 			-- this doesnt work yet.
@@ -118,5 +155,47 @@ function module:LoadItems()
 		shadow(card)
 	end
 end
+
+function module:BeginTracking()
+	local player_quests = get_quest_data:InvokeServer() :: { typemarshaller.Quest }
+	if not player_quests then
+		warn("couldnt pull player quests.")
+
+		return
+	end
+
+	for i, quest in ipairs(player_quests) do
+		local quest_module_name = quest.module
+
+		if not quest_module_name then
+			continue
+		end
+
+		local directory = ReplicatedStorage.ClientModules["quest-modules"]
+		local quest_module = directory:FindFirstChild(quest_module_name) :: ModuleScript?
+		if not quest_module then
+			continue
+		end
+
+		local ok, fn = future.Try(require, quest_module):Unwrap()
+		if not ok then
+			print(ok, fn)
+			continue
+		end
+
+		print(type(fn))
+		fn(player)
+
+		print("begun tracking: ", quest.name)
+	end
+
+	local snackbar = hint.new()
+	snackbar:SetText("Begun tracking quests")
+	snackbar:SetExpiry(2)
+	snackbar:SetCanClick(false)
+	snackbar:SetCanDismiss(true)
+end
+
+module:BeginTracking()
 
 return module

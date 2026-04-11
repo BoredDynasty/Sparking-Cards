@@ -138,12 +138,12 @@ function module:LoadItems()
 				local local_time = date:FormatLocalTime("MMM D, YYYY", "en-us") or "(unknown)"
 
 				description.Text = string.format(acquired_str, local_time)
+
+				if quest.completed then
+					card.Cancel.Visible = false -- we'll do something with this later
+				end
 			end
 		end)
-
-		if quest.completed then
-			card.Cancel.Visible = false -- we'll do something with this later
-		end
 
 		card.Cancel.Activated:Connect(function()
 			-- this doesnt work yet.

@@ -57,7 +57,7 @@ export type Sword = setmetatable<{
 }, typeof(module)>
 
 function module.new(player: Player, sword_name: string)
-	local sword_model = ReplicatedStorage.Assets.Weaponry:FindFirstChild(sword_name) :: BaseSword
+	local sword_model = ReplicatedStorage.Assets.Weaponry:WaitForChild(sword_name, 10) :: BaseSword
 	assert(sword_model, "Couldn't fetch sword model: " .. sword_name)
 
 	local self = setmetatable({}, module)

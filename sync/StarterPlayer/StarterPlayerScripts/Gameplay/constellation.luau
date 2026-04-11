@@ -5,7 +5,6 @@ local RunService = game:GetService("RunService")
 local hydration = require(ReplicatedStorage.Utility.hydration)
 local input = require(ReplicatedStorage.Packages.input)
 local random = require(ReplicatedStorage.Utility.random)
-local tablekit = require(ReplicatedStorage.Packages.tablekit)
 
 -- constellation.luau
 -- makes a constellation trail effect,
@@ -46,8 +45,13 @@ type StarData = {
 function module.new(ancestor: LayerCollector, config: ConstellationConfig?)
 	local self = setmetatable({}, module)
 
-	self.config = config or default_config
-	tablekit.Reconcile(self.config, default_config)
+	self.config = config or {}
+	-- reconcile
+	for k, v in pairs(default_config) do
+		if self.config[k] == nil then
+			self.config[k] = v
+		end
+	end
 
 	self.parent = ancestor
 	self.stars = {} :: { StarData } -- currently visible stars
@@ -70,7 +74,7 @@ function module.new(ancestor: LayerCollector, config: ConstellationConfig?)
 	}
 
 	-- initialize star cache
-	self:InitializeCache()
+	self:InitializeCache(self)
 
 	return self
 end
