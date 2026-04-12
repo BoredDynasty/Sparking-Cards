@@ -25,6 +25,9 @@ local STATION_STOP_DURATION = 10
 local THROTTLE_TWEEN_DURATION = 1
 local CLEARANCE_RETRY_INTERVAL = 0.25
 
+local COMFORT_ACCELERATION = 6
+local COMFORT_DECELERATION = 10
+
 local DEFAULT_FOLLOW_DISTANCE = 180
 local DEFAULT_LATERAL_TOLERANCE = 22
 local DEFAULT_DOOR_OFFSET_LEFT = Vector3.new(-1, 0, 6)
@@ -671,32 +674,11 @@ function service_class:_watch_workspace()
 end
 
 function service_class:_start_heartbeat()
-	table.insert(self.connections, RunService.Heartbeat:Connect(function()
-		local max_speed_ratio = 0
+	table.insert(self.connections, RunService.Heartbeat:Connect(function(dt: number)
 		for _, train_instance in ipairs(self.trains) do
-			train_instance:_step()
-			if train_instance.ambient_speed_ratio > max_speed_ratio then
-				max_speed_ratio = train_instance.ambient_speed_ratio
-			end
+			train_instance:_step(dt)
 		end
-
-		audio:ConfigureSFX("train_ambient", {
-			looped = true,
-			volume = max_speed_ratio,
-		})
 	end))
-
-	audio:ConfigureSFX("train_ambient", {
-		looped = true,
-	})
-	audio:PlaySFX("train_ambient")
-	task.delay(5, function()
-		if self.destroyed then
-			return
-		end
-
-		audio:PlaySFX("train_ambient")
-	end)
 end
 
 function service_class:destroy()
@@ -759,15 +741,20 @@ function train_class.new(service: TrainService, train_id: string, train_model: M
 		safe_follow_distance = get_number_attribute(train_model, "SafeFollowDistance") or DEFAULT_FOLLOW_DISTANCE,
 		lateral_tolerance = get_number_attribute(train_model, "LateralTolerance") or DEFAULT_LATERAL_TOLERANCE,
 		ambient_speed_ratio = 0,
+		target_station = nil,
+		ambient_sound = nil,
+		clattering_sound = nil,
 	}, train_class)
 
 	self:_discover_carriages()
-	self:_weld_train()
+	self:_setup_physics()
+	self:_setup_sounds()
 	self:_discover_doors()
 	self:_discover_destinations()
 	self:_discover_passenger_seats()
 	self:_set_direction(self.depart_throttle)
 	self:_connect()
+	self:_init_movement()
 
 	return self
 end
@@ -812,20 +799,172 @@ function train_class:_discover_carriages()
 			register_carriage(descendant)
 		end
 	end
+
+	-- Sort carriages by their position relative to the engine's LookVector
+	-- We want them ordered from front to back
+	local engine_cf = self.engine.CFrame
+	table.sort(self.carriages, function(a, b)
+		local a_pos = a:GetBoundingBox()
+		local b_pos = b:GetBoundingBox()
+		local rel_a = engine_cf:PointToObjectSpace(a_pos.Position).Z
+		local rel_b = engine_cf:PointToObjectSpace(b_pos.Position).Z
+		return rel_a < rel_b -- Smaller Z is further forward (-Z is forward)
+	end)
 end
 
-function train_class:_weld_train()
+function train_class:_setup_physics()
+	-- First, weld each carriage internally and unanchor it
 	for _, carriage_model in ipairs(self.carriages) do
-		local ok, err = pcall(function()
-			weld_utility:Weld(carriage_model, self.engine)
-		end)
+		local main_part = if carriage_model == self.model
+			then self.engine
+			else (carriage_model.PrimaryPart or carriage_model:FindFirstChild("Engine") or carriage_model:FindFirstChildWhichIsA("BasePart"))
 
-		if ok then
+		if main_part then
+			weld_utility:Weld(carriage_model, main_part)
+			main_part.Anchored = false
+		end
+	end
+
+	-- Now chain the carriages together using BallSocketConstraints
+	local previous_main_part = self.engine
+	local previous_cframe, previous_size = self.model:GetBoundingBox()
+
+	for i = 1, #self.carriages do
+		local carriage_model = self.carriages[i]
+		if carriage_model == self.model then
 			continue
 		end
 
-		warn(`Train '{self.id}' failed to weld '{carriage_model:GetFullName()}': {err}`)
+		local current_main_part = carriage_model.PrimaryPart
+			or carriage_model:FindFirstChild("Engine")
+			or carriage_model:FindFirstChildWhichIsA("BasePart")
+		if not current_main_part then
+			continue
+		end
+
+		local current_cframe, current_size = carriage_model:GetBoundingBox()
+
+		-- Create attachments for the coupling
+		local attachment0 = Instance.new("Attachment")
+		attachment0.Name = "CouplingBack"
+		-- Position at back of previous
+		attachment0.Position = previous_main_part.CFrame:PointToObjectSpace(
+			previous_cframe.Position - (previous_cframe.LookVector * (previous_size.Z / 2))
+		)
+		attachment0.Parent = previous_main_part
+
+		local attachment1 = Instance.new("Attachment")
+		attachment1.Name = "CouplingFront"
+		-- Position at front of current
+		attachment1.Position = current_main_part.CFrame:PointToObjectSpace(
+			current_cframe.Position + (current_cframe.LookVector * (current_size.Z / 2))
+		)
+		attachment1.Parent = current_main_part
+
+		local constraint = Instance.new("BallSocketConstraint")
+		constraint.Name = "CarriageCoupling"
+		constraint.Attachment0 = attachment0
+		constraint.Attachment1 = attachment1
+		constraint.LimitsEnabled = true
+		constraint.UpperAngle = 15
+		constraint.Parent = current_main_part
+
+		local no_collision = Instance.new("NoCollisionConstraint")
+		no_collision.Part0 = previous_main_part
+		no_collision.Part1 = current_main_part
+		no_collision.Parent = current_main_part
+
+		previous_main_part = current_main_part
+		previous_cframe = current_cframe
+		previous_size = current_size
 	end
+end
+
+--[=[
+	@within Train
+	Finds the next station sensor based on the current station's "NextStation" attribute.
+	@param sensor BasePart -- The current station sensor.
+	@return BasePart? -- The next station sensor if found.
+]=]
+function train_class:_find_next_station(sensor: BasePart): BasePart?
+	local next_station_name = get_string_attribute(sensor, "NextStation")
+	if not next_station_name then
+		return nil
+	end
+
+	local station_folder = Workspace:FindFirstChild("StationSensors")
+	if not station_folder then
+		return nil
+	end
+
+	local next_station = station_folder:FindFirstChild(next_station_name)
+	if next_station and next_station:IsA("BasePart") then
+		return next_station
+	end
+
+	return nil
+end
+
+--[=[
+	@within Train
+	Initializes the train's movement by finding the nearest station in the Workspace.
+]=]
+function train_class:_init_movement()
+	local station_folder = Workspace:FindFirstChild("StationSensors")
+	if not station_folder then
+		warn(`Train '{self.id}': StationSensors folder not found in Workspace`)
+		-- Fallback: move forward until hit something
+		self:_set_throttle(1, 0)
+		return
+	end
+
+	local nearest = nil
+	local min_dist = math.huge
+	for _, child in ipairs(station_folder:GetChildren()) do
+		if not child:IsA("BasePart") then
+			continue
+		end
+
+		local dist = (child.Position - self.engine.Position).Magnitude
+		if dist < min_dist then
+			min_dist = dist
+			nearest = child
+		end
+	end
+
+	if nearest then
+		self.target_station = nearest
+		self:_set_throttle(1, 0)
+	else
+		warn(`Train '{self.id}': No stations found in StationSensors folder`)
+		self:_set_throttle(1, 0)
+	end
+end
+
+function train_class:_setup_sounds()
+	-- Ambient sound
+	local ambient = Instance.new("Sound")
+	ambient.Name = "TrainAmbient"
+	ambient.SoundId = "rbxassetid://133261320841417"
+	ambient.Looped = true
+	ambient.Volume = 0
+	ambient.RollOffMaxDistance = 500
+	ambient.RollOffMinDistance = 10
+	ambient.Parent = self.engine
+	ambient:Play()
+	self.ambient_sound = ambient
+
+	-- Clattering sound
+	local clattering = Instance.new("Sound")
+	clattering.Name = "TrainClattering"
+	clattering.SoundId = "rbxassetid://149026377"
+	clattering.Looped = true
+	clattering.Volume = 0
+	clattering.RollOffMaxDistance = 400
+	clattering.RollOffMinDistance = 5
+	clattering.Parent = self.engine
+	clattering:Play()
+	self.clattering_sound = clattering
 end
 
 function train_class:_resolve_door_offset(door_part: BasePart, door_group: Instance, side: door_side): Vector3
@@ -1200,6 +1339,7 @@ function train_class:_handle_station(sensor: BasePart)
 
 	self.last_station = sensor
 	self.last_station_tick = now
+	self.target_station = self:_find_next_station(sensor)
 
 	local config = self:_build_station_config(sensor)
 	local previous_block = self.current_block_id
@@ -1288,16 +1428,61 @@ function train_class:_connect()
 	end))
 end
 
-function train_class:_step()
+function train_class:_step(dt: number)
 	if self.destroyed then
 		return
 	end
 
-	local target_velocity = self.engine.CFrame.LookVector.Unit * (self.throttle_value.Value * self.seat.MaxSpeed)
+	local current_speed = self.engine.AssemblyLinearVelocity.Magnitude
+	local max_speed = math.max(self.seat.MaxSpeed, 0.01)
+
+	if self.target_station and not self.station_processing then
+		local delta = self.target_station.Position - self.engine.Position
+		local distance = delta.Magnitude
+
+		-- v^2 = 2as => s = v^2 / 2a
+		local braking_distance = (current_speed * current_speed) / (2 * COMFORT_DECELERATION)
+
+		if distance <= braking_distance + 2 then
+			-- Gradual deceleration
+			local target_speed = math.sqrt(2 * COMFORT_DECELERATION * math.max(0, distance - 2))
+			local target_throttle = math.clamp(target_speed / max_speed, 0, 1)
+
+			local diff = target_throttle - self.throttle_value.Value
+			local step = (COMFORT_DECELERATION / max_speed) * dt
+			if math.abs(diff) < step then
+				self.throttle_value.Value = target_throttle
+			else
+				self.throttle_value.Value += math.sign(diff) * step
+			end
+		else
+			-- Acceleration
+			local target_throttle = 1
+			local diff = target_throttle - self.throttle_value.Value
+			local step = (COMFORT_ACCELERATION / max_speed) * dt
+			if math.abs(diff) < step then
+				self.throttle_value.Value = target_throttle
+			else
+				self.throttle_value.Value += math.sign(diff) * step
+			end
+		end
+	end
+
+	local target_velocity = self.engine.CFrame.LookVector.Unit * (self.throttle_value.Value * self.depart_throttle * max_speed)
 	self.engine_velocity.Velocity = target_velocity
 
-	local speed_ratio = self.engine.AssemblyLinearVelocity.Magnitude / math.max(self.seat.MaxSpeed, 0.01)
+	local speed_ratio = current_speed / max_speed
 	self.ambient_speed_ratio = math.clamp(speed_ratio, 0, 1)
+
+	-- Update sounds
+	if self.ambient_sound then
+		self.ambient_sound.Volume = self.ambient_speed_ratio
+	end
+
+	if self.clattering_sound then
+		self.clattering_sound.Volume = self.ambient_speed_ratio
+		self.clattering_sound.PlaybackSpeed = 0.5 + (self.ambient_speed_ratio * 1.5)
+	end
 end
 
 function train_class:Destroy()
