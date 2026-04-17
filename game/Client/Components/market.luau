@@ -643,6 +643,4 @@ function module:LoadGamepasses()
 	local gamepasses_array = pages.toarray(gamepasses)
 end
 
-print(tablekit.ToString(events.GetGamepasses:InvokeServer() :: any))
-
 return module

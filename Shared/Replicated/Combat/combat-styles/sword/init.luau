@@ -67,7 +67,8 @@ function module.new(player: Player, sword_name: string)
 
 	local character = player.Character or player.CharacterAdded:Wait()
 
-	local grip_info = grip.createGrip(character, self.model, "Right", CFrame.new(0, 0, 2))
+	local grip_info =
+		grip.createGrip(character, self.model, "Right", CFrame.new(0, 0, -1.5), Vector3.new(-90, 180, 0))
 
 	self.grip_info = grip_info
 	self.character = character

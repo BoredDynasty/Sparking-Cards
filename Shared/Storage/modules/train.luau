@@ -79,6 +79,74 @@ export type TrainService = {
 	[string]: any,
 }
 
+--[[
+	# Train Module Documentation
+
+The `train.luau` module is a server-side orchestrator for managing advanced, physics-based trains in Roblox. It supports multiple train instances, multi-carriage coupling, automatic station routing, and dynamic acceleration/deceleration.
+
+## Setup Instructions
+
+### 1. Workspace Organization
+- **Station Sensors**: Create a folder named `StationSensors` in `Workspace`. All your station sensor parts should be placed here.
+- **Trains**: While the service can discover trains throughout the Workspace, it's recommended to place them in a `Trains` folder for better organization.
+
+### 2. Station Configuration
+Each station is defined by a `BasePart` named `StationSensor`. Configure it using the following **Attributes**:
+
+| Attribute | Type | Description |
+| :--- | :--- | :--- |
+| `NextStation` | String | The name of the next `StationSensor` in the line. |
+| `DepartDirection` | Number | `1` for forward, `-1` for reverse. |
+| `LeftDoors` | Boolean | `true` to open left doors, `false` for right. |
+| `LineName` | String | (Optional) The name of the train line for displays. |
+| `SetLine` | Number | (Optional) The line number for displays. |
+| `DoorOpenDuration` | Number | Seconds the doors remain open. |
+| `StationStopDuration`| Number | Total seconds the train stays at the station. |
+
+### 3. Train Model Structure
+A valid train model should have:
+- An **Engine** part (BasePart).
+- A **VehicleSeat**.
+- (Optional) **Carriages**: Models parented under a folder named `Carriages` or marked with the `IsTrainCarriage` attribute.
+- (Optional) **Doors**: Grouped in models named `LeftDoors` or `RightDoors` within carriages.
+- (Optional) **Lights**: Grouped in a folder named `Lights` with parts named `A` (front) or `B` (back).
+
+## How it Works
+
+### Physics and Coupling
+The module uses `BallSocketConstraints` to connect multiple carriages. Each carriage is internally welded using a `weld-utility` and then chained to the next, allowing the train to navigate curves realistically.
+
+### Automatic Movement
+1. **Initial Search**: Upon creation, the train looks for the nearest `StationSensor` in `Workspace.StationSensors`.
+2. **Acceleration**: The train accelerates at a "comfort" rate until it reaches its `MaxSpeed`.
+3. **Deceleration**: The train dynamically calculates its braking distance. When it nears the `target_station`, it gradually slows down to a complete halt exactly at the sensor.
+4. **Sequencing**: After stopping at a station, the train identifies the next target using the `NextStation` attribute.
+
+### Audio System
+The module provides spatial audio parented to the train's engine:
+- **Ambient**: A looping background track that scales in volume with speed.
+- **Clattering**: A speed-dependent track that increases in both volume and pitch as the train moves faster.
+- **Brakes/Starting**: One-shot SFX triggered during station events.
+
+## Example Usage
+
+The module returns a `TrainService` singleton that automatically initializes. You usually don't need to call methods manually, but you can interact with it as follows:
+
+```lua
+local TrainService = require(path.to.train)
+
+-- The service automatically handles train registration and lifecycle.
+-- You can configure your train models with attributes in the editor.
+```
+
+### Adding a New Carriage Programmatically
+If you want a model to be recognized as a carriage, simply add the attribute:
+```lua
+model:SetAttribute("IsTrainCarriage", true)
+```
+The `TrainService` will detect the new model and integrate it into the nearest train's physical chain.
+
+]]
 local train_class = {}
 train_class.__index = train_class
 
@@ -273,7 +341,7 @@ local function ensure_body_velocity(engine: BasePart): BodyVelocity
 
 	local created = Instance.new("BodyVelocity")
 	created.Name = "BodyVelocity"
-	created.MaxForce = Vector3.new(1e7, 1e7, 1e7)
+	created.MaxForce = Vector3.one * 1e7
 	created.P = 2e4
 	created.Velocity = Vector3.zero
 	created.Parent = engine
@@ -314,6 +382,15 @@ function service_class.new(): TrainService
 		destroyed = false,
 	}, service_class)
 
+	game:BindToClose(function()
+		for i, conn in ipairs(self.connections) do
+			conn:Disconnect()
+			conn = nil
+		end
+
+		table.clear(self.connections)
+	end)
+
 	self:_index_switches()
 	self:_bootstrap_trains()
 	self:_watch_workspace()
@@ -348,7 +425,11 @@ function service_class:_index_single_switch(switch_container: Instance)
 		end
 
 		local normalized_route_name = string.lower(route_name)
-		if normalized_route_name == "state" or normalized_route_name == "show" or normalized_route_name == "click" then
+		if
+			normalized_route_name == "state"
+			or normalized_route_name == "show"
+			or normalized_route_name == "click"
+		then
 			continue
 		end
 
@@ -511,7 +592,12 @@ function service_class:release_blocks(train: Train, block_ids: { string }?)
 	table.clear(train.owned_blocks)
 end
 
-function service_class:find_blocking_train(train: Train, depart_direction: number, safe_distance: number, lateral_tolerance: number): Train?
+function service_class:find_blocking_train(
+	train: Train,
+	depart_direction: number,
+	safe_distance: number,
+	lateral_tolerance: number
+): Train?
 	local forward = train.engine.CFrame.LookVector.Unit * depart_direction
 	local origin = train.engine.Position
 
@@ -641,44 +727,53 @@ function service_class:_bootstrap_trains()
 end
 
 function service_class:_watch_workspace()
-	table.insert(self.connections, Workspace.DescendantAdded:Connect(function(instance)
-		if not instance:IsA("Model") then
-			return
-		end
-
-		task.defer(function()
-			if self.destroyed then
+	table.insert(
+		self.connections,
+		Workspace.DescendantAdded:Connect(function(instance)
+			if not instance:IsA("Model") then
 				return
 			end
 
-			if not instance:IsDescendantOf(Workspace) then
-				return
-			end
+			task.defer(function()
+				if self.destroyed then
+					return
+				end
 
-			self:register_train_model(instance)
+				if not instance:IsDescendantOf(Workspace) then
+					return
+				end
+
+				self:register_train_model(instance)
+			end)
 		end)
-	end))
+	)
 
-	table.insert(self.connections, Workspace.DescendantRemoving:Connect(function(instance)
-		if not instance:IsA("Model") then
-			return
-		end
+	table.insert(
+		self.connections,
+		Workspace.DescendantRemoving:Connect(function(instance)
+			if not instance:IsA("Model") then
+				return
+			end
 
-		local tracked_train = self.trains_by_model[instance]
-		if not tracked_train then
-			return
-		end
+			local tracked_train = self.trains_by_model[instance]
+			if not tracked_train then
+				return
+			end
 
-		self:_remove_train(tracked_train)
-	end))
+			self:_remove_train(tracked_train)
+		end)
+	)
 end
 
 function service_class:_start_heartbeat()
-	table.insert(self.connections, RunService.Heartbeat:Connect(function(dt: number)
-		for _, train_instance in ipairs(self.trains) do
-			train_instance:_step(dt)
-		end
-	end))
+	table.insert(
+		self.connections,
+		RunService.Heartbeat:Connect(function(dt: number)
+			for _, train_instance in ipairs(self.trains) do
+				train_instance:_step(dt)
+			end
+		end)
+	)
 end
 
 function service_class:destroy()
@@ -738,8 +833,10 @@ function train_class.new(service: TrainService, train_id: string, train_model: M
 		destroyed = false,
 		owned_blocks = {},
 		current_block_id = nil,
-		safe_follow_distance = get_number_attribute(train_model, "SafeFollowDistance") or DEFAULT_FOLLOW_DISTANCE,
-		lateral_tolerance = get_number_attribute(train_model, "LateralTolerance") or DEFAULT_LATERAL_TOLERANCE,
+		safe_follow_distance = get_number_attribute(train_model, "SafeFollowDistance")
+			or DEFAULT_FOLLOW_DISTANCE,
+		lateral_tolerance = get_number_attribute(train_model, "LateralTolerance")
+			or DEFAULT_LATERAL_TOLERANCE,
 		ambient_speed_ratio = 0,
 		target_station = nil,
 		ambient_sound = nil,
@@ -794,7 +891,8 @@ function train_class:_discover_carriages()
 			continue
 		end
 
-		local has_doors = descendant:FindFirstChild("LeftDoors") ~= nil or descendant:FindFirstChild("RightDoors") ~= nil
+		local has_doors = descendant:FindFirstChild("LeftDoors") ~= nil
+			or descendant:FindFirstChild("RightDoors") ~= nil
 		if has_doors then
 			register_carriage(descendant)
 		end
@@ -817,7 +915,11 @@ function train_class:_setup_physics()
 	for _, carriage_model in ipairs(self.carriages) do
 		local main_part = if carriage_model == self.model
 			then self.engine
-			else (carriage_model.PrimaryPart or carriage_model:FindFirstChild("Engine") or carriage_model:FindFirstChildWhichIsA("BasePart"))
+			else (
+				carriage_model.PrimaryPart
+				or carriage_model:FindFirstChild("Engine")
+				or carriage_model:FindFirstChildWhichIsA("BasePart")
+			)
 
 		if main_part then
 			weld_utility:Weld(carriage_model, main_part)
@@ -1064,9 +1166,13 @@ function train_class:_set_throttle(target_throttle: number, tween_duration: numb
 		return
 	end
 
-	local tween = TweenService:Create(self.throttle_value, TweenInfo.new(tween_duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		Value = target_throttle,
-	})
+	local tween = TweenService:Create(
+		self.throttle_value,
+		TweenInfo.new(tween_duration, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			Value = target_throttle,
+		}
+	)
 	tween:Play()
 	tween.Completed:Connect(function()
 		if self.destroyed then
@@ -1115,9 +1221,13 @@ function train_class:_tween_door(door: door_record, is_open: boolean)
 		door.tween = nil
 	end
 
-	local tween = TweenService:Create(door.part, TweenInfo.new(DOOR_TWEEN_DURATION, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
-		CFrame = self:_door_target_cframe(door, is_open),
-	})
+	local tween = TweenService:Create(
+		door.part,
+		TweenInfo.new(DOOR_TWEEN_DURATION, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),
+		{
+			CFrame = self:_door_target_cframe(door, is_open),
+		}
+	)
 	door.tween = tween
 
 	tween.Completed:Connect(function()
@@ -1173,17 +1283,18 @@ function train_class:_build_station_config(sensor: BasePart): station_config
 		switch_routes[normalize_id(direct_switch_id)] = direct_switch_route
 	end
 
-	local directional_switch_id = get_string_attribute(sensor, infer_directional_attribute_name("SwitchId", depart_direction))
-	local directional_switch_route = get_string_attribute(
-		sensor,
-		infer_directional_attribute_name("SwitchRoute", depart_direction)
-	)
+	local directional_switch_id =
+		get_string_attribute(sensor, infer_directional_attribute_name("SwitchId", depart_direction))
+	local directional_switch_route =
+		get_string_attribute(sensor, infer_directional_attribute_name("SwitchRoute", depart_direction))
 	if directional_switch_id and directional_switch_route then
 		switch_routes[normalize_id(directional_switch_id)] = directional_switch_route
 	end
 
 	local required_blocks = parse_block_list(sensor, "RequiredBlocks")
-	for _, block_id in ipairs(parse_block_list(sensor, infer_directional_attribute_name("RequiredBlocks", depart_direction))) do
+	for _, block_id in
+		ipairs(parse_block_list(sensor, infer_directional_attribute_name("RequiredBlocks", depart_direction)))
+	do
 		if table.find(required_blocks, block_id) then
 			continue
 		end
@@ -1200,7 +1311,9 @@ function train_class:_build_station_config(sensor: BasePart): station_config
 	end
 
 	local release_blocks = parse_block_list(sensor, "ReleaseBlocks")
-	for _, block_id in ipairs(parse_block_list(sensor, infer_directional_attribute_name("ReleaseBlocks", depart_direction))) do
+	for _, block_id in
+		ipairs(parse_block_list(sensor, infer_directional_attribute_name("ReleaseBlocks", depart_direction)))
+	do
 		if table.find(release_blocks, block_id) then
 			continue
 		end
@@ -1208,7 +1321,8 @@ function train_class:_build_station_config(sensor: BasePart): station_config
 		table.insert(release_blocks, block_id)
 	end
 
-	local current_block = get_string_attribute(sensor, "CurrentBlock") or get_string_attribute(sensor, "StationBlock")
+	local current_block = get_string_attribute(sensor, "CurrentBlock")
+		or get_string_attribute(sensor, "StationBlock")
 	if current_block then
 		current_block = normalize_id(current_block)
 	end
@@ -1271,7 +1385,8 @@ function train_class:_collect_passengers(): { Player }
 	overlap_params.FilterDescendantsInstances = {}
 	overlap_params.MaxParts = 128
 
-	local parts = Workspace:GetPartBoundsInBox(bound_cframe, bound_size + PASSENGER_SCAN_PADDING, overlap_params)
+	local parts =
+		Workspace:GetPartBoundsInBox(bound_cframe, bound_size + PASSENGER_SCAN_PADDING, overlap_params)
 	for _, part in ipairs(parts) do
 		local character = part:FindFirstAncestorOfClass("Model")
 		if not character then
@@ -1395,37 +1510,40 @@ function train_class:_handle_station(sensor: BasePart)
 end
 
 function train_class:_connect()
-	table.insert(self.connections, self.seat.Touched:Connect(function(hit_part)
-		if not hit_part:IsA("BasePart") then
-			return
-		end
-
-		local station_sensor = get_station_sensor(hit_part)
-		if not station_sensor then
-			return
-		end
-
-		if self.station_processing then
-			return
-		end
-
-		self.station_processing = true
-		task.spawn(function()
-			local ok, err = pcall(function()
-				self:_handle_station(station_sensor)
-			end)
-
-			if not ok then
-				warn(`Train '{self.id}' station handling failed: {err}`)
-			end
-
-			if self.destroyed then
+	table.insert(
+		self.connections,
+		self.seat.Touched:Connect(function(hit_part)
+			if not hit_part:IsA("BasePart") then
 				return
 			end
 
-			self.station_processing = false
+			local station_sensor = get_station_sensor(hit_part)
+			if not station_sensor then
+				return
+			end
+
+			if self.station_processing then
+				return
+			end
+
+			self.station_processing = true
+			task.spawn(function()
+				local ok, err = pcall(function()
+					self:_handle_station(station_sensor)
+				end)
+
+				if not ok then
+					warn(`Train '{self.id}' station handling failed: {err}`)
+				end
+
+				if self.destroyed then
+					return
+				end
+
+				self.station_processing = false
+			end)
 		end)
-	end))
+	)
 end
 
 function train_class:_step(dt: number)
@@ -1468,7 +1586,8 @@ function train_class:_step(dt: number)
 		end
 	end
 
-	local target_velocity = self.engine.CFrame.LookVector.Unit * (self.throttle_value.Value * self.depart_throttle * max_speed)
+	local target_velocity = self.engine.CFrame.LookVector.Unit
+		* (self.throttle_value.Value * self.depart_throttle * max_speed)
 	self.engine_velocity.Velocity = target_velocity
 
 	local speed_ratio = current_speed / max_speed

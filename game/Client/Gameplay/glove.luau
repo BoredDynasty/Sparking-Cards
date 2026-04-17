@@ -92,7 +92,7 @@ function module:Apply(character: typemarshaller.Character)
 		warn("could not apply gloves, missing hands")
 	end
 
-	character.Humanoid:ChangeState(Enum.HumanoidStateType.None)
+	character.Humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
 end
 
 return module

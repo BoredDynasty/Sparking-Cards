@@ -43,6 +43,8 @@ return {
 			local current_position = rootPart.Position :: Vector3
 
 			while target:GetAttribute("Flying") do
+				task.wait(0.1)
+
 				local add = Vector3.zero
 
 				if UserInputService:IsKeyDown(Enum.KeyCode.W) then

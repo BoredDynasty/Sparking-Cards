@@ -525,23 +525,25 @@ local function onPlayerRemoving(player: Player)
 		pending_setting_saves[player] = nil
 	end
 
-	unregisterCombatPlayer(player)
+	task.spawn(unregisterCombatPlayer, player)
 
-	local profile = profiles[player]
+	task.spawn(function()
+		local profile = profiles[player]
 
-	if profile then
-		SaveProfileData(player)
+		if profile then
+			SaveProfileData(player)
 
-		print("saved data for " .. player.Name)
+			print("saved data for " .. player.Name)
 
-		profile:EndSession()
+			profile:EndSession()
 
-		profiles[player] = nil
+			profiles[player] = nil
 
-		print("ended session for " .. player.Name)
-	else
-		warn("couldn't save in time for " .. player.Name)
-	end
+			print("ended session for " .. player.Name)
+		else
+			warn("couldn't save in time for " .. player.Name)
+		end
+	end)
 
 	task.defer(player.Destroy, player)
 end

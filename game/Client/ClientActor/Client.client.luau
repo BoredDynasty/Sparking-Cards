@@ -37,6 +37,7 @@ local health_pulse = require(StarterPlayer.StarterPlayerScripts.Gameplay["health
 local hint = require(StarterPlayer.StarterPlayerScripts.Components.hint)
 local hud = require(StarterPlayer.StarterPlayerScripts.Components.hud)
 local indicate_damage = require(StarterPlayer.StarterPlayerScripts.Components["indicate-damage"])
+local input = require(ReplicatedStorage.Packages.input)
 local joint_controller = require(StarterPlayer.StarterPlayerScripts.Movement["joint-controller"])
 local keybindlink = require(StarterPlayer.StarterPlayerScripts.Components.keybindlink)
 local letterbox = require(StarterPlayer.StarterPlayerScripts.Components.letterbox)
@@ -95,6 +96,7 @@ local PlayerGui = player.PlayerGui
 print("client starting")
 
 local transition_manager = transition.TransitionManager.new(PlayerGui)
+local mouse = input.Mouse.new()
 
 local function initializeRemotes()
 	do
@@ -913,8 +915,12 @@ UserInputService.InputBegan:Connect(function(key, processed)
 		return
 	end
 
-	invokeAttack(key)
-	invokeJuke(key)
+	--invokeAttack(key.KeyCode)
+	invokeJuke(key.KeyCode)
+end)
+
+mouse.LeftDown:Connect(function()
+	--invokeAttack(Enum.KeyCode.MouseLeftButton)
 end)
 
 glove:Apply(character)

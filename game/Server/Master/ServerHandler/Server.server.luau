@@ -404,6 +404,7 @@ local function executeAttack(player: Player, attack_type: typemarshaller.AttackT
 	end
 
 	local equipped_card = profile.equipped_card
+	print(equipped_card)
 
 	local module = indexCombatModule(equipped_card)
 	if not module then
@@ -414,10 +415,12 @@ local function executeAttack(player: Player, attack_type: typemarshaller.AttackT
 	local attack_func = module.moveset[attack_type]
 	if attack_func then
 		print("executing attack")
-		return attack_func(player)
+
+		print(player, data.player)
+
+		module.moveset[attack_type](player)
 	else
 		warn(`Attack function for type '{attack_type}' not found in module '{equipped_card}'`)
-		return
 	end
 end
 
@@ -525,32 +528,36 @@ local function onPlayerRemoving(player: Player)
 		pending_setting_saves[player] = nil
 	end
 
-	unregisterCombatPlayer(player)
+	task.spawn(unregisterCombatPlayer, player)
 
-	local profile = profiles[player]
+	task.spawn(function()
+		local profile = profiles[player]
 
-	if profile then
-		SaveProfileData(player)
+		if profile then
+			SaveProfileData(player)
 
-		print("saved data for " .. player.Name)
+			print("saved data for " .. player.Name)
 
-		profile:EndSession()
+			profile:EndSession()
 
-		profiles[player] = nil
+			profiles[player] = nil
 
-		print("ended session for " .. player.Name)
-	else
-		warn("couldn't save in time for " .. player.Name)
-	end
+			print("ended session for " .. player.Name)
+		else
+			warn("couldn't save in time for " .. player.Name)
+		end
+	end)
 
 	task.defer(player.Destroy, player)
 end
 
-game:BindToClose(function()
-	for _, player in ipairs(Players:GetPlayers()) do
-		onPlayerRemoving(player)
-	end
-end)
+if not RunService:IsStudio() then
+	game:BindToClose(function()
+		for _, player in ipairs(Players:GetPlayers()) do
+			task.spawn(onPlayerRemoving, player)
+		end
+	end)
+end
 
 local function purchaseCard(player: Player, card_name: string)
 	-- TODO)  attempt to index nil with 'Price'
@@ -1330,6 +1337,15 @@ end
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
+Events.CallStyleFunction.OnInvoke = function(player, method, ...)
+	local data = indexCombatPlayer(player)
+	if data then
+		return data.style[method](...)
+	else
+		warn("no data")
+		return nil
+	end
+end
 Events.GetPlayerCombatData.OnInvoke = indexCombatPlayer
 Events.SendMatchmakingTime.OnServerEvent:Connect(function(player: Player, seconds: number)
 	logMatchWaitingTime(player, seconds)
@@ -1353,6 +1369,12 @@ Events.ToggleGUISound.OnServerEvent:Connect(function(player, volume)
 end)
 Events.ToggleMusic.OnServerEvent:Connect(function(player, is_on)
 	Events.ToggleMusic:FireClient(player, is_on)
+end)
+Events.LogAnalytic.OnServerEvent:Connect(function(player, analytic, ...)
+	future.Try(function(...)
+		log_analytics.custom(player, info)
+		log_analytics[analytic](player, ...)
+	end, ...)
 end)
 initializeAudio()
 startLightingCycle()

@@ -52,6 +52,8 @@ shadow(party_frame.Create)
 shadow(party_frame.InviteFriend)
 shadow(party_frame)
 
+local friend_invites = 0
+
 local function inviteFriend()
 	local fut = future.Try(function()
 		return SocialService:CanSendGameInviteAsync(player)
@@ -61,6 +63,10 @@ local function inviteFriend()
 
 	if ok and can_send then
 		SocialService:PromptGameInvite(player)
+
+		friend_invites += 1
+
+		events.LogAnalytic:FireServer("custom", "Friend Invite", friend_invites)
 
 		local snackbar = hint.new()
 		snackbar:SetText("Invite someone to your party!")

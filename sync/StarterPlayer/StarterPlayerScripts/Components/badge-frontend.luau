@@ -81,7 +81,7 @@ local function isRegisteredBadge(badge: typemarshaller.Badge)
 	return false
 end
 
-local function getBadgeDataFromName(name: string): typemarsh
+local function getBadgeDataFromName(name: string): typemarshaller.Badge?
 	for i, badge_data in ipairs(badges) do
 		if badge_data.name == name then
 			return badge_data
