@@ -336,12 +336,13 @@ end
 local function ensure_body_velocity(engine: BasePart): BodyVelocity
 	local body_velocity = engine:FindFirstChildOfClass("BodyVelocity")
 	if body_velocity then
+		body_velocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
 		return body_velocity
 	end
 
 	local created = Instance.new("BodyVelocity")
 	created.Name = "BodyVelocity"
-	created.MaxForce = Vector3.one * 1e7
+	created.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
 	created.P = 2e4
 	created.Velocity = Vector3.zero
 	created.Parent = engine
@@ -730,10 +731,6 @@ function service_class:_watch_workspace()
 	table.insert(
 		self.connections,
 		Workspace.DescendantAdded:Connect(function(instance)
-			if not instance:IsA("Model") then
-				return
-			end
-
 			task.defer(function()
 				if self.destroyed then
 					return
@@ -743,7 +740,10 @@ function service_class:_watch_workspace()
 					return
 				end
 
-				self:register_train_model(instance)
+				local train_model = instance:FindFirstAncestorWhichIsA("Model") or instance
+				if train_model:IsA("Model") then
+					self:register_train_model(train_model)
+				end
 			end)
 		end)
 	)
@@ -1015,7 +1015,7 @@ function train_class:_init_movement()
 	local station_folder = Workspace:FindFirstChild("StationSensors")
 	if not station_folder then
 		warn(`Train '{self.id}': StationSensors folder not found in Workspace`)
-		-- Fallback: move forward until hit something
+		-- Fallback: move forward
 		self:_set_throttle(1, 0)
 		return
 	end
@@ -1036,7 +1036,20 @@ function train_class:_init_movement()
 
 	if nearest then
 		self.target_station = nearest
-		self:_set_throttle(1, 0)
+
+		-- If we are already at the station (e.g. spawned there), trigger it immediately
+		if min_dist < 15 then
+			task.spawn(function()
+				if self.destroyed then
+					return
+				end
+				self.station_processing = true
+				self:_handle_station(nearest)
+				self.station_processing = false
+			end)
+		else
+			self:_set_throttle(1, 0)
+		end
 	else
 		warn(`Train '{self.id}': No stations found in StationSensors folder`)
 		self:_set_throttle(1, 0)
@@ -1159,10 +1172,11 @@ end
 
 function train_class:_set_throttle(target_throttle: number, tween_duration: number)
 	tween_duration = math.max(tween_duration, 0)
+	target_throttle = math.abs(target_throttle)
 
 	if tween_duration == 0 then
 		self.throttle_value.Value = target_throttle
-		self.seat.Throttle = math.sign(target_throttle)
+		self.seat.Throttle = if target_throttle > 0.01 then self.depart_throttle else 0
 		return
 	end
 
@@ -1179,7 +1193,7 @@ function train_class:_set_throttle(target_throttle: number, tween_duration: numb
 			return
 		end
 
-		self.seat.Throttle = math.sign(self.throttle_value.Value)
+		self.seat.Throttle = if self.throttle_value.Value > 0.01 then self.depart_throttle else 0
 	end)
 end
 
@@ -1494,7 +1508,7 @@ function train_class:_handle_station(sensor: BasePart)
 
 	self:_wait_for_clearance(config)
 
-	self:_set_throttle(config.depart_direction, THROTTLE_TWEEN_DURATION)
+	self:_set_throttle(1, THROTTLE_TWEEN_DURATION)
 	audio:PlaySFX("train_starting", self.engine.Position)
 	self:_send_departure_camera_event()
 
@@ -1587,7 +1601,7 @@ function train_class:_step(dt: number)
 	end
 
 	local target_velocity = self.engine.CFrame.LookVector.Unit
-		* (self.throttle_value.Value * self.depart_throttle * max_speed)
+		* (math.abs(self.throttle_value.Value) * self.depart_throttle * max_speed)
 	self.engine_velocity.Velocity = target_velocity
 
 	local speed_ratio = current_speed / max_speed
