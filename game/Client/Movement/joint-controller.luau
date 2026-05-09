@@ -16,13 +16,13 @@ local character = player.Character or player.CharacterAdded:Wait()
 
 local joints = {} :: { [number]: Motor6D }
 
-local frameRate = 24
+local frameRate = 60
 local totalStep = 0
 
 local lastJointCFrames = {} :: { CFrame }
 
 local function getJoints(part: Instance)
-	for _, child in part:GetChildren() do
+	for _, child in ipairs(part:GetChildren()) do
 		if child:IsA("Motor6D") then
 			table.insert(joints, child)
 		end
@@ -31,7 +31,7 @@ local function getJoints(part: Instance)
 end
 
 local function updateJoints()
-	for i, inst in pairs(character:GetDescendants()) do
+	for i, inst in ipairs(character:GetDescendants()) do
 		getJoints(inst)
 	end
 

@@ -1,10 +1,8 @@
 --!strict
 -- audio.lua
 
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local SoundService = game:GetService("SoundService")
-
-local hydration = require(ReplicatedStorage.Utility.hydration)
+local TweenService = game:GetService("TweenService")
 
 local module = {}
 
@@ -15,13 +13,11 @@ local sound_effects = {} :: { [string]: Sound }
 -- utility
 local function create_sound(sound_id: number, parent: Instance, config)
 	local sound = Instance.new("Sound")
-	hydration(sound) {
-		AudioContent = Content.fromAssetId(sound_id),
-		Volume = config.volume or 1,
-		PlaybackSpeed = config.pitch or 1,
-		Looped = config.looped or false,
-		Parent = parent,
-	}
+	sound.AudioContent = Content.fromAssetId(sound_id)
+	sound.Volume = config.volume or 1
+	sound.PlaybackSpeed = config.pitch or 1
+	sound.Looped = config.looped or false
+	sound.Parent = parent
 
 	return sound
 end
@@ -35,6 +31,17 @@ end
 function module:PlayMusic(name: string)
 	local track = music_tracks[name]
 	if track then
+		-- smoothly play the sound
+
+		local fade_in_time = 0.5
+		local track_volume = track.Volume
+
+		track.Volume = 0 -- reset volume
+
+		TweenService:Create(track, TweenInfo.new(fade_in_time), {
+			Volume = track_volume,
+		}):Play()
+
 		track:Play()
 	end
 end
@@ -49,7 +56,16 @@ end
 function module:StopMusic(name: string)
 	local track = music_tracks[name]
 	if track then
+		-- smoothly stop the sound
+
+		local track_volume = track.Volume
+
+		local fade_out_time = 0.5
+		TweenService:Create(track, TweenInfo.new(fade_out_time), {
+			Volume = 0,
+		}):Play()
 		track:Stop()
+		track.Volume = track_volume -- reset volume for next time
 	end
 end
 
@@ -76,35 +92,20 @@ end
 
 --[[
 	@param name The SFX name
-	@param point Where the SFX should play from.
 ]]
-function module:PlaySFX(name: string, point: Vector3?)
+function module:PlaySFX(name: string)
 	local sfx = sound_effects[name]
 	if sfx then
-		if point then
-			local part = Instance.new("Part")
-			part.Anchored = true
-			part.CanCollide = false
-			part.Transparency = 1
-			part.Size = Vector3.new(1, 1, 1)
-			part.CFrame = CFrame.new(point)
-			part.Parent = workspace
-
-			sfx.Parent = part
-
-			sfx.Ended:Connect(function()
-				sfx.Parent = SoundService
-				part:Destroy()
-			end)
-		else
-			sfx.Parent = SoundService
-		end
+		sfx.Parent = SoundService
 
 		sfx:Play()
 	end
 end
 
-function module:ConfigureSFX(name: string, config)
+function module:ConfigureSFX(
+	name: string,
+	config: { read looped: boolean, read pitch: number, read volume: number }
+)
 	local sfx = sound_effects[name]
 	if not sfx then
 		return

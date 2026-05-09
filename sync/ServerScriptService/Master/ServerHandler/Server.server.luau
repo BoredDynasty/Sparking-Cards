@@ -341,10 +341,10 @@ local function registerCombatPlayer(player: Player)
 	local style = sword.new(player, "Katana") -- change this later
 	local combo_info = combo.new(3)
 
-	style:Equip()
-	style:CreateTrail()
+	--style:Equip(style)
+	--style:CreateTrail(style)
 
-	print("grip data: ", style:GetGripData())
+	print("grip data: ", style:GetGripData(style))
 
 	local data = {
 		player = player,
@@ -362,7 +362,7 @@ end
 local function unregisterCombatPlayer(player: Player)
 	for i, data in ipairs(combat_data) do
 		if player.UserId == data.player.UserId then
-			data.style:Destroy()
+			data.style:Destroy(data.style)
 			data.combo_info = nil
 
 			combat_data[i] = nil
@@ -404,6 +404,7 @@ local function executeAttack(player: Player, attack_type: typemarshaller.AttackT
 	end
 
 	local equipped_card = profile.equipped_card
+	print(equipped_card)
 
 	local module = indexCombatModule(equipped_card)
 	if not module then
@@ -414,10 +415,12 @@ local function executeAttack(player: Player, attack_type: typemarshaller.AttackT
 	local attack_func = module.moveset[attack_type]
 	if attack_func then
 		print("executing attack")
-		return attack_func(player)
+
+		print(player, data.player)
+
+		module.moveset[attack_type](player)
 	else
 		warn(`Attack function for type '{attack_type}' not found in module '{equipped_card}'`)
-		return
 	end
 end
 
@@ -548,11 +551,13 @@ local function onPlayerRemoving(player: Player)
 	task.defer(player.Destroy, player)
 end
 
-game:BindToClose(function()
-	for _, player in ipairs(Players:GetPlayers()) do
-		onPlayerRemoving(player)
-	end
-end)
+if not RunService:IsStudio() then
+	game:BindToClose(function()
+		for _, player in ipairs(Players:GetPlayers()) do
+			task.spawn(onPlayerRemoving, player)
+		end
+	end)
+end
 
 local function purchaseCard(player: Player, card_name: string)
 	-- TODO)  attempt to index nil with 'Price'
@@ -758,7 +763,7 @@ local function startLightingCycle()
 	local cycle_time = day_length * 60
 	local minutes_in_a_day = 24 * 60
 
-	local start_time = tick() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
+	local start_time = os.clock() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
 	local end_time = start_time + cycle_time
 
 	local time_ratio = minutes_in_a_day / cycle_time
@@ -767,14 +772,16 @@ local function startLightingCycle()
 		day_length = 1
 	end
 
-	RunService.Heartbeat:Connect(function()
+	local conn = nil
+
+	conn = RunService.Heartbeat:Connect(function()
 		if overideClocktime then
-			start_time = tick() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
+			start_time = os.clock() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
 
 			return
 		end
 
-		local current_time = tick()
+		local current_time = os.clock()
 
 		if current_time > end_time then
 			start_time = end_time
@@ -782,6 +789,13 @@ local function startLightingCycle()
 		end
 
 		Lighting:SetMinutesAfterMidnight((current_time - start_time) * time_ratio)
+	end)
+
+	game:BindToClose(function()
+		if conn then
+			conn:Disconnect()
+			conn = nil
+		end
 	end)
 end
 
@@ -1332,6 +1346,15 @@ end
 Events.ExecuteAttack.OnServerInvoke = function(player: Player, ...)
 	return executeAttack(player, ...)
 end
+Events.CallStyleFunction.OnInvoke = function(player, method, ...)
+	local data = indexCombatPlayer(player)
+	if data then
+		return data.style[method](data.style, ...)
+	else
+		warn("no data")
+		return nil
+	end
+end
 Events.GetPlayerCombatData.OnInvoke = indexCombatPlayer
 Events.SendMatchmakingTime.OnServerEvent:Connect(function(player: Player, seconds: number)
 	logMatchWaitingTime(player, seconds)
@@ -1355,6 +1378,11 @@ Events.ToggleGUISound.OnServerEvent:Connect(function(player, volume)
 end)
 Events.ToggleMusic.OnServerEvent:Connect(function(player, is_on)
 	Events.ToggleMusic:FireClient(player, is_on)
+end)
+Events.LogAnalytic.OnServerEvent:Connect(function(player, analytic, ...)
+	future.Try(function(...)
+		log_analytics[analytic](player, ...)
+	end, ...)
 end)
 initializeAudio()
 startLightingCycle()

@@ -164,6 +164,7 @@ consider donating if you found this useful!!
 ]]
 
 --// Services
+local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
 --// Modules
@@ -187,7 +188,7 @@ local lastAdaptivePreloadTime = 0
 local lastValidationTime = 0
 
 local function autoOptimize()
-	local currentTime = tick()
+	local currentTime = os.clock()
 
 	if currentTime - lastOptimizeTime >= Constants.OPTIMIZE_INTERVAL then
 		Pooler:OptimizeAllPools()
@@ -215,7 +216,25 @@ local function autoOptimize()
 	end
 end
 
-RunService.Heartbeat:Connect(autoOptimize)
+local optimize_conn = nil
+
+optimize_conn = RunService.Heartbeat:Connect(autoOptimize)
+if RunService:IsServer() then
+	game:BindToClose(function()
+		if optimize_conn then
+			optimize_conn:Disconnect()
+		end
+	end)
+elseif RunService:IsClient() then
+	local player = Players.LocalPlayer
+	player.AncestryChanged:Connect(function(_, parent)
+		if not parent then
+			if optimize_conn then
+				optimize_conn:Disconnect()
+			end
+		end
+	end)
+end
 
 --================================================================================--
 --||                              POOLER METHODS                                ||--

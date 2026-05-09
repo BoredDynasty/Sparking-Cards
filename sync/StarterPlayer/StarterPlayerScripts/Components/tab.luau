@@ -77,6 +77,43 @@ function module:SelectTab(name: string, force: boolean?)
 	end
 end
 
+function module:DeselectTab(name: string?)
+	name = name or module:GetSelectedTab()
+	if not name then
+		for i, tab in ipairs(self.tabs :: { typeof(ReplicatedStorage.Interfaces.Tab) }) do
+			local active_indicator = tab.ActiveIndicator
+
+			spr.target(active_indicator, 0.8, 4, {
+				ImageTransparency = 0.5,
+				ImageColor3 = Color3.fromHex("#d8c2bc"),
+			})
+			spr.target(tab.TextLabel, 0.8, 4, {
+				TextColor3 = Color3.fromHex("#d8c2bc"),
+			})
+		end
+	else
+		for i, tab in ipairs(self.tabs :: { typeof(ReplicatedStorage.Interfaces.Tab) }) do
+			if tab.Name ~= name then
+				continue
+			end
+
+			local active_indicator = tab.ActiveIndicator
+
+			spr.target(active_indicator, 0.8, 4, {
+				ImageTransparency = 0.5,
+				ImageColor3 = Color3.fromHex("#d8c2bc"),
+			})
+			spr.target(tab.TextLabel, 0.8, 4, {
+				TextColor3 = Color3.fromHex("#d8c2bc"),
+			})
+
+			break
+		end
+	end
+
+	self.selected = nil
+end
+
 function module:GetSelectedTab(): string?
 	return self.selected
 end
@@ -88,10 +125,10 @@ function module:RemoveTab(name: string)
 			table.remove(self.tabs, i)
 
 			if self.selected == name then
-				self.selected = nil
+				self:DeselectTab(name)
 			end
 
-			return
+			break
 		end
 	end
 end

@@ -7,7 +7,9 @@ local StarterPlayer = game:GetService("StarterPlayer")
 local UserInputService = game:GetService("UserInputService")
 
 local MovementConfig = require(ReplicatedStorage.Structures.MovementConfig)
+local animate = require(StarterPlayer.StarterPlayerScripts.Utilities.animate)
 local fetchProfile = require(StarterPlayer.StarterPlayerScripts.Utilities.fetchProfile)
+local lerp = require(StarterPlayer.StarterPlayerScripts.Utilities.lerp)
 local skill_functions = require(ReplicatedStorage.Modules["skill-functions"])
 local trove = require(ReplicatedStorage.Packages.trove)
 
@@ -28,6 +30,8 @@ local max_stamina = 100
 local is_sprinting = false
 
 local character_trove = _trove:Extend()
+
+local sprint_animation = 111852268003786
 
 local function setupCharacter(new_character: Model)
 	character_trove:Clean()
@@ -63,7 +67,7 @@ local function updateInternalValues()
 	-- get how many stamina upgrades the player has and apply it
 	local profile = fetchProfile()
 	if not profile then
-		print("no profile found for sprint controller, defaulting to 0 upgrades.")
+		print("no profile found for sprint controller; defaulting to 0 upgrades.")
 		return
 	end
 
@@ -91,6 +95,9 @@ UserInputService.InputBegan:Connect(function(input, processed)
 
 	if input.KeyCode == default_keybinds.sprint then
 		is_sprinting = true
+
+		animate.stop(MovementConfig.Animations.Walk.Id)
+		animate.play(sprint_animation)
 	end
 end)
 
@@ -117,7 +124,6 @@ function module:Update(delta_time: number)
 		end
 
 		local current_stamina = character:GetAttribute("Stamina") :: number or 0
-		-- TODO) add a skill tree multipliier for stamina and drain rate.
 		local drain_rate = MovementConfig.Sprint.StaminaDrainRate
 
 		local new_stamina = math.max(0, current_stamina - (drain_rate * delta_time))
@@ -127,13 +133,24 @@ function module:Update(delta_time: number)
 
 		local speed_multiplier = getSpeedFromStamina(new_stamina)
 		humanoid.WalkSpeed = 12 + (speed_multiplier * 24)
+
+		local track = animate.getTrack(sprint_animation)
+		if track then
+			track:AdjustSpeed(math.clamp(humanoid.WalkSpeed, 0, 1))
+		end
 	else
 		-- allow for regeneration when not sprinting
-		-- the stamina-controller already handles most of this
+		-- the stamina-controller already handles most of thisd
 
 		character:SetAttribute("AntiRegenerate", false)
 		-- smoothly transition back to normal speed when stopping sprinting
-		humanoid.WalkSpeed = humanoid.WalkSpeed - ((humanoid.WalkSpeed - 12) * 0.1)
+		humanoid.WalkSpeed = lerp(humanoid.WalkSpeed, 14, 0.05)
+		local track = animate.getTrack(sprint_animation)
+		if track then
+			track:AdjustSpeed(math.clamp(humanoid.WalkSpeed, 0, 1))
+		end
+
+		animate.stop(sprint_animation, 1)
 	end
 end
 

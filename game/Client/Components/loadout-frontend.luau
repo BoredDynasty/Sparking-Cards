@@ -59,7 +59,7 @@ function module:HydrateCards()
 		warn("Failed to fetch profile for card hydration.")
 
 		local snackbar = hint.new()
-		snackbar:SetText("Failed to load your profile. Please try again later.")
+		snackbar:SetText("Failed to load your data. Please try again later.")
 		snackbar:SetExpiry(2)
 		snackbar:SetCanClick(true)
 		snackbar:SetAction(function()
@@ -75,6 +75,8 @@ function module:HydrateCards()
 			return
 		end
 	end
+
+	module:UnloadCards()
 
 	for card_name, quantity in pairs(profile.Data.cards) do
 		if quantity <= 0 then

@@ -28,8 +28,20 @@ local CLEARANCE_RETRY_INTERVAL = 0.25
 local COMFORT_ACCELERATION = 6
 local COMFORT_DECELERATION = 10
 
+local CURVE_SCAN_INTERVAL = 0.25
+local CURVE_SCAN_RADIUS = 52
+local CURVE_SCAN_LOOKAHEAD = 72
+local CURVE_SCAN_BACKTRACK = 10
+local CURVE_SCAN_LATERAL_TOLERANCE = 26
+local CURVE_SOFT_ANGLE = 6
+local CURVE_HARD_ANGLE = 20
+local CURVE_MIN_SPEED_FACTOR = 0.45
+
 local DEFAULT_FOLLOW_DISTANCE = 180
 local DEFAULT_LATERAL_TOLERANCE = 22
+local FOLLOW_DISTANCE_SPEED_FACTOR = 2.2
+local YIELD_STOP_BUFFER = 10
+
 local DEFAULT_DOOR_OFFSET_LEFT = Vector3.new(-1, 0, 6)
 local DEFAULT_DOOR_OFFSET_RIGHT = Vector3.new(1, 0, 6)
 local PASSENGER_SCAN_PADDING = Vector3.new(12, 8, 12)
@@ -38,6 +50,50 @@ local INACTIVE_ROUTE_TRANSPARENCY = 0.75
 local LIGHT_COLOR_FORWARD = Color3.new(1, 0.95, 0.88)
 local LIGHT_COLOR_REVERSE = Color3.new(0.66, 0, 0)
 local LIGHT_COLOR_OFF = Color3.new(0.1, 0.1, 0.1)
+
+local TRACK_CONTAINER_TOKENS = {
+	track = true,
+	rail = true,
+	switch = true,
+	junction = true,
+	crossing = true,
+	turnout = true,
+	metro = true,
+}
+
+local SWITCH_CONTAINER_TOKENS = {
+	switch = true,
+	junction = true,
+	turnout = true,
+	crossing = true,
+}
+
+local ROUTE_SUFFIX_TOKENS = {
+	left = true,
+	right = true,
+	inner = true,
+	outer = true,
+	rail = true,
+	tie = true,
+	bed = true,
+	wall = true,
+	teeth = true,
+	sleeper = true,
+	point = true,
+}
+
+local TRACK_SUPPORT_TOKENS = {
+	bed = true,
+	wall = true,
+	tie = true,
+	teeth = true,
+	ballast = true,
+	sleeper = true,
+	support = true,
+	base = true,
+	floor = true,
+	guard = true,
+}
 
 type door_side = "left" | "right"
 
@@ -77,6 +133,14 @@ export type Train = {
 
 export type TrainService = {
 	[string]: any,
+}
+
+type train_conflict = {
+	train: Train,
+	along_distance: number,
+	lateral_distance: number,
+	linear_distance: number,
+	head_on: boolean,
 }
 
 --[[
@@ -284,6 +348,66 @@ local function collect_base_parts(container: Instance): { BasePart }
 	return parts
 end
 
+local function name_contains_any_token(name: string, token_map: { [string]: boolean }): boolean
+	local lowered_name = string.lower(name)
+	for token in pairs(token_map) do
+		if string.find(lowered_name, token, 1, true) then
+			return true
+		end
+	end
+
+	return false
+end
+
+local function to_word_tokens(name: string): { string }
+	local normalized_name = string.gsub(name, "[_%-%s]+", " ")
+	normalized_name = string.gsub(normalized_name, "(%l)(%u)", "%1 %2")
+
+	local tokens = {}
+	for token in string.gmatch(normalized_name, "[%w]+") do
+		table.insert(tokens, token)
+	end
+
+	return tokens
+end
+
+local function is_rail_name(name: string): boolean
+	return string.find(string.lower(name), "rail", 1, true) ~= nil
+end
+
+local function is_track_support_name(name: string): boolean
+	return name_contains_any_token(name, TRACK_SUPPORT_TOKENS)
+end
+
+local function infer_route_name_from_part_name(part_name: string): string?
+	if not is_rail_name(part_name) then
+		return nil
+	end
+
+	local tokens = to_word_tokens(part_name)
+	if #tokens == 0 then
+		return nil
+	end
+
+	local last_route_token_index = #tokens
+	while last_route_token_index > 1 do
+		local suffix_token = string.lower(tokens[last_route_token_index])
+		if not ROUTE_SUFFIX_TOKENS[suffix_token] then
+			break
+		end
+
+		last_route_token_index -= 1
+	end
+
+	local route_name = table.concat(tokens, "", 1, last_route_token_index)
+	route_name = trim(route_name)
+	if route_name == "" then
+		return nil
+	end
+
+	return route_name
+end
+
 local function update_light_color(light: Instance, direction: number)
 	local spotlight = light:FindFirstChild("SpotLight")
 	local surface_gui = light:FindFirstChild("SurfaceGui")
@@ -334,15 +458,16 @@ local function get_station_sensor(hit_part: BasePart): BasePart?
 end
 
 local function ensure_body_velocity(engine: BasePart): BodyVelocity
+	-- TODO: convert this into linear velocity
 	local body_velocity = engine:FindFirstChildOfClass("BodyVelocity")
 	if body_velocity then
-		body_velocity.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+		body_velocity.MaxForce = Vector3.new(math.huge, 0, math.huge)
 		return body_velocity
 	end
 
 	local created = Instance.new("BodyVelocity")
 	created.Name = "BodyVelocity"
-	created.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+	created.MaxForce = Vector3.new(math.huge, 0, math.huge)
 	created.P = 2e4
 	created.Velocity = Vector3.zero
 	created.Parent = engine
@@ -377,6 +502,7 @@ function service_class.new(): TrainService
 		trains = {},
 		trains_by_model = {},
 		switches = {},
+		track_route_parts = {},
 		track_blocks = {},
 		connections = {},
 		next_train_serial = 0,
@@ -393,6 +519,7 @@ function service_class.new(): TrainService
 	end)
 
 	self:_index_switches()
+	self:_normalize_track_collisions()
 	self:_bootstrap_trains()
 	self:_watch_workspace()
 	self:_start_heartbeat()
@@ -411,6 +538,39 @@ function service_class:_index_single_switch(switch_container: Instance)
 	end
 
 	local routes: { [string]: { BasePart } } = {}
+	local route_parts_lookup = {}
+
+	local function append_route_parts(route_name: string, parts: { BasePart })
+		if #parts == 0 then
+			return
+		end
+
+		local cleaned_route_name = trim(route_name)
+		if cleaned_route_name == "" then
+			return
+		end
+
+		local route_parts = routes[cleaned_route_name]
+		if not route_parts then
+			route_parts = {}
+			routes[cleaned_route_name] = route_parts
+		end
+
+		local route_lookup = route_parts_lookup[cleaned_route_name]
+		if not route_lookup then
+			route_lookup = {}
+			route_parts_lookup[cleaned_route_name] = route_lookup
+		end
+
+		for _, part in ipairs(parts) do
+			if route_lookup[part] then
+				continue
+			end
+
+			route_lookup[part] = true
+			table.insert(route_parts, part)
+		end
+	end
 
 	for _, child in ipairs(switch_container:GetChildren()) do
 		local route_name = get_string_attribute(child, "RouteName")
@@ -434,7 +594,7 @@ function service_class:_index_single_switch(switch_container: Instance)
 			continue
 		end
 
-		routes[route_name] = collect_base_parts(child)
+		append_route_parts(route_name, collect_base_parts(child))
 	end
 
 	if next(routes) == nil then
@@ -448,17 +608,40 @@ function service_class:_index_single_switch(switch_container: Instance)
 				continue
 			end
 
-			if not routes[route_name] then
-				routes[route_name] = {}
+			append_route_parts(route_name, { descendant })
+		end
+	end
+
+	if next(routes) == nil then
+		for _, descendant in ipairs(switch_container:GetDescendants()) do
+			if not descendant:IsA("BasePart") then
+				continue
 			end
 
-			table.insert(routes[route_name], descendant)
+			local inferred_route_name = infer_route_name_from_part_name(descendant.Name)
+			if not inferred_route_name then
+				continue
+			end
+
+			append_route_parts(inferred_route_name, { descendant })
 		end
 	end
 
 	local populated_routes = 0
-	for _, parts in pairs(routes) do
-		if #parts == 0 then
+	local active_route_parts = {}
+	for _, route_parts in pairs(routes) do
+		local live_parts = 0
+		for _, part in ipairs(route_parts) do
+			if not part:IsDescendantOf(switch_container) then
+				continue
+			end
+
+			live_parts += 1
+			active_route_parts[part] = true
+			self.track_route_parts[part] = true
+		end
+
+		if live_parts == 0 then
 			continue
 		end
 
@@ -474,10 +657,31 @@ function service_class:_index_single_switch(switch_container: Instance)
 		model = switch_container,
 		routes = routes,
 	}
+
+	for _, descendant in ipairs(switch_container:GetDescendants()) do
+		if not descendant:IsA("BasePart") then
+			continue
+		end
+
+		if active_route_parts[descendant] then
+			continue
+		end
+
+		if descendant:GetAttribute("PreserveCanCollide") == true then
+			continue
+		end
+
+		if not is_track_support_name(descendant.Name) then
+			continue
+		end
+
+		descendant.CanCollide = false
+	end
 end
 
 function service_class:_index_switches()
 	table.clear(self.switches)
+	table.clear(self.track_route_parts)
 
 	local switch_container = Workspace:FindFirstChild("TrainSwitches")
 	if switch_container then
@@ -487,15 +691,99 @@ function service_class:_index_switches()
 	end
 
 	for _, descendant in ipairs(Workspace:GetDescendants()) do
-		if descendant:GetAttribute("SwitchId") == nil then
-			continue
-		end
-
 		if not descendant:IsA("Model") and not descendant:IsA("Folder") then
 			continue
 		end
 
+		local has_switch_id = descendant:GetAttribute("SwitchId") ~= nil
+		local has_switch_name = name_contains_any_token(descendant.Name, SWITCH_CONTAINER_TOKENS)
+		if not has_switch_id and not has_switch_name then
+			continue
+		end
+
 		self:_index_single_switch(descendant)
+	end
+end
+
+function service_class:_is_track_related_instance(instance: Instance): boolean
+	if instance:GetAttribute("IsTrack") == true or instance:GetAttribute("IsTrackModel") == true then
+		return true
+	end
+
+	return name_contains_any_token(instance.Name, TRACK_CONTAINER_TOKENS)
+end
+
+function service_class:_is_track_related_part(part: BasePart): boolean
+	if part:GetAttribute("IsTrackPart") == true or part:GetAttribute("IsRailPart") == true then
+		return true
+	end
+
+	if is_rail_name(part.Name) then
+		return true
+	end
+
+	local ancestor = part.Parent
+	while ancestor and ancestor ~= Workspace do
+		if self:_is_track_related_instance(ancestor) then
+			return true
+		end
+
+		ancestor = ancestor.Parent
+	end
+
+	return false
+end
+
+function service_class:is_motion_rail_part(part: BasePart): boolean
+	if self.track_route_parts[part] then
+		return true
+	end
+
+	if part:GetAttribute("IsRailPart") == true then
+		return true
+	end
+
+	local track_role = get_string_attribute(part, "TrackRole")
+	if track_role and string.lower(track_role) == "rail" then
+		return true
+	end
+
+	return is_rail_name(part.Name)
+end
+
+function service_class:_normalize_track_part_collision(part: BasePart)
+	if not self:_is_track_related_part(part) then
+		return
+	end
+
+	if self:is_motion_rail_part(part) then
+		return
+	end
+
+	if part:GetAttribute("PreserveCanCollide") == true then
+		return
+	end
+
+	local track_role = get_string_attribute(part, "TrackRole")
+	if track_role and string.lower(track_role) == "support" then
+		part.CanCollide = false
+		return
+	end
+
+	if not is_track_support_name(part.Name) then
+		return
+	end
+
+	part.CanCollide = false
+end
+
+function service_class:_normalize_track_collisions()
+	for _, descendant in ipairs(Workspace:GetDescendants()) do
+		if not descendant:IsA("BasePart") then
+			continue
+		end
+
+		self:_normalize_track_part_collision(descendant)
 	end
 end
 
@@ -511,8 +799,34 @@ function service_class:apply_switch_routes(routes: route_map)
 			continue
 		end
 
+		local active_route_name = nil
+		for current_route in pairs(switch_data.routes) do
+			local normalized_current_route = string.lower(current_route)
+			if normalized_current_route == target_route then
+				active_route_name = current_route
+				break
+			end
+		end
+
+		if not active_route_name then
+			for current_route in pairs(switch_data.routes) do
+				local normalized_current_route = string.lower(current_route)
+				local starts_with_target = string.find(normalized_current_route, target_route, 1, true) == 1
+				local target_starts_with_route = string.find(target_route, normalized_current_route, 1, true)
+					== 1
+				if starts_with_target or target_starts_with_route then
+					active_route_name = current_route
+					break
+				end
+			end
+		end
+
+		if not active_route_name then
+			continue
+		end
+
 		for current_route, parts in pairs(switch_data.routes) do
-			local active = string.lower(current_route) == target_route
+			local active = current_route == active_route_name
 			for _, part in ipairs(parts) do
 				if not part:IsDescendantOf(Workspace) then
 					continue
@@ -593,14 +907,38 @@ function service_class:release_blocks(train: Train, block_ids: { string }?)
 	table.clear(train.owned_blocks)
 end
 
-function service_class:find_blocking_train(
+function service_class:_distance_to_target_station(train: Train): number
+	local target_station = train.target_station
+	if typeof(target_station) ~= "Instance" then
+		return math.huge
+	end
+
+	if not target_station:IsA("BasePart") then
+		return math.huge
+	end
+
+	if not target_station:IsDescendantOf(Workspace) then
+		return math.huge
+	end
+
+	return (target_station.Position - train.engine.Position).Magnitude
+end
+
+function service_class:find_train_conflict(
 	train: Train,
 	depart_direction: number,
 	safe_distance: number,
 	lateral_tolerance: number
-): Train?
-	local forward = train.engine.CFrame.LookVector.Unit * depart_direction
+): train_conflict?
+	local active_direction = depart_direction
+	if active_direction == 0 then
+		active_direction = if train.depart_throttle == 0 then 1 else train.depart_throttle
+	end
+
+	local forward = train.engine.CFrame.LookVector.Unit * active_direction
 	local origin = train.engine.Position
+	local best_conflict = nil
+	local best_conflict_score = math.huge
 
 	for _, other_train in ipairs(self.trains) do
 		if other_train == train then
@@ -612,24 +950,93 @@ function service_class:find_blocking_train(
 		end
 
 		local delta = other_train.engine.Position - origin
-		local along = delta:Dot(forward)
-		if along <= 0 then
+		local along_distance = delta:Dot(forward)
+		if along_distance <= 0 then
 			continue
 		end
 
-		if along > safe_distance then
+		local linear_distance = delta.Magnitude
+		if linear_distance > safe_distance then
 			continue
 		end
 
-		local lateral = (delta - (forward * along)).Magnitude
-		if lateral > lateral_tolerance then
+		local lateral_distance = (delta - (forward * along_distance)).Magnitude
+		if lateral_distance > lateral_tolerance then
 			continue
 		end
 
-		return other_train
+		local other_direction = if other_train.depart_throttle == 0 then 1 else other_train.depart_throttle
+		local other_forward = other_train.engine.CFrame.LookVector.Unit * other_direction
+		local head_on = forward:Dot(other_forward) < -0.2
+		local conflict_score = if head_on
+			then (along_distance * 0.5) + (linear_distance * 0.5)
+			else along_distance
+		if conflict_score >= best_conflict_score then
+			continue
+		end
+
+		best_conflict_score = conflict_score
+		best_conflict = {
+			train = other_train,
+			along_distance = along_distance,
+			lateral_distance = lateral_distance,
+			linear_distance = linear_distance,
+			head_on = head_on,
+		}
 	end
 
-	return nil
+	return best_conflict
+end
+
+function service_class:should_yield_to_conflict(train: Train, conflict: train_conflict): boolean
+	local other_train = conflict.train
+	if other_train == train then
+		return false
+	end
+
+	if other_train.destroyed then
+		return false
+	end
+
+	if not conflict.head_on then
+		return true
+	end
+
+	if train.station_processing and not other_train.station_processing then
+		return true
+	end
+
+	if other_train.station_processing and not train.station_processing then
+		return false
+	end
+
+	local train_station_distance = self:_distance_to_target_station(train)
+	local other_station_distance = self:_distance_to_target_station(other_train)
+	if math.abs(train_station_distance - other_station_distance) > 4 then
+		return train_station_distance > other_station_distance
+	end
+
+	local train_speed = train.engine.AssemblyLinearVelocity.Magnitude
+	local other_speed = other_train.engine.AssemblyLinearVelocity.Magnitude
+	if math.abs(train_speed - other_speed) > 0.1 then
+		return train_speed < other_speed
+	end
+
+	return train.id > other_train.id
+end
+
+function service_class:find_blocking_train(
+	train: Train,
+	depart_direction: number,
+	safe_distance: number,
+	lateral_tolerance: number
+): Train?
+	local conflict = self:find_train_conflict(train, depart_direction, safe_distance, lateral_tolerance)
+	if not conflict then
+		return nil
+	end
+
+	return conflict.train
 end
 
 function service_class:_is_descendant_of_registered_train(model: Model): boolean
@@ -740,9 +1147,35 @@ function service_class:_watch_workspace()
 					return
 				end
 
+				if instance:IsA("BasePart") then
+					self:_normalize_track_part_collision(instance)
+				end
+
 				local train_model = instance:FindFirstAncestorWhichIsA("Model") or instance
 				if train_model:IsA("Model") then
 					self:register_train_model(train_model)
+				end
+
+				local should_refresh_switches = false
+				local is_switch_container = instance:IsA("Model") or instance:IsA("Folder")
+				if is_switch_container then
+					if instance:GetAttribute("SwitchId") ~= nil then
+						should_refresh_switches = true
+					end
+
+					if name_contains_any_token(instance.Name, SWITCH_CONTAINER_TOKENS) then
+						should_refresh_switches = true
+					end
+
+					local train_switches = Workspace:FindFirstChild("TrainSwitches")
+					if train_switches and instance.Parent == train_switches then
+						should_refresh_switches = true
+					end
+				end
+
+				if should_refresh_switches then
+					self:_index_switches()
+					self:_normalize_track_collisions()
 				end
 			end)
 		end)
@@ -751,6 +1184,34 @@ function service_class:_watch_workspace()
 	table.insert(
 		self.connections,
 		Workspace.DescendantRemoving:Connect(function(instance)
+			if instance:IsA("BasePart") then
+				self.track_route_parts[instance] = nil
+				return
+			end
+
+			local should_refresh_switches = false
+			local is_switch_container = instance:IsA("Model") or instance:IsA("Folder")
+			if is_switch_container then
+				if instance:GetAttribute("SwitchId") ~= nil then
+					should_refresh_switches = true
+				end
+
+				if name_contains_any_token(instance.Name, SWITCH_CONTAINER_TOKENS) then
+					should_refresh_switches = true
+				end
+			end
+
+			if should_refresh_switches then
+				task.defer(function()
+					if self.destroyed then
+						return
+					end
+
+					self:_index_switches()
+					self:_normalize_track_collisions()
+				end)
+			end
+
 			if not instance:IsA("Model") then
 				return
 			end
@@ -793,6 +1254,7 @@ function service_class:destroy()
 	end
 	table.clear(self.trains)
 	table.clear(self.trains_by_model)
+	table.clear(self.track_route_parts)
 	table.clear(self.track_blocks)
 end
 
@@ -837,11 +1299,37 @@ function train_class.new(service: TrainService, train_id: string, train_model: M
 			or DEFAULT_FOLLOW_DISTANCE,
 		lateral_tolerance = get_number_attribute(train_model, "LateralTolerance")
 			or DEFAULT_LATERAL_TOLERANCE,
+		curve_scan_radius = get_number_attribute(train_model, "CurveScanRadius") or CURVE_SCAN_RADIUS,
+		curve_scan_lookahead = get_number_attribute(train_model, "CurveScanLookahead")
+			or CURVE_SCAN_LOOKAHEAD,
+		curve_scan_lateral_tolerance = get_number_attribute(train_model, "CurveScanLateralTolerance")
+			or CURVE_SCAN_LATERAL_TOLERANCE,
+		curve_soft_angle = get_number_attribute(train_model, "CurveSoftAngle") or CURVE_SOFT_ANGLE,
+		curve_hard_angle = get_number_attribute(train_model, "CurveHardAngle") or CURVE_HARD_ANGLE,
+		curve_min_speed_factor = get_number_attribute(train_model, "CurveMinSpeedFactor")
+			or CURVE_MIN_SPEED_FACTOR,
+		last_curve_scan_tick = 0,
+		curve_speed_factor = 1,
+		yielding_to_train_id = nil,
+		rail_scan_params = nil,
 		ambient_speed_ratio = 0,
 		target_station = nil,
 		ambient_sound = nil,
 		clattering_sound = nil,
 	}, train_class)
+
+	self.curve_scan_radius = math.max(self.curve_scan_radius, 8)
+	self.curve_scan_lookahead = math.max(self.curve_scan_lookahead, 16)
+	self.curve_scan_lateral_tolerance = math.max(self.curve_scan_lateral_tolerance, 4)
+	self.curve_soft_angle = math.clamp(self.curve_soft_angle, 1, 30)
+	self.curve_hard_angle = math.max(self.curve_hard_angle, self.curve_soft_angle + 1)
+	self.curve_min_speed_factor = math.clamp(self.curve_min_speed_factor, 0.1, 1)
+
+	local rail_scan_params = OverlapParams.new()
+	rail_scan_params.FilterType = Enum.RaycastFilterType.Exclude
+	rail_scan_params.FilterDescendantsInstances = { self.model }
+	rail_scan_params.MaxParts = 128
+	self.rail_scan_params = rail_scan_params
 
 	self:_discover_carriages()
 	self:_setup_physics()
@@ -1436,14 +1924,19 @@ function train_class:_wait_for_clearance(config: station_config)
 			got_blocks = self._service:try_claim_blocks(self, config.required_blocks)
 		end
 
-		local blocking_train = self._service:find_blocking_train(
+		local conflict = self._service:find_train_conflict(
 			self,
 			config.depart_direction,
 			self.safe_follow_distance,
 			self.lateral_tolerance
 		)
 
-		if got_blocks and not blocking_train then
+		local should_yield = false
+		if conflict then
+			should_yield = self._service:should_yield_to_conflict(self, conflict)
+		end
+
+		if got_blocks and not should_yield then
 			return
 		end
 
@@ -1560,48 +2053,140 @@ function train_class:_connect()
 	)
 end
 
+function train_class:_compute_station_target_throttle(current_speed: number, max_speed: number): number
+	if not self.target_station then
+		return 1
+	end
+
+	if self.station_processing then
+		return self.throttle_value.Value
+	end
+
+	if not self.target_station:IsDescendantOf(Workspace) then
+		self.target_station = nil
+		return 1
+	end
+
+	local delta = self.target_station.Position - self.engine.Position
+	local distance = delta.Magnitude
+	local braking_distance = (current_speed * current_speed) / (2 * COMFORT_DECELERATION)
+	if distance > braking_distance + 2 then
+		return 1
+	end
+
+	local target_speed = math.sqrt(2 * COMFORT_DECELERATION * math.max(0, distance - 2))
+	return math.clamp(target_speed / max_speed, 0, 1)
+end
+
+function train_class:_compute_curve_speed_factor(forward_vector: Vector3): number
+	local nearby_parts =
+		Workspace:GetPartBoundsInRadius(self.engine.Position, self.curve_scan_radius, self.rail_scan_params)
+	local max_curve_angle = 0
+
+	for _, part in ipairs(nearby_parts) do
+		if not self._service:is_motion_rail_part(part) then
+			continue
+		end
+
+		local delta = part.Position - self.engine.Position
+		local along = delta:Dot(forward_vector)
+		if along < -CURVE_SCAN_BACKTRACK or along > self.curve_scan_lookahead then
+			continue
+		end
+
+		local lateral = (delta - (forward_vector * along)).Magnitude
+		if lateral > self.curve_scan_lateral_tolerance then
+			continue
+		end
+
+		local part_forward = part.CFrame.LookVector.Unit
+		local alignment = math.abs(forward_vector:Dot(part_forward))
+		alignment = math.clamp(alignment, -1, 1)
+		local curve_angle = math.deg(math.acos(alignment))
+		if curve_angle > max_curve_angle then
+			max_curve_angle = curve_angle
+		end
+	end
+
+	if max_curve_angle <= self.curve_soft_angle then
+		return 1
+	end
+
+	local angle_span = math.max(self.curve_hard_angle - self.curve_soft_angle, 0.001)
+	local curve_alpha = math.clamp((max_curve_angle - self.curve_soft_angle) / angle_span, 0, 1)
+	return 1 - ((1 - self.curve_min_speed_factor) * curve_alpha)
+end
+
+function train_class:_refresh_curve_speed_factor(now: number, forward_vector: Vector3)
+	if (now - self.last_curve_scan_tick) < CURVE_SCAN_INTERVAL then
+		return
+	end
+
+	self.last_curve_scan_tick = now
+	self.curve_speed_factor = self:_compute_curve_speed_factor(forward_vector)
+end
+
+function train_class:_approach_throttle(target_throttle: number, max_speed: number, dt: number)
+	local clamped_target_throttle = math.clamp(target_throttle, 0, 1)
+	local difference = clamped_target_throttle - self.throttle_value.Value
+	if math.abs(difference) <= 1e-4 then
+		return
+	end
+
+	local acceleration_rate = if difference > 0 then COMFORT_ACCELERATION else COMFORT_DECELERATION
+	local throttle_step = (acceleration_rate / max_speed) * dt
+	if math.abs(difference) <= throttle_step then
+		self.throttle_value.Value = clamped_target_throttle
+		return
+	end
+
+	self.throttle_value.Value += math.sign(difference) * throttle_step
+end
+
 function train_class:_step(dt: number)
 	if self.destroyed then
 		return
 	end
 
-	local current_speed = self.engine.AssemblyLinearVelocity.Magnitude
 	local max_speed = math.max(self.seat.MaxSpeed, 0.01)
+	local current_speed = self.engine.AssemblyLinearVelocity.Magnitude
+	local forward_vector = self.engine.CFrame.LookVector.Unit * self.depart_throttle
+	local now = os.clock()
 
-	if self.target_station and not self.station_processing then
-		local delta = self.target_station.Position - self.engine.Position
-		local distance = delta.Magnitude
+	self:_refresh_curve_speed_factor(now, forward_vector)
 
-		-- v^2 = 2as => s = v^2 / 2a
-		local braking_distance = (current_speed * current_speed) / (2 * COMFORT_DECELERATION)
+	local desired_throttle = self.throttle_value.Value
+	local conflict_safe_distance = math.max(
+		self.safe_follow_distance,
+		(current_speed * FOLLOW_DISTANCE_SPEED_FACTOR) + YIELD_STOP_BUFFER
+	)
+	if not self.station_processing then
+		desired_throttle = 1
+		desired_throttle =
+			math.min(desired_throttle, self:_compute_station_target_throttle(current_speed, max_speed))
+		desired_throttle = math.min(desired_throttle, self.curve_speed_factor)
 
-		if distance <= braking_distance + 2 then
-			-- Gradual deceleration
-			local target_speed = math.sqrt(2 * COMFORT_DECELERATION * math.max(0, distance - 2))
-			local target_throttle = math.clamp(target_speed / max_speed, 0, 1)
-
-			local diff = target_throttle - self.throttle_value.Value
-			local step = (COMFORT_DECELERATION / max_speed) * dt
-			if math.abs(diff) < step then
-				self.throttle_value.Value = target_throttle
-			else
-				self.throttle_value.Value += math.sign(diff) * step
-			end
+		local conflict = self._service:find_train_conflict(
+			self,
+			self.depart_throttle,
+			conflict_safe_distance,
+			self.lateral_tolerance
+		)
+		if conflict and self._service:should_yield_to_conflict(self, conflict) then
+			local stop_distance = math.max(conflict.along_distance - YIELD_STOP_BUFFER, 0)
+			local yield_speed = math.sqrt(2 * COMFORT_DECELERATION * stop_distance)
+			local yield_throttle = math.clamp(yield_speed / max_speed, 0, 1)
+			desired_throttle = math.min(desired_throttle, yield_throttle)
+			self.yielding_to_train_id = conflict.train.id
 		else
-			-- Acceleration
-			local target_throttle = 1
-			local diff = target_throttle - self.throttle_value.Value
-			local step = (COMFORT_ACCELERATION / max_speed) * dt
-			if math.abs(diff) < step then
-				self.throttle_value.Value = target_throttle
-			else
-				self.throttle_value.Value += math.sign(diff) * step
-			end
+			self.yielding_to_train_id = nil
 		end
 	end
 
-	local target_velocity = self.engine.CFrame.LookVector.Unit
-		* (math.abs(self.throttle_value.Value) * self.depart_throttle * max_speed)
+	self:_approach_throttle(desired_throttle, max_speed, dt)
+	self.seat.Throttle = if self.throttle_value.Value > 0.01 then self.depart_throttle else 0
+
+	local target_velocity = forward_vector * (math.abs(self.throttle_value.Value) * max_speed)
 	self.engine_velocity.Velocity = target_velocity
 
 	local speed_ratio = current_speed / max_speed

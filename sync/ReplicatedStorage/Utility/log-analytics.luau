@@ -4,6 +4,12 @@
 ]]
 
 local AnalyticsService = game:GetService("AnalyticsService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
+
+-- we are having problems with analytic rates.
+local analytic_rate = ratelimit(2, 3)
 
 export type CustomFields = { [string]: string }
 
@@ -107,6 +113,9 @@ local function INFO_TO_CUSTOM_FIELDS(info: BaseAnalyticsInfo): ConvertedCustomFi
 end
 
 local function onboarding_funnel_step(player: Player, info: AnalyticsOnboardingFunnelStepInfo)
+	if not analytic_rate() then
+		task.wait(math.random(1, 5))
+	end
 	AnalyticsService:LogOnboardingFunnelStepEvent(
 		player,
 		info.step,
@@ -116,6 +125,9 @@ local function onboarding_funnel_step(player: Player, info: AnalyticsOnboardingF
 end
 
 local function progression(player: Player, info: AnalyticsProgressionInfo)
+	if not analytic_rate() then
+		task.wait(math.random(1, 5))
+	end
 	AnalyticsService:LogProgressionEvent(
 		player,
 		info.path_name,
@@ -127,6 +139,9 @@ local function progression(player: Player, info: AnalyticsProgressionInfo)
 end
 
 local function funnel_step(player: Player, info: AnalyticsFunnelStepInfo)
+	if not analytic_rate() then
+		task.wait(math.random(1, 5))
+	end
 	AnalyticsService:LogFunnelStepEvent(
 		player,
 		info.funnel_name,
@@ -138,6 +153,9 @@ local function funnel_step(player: Player, info: AnalyticsFunnelStepInfo)
 end
 
 local function custom(player: Player, info: AnalyticsCustomEventInfo)
+	if not analytic_rate() then
+		task.wait(math.random(1, 5))
+	end
 	AnalyticsService:LogCustomEvent(player, info.name, info.value, INFO_TO_CUSTOM_FIELDS(info))
 end
 
@@ -155,6 +173,9 @@ end
 	```
 ]]
 local function economy(player: Player, info: AnalyticsEconomyInfo)
+	if not analytic_rate() then
+		task.wait(math.random(1, 5))
+	end
 	AnalyticsService:LogEconomyEvent(
 		player,
 		info.flow_type,
@@ -171,6 +192,9 @@ local logger = {} :: LoggerPrototype
 logger.__index = logger
 
 logger.event = function(logger: any, name: string, fields: CustomFields?)
+	if not analytic_rate() then
+		task.wait(math.random(1, 5))
+	end
 	if fields then
 		logger[name] = function(player: Player, info: CustomLoggerMethodInfo)
 			AnalyticsService:LogCustomEvent(player, name, info.value, TABLE_TO_CUSTOM_FIELDS(info.fields))

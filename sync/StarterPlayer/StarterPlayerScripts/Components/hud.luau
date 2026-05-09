@@ -12,9 +12,11 @@ local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
+local screen_3d = require(StarterPlayer.StarterPlayerScripts.Interface["screen-3d"])
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local state_machine = require(ReplicatedStorage.Utility["state-machine"])
+local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
 local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
@@ -39,7 +41,7 @@ end
 
 module.horizontal_position:Set("left")
 
-local global_ratelimit = ratelimit(3, 2.5)
+local global_ratelimit = ratelimit(1, 3.3) :: ratelimit.Ratelimit<string>
 
 local pool = PoolerPlus:CreatePool("HudPool", function()
 	local templates = ReplicatedStorage.Interfaces
@@ -67,7 +69,7 @@ function module.new(name: string, callback: () -> (), icon: typemarshaller.Lucid
 		icon = icon,
 		reactor = observer.new(false) :: observer.Observer<boolean>,
 		limit = ratelimit(1, 3.5) :: ratelimit.Ratelimit<string>,
-		hover_limit = ratelimit(1, 0.9) :: ratelimit.Ratelimit<string>,
+		hover_limit = ratelimit(3, 0.9) :: ratelimit.Ratelimit<string>,
 		text_button = pool:Get(),
 		is_large = is_large,
 	}
@@ -77,6 +79,14 @@ end
 
 local hud_container = player.PlayerGui.Hud
 local hud_background = hud_container.Background
+
+hud_background.Position = UDim2.fromScale(0.52, 0.87)
+
+local screen3d = screen_3d.new(hud_container, 5)
+local component3d = screen3d:GetComponent3D(hud_background)
+component3d:Enable()
+
+component3d.offset = CFrame.Angles(0, math.rad(7), 0) -- rotates 3D UI element 7 degrees on the Y axis to give a slight perspective effect
 
 function module:Render()
 	for _, button in ipairs(hud_container:GetChildren()) do
@@ -134,6 +144,8 @@ function module:Render()
 
 		text_button.Activated:Connect(function()
 			if not button.limit(button.name) or not global_ratelimit() then
+				audio:PlaySFX("cancel")
+
 				return
 			end
 
@@ -146,10 +158,15 @@ function module:Render()
 				CornerRadius = UDim.new(1 / 8, 0), -- 0.125
 			})
 
+			spr.stop(icon_image, "Rotation")
+			spr.target(icon_image, 0.35, 8, {
+				Rotation = 15,
+			})
+
 			spr.stop(text_button, "BackgroundColor3")
 			spr.stop(text_button, "Size")
 			spr.target(text_button, 0.7, 5, {
-				Size = default_size + UDim2.fromOffset(10, 0),
+				Size = default_size + UDim2.fromOffset(10, 10),
 				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
 			})
 
@@ -158,15 +175,33 @@ function module:Render()
 			button.reactor:Map(function(current)
 				return not current
 			end)
+
+			-- stop all other buttons
+			for _, other_button in ipairs(module.buttons) do
+				if other_button.name ~= button.name then
+					other_button.reactor:Set(false)
+				end
+			end
 		end)
 
 		text_button.MouseButton1Up:Connect(function()
 			-- revert the "pop" of the UICorner and button size
 			-- and the color of the button
 
+			if button.reactor:Get() then
+				audio:PlaySFX("cancel")
+
+				return
+			end
+
 			spr.stop(ui_corner)
 			spr.target(ui_corner, 0.7, 4.9, {
 				CornerRadius = default_corner,
+			})
+
+			spr.stop(icon_image, "Rotation")
+			spr.target(icon_image, 0.35, 8, {
+				Rotation = 0,
 			})
 
 			spr.stop(text_button, "Size")
@@ -179,10 +214,21 @@ function module:Render()
 
 		text_button.MouseEnter:Connect(function()
 			if not button.hover_limit(button.name) then
+				audio:PlaySFX("cancel")
+
 				return
 			end
 
-			wiggle(icon_image)
+			if button.reactor:Get() then
+				audio:PlaySFX("cancel")
+
+				return
+			end
+
+			spr.stop(icon_image, "Rotation")
+			spr.target(icon_image, 0.35, 8, {
+				Rotation = 15,
+			})
 
 			-- mouse hover effect
 			spr.stop(text_button, "Size")
@@ -194,6 +240,17 @@ function module:Render()
 		end)
 
 		text_button.MouseLeave:Connect(function()
+			if button.reactor:Get() then
+				audio:PlaySFX("cancel")
+
+				return
+			end
+
+			spr.stop(icon_image, "Rotation")
+			spr.target(icon_image, 0.35, 8, {
+				Rotation = 0,
+			})
+
 			spr.stop(text_button, "Size")
 			spr.stop(text_button, "BackgroundColor3")
 			spr.target(text_button, 0.8, 8, {
@@ -217,9 +274,16 @@ function module:Render()
 					Rotation = 15,
 				})
 			else
-				spr.stop(icon_image)
+				spr.stop(icon_image, "Rotation")
 				spr.target(icon_image, 0.35, 8, {
 					Rotation = 0,
+				})
+
+				spr.stop(text_button, "Size")
+				spr.stop(text_button, "BackgroundColor3")
+				spr.target(text_button, 0.8, 8, {
+					BackgroundColor3 = default_color,
+					Size = default_size,
 				})
 			end
 
@@ -230,7 +294,8 @@ function module:Render()
 			end
 		end)
 
-		shadow(text_button, Color3.new(), 0.5)
+		-- dynamic shadow transparency based on button index, so that buttons further down the list have a more transparent shadow, to create a sense of depth.
+		shadow(text_button, Color3.new(), 0.5 + (i * 0.05), 16, 1, 1)
 		--tooltip.register(text_button, button.name)
 	end
 end

@@ -6,6 +6,7 @@ local TweenService = game:GetService("TweenService")
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local future = require(ReplicatedStorage.Packages.future)
 local hydration = require(ReplicatedStorage.Utility.hydration)
+local lerp = require(StarterPlayer.StarterPlayerScripts.Utilities.lerp)
 local observer = require(ReplicatedStorage.Utility.observer)
 local spr = require(ReplicatedStorage.Modules.spr)
 local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
@@ -122,8 +123,8 @@ function module.SetValue(self: PhysicalBar, value: number)
 
 	local scale = UDim2.fromScale(1, percentage)
 
-	spr.stop(inner_bar, "Size")
-	spr.target(inner_bar, 0.8, 8, {
+	spr.stop(bar_frame, "Size")
+	spr.target(bar_frame, 0.8, 4, {
 		Size = scale,
 	})
 end

@@ -16,7 +16,7 @@ return function()
 	end)
 
 	repeat
-		task.wait(1)
+		task.wait(1 / 10)
 	--print("pending profile fetch")
 	until not fut:IsPending()
 

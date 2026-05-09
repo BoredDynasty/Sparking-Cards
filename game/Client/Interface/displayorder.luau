@@ -68,13 +68,13 @@ local function openCanvas(canvas_data: CanvasData)
 	-- rest below the screen
 	canvas_data.canvas.Position = UDim2.fromScale(0.5, 2)
 
-	spr.target(scale, 0.5, 1.5, {
+	spr.target(scale, 0.45, 1.5, {
 		Scale = 1,
 	})
 
 	-- attuned values, using desmos calculator
 	-- https://www.desmos.com/calculator/rzvw27ljh9
-	spr.target(canvas_data.canvas, 0.8, 3.5, {
+	spr.target(canvas_data.canvas, 0.7, 3, {
 		Position = UDim2.fromScale(1 / 2, 1 / 2),
 	})
 
@@ -150,15 +150,15 @@ function module:Toggle(canvas: CanvasGroup)
 	end
 
 	if data.state:Get() then
-		task.spawn(closeCanvas, data)
+		closeCanvas(data)
 	else
-		task.spawn(openCanvas, data)
+		openCanvas(data)
 	end
 
 	-- close every other gui
 	for _, other_data in ipairs(tracked) do
 		if other_data ~= data and other_data.state:Get() then
-			task.spawn(closeCanvas, other_data)
+			closeCanvas(other_data)
 		end
 	end
 end
@@ -186,7 +186,7 @@ function module:Open(canvas: CanvasGroup)
 		-- close every other gui
 		for _, other_data in ipairs(tracked) do
 			if other_data ~= data and other_data.state:Get() then
-				task.spawn(closeCanvas, other_data)
+				closeCanvas(other_data)
 			end
 		end
 	end
@@ -200,14 +200,14 @@ function module:Close(canvas: CanvasGroup)
 	end
 
 	if data.state:Get() then
-		task.spawn(closeCanvas, data)
+		closeCanvas(data)
 	end
 end
 
 function module:CloseAll()
 	for _, data in ipairs(tracked) do
 		if data.state:Get() then
-			task.spawn(closeCanvas, data)
+			closeCanvas(data)
 		end
 	end
 end

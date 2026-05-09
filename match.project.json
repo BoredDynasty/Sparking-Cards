@@ -13,19 +13,19 @@
       "$ignoreUnknownInstances": true,
       "$path": "Shared/ReplicatedFirst"
     },
+    "Workspace": {
+      "$className": "Workspace",
+      "$ignoreUnknownInstances": true,
+      "$path": "game/Workspace"
+    },
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
       "$ignoreUnknownInstances": true,
       "$path": "Shared/Replicated",
       "Packages": {
         "$className": "Folder",
-        "$ignoreUnknownInstances": true,
+        "$ignoreUnknownInstances": false,
         "$path": "Packages"
-      },
-      "RemoteEvents": {
-        "$className": "Folder",
-        "$ignoreUnknownInstances": true,
-        "$path": "Remotes/Remotes.rbxm"
       }
     },
     "ServerScriptService": {
@@ -41,7 +41,7 @@
     "StarterGui": {
       "$className": "StarterGui",
       "$ignoreUnknownInstances": true,
-      "$path": "Shared/UI"
+      "$path": "game/UI"
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",

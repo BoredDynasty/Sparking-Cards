@@ -60,6 +60,7 @@ local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local proximity_prompt = require(ReplicatedStorage.Modules["proximity-prompt"])
 local quest_frontend = require(StarterPlayer.StarterPlayerScripts.Components["quest-frontend"])
+local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local skill_frontend = require(StarterPlayer.StarterPlayerScripts.Components["skill-frontend"])
 local spectate = require(StarterPlayer.StarterPlayerScripts.Components.spectate)
@@ -433,7 +434,7 @@ local function initializeBadges()
 		end
 	end
 
-	hud.new("Badges", callback, lucide.GetAsset("award", 48), true)
+	hud.new("Badges", callback, lucide.GetAsset("award", 48))
 end
 local function initializeNotifiers()
 	--print("init notifiers")
@@ -487,8 +488,8 @@ local function initializeMusic()
 			name = "Maui",
 			artist = "Hazelwood",
 			coordinates = {
-				position = vector.create(-1845, 228, 139),
-				size = vector.create(2048, 64, 2048),
+				position = Vector3.new(-1845, 228, 139),
+				size = Vector3.new(2048, 64, 2048),
 			},
 		},
 		{
@@ -497,19 +498,17 @@ local function initializeMusic()
 			name = "Tariro",
 			artist = "Pufino | Freetouse",
 			coordinates = {
-				position = vector.create(-1791, 323, -3444),
-				size = vector.create(580, 254, 761),
+				position = Vector3.new(-1791, 323, -3444),
+				size = Vector3.new(580, 254, 761),
 			},
 		},
 	}
 
-	for i, track in ipairs(tracks) do
-		task.spawn(music.new, track.biome, {
-			track,
-		}, track.coordinates.position, track.coordinates.size)
-
-		--print("added biome track: " .. i .. ` {tracks[i]}`)
-	end
+	task.spawn(function()
+		for i, track in ipairs(tracks) do
+			music.new(track.biome, track, track.coordinates.position, track.coordinates.size)
+		end
+	end)
 
 	music:Start()
 
@@ -522,8 +521,10 @@ local function initializeMusic()
 	local artist_display = musicCanvas.Artist
 
 	musicGui.Enabled = not RunService:IsStudio()
+	sway.register(disc, 0.5, 2, 1.5)
 
-	music.Playing.Changed:Connect(function(track: music.Track)
+	local playing = music:GetPlaying()
+	playing:Watch(function(track)
 		if not track then
 			return
 		end
@@ -532,38 +533,35 @@ local function initializeMusic()
 		artist_display.Text = track.artist or "none"
 	end)
 
-	local function rotate()
-		while true do
-			local frame = RunService.RenderStepped:Wait()
-			disc.Rotation += math.deg(frame)
+	local rotation_conn = nil
+	local function render_function(delta)
+		if music:GetPlaying() then
+			disc.Rotation += math.deg(delta)
+		else
+			-- slow the disc down to a stop
+			disc.Rotation *= 0.95
 		end
 	end
 
-	-- rotate effect on disc
-	local rotation_coroutine = coroutine.create(rotate)
-	coroutine.resume(rotation_coroutine)
+	rotation_conn = RunService.PreRender:Connect(render_function)
 
 	local swipe_controller = swipe.new(disc)
 	swipe_controller.OnSwipe:Connect(function(direction, delta)
-		future.Try(function()
-			if coroutine.status(rotation_coroutine) == "running" then
-				coroutine.close(rotation_coroutine)
-			elseif
-				coroutine.status(rotation_coroutine) == "suspended"
-				or coroutine.status(rotation_coroutine) == "dead"
-			then
-				return
-			end
+		-- a fun little effect:
+		-- spin the disc based on the swipe delta
 
-			-- a fun little effect:
-			-- spin the disc based on the swipe delta
-			spr.target(disc, 0.5, 5, {
-				Rotation = disc.Rotation + delta.X * 5,
-			})
+		-- stop the connection temporarily
+		if rotation_conn then
+			rotation_conn:Disconnect()
+		end
 
-			-- restart rotation after the player is done interacting
-			rotation_coroutine = coroutine.create(rotate)
-			coroutine.resume(rotation_coroutine)
+		spr.target(disc, 0.5, 5, {
+			Rotation = disc.Rotation + delta.X * 5,
+		})
+
+		-- then re-enable the connection after a short delay
+		task.delay(0.5, function()
+			rotation_conn = RunService.PreRender:Connect(render_function)
 		end)
 	end)
 end
@@ -587,7 +585,7 @@ local function initializeObjectives()
 		end
 	end
 
-	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"), true)
+	hud.new("Quests", toggleUI, lucide.GetAsset("clipboard-list"))
 end
 
 local function initializeSkills()
@@ -607,7 +605,7 @@ local function initializeSkills()
 		end
 	end
 
-	hud.new("Skills", toggleUI, lucide.GetAsset("currency"), true)
+	hud.new("Skills", toggleUI, lucide.GetAsset("currency"))
 end
 
 local function initializeParties()
@@ -915,7 +913,7 @@ UserInputService.InputBegan:Connect(function(key, processed)
 		return
 	end
 
-	--invokeAttack(key.KeyCode)
+	invokeAttack(key.KeyCode)
 	invokeJuke(key.KeyCode)
 end)
 
@@ -939,7 +937,13 @@ do
 	local min_quality_level = 6
 	local min_quality_enum = Enum.SavedQualitySetting.QualityLevel6
 
+	local limit = ratelimit(2, 60) -- max 2 notifications per minute
+
 	user_game_settings.Changed:Connect(function()
+		if not limit() then
+			return
+		end
+
 		local quality_level = getGraphicsQuality()
 
 		if quality_level >= min_quality_level then

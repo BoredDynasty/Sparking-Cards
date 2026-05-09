@@ -82,11 +82,11 @@ function module.new(player: Player, sword_name: string)
 	return self
 end
 
-function module:GetGripData(): grip.GripInfo
+function module:GetGripData(self: Sword): grip.GripInfo
 	return self.grip_info
 end
 
-function module:Activate()
+function module:Activate(self: Sword)
 	-- swing the sword (client animation + server hit window)
 	print(string.format("%s swings the sword!", tostring(self.player and self.player.Name)))
 
@@ -105,16 +105,16 @@ function module:Activate()
 
 	-- enable hit window and create trail for visual feedback
 	self._can_hit = true
-	self:CreateTrail()
+	self:CreateTrail(self)
 
 	-- schedule disabling hit window and removing trail
 	task.delay(0.45, function()
 		self._can_hit = false
-		self:RemoveTrail()
+		self:RemoveTrail(self)
 	end)
 end
 
-function module:Equip()
+function module:Equip(self: Sword)
 	if self.model and self.character then
 		self.model.Parent = self.character
 	end
@@ -122,14 +122,14 @@ function module:Equip()
 	local blade = self.model:FindFirstChild("Blade") :: BasePart?
 	if blade and blade:IsA("BasePart") then
 		local conn = blade.Touched:Connect(function(base_part)
-			self:OnTouched(base_part)
+			self:OnTouched(self, base_part)
 		end)
 
 		table.insert(self._connections, conn)
 	end
 end
 
-function module:Unequip()
+function module:Unequip(self: Sword)
 	for i, conn in ipairs(self._connections :: { RBXScriptConnection }) do
 		if conn and conn.Connected then
 			conn:Disconnect()
@@ -146,7 +146,7 @@ function module:Unequip()
 	model.Parent = ReplicatedStorage
 end
 
-function module:OnTouched(hit: Instance)
+function module:OnTouched(self: Sword, hit: Instance)
 	if not self._can_hit then
 		return
 	end
@@ -181,7 +181,7 @@ function module:OnTouched(hit: Instance)
 	print("damage!")
 end
 
-function module:CreateTrail()
+function module:CreateTrail(self: Sword)
 	if self._trail then
 		return
 	end
@@ -219,19 +219,19 @@ function module:CreateTrail()
 	self._trail = trail
 end
 
-function module:RemoveTrail()
+function module:RemoveTrail(self: Sword)
 	if not self._trail then
 		return
 	end
 
 	if self._trail.Parent then
-		self._trail:Destroy()
+		self._trail:Destroy(self)
 	end
 end
 
 function module:Destroy()
-	self:Unequip()
-	self:RemoveTrail()
+	self:Unequip(self)
+	self:RemoveTrail(self)
 
 	table.clear(self._hit_cache)
 

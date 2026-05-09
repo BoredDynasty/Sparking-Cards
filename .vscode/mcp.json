@@ -3,6 +3,13 @@
       "github": {
          "type": "http",
          "url": "https://api.githubcopilot.com/mcp/"
+      },
+      "Roblox_Studio": {
+         "command": "cmd.exe",
+         "args": [
+            "/c",
+            "%LOCALAPPDATA%\\Roblox\\mcp.bat"
+         ]
       }
    }
 }

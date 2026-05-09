@@ -2,27 +2,23 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local _SoundService = game:GetService("SoundService")
 
-local SignalPlus = require(ReplicatedStorage.Dependencies.SignalPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
 
-local future = require(ReplicatedStorage.Packages.future)
-local hydration = require(ReplicatedStorage.Utility.hydration)
 local observer = require(ReplicatedStorage.Utility.observer)
 local random = require(ReplicatedStorage.Utility.random)
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- music.luau
 
-local module = {
-	biomes = {},
-	Playing = observer.new(nil) :: observer.Observer<Track?>,
-	_trove = trove.new(),
-	current_biome = "" :: string?,
-	current_track = nil :: Track?,
-	added_music = {}, -- Track which music IDs have been added to audio
-}
+local module = {}
+
+local biomes = {}
+local Playing = observer.new(nil) :: observer.Observer<Track?>
+local _trove = trove.new()
+local current_biome = "" :: string?
+local current_track = nil :: Track?
+local added_music = {}
 
 local events = ReplicatedStorage.Events
 
@@ -47,7 +43,7 @@ export type Track = {
 	        name = "Forest Theme",
 	        artist = "Composer"
 	    }
-	}, vector.create(0, 0, 0), vector.create(100, 50, 100))
+	}, Vector3.new(0, 0, 0), Vector3.new(100, 50, 100))
 
 	-- Start tracking
 	module:Start()
@@ -56,31 +52,23 @@ export type Track = {
 	module:Destroy()
 	```
 ]]
-function module.new(name: string, tracks: { Track }, position: vector, size: vector)
+function module.new(name: string, tracks: { Track }, position: Vector3, size: Vector3)
 	local box = Instance.new("Part")
-	hydration(box) {
-		Anchored = true,
-		CanCollide = false,
-		Transparency = 1,
-		Position = position,
-		Size = size,
-	}
 
-	module.biomes[name] = {
+	box.Anchored = true
+	box.CanCollide = false
+	box.Transparency = 1
+	box.Position = position
+	box.Size = size
+
+	biomes[name] = {
 		tracks = tracks,
 		bounding_box = box,
 	}
 end
 
-function module:GetTracks(biomeName: string): { Track }?
-	local biome = select(
-		2,
-		future
-			.Try(function()
-				return module.biomes[biomeName]
-			end)
-			:Unwrap()
-	)
+function module:GetTracks(biome_name: string): { Track }?
+	local biome = biomes[biome_name]
 
 	if biome then
 		return biome.tracks
@@ -99,7 +87,7 @@ function module:Start()
 	local check_interval = 1 / 2 -- 0.5
 	local last_postion = Vector3.zero
 
-	module._trove:Connect(RunService.Heartbeat, function(dt: number)
+	_trove:Connect(RunService.Heartbeat, function(dt: number)
 		debug.profilebegin("music-track")
 
 		last_check += dt :: number
@@ -119,9 +107,9 @@ function module:Start()
 		last_postion = position
 
 		-- Check if player is in any biome
-		local inAnyBiome = false
-		for biomeName, biomeData in pairs(module.biomes) do
-			local box = biomeData.bounding_box
+		local in_any_biome = false
+		for biome_name, biome_data in pairs(biomes) do
+			local box = biome_data.bounding_box
 			if
 				box
 				and (position.X >= box.Position.X - box.Size.X / 2)
@@ -132,13 +120,13 @@ function module:Start()
 				and (position.Z <= box.Position.Z + box.Size.Z / 2)
 			then
 				-- Player is in this biome
-				inAnyBiome = true
+				in_any_biome = true
 
 				-- If this is a new biome, play a random track
-				if module.current_biome ~= biomeName then
-					module.current_biome = biomeName
+				if current_biome ~= biome_name then
+					current_biome = biome_name
 
-					module:PlayRandomTrack(biomeName)
+					module:PlayRandomTrack(biome_name)
 				end
 
 				break
@@ -146,9 +134,9 @@ function module:Start()
 		end
 
 		-- Stop module if player left the current biome
-		if not inAnyBiome and module.current_biome ~= nil and module.current_biome ~= "" then
+		if not in_any_biome and current_biome ~= nil and current_biome ~= "" then
 			module:StopCurrentTrack()
-			module.current_biome = ""
+			current_biome = ""
 		end
 
 		debug.profileend()
@@ -156,23 +144,23 @@ function module:Start()
 end
 
 function module:SetPlaying(track: Track?)
-	module.Playing:Set(track)
+	Playing:Set(track)
 end
 
 function module:GetBiome()
-	return module.current_biome
+	return current_biome
 end
 
 function module:GetCurrentTrack()
-	return module.current_track
+	return current_track
 end
 
 function module:GetPlaying()
-	return module.Playing
+	return Playing
 end
 
-function module:PlayRandomTrack(biomeName: string)
-	local tracks = module:GetTracks(biomeName)
+function module:PlayRandomTrack(biome_name: string)
+	local tracks = module:GetTracks(biome_name)
 	if not tracks or #tracks == 0 then
 		return
 	end
@@ -181,32 +169,32 @@ function module:PlayRandomTrack(biomeName: string)
 	local track = tracks[random.integer(1, #tracks)] :: Track
 
 	-- Stop any currently Playing track
-	if module.current_track then
+	if current_track then
 		module:StopCurrentTrack()
 	end
 
 	-- Add the new track to the audio system if not already present (track locally)
 	local trackName = tostring(track.id)
-	if not module.added_music[trackName] then
+	if not added_music[trackName] then
 		audio:AddMusic(trackName, track.id, {
 			volume = 1 / 8,
 			looped = true,
 		})
-		module.added_music[trackName] = true
+		added_music[trackName] = true
 	end
 
 	-- Play the new track
-	module.current_track = track
+	current_track = track
 	audio:PlayMusic(trackName)
 	module:SetPlaying(track)
 end
 
 function module:StopCurrentTrack()
-	local current_track = module.current_track
+	local current_track = current_track
 	if current_track then
 		local trackName = tostring(current_track.id)
 		audio:StopMusic(trackName)
-		module.current_track = nil
+		current_track = nil
 		module:SetPlaying(nil)
 	end
 end
@@ -214,13 +202,13 @@ end
 function module:Destroy()
 	module:StopCurrentTrack()
 
-	module.current_biome = ""
+	current_biome = ""
 
-	module._trove:Clean()
+	_trove:Clean()
 end
 
 events.SetMusicVolume.OnClientEvent:Connect(function(volume: number)
-	for name, data in pairs(module.biomes) do
+	for name, data in pairs(biomes) do
 		for _, track in ipairs(data.tracks) do
 			local trackName = tostring(track.id)
 			audio:ConfigureMusic(trackName, {
@@ -237,8 +225,8 @@ events.ToggleMusic.OnClientEvent:Connect(function(enabled: boolean)
 	else
 		audio:SetMusicEnabled(true)
 		-- Re-play current track if music is enabled again
-		if module.current_biome and module.current_biome ~= "" then
-			module:PlayRandomTrack(module.current_biome)
+		if current_biome and current_biome ~= "" then
+			module:PlayRandomTrack(current_biome)
 		end
 	end
 end)

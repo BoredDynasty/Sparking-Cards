@@ -92,7 +92,7 @@ return function(deltaTime: number)
 	if root_magnitude > 1 then
 		sway_offset = lerp(
 			sway_offset,
-			math.cos(tick() * 0.5 * math.floor(bob_frequency)) * (bob_frequency / 200),
+			math.cos(os.time() * 0.5 * math.floor(bob_frequency)) * (bob_frequency / 200),
 			0.25 * deltaTime
 		)
 	else

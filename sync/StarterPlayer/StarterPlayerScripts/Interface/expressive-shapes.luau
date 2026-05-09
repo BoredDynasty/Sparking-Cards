@@ -1,8 +1,9 @@
 --!strict
-local ContentProvider = game:GetService("ContentProvider")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local RunService = game:GetService("RunService")
+local StarterPlayer = game:GetService("StarterPlayer")
+
+local lerp = require(StarterPlayer.StarterPlayerScripts.Utilities.lerp)
 
 -- expressive-shapes.luau
 
@@ -22,22 +23,29 @@ local shapes = {
 	114671850438094,
 }
 
-local tracked = {}
+local tracked: { { shape: GuiObject, inside: GuiObject } } = {}
 
 function module.register(shape: GuiObject, inside: GuiObject)
 	table.insert(tracked, { shape = shape, inside = inside })
 end
 
-RunService.Heartbeat:Connect(function(delta)
+RunService.PreRender:Connect(function(delta)
 	if next(tracked) == nil then
 		return
 	end
 
 	for i, shape in ipairs(tracked) do
-		shape.shape.Rotation = shape.shape.Rotation + 20 * delta
+		-- use lerp to smoothly rotate the shape and its inside in opposite directions
 
-		-- keep inert
-		shape.inside.Rotation = shape.inside.Rotation - 20 * delta
+		shape.shape.Rotation = lerp(shape.shape.Rotation, shape.shape.Rotation + 20 * delta, 0.1 * delta)
+		-- the inside should rotate in the opposite direction to create a dynamic effect, but it should also
+		-- lerp towards its original rotation to prevent it from drifting too far and looking weird
+		-- this creates a nice balance where the inside rotates opposite to the shape, but doesn't go
+
+		if shape.inside then
+			shape.inside.Rotation =
+				lerp(shape.inside.Rotation, shape.inside.Rotation - 20 * delta, 0.1 * delta)
+		end
 	end
 end)
 

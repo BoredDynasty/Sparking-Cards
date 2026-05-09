@@ -30,8 +30,8 @@ local function comboToAnimationId(combo: number): string
 	end
 end
 
-function pyro.moveset:M1(player: Player)
-	print("Pyro M1_1 executed for player:", player.Name)
+function pyro.moveset.M1(player: Player, ...)
+	print("Pyro M1_1 executed for player:", player)
 	-- Implement the actual attack logic here
 
 	local character = player.Character or player.CharacterAdded:Wait()
@@ -42,7 +42,8 @@ function pyro.moveset:M1(player: Player)
 	local singleton = combat_data.style :: sword.Sword
 
 	print("singleton")
-	singleton:Activate()
+	--singleton:Activate()
+	events.CallStyleFunction:Invoke(player, "Activate")
 
 	local nearest_players = nearest(character.PrimaryPart, 10)
 	for _, other_player in ipairs(nearest_players) do
@@ -52,8 +53,8 @@ function pyro.moveset:M1(player: Player)
 	return true
 end
 
-function pyro.moveset:Skill(player: Player, ...: any?)
-	print("Pyro Skill executed for player:", player.Name)
+function pyro.moveset.Skill(player: Player, ...: any)
+	print("Pyro Skill executed for player:", player)
 	-- Implement the actual attack logic here
 
 	-- a slash
@@ -61,7 +62,7 @@ function pyro.moveset:Skill(player: Player, ...: any?)
 	return true
 end
 
-function pyro:GetMaxCombo()
+function pyro.GetMaxCombo()
 	return 3
 end
 

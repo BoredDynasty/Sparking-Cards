@@ -147,13 +147,6 @@ report_progress.OnServerEvent:Connect(function(player: Player, bfr: buffer)
 				if not reward then
 					reward = 5
 				end
-
-				if player then
-					task.wait(5)
-					-- this is currently erroring.
-					-- TODO: add this back!
-					--send_reward_server:Invoke(player, reward or 5, "Quest Completion", name) -- experience, reason, quest name
-				end
 			end
 
 			local serialized = bufferencoder.write(q :: any)

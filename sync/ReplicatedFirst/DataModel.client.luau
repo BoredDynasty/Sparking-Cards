@@ -56,10 +56,10 @@ local function preload()
 
 		return
 	end
-	debug.profilebegin("PreloadAssets")
+
 	local start_time = os.clock()
 
-	textIndicator.Text = ("%s"):format(tostring(game.PlaceId)) or "hi"
+	textIndicator.Text = tostring(game.PlaceId) or "hi"
 
 	-- Combine assets into one table
 	local pre_allocated = 3000
@@ -166,8 +166,6 @@ local function preload()
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Backpack, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.EmotesMenu, false)
 	StarterGui:SetCoreGuiEnabled(Enum.CoreGuiType.Health, false)
-
-	debug.profileend()
 end
 
 preload()

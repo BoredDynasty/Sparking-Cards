@@ -341,10 +341,10 @@ local function registerCombatPlayer(player: Player)
 	local style = sword.new(player, "Katana") -- change this later
 	local combo_info = combo.new(3)
 
-	style:Equip()
-	style:CreateTrail()
+	--style:Equip(style)
+	--style:CreateTrail(style)
 
-	print("grip data: ", style:GetGripData())
+	print("grip data: ", style:GetGripData(style))
 
 	local data = {
 		player = player,
@@ -362,7 +362,7 @@ end
 local function unregisterCombatPlayer(player: Player)
 	for i, data in ipairs(combat_data) do
 		if player.UserId == data.player.UserId then
-			data.style:Destroy()
+			data.style:Destroy(data.style)
 			data.combo_info = nil
 
 			combat_data[i] = nil
@@ -763,7 +763,7 @@ local function startLightingCycle()
 	local cycle_time = day_length * 60
 	local minutes_in_a_day = 24 * 60
 
-	local start_time = tick() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
+	local start_time = os.clock() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
 	local end_time = start_time + cycle_time
 
 	local time_ratio = minutes_in_a_day / cycle_time
@@ -772,14 +772,16 @@ local function startLightingCycle()
 		day_length = 1
 	end
 
-	RunService.Heartbeat:Connect(function()
+	local conn = nil
+
+	conn = RunService.Heartbeat:Connect(function()
 		if overideClocktime then
-			start_time = tick() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
+			start_time = os.clock() - (Lighting:GetMinutesAfterMidnight() / minutes_in_a_day) * cycle_time
 
 			return
 		end
 
-		local current_time = tick()
+		local current_time = os.clock()
 
 		if current_time > end_time then
 			start_time = end_time
@@ -787,6 +789,13 @@ local function startLightingCycle()
 		end
 
 		Lighting:SetMinutesAfterMidnight((current_time - start_time) * time_ratio)
+	end)
+
+	game:BindToClose(function()
+		if conn then
+			conn:Disconnect()
+			conn = nil
+		end
 	end)
 end
 
@@ -1340,7 +1349,7 @@ end
 Events.CallStyleFunction.OnInvoke = function(player, method, ...)
 	local data = indexCombatPlayer(player)
 	if data then
-		return data.style[method](...)
+		return data.style[method](data.style, ...)
 	else
 		warn("no data")
 		return nil
@@ -1372,7 +1381,6 @@ Events.ToggleMusic.OnServerEvent:Connect(function(player, is_on)
 end)
 Events.LogAnalytic.OnServerEvent:Connect(function(player, analytic, ...)
 	future.Try(function(...)
-		log_analytics.custom(player, info)
 		log_analytics[analytic](player, ...)
 	end, ...)
 end)

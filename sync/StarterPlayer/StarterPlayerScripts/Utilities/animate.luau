@@ -106,7 +106,7 @@ end
 --[[
 	Include the prefix.
 ]]
-function module.stop(animationId: string | string): ()
+function module.stop(animationId: number | string, ...): ()
 	local animator = getAnimator(character)
 	if not animator then
 		return
@@ -118,7 +118,7 @@ function module.stop(animationId: string | string): ()
 
 	for _, track in ipairs(animator:GetPlayingAnimationTracks()) do
 		if track.Animation and track.Animation.AnimationId == animationId then
-			track:Stop()
+			track:Stop(...)
 		end
 	end
 end
@@ -138,7 +138,7 @@ end
 --[[
 	Include the prefix.
 ]]
-function module.getTrack(animationId: string | string): AnimationTrack?
+function module.getTrack(animationId: number | string): AnimationTrack?
 	local animator = getAnimator(character)
 	if not animator then
 		return nil

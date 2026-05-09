@@ -98,14 +98,17 @@ local ignore_tab_switch = false
 function module:InitializeTabs()
 	tabs:AddTab("Shop")
 	tabs:AddTab("Inventory")
+	tabs:AddTab("Passes")
 
-	tabs:SelectTab("Shop")
+	tabs:DeselectTab()
 
 	tabs.Changed:Connect(function(name)
 		if name == "Shop" then
 			self:LoadItems()
 		elseif name == "Inventory" then
 			self:LoadInventory()
+		elseif name == "Passes" then
+			self:LoadGamepasses()
 		end
 	end)
 end
