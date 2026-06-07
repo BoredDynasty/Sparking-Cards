@@ -4,7 +4,6 @@ local RunService = game:GetService("RunService")
 
 local Packet = require(ReplicatedStorage.Packet)
 
-local impact = require(ReplicatedStorage.Combat.framework.effects.impact)
 local observer = require(ReplicatedStorage.Utility.observer)
 local trove = require(ReplicatedStorage.Packages.trove)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)

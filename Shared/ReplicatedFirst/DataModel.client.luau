@@ -90,7 +90,7 @@ local function preload()
 	skipButton.MouseButton1Click:Once(skipPreloading)
 
 	local circle = 360
-	connection = RunService.RenderStepped:Connect(function(deltaTime: number)
+	connection = RunService.PreRender:Connect(function(deltaTime: number)
 		loader.Rotation += circle * deltaTime
 	end)
 

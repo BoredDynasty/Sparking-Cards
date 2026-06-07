@@ -15,8 +15,7 @@
     },
     "Workspace": {
       "$className": "Workspace",
-      "$ignoreUnknownInstances": true,
-      "$path": "game/Workspace"
+      "$ignoreUnknownInstances": true
     },
     "ReplicatedStorage": {
       "$className": "ReplicatedStorage",
@@ -40,8 +39,7 @@
     },
     "StarterGui": {
       "$className": "StarterGui",
-      "$ignoreUnknownInstances": true,
-      "$path": "game/UI"
+      "$ignoreUnknownInstances": true
     },
     "StarterPlayer": {
       "$className": "StarterPlayer",

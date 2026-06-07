@@ -3,7 +3,7 @@
 -- artwork.luau
 
 return {
-	{
+	sunset_1 = {
 		id = 110938293848368,
 		name = "Dramatic Sunset Wildlife Landscape Illustration",
 		attribution = "Vecteezy",

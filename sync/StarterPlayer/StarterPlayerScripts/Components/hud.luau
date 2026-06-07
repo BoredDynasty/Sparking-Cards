@@ -5,21 +5,22 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
+local _bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
+local _future = require(ReplicatedStorage.Packages.future)
+local _sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
+local _tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
+local _wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 local audio = require(ReplicatedStorage.Modules.audio)
-local bounds = require(StarterPlayer.StarterPlayerScripts.Utilities.bounds)
-local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
+local promise = require(ReplicatedStorage.Packages.promise)
 local ratelimit = require(ReplicatedStorage.Utility.ratelimit)
 local ripple = require(StarterPlayer.StarterPlayerScripts.Interface.ripple)
 local screen_3d = require(StarterPlayer.StarterPlayerScripts.Interface["screen-3d"])
 local shadow = require(StarterPlayer.StarterPlayerScripts.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local state_machine = require(ReplicatedStorage.Utility["state-machine"])
-local sway = require(StarterPlayer.StarterPlayerScripts.Interface.sway)
-local tooltip = require(StarterPlayer.StarterPlayerScripts.Components.tooltip)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
-local wiggle = require(StarterPlayer.StarterPlayerScripts.Interface.wiggle)
 
 -- hud.luau
 
@@ -41,6 +42,9 @@ end
 
 module.horizontal_position:Set("left")
 
+module.active_button = nil :: Button?
+module.is_processing = false
+
 local global_ratelimit = ratelimit(1, 3.3) :: ratelimit.Ratelimit<string>
 
 local pool = PoolerPlus:CreatePool("HudPool", function()
@@ -58,11 +62,20 @@ export type Button = {
 	reactor: observer.Observer<boolean>,
 	limit: ratelimit.Ratelimit<string>,
 	hover_limit: ratelimit.Ratelimit<string>,
-	text_button: typeof(pool:Get()),
+	text_button: typeof(pool:Get())?,
 	is_large: boolean,
+	initialized: boolean,
+	default_size: UDim2,
+	default_color: Color3,
+	default_corner: UDim,
+	default_aspect_ratio: number,
+	default_aspect_type: Enum.AspectType,
+	default_dominant_axis: Enum.DominantAxis,
 }
 
 function module.new(name: string, callback: () -> (), icon: typemarshaller.LucideIcon, is_large: boolean)
+	local text_button = pool:Get()
+
 	local button = {
 		name = name,
 		callback = callback,
@@ -70,9 +83,16 @@ function module.new(name: string, callback: () -> (), icon: typemarshaller.Lucid
 		reactor = observer.new(false) :: observer.Observer<boolean>,
 		limit = ratelimit(1, 3.5) :: ratelimit.Ratelimit<string>,
 		hover_limit = ratelimit(3, 0.9) :: ratelimit.Ratelimit<string>,
-		text_button = pool:Get(),
+		text_button = text_button,
 		is_large = is_large,
-	}
+		initialized = false,
+		default_size = text_button.Size,
+		default_color = text_button.BackgroundColor3,
+		default_corner = text_button.UICorner and text_button.UICorner.CornerRadius or UDim.new(0.238, 0),
+		default_aspect_ratio = text_button.AspectRatio.AspectRatio,
+		default_aspect_type = text_button.AspectRatio.AspectType,
+		default_dominant_axis = text_button.AspectRatio.DominantAxis,
+	} :: Button
 
 	table.insert(module.buttons, button)
 end
@@ -89,10 +109,15 @@ component3d:Enable()
 component3d.offset = CFrame.Angles(0, math.rad(7), 0) -- rotates 3D UI element 7 degrees on the Y axis to give a slight perspective effect
 
 function module:Render()
-	for _, button in ipairs(hud_container:GetChildren()) do
-		local attribute = button:GetAttribute("NonDestroyable")
-		if button:IsA("TextButton") and not attribute then
-			button:Destroy() -- Clear existing buttons
+	local active_buttons = {} :: { [Instance]: boolean }
+
+	for _, button in ipairs(module.buttons) do
+		active_buttons[button.text_button] = true
+	end
+
+	for _, child in ipairs(hud_background:GetChildren()) do
+		if child:IsA("TextButton") and not active_buttons[child] then
+			child:Destroy()
 		end
 	end
 
@@ -112,168 +137,95 @@ function module:Render()
 
 		text_button.Parent = hud_background
 		text_button.Name = button.name
-
+		text_button.LayoutOrder = i
 		text_button.AutoButtonColor = false
+
+		text_button.Size = if button.is_large then UDim2.fromScale(0.077, 1.036) else button.default_size
+
+		if button.is_large then
+			text_button.AspectRatio.AspectRatio = 1.513
+			text_button.AspectRatio.AspectType = Enum.AspectType.FitWithinMaxSize
+			text_button.AspectRatio.DominantAxis = Enum.DominantAxis.Width
+		else
+			text_button.AspectRatio.AspectRatio = button.default_aspect_ratio
+			text_button.AspectRatio.AspectType = button.default_aspect_type
+			text_button.AspectRatio.DominantAxis = button.default_dominant_axis
+		end
 
 		icon_image.Position = UDim2.fromScale(0.5, 0.5)
 		icon_image.AnchorPoint = Vector2.one / 2
 
-		local default_corner = UDim.new(0.238, 0)
-
-		if button.is_large then
-			-- make the TextButton width larger.
-			text_button.Size = UDim2.fromScale(0.077, 1.036)
-		end
-
-		task.spawn(function()
-			local ok, default_icon = future.Try(lucide.GetAsset, icon, 256 * 2):Await()
-
-			if ok then
-				icon_image.ImageRectOffset = default_icon.ImageRectOffset
-				icon_image.ImageRectSize = default_icon.ImageRectSize
-				icon_image.Image = default_icon.Url
-			else
-				warn("Failed to fetch asset!")
-			end
-		end)
-
+		local default_corner = button.default_corner
 		local default_size = text_button.Size
-		local default_color = text_button.BackgroundColor3
-
+		local default_color = button.default_color
 		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
 
-		text_button.Activated:Connect(function()
-			if not button.limit(button.name) or not global_ratelimit() then
-				audio:PlaySFX("cancel")
+		if not button.initialized then
+			button.initialized = true
 
-				return
-			end
+			text_button.Activated:Connect(function()
+				if module.is_processing then
+					audio:PlaySFX("cancel")
+					return
+				end
 
-			-- "pop" the UICorner
-			-- "pop" the horizontal size of the button a bit
-			-- darken the color of the button a bit
-
-			spr.stop(ui_corner)
-			spr.target(ui_corner, 0.7, 4.9, {
-				CornerRadius = UDim.new(1 / 8, 0), -- 0.125
-			})
-
-			spr.stop(icon_image, "Rotation")
-			spr.target(icon_image, 0.35, 8, {
-				Rotation = 15,
-			})
-
-			spr.stop(text_button, "BackgroundColor3")
-			spr.stop(text_button, "Size")
-			spr.target(text_button, 0.7, 5, {
-				Size = default_size + UDim2.fromOffset(10, 10),
-				BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
-			})
-
-			ripple(text_button, 0.9)
-
-			button.reactor:Map(function(current)
-				return not current
+				button.reactor:Set(not button.reactor:Get())
 			end)
 
-			-- stop all other buttons
-			for _, other_button in ipairs(module.buttons) do
-				if other_button.name ~= button.name then
-					other_button.reactor:Set(false)
+			text_button.MouseButton1Up:Connect(function()
+				if button.reactor:Get() then
+					audio:PlaySFX("cancel")
+					return
 				end
-			end
-		end)
 
-		text_button.MouseButton1Up:Connect(function()
-			-- revert the "pop" of the UICorner and button size
-			-- and the color of the button
+				spr.stop(ui_corner)
+				spr.target(ui_corner, 0.7, 4.9, {
+					CornerRadius = default_corner,
+				})
 
-			if button.reactor:Get() then
-				audio:PlaySFX("cancel")
+				spr.stop(icon_image, "Rotation")
+				spr.target(icon_image, 0.35, 8, {
+					Rotation = 0,
+				})
 
-				return
-			end
+				spr.stop(text_button, "Size")
+				spr.stop(text_button, "BackgroundColor3")
+				spr.target(text_button, 0.7, 6, {
+					Size = default_size,
+					BackgroundColor3 = default_color,
+				})
+			end)
 
-			spr.stop(ui_corner)
-			spr.target(ui_corner, 0.7, 4.9, {
-				CornerRadius = default_corner,
-			})
+			text_button.MouseEnter:Connect(function()
+				if not button.hover_limit(button.name) then
+					audio:PlaySFX("cancel")
+					return
+				end
 
-			spr.stop(icon_image, "Rotation")
-			spr.target(icon_image, 0.35, 8, {
-				Rotation = 0,
-			})
+				if button.reactor:Get() then
+					audio:PlaySFX("cancel")
+					return
+				end
 
-			spr.stop(text_button, "Size")
-			spr.stop(text_button, "BackgroundColor3")
-			spr.target(text_button, 0.7, 6, {
-				Size = default_size,
-				BackgroundColor3 = default_color,
-			})
-		end)
-
-		text_button.MouseEnter:Connect(function()
-			if not button.hover_limit(button.name) then
-				audio:PlaySFX("cancel")
-
-				return
-			end
-
-			if button.reactor:Get() then
-				audio:PlaySFX("cancel")
-
-				return
-			end
-
-			spr.stop(icon_image, "Rotation")
-			spr.target(icon_image, 0.35, 8, {
-				Rotation = 15,
-			})
-
-			-- mouse hover effect
-			spr.stop(text_button, "Size")
-			spr.stop(text_button, "BackgroundColor3")
-			spr.target(text_button, 0.8, 8, {
-				BackgroundColor3 = lighter_color,
-			})
-			audio:PlaySFX("hover")
-		end)
-
-		text_button.MouseLeave:Connect(function()
-			if button.reactor:Get() then
-				audio:PlaySFX("cancel")
-
-				return
-			end
-
-			spr.stop(icon_image, "Rotation")
-			spr.target(icon_image, 0.35, 8, {
-				Rotation = 0,
-			})
-
-			spr.stop(text_button, "Size")
-			spr.stop(text_button, "BackgroundColor3")
-			spr.target(text_button, 0.8, 8, {
-				BackgroundColor3 = default_color,
-			})
-			audio:PlaySFX("leave")
-		end)
-
-		button.reactor:Watch(function(newValue: boolean)
-			if newValue then
-				audio:PlaySFX("click")
-			else
-				audio:PlaySFX("cancel")
-			end
-
-			-- tilt the icon
-			-- button size
-			if newValue then
-				spr.stop(icon_image)
+				spr.stop(icon_image, "Rotation")
 				spr.target(icon_image, 0.35, 8, {
 					Rotation = 15,
 				})
-			else
+
+				spr.stop(text_button, "Size")
+				spr.stop(text_button, "BackgroundColor3")
+				spr.target(text_button, 0.8, 8, {
+					BackgroundColor3 = lighter_color,
+				})
+				audio:PlaySFX("hover")
+			end)
+
+			text_button.MouseLeave:Connect(function()
+				if button.reactor:Get() then
+					audio:PlaySFX("cancel")
+					return
+				end
+
 				spr.stop(icon_image, "Rotation")
 				spr.target(icon_image, 0.35, 8, {
 					Rotation = 0,
@@ -283,30 +235,114 @@ function module:Render()
 				spr.stop(text_button, "BackgroundColor3")
 				spr.target(text_button, 0.8, 8, {
 					BackgroundColor3 = default_color,
-					Size = default_size,
 				})
-			end
+				audio:PlaySFX("leave")
+			end)
 
-			if button.callback then
-				future.Try(button.callback):Await()
+			button.reactor:Watch(function(current, _)
+				if current then
+					if module.is_processing or not button.limit(button.name) or not global_ratelimit() then
+						audio:PlaySFX("cancel")
+						button.reactor:Set(false)
+						return
+					end
+
+					if module.active_button and module.active_button ~= button then
+						module.active_button.reactor:Set(false)
+					end
+
+					module.active_button = button
+					module.is_processing = true
+
+					spr.stop(ui_corner)
+					spr.target(ui_corner, 0.7, 4.9, {
+						CornerRadius = UDim.new(1 / 8, 0),
+					})
+
+					spr.stop(icon_image, "Rotation")
+					spr.target(icon_image, 0.35, 8, {
+						Rotation = 15,
+					})
+
+					spr.stop(text_button, "BackgroundColor3")
+					spr.stop(text_button, "Size")
+					spr.target(text_button, 0.7, 5, {
+						Size = default_size + UDim2.fromOffset(10, 10),
+						BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
+					})
+
+					ripple(text_button, 0.9)
+
+					audio:PlaySFX("click")
+
+					local function complete()
+						module.is_processing = false
+
+						if module.active_button == button then
+							module.active_button = nil
+						end
+					end
+
+					local success, callback_result = pcall(button.callback)
+					if not success then
+						warn("Hud button callback error:", callback_result)
+						complete()
+					else
+						local promise_candidate = callback_result :: any
+						if promise.is(promise_candidate) then
+							promise_candidate:andThen(complete, function(err)
+								warn("Hud button callback promise failed:", err)
+								complete()
+							end)
+						else
+							complete()
+						end
+					end
+				else
+					spr.stop(ui_corner)
+					spr.target(ui_corner, 0.7, 4.9, {
+						CornerRadius = default_corner,
+					})
+
+					spr.stop(icon_image, "Rotation")
+					spr.target(icon_image, 0.35, 8, {
+						Rotation = 0,
+					})
+
+					spr.stop(text_button, "Size")
+					spr.stop(text_button, "BackgroundColor3")
+					spr.target(text_button, 0.7, 6, {
+						Size = default_size,
+						BackgroundColor3 = default_color,
+					})
+				end
+			end)
+		end
+
+		task.defer(function()
+			local default_icon = lucide.GetAsset(icon)
+
+			if default_icon then
+				icon_image.ImageRectOffset = default_icon.ImageRectOffset
+				icon_image.ImageRectSize = default_icon.ImageRectSize
+				icon_image.Image = default_icon.Url
 			else
-				warn("No callback defined for button: ", button.name)
+				warn("Failed to fetch asset!")
 			end
 		end)
 
-		-- dynamic shadow transparency based on button index, so that buttons further down the list have a more transparent shadow, to create a sense of depth.
-		shadow(text_button, Color3.new(), 0.5 + (i * 0.05), 16, 1, 1)
-		--tooltip.register(text_button, button.name)
+		if not text_button:FindFirstChild("ShadowLayers") then
+			shadow(text_button, Color3.new(), 0.5 + (i * 0.05), 16, 1, 1)
+		end
 	end
 end
 
 function module:Toggle(buttonName: string)
-	local button: Button? = nil
-
-	if not module.buttons then
+	if module.is_processing then
 		return
 	end
 
+	local button: Button? = nil
 	for _, b in ipairs(module.buttons :: { Button }) do
 		if b.name == buttonName then
 			button = b
@@ -315,15 +351,30 @@ function module:Toggle(buttonName: string)
 	end
 
 	if button then
-		button.reactor:Map(function(current)
-			return not current
-		end)
+		if button.reactor:Get() then
+			button.reactor:Set(false)
+		else
+			if module.active_button and module.active_button ~= button then
+				module.active_button.reactor:Set(false)
+			end
+			button.reactor:Set(true)
+		end
 	end
 end
 
 function module:Clear()
-	for i, btn in pairs(module.buttons) do
-		btn.reactor:Destroy()
+	for i = #module.buttons, 1, -1 do
+		local btn = module.buttons[i]
+
+		if btn.reactor then
+			btn.reactor:Destroy()
+		end
+
+		if btn.text_button then
+			btn.text_button.Parent = nil
+			pool:Return(btn.text_button)
+			btn.text_button = nil
+		end
 
 		if btn.limit.count_map[btn.name] then
 			btn.limit.count_map[btn.name] = nil
@@ -333,14 +384,11 @@ function module:Clear()
 			btn.hover_limit.count_map[btn.name] = nil
 		end
 
-		module.buttons[i] = nil
+		table.remove(module.buttons, i)
 	end
 
-	for _, button in ipairs(hud_container:GetChildren()) do
-		if button:IsA("TextButton") then
-			button:Destroy() -- Clear existing buttons
-		end
-	end
+	module.active_button = nil
+	module.is_processing = false
 end
 
 function module:GetHorizontalAlignment()
