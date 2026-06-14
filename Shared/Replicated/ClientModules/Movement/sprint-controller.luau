@@ -28,6 +28,7 @@ local _trove = trove.new()
 
 local max_stamina = 100
 local is_sprinting = false
+local unlocked_bhop = false
 
 local character_trove = _trove:Extend()
 
@@ -80,9 +81,63 @@ local function updateInternalValues()
 	else
 		print("no stamina upgrades found, using default max stamina: ", max_stamina)
 	end
+
+	local bhop_upgrade = skill_functions:GetTechniquesUnlocked(profile, "Bunny Hop")
+	if bhop_upgrade > 0 then
+		unlocked_bhop = true
+		print("player has unlocked bhop")
+	else
+		unlocked_bhop = false
+		print("player has not unlocked bhop")
+	end
 end
 
-task.spawn(updateInternalValues)
+task.spawn(function()
+	updateInternalValues()
+
+	-- todo) listen for changes in the profile and update values accordingly
+end)
+
+-- allow for bunny hopping
+
+local ground_acceleration = 16
+local ground_deceleration = 12
+local air_acceleration = 1
+
+local player_velocity = Vector3.zero
+
+local linear_velocity = Instance.new("LinearVelocity")
+linear_velocity.Attachment0 = root_part:WaitForChild("RootAttachment") :: Attachment
+linear_velocity.MaxForce = math.huge
+linear_velocity.RelativeTo = Enum.ActuatorRelativeTo.World
+linear_velocity.Parent = root_part
+linear_velocity.PrimaryTangentAxis = Vector3.new(1, 0, 0)
+linear_velocity.SecondaryTangentAxis = Vector3.new(0, 0, 1)
+
+local function move(direction: Vector3, speed: number, rate_1: number, rate_2: number)
+	local current_velocity = player_velocity
+	local target_speed = direction * speed
+
+	local add = (target_speed - current_velocity)
+
+	local rate = if current_velocity.Magnitude < speed or direction.Magnitude > 0 then rate_1 else rate_2
+
+	player_velocity += add * rate * RunService.Heartbeat:Wait()
+end
+
+local function airMove(wish_direction: Vector3, wish_speed: number, acceleration: number)
+	local current_velocity = player_velocity:Dot(wish_direction)
+	local add = wish_speed - current_velocity
+
+	if add <= 0 then
+		return
+	end
+
+	local rate = add * (RunService.Heartbeat:Wait() * wish_speed)
+	rate = math.clamp(rate, -0.001, add)
+
+	player_velocity += rate * wish_direction
+end
 
 UserInputService.InputBegan:Connect(function(input, processed)
 	if processed then
@@ -152,7 +207,32 @@ function module:Update(delta_time: number)
 
 		animate.stop(sprint_animation, 1)
 	end
+
+	if not unlocked_bhop then
+		return
+	end
+
+	-- bunnyhop logic
+	for i, part in ipairs(character:GetChildren()) do
+		if part:IsA("BasePart") then
+			part.CustomPhysicalProperties = PhysicalProperties.new(0.7, 0, 0, 100, 100)
+		end
+	end
+
+	humanoid.UseJumpPower = true
+
+	local grounded = humanoid:GetState() ~= Enum.HumanoidStateType.Freefall
+	if grounded then
+		move(humanoid.MoveDirection, humanoid.WalkSpeed, ground_acceleration, ground_deceleration)
+	else
+		airMove(humanoid.MoveDirection, humanoid.WalkSpeed, air_acceleration)
+	end
+
+	if not (humanoid:GetState() == Enum.HumanoidStateType.Climbing) then
+		linear_velocity.PlaneVelocity = Vector2.new(player_velocity.X, player_velocity.Z)
+	else
+		linear_velocity.PlaneVelocity = Vector2.zero
+	end
 end
 
 return module
-

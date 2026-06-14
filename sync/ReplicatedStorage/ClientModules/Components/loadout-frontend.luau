@@ -10,7 +10,9 @@ local fetchProfile = require(ReplicatedStorage.ClientModules.Utilities.fetchProf
 local hint = require(ReplicatedStorage.ClientModules.Components.hint)
 local image_mask = require(ReplicatedStorage.Modules.Imagery["image-mask"])
 local leventine = require(ReplicatedStorage.Utility.leventine)
+local pop = require(ReplicatedStorage.ClientModules.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
+local spr = require(ReplicatedStorage.Modules.spr)
 
 -- loadout-frontend.luau
 
@@ -39,6 +41,7 @@ local module = {}
 local profile = fetchProfile()
 
 local function createCardRhombus()
+	-- its really just a vertically stretched parallelogram...
 	return ReplicatedStorage.Interfaces.CardRhombus:Clone()
 end
 
@@ -100,8 +103,39 @@ function module:HydrateCards()
 		local card_ui = createCardRhombus()
 		card_ui.Name = (closest_card_name or card_name) .. "_CardUI"
 		card_ui.Parent = loadout_screen.CanvasGroup.CardHolder
+
+		local outline = card_ui.Outline
+
+		local hitbox = card_ui.Hitbox :: TextButton
+
+		hitbox.MouseEnter:Connect(function()
+			spr.target(outline, 0.8, 4, {
+				ImageTransparency = 0,
+				ImageColor = Color3.fromRGB(255, 77, 77),
+			})
+
+			pop(card_ui)
+		end)
+		hitbox.MouseLeave:Connect(function()
+			spr.target(outline, 0.8, 4, {
+				ImageTransparency = 1,
+				--ImageColor = Color3.fromRGB(255, 77, 77),
+			})
+		end)
+
+		hitbox.Activated:Connect(function()
+			-- make the card a little bigger
+			spr.target(card_ui, 0.8, 4, {
+				Size = card_ui.Size * 1.1,
+			})
+
+			-- this means the card has been equipped, so we need to add it to the player's loadout
+			-- we can store the player's loadout in the profile, and then save the profile
+			-- for now, let's just print the card name to the output
+
+			print("Equipped card: " .. closest_card_name)
+		end)
 	end
 end
 
 return module
-

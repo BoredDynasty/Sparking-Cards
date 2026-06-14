@@ -461,13 +461,14 @@ local function ensure_body_velocity(engine: BasePart): BodyVelocity
 	-- TODO: convert this into linear velocity
 	local body_velocity = engine:FindFirstChildOfClass("BodyVelocity")
 	if body_velocity then
-		body_velocity.MaxForce = Vector3.new(math.huge, 0, math.huge)
+		-- note: do not change the maxforce value. this works perfectly for keeping the train on track while allowing it to slow down and stop when needed. changing this value may cause issues with stopping at stations and navigating curves.
+		body_velocity.MaxForce = Vector3.new(10000000, 0, 10000000)
 		return body_velocity
 	end
 
 	local created = Instance.new("BodyVelocity")
 	created.Name = "BodyVelocity"
-	created.MaxForce = Vector3.new(math.huge, 0, math.huge)
+	created.MaxForce = Vector3.new(10000000, 0, 10000000)
 	created.P = 2e4
 	created.Velocity = Vector3.zero
 	created.Parent = engine

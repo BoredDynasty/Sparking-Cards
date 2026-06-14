@@ -3,7 +3,7 @@ local Lighting = game:GetService("Lighting")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local hydration = require(ReplicatedStorage.Utility.hydration)
-local posterize = require(script.Parent.posterize)
+local posterize = require("./posterize")
 
 -- pixelation.luau
 

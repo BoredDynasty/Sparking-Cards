@@ -5,6 +5,7 @@
 
 export type Card = {
 	DisplayName: string,
+	Element: string?,
 	WeaponType: string, -- General category for the weapon type (e.g., "Gauntlet", "Sword")
 	BaseDamageMultiplier: number, -- Base damage multiplier for this card's attacks
 	MaxCombo: number, -- Max M1 combo count for this weapon/card
@@ -18,6 +19,24 @@ export type Card = {
 		Support: string,
 		-- Potentially add M1_2, M1_3 etc. if combo pieces have unique AttackNames not covered by Orion
 	},
+	DefaultDamageValues: {
+		M1: number,
+		Skill: number,
+		Ultimate: number,
+		Support: number,
+	}?,
+	DefaultCooldowns: {
+		M1: number,
+		Skill: number,
+		Ultimate: number,
+		Support: number,
+	}?,
+	AnimationIds: {
+		M1: { [number]: string }?,
+		Skill: string?,
+		Ultimate: string?,
+		Support: string?,
+	}?,
 	-- Other card-specific properties could include:
 	-- DefaultDamageValues: { M1 = 10, Skill = 25, Ultimate = 50, Support = 0 }?
 	-- DefaultCooldowns: { M1 = 0.5, Skill = 8, Ultimate = 20, Support = 15 }?
@@ -43,6 +62,7 @@ local CardLibrary = {
 	},
 	PyroKatana = {
 		DisplayName = "Pyro Katana",
+		Element = "Pyro",
 		WeaponType = "Sword",
 		MovesetName = "Conflagration of the Blazing Heart",
 		TextColor = Color3.fromRGB(255, 88, 88),
@@ -54,6 +74,28 @@ local CardLibrary = {
 			Skill = "PyroKatana_Slash_Skill",
 			Ultimate = "PyroKatana_InfernalSlash_Ultimate",
 			Support = "PyroKatana_HeatAura_Support",
+		},
+		DefaultDamageValues = {
+			M1 = 9,
+			Skill = 24,
+			Ultimate = 48,
+			Support = 0,
+		},
+		DefaultCooldowns = {
+			M1 = 0.35,
+			Skill = 6,
+			Ultimate = 18,
+			Support = 12,
+		},
+		AnimationIds = {
+			M1 = {
+				[1] = "rbxassetid://123950065803851",
+				[2] = "rbxassetid://117366009412180",
+				[3] = "rbxassetid://89377068894374",
+			},
+			Skill = "rbxassetid://123950065803851",
+			Ultimate = "rbxassetid://117366009412180",
+			Support = "rbxassetid://89377068894374",
 		},
 	},
 	HydroCatalyst = {

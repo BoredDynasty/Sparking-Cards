@@ -98,6 +98,14 @@ return bytenet.defineNamespace("MainNet", function()
 	})
 
 	--[=[
+		@struct sell_skill_struct
+		@desc Structure for selling a skill.
+	]=]
+	local sell_skill_struct = bytenet.struct({
+		skill_name = bytenet.string,
+	})
+
+	--[=[
 		@struct pay_prisms_struct
 		@desc Structure for paying prisms.
 	]=]
@@ -261,7 +269,7 @@ return bytenet.defineNamespace("MainNet", function()
 		CancelAnimation = bytenet.definePacket({ value = cancel_animation_struct }),
 		StopAllAnimations = bytenet.definePacket({ value = stop_all_animations_struct }),
 		BuySkill = bytenet.definePacket({ value = buy_skill_struct }),
-		SellSkill = bytenet.definePacket({ value = sell_card_struct }),
+		SellSkill = bytenet.definePacket({ value = sell_skill_struct }),
 		SkillPurchased = bytenet.definePacket({ value = skill_purchased_struct }),
 		DeductStamina = bytenet.definePacket({ value = deduct_stamina_struct }),
 		AddStamina = bytenet.definePacket({ value = add_stamina_struct }),

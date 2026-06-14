@@ -41,7 +41,7 @@ local function setupCharacter(new_character: Model)
 	bar = physical_bar.new()
 	bar:SetAdornee(root_part)
 
-	bar:SetValue(character:GetAttribute("Stamina"))
+	bar:SetValue(character:GetAttribute("Stamina") or 100 / max_stamina)
 
 	previous_stamina = max_stamina
 	last_drain = 0
@@ -97,4 +97,3 @@ function module:Update(deltaTime: number)
 end
 
 return module
-

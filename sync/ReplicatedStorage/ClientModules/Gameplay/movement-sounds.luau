@@ -79,6 +79,8 @@ local function updateVolume()
 		return
 	end
 
+	debug.profilebegin("update-character-volume")
+
 	local camera_position = camera.CFrame.Position
 
 	if camera_position == last_camera_position then
@@ -103,6 +105,8 @@ local function updateVolume()
 	})
 
 	last_camera_position = camera_position
+
+	debug.profileend()
 end
 
 humanoid:GetPropertyChangedSignal("FloorMaterial"):Connect(function()

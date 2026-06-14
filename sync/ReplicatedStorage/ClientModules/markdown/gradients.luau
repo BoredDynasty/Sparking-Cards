@@ -1,6 +1,6 @@
 --!strict
 
-local configuration = require(script.Parent.configuration)
+local configuration = require("./configuration")
 
 -- gradients.luau
 

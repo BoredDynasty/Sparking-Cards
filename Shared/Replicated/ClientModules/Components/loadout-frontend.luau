@@ -10,7 +10,7 @@ local fetchProfile = require(ReplicatedStorage.ClientModules.Utilities.fetchProf
 local hint = require(ReplicatedStorage.ClientModules.Components.hint)
 local image_mask = require(ReplicatedStorage.Modules.Imagery["image-mask"])
 local leventine = require(ReplicatedStorage.Utility.leventine)
-local pop = require(StarterPlayer.StarterPlayerScripts.Interface.pop)
+local pop = require(ReplicatedStorage.ClientModules.Interface.pop)
 local profilestructure = require(ReplicatedStorage.Structures.profilestructure)
 local spr = require(ReplicatedStorage.Modules.spr)
 

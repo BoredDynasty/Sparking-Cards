@@ -1,5 +1,6 @@
 --!strict
 
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
 local StarterPlayer = game:GetService("StarterPlayer")
 
@@ -63,4 +64,3 @@ function module.random_shape()
 end
 
 return module
-

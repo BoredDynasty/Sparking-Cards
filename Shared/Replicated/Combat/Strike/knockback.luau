@@ -1,51 +1,65 @@
 --!strict
 
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Debris = game:GetService("Debris")
 
-local hydration = require(ReplicatedStorage.Utility.hydration)
 local random = require(ReplicatedStorage.Utility.random)
-local trove = require(ReplicatedStorage.Packages.trove)
 
 -- knockback.luau
 
-local _trove = trove.new()
-
-return function(player: Player, direction: Vector3)
+return function(player: Player, direction: Vector3, power: number?, duration: number?): boolean
 	local character = player.Character or player.CharacterAdded:Wait()
-	local root_part = character.PrimaryPart
-	local humanoid = character:FindFirstChild("Humanoid") :: Humanoid
+	local root_part = character:FindFirstChild("HumanoidRootPart") :: BasePart?
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
 
-	if not humanoid or humanoid.Health <= 0 then
-		return
+	if not root_part or not humanoid or humanoid.Health <= 0 then
+		return false
 	end
 
-	local force_power = 200
-	local expiry = 0.75
+	if direction.Magnitude <= 0 then
+		return false
+	end
+
+	local force_power = power or 26
+	local expiry = duration or 0.35
 	local minimum_rotation = 1
 	local max_rotation = 10
 
 	-- disable movement
 	humanoid.PlatformStand = true
 
-	local force = _trove:Construct(Instance, "LinearVelocity", root_part) :: LinearVelocity
-	hydration(force) {
-		Parent = root_part,
-		MaxForce = math.huge,
-		VectorVelocity = (direction + Vector3.new(0, 1, 0)).Unit * 26,
-	}
+	local attachment = Instance.new("Attachment")
+	attachment.Name = "KnockbackAttachment"
+	attachment.Parent = root_part
 
-	local rotation = _trove:Construct(Instance, "AngularVelocity", root_part) :: AngularVelocity
-	hydration(rotation) {
-		Parent = root_part,
-		AngularVelocity = Vector3.one * math.pi * random.integer(minimum_rotation, max_rotation),
-		MaxTorque = force_power,
-	}
+	local force = Instance.new("LinearVelocity")
+	force.Name = "KnockbackVelocity"
+	force.Attachment0 = attachment
+	force.MaxForce = math.huge
+	force.VectorVelocity = (direction.Unit + Vector3.new(0, 0.35, 0)).Unit * force_power
+	force.Parent = root_part
+
+	local rotation = Instance.new("AngularVelocity")
+	rotation.Name = "KnockbackRotation"
+	rotation.Attachment0 = attachment
+	rotation.AngularVelocity = Vector3.one * math.pi * random.integer(minimum_rotation, max_rotation)
+	rotation.MaxTorque = force_power * 200
+	rotation.Parent = root_part
 	-- the aggresiveness should be (5000)
 
 	task.delay(expiry, function()
-		humanoid.PlatformStand = false
+		if humanoid.Parent then
+			humanoid.PlatformStand = false
+		end
 
-		_trove:Remove(force)
-		_trove:Remove(rotation)
+		force:Destroy()
+		rotation:Destroy()
+		attachment:Destroy()
 	end)
+
+	Debris:AddItem(force, expiry + 0.5)
+	Debris:AddItem(rotation, expiry + 0.5)
+	Debris:AddItem(attachment, expiry + 0.5)
+
+	return true
 end

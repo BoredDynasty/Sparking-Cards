@@ -2,7 +2,7 @@
 
 -- Private Functions
 
-local function getAbsDist(a, b)
+local function getAbsDist(a: number, b: number)
 	local d = b - a
 	if type(d) == "number" then
 		return math.abs(d)
@@ -22,7 +22,7 @@ end
 
 -- Public Constructors
 
-function SpringClass.new(stiffness, dampingCoeff, dampingRatio, initialPos)
+function SpringClass.new(stiffness: number, dampingCoeff: number, dampingRatio: number, initialPos: number)
 	local self = setmetatable({}, SpringClass)
 
 	self.instant = false
@@ -41,7 +41,7 @@ end
 
 -- Public Methods
 
-function SpringClass:Update(dt)
+function SpringClass:Update(dt: number)
 	if not self.instant then
 		local t, k, d, x0, v0 = self.t, self.k, self.d, self.x, self.v
 		local a0 = k * (t - x0) + v0 * d

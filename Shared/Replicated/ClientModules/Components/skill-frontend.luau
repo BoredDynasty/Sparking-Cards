@@ -2,33 +2,24 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local RunService = game:GetService("RunService")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 local Packet = require(ReplicatedStorage.Packet)
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local audio = require(ReplicatedStorage.Modules.audio)
+local displayorder = require(ReplicatedStorage.ClientModules.Interface.displayorder)
 local fetchProfile = require(ReplicatedStorage.ClientModules.Utilities.fetchProfile)
-local future = require(ReplicatedStorage.Packages.future)
 local shadow = require(ReplicatedStorage.ClientModules.Interface.shadow)
 local skill_chart = require(ReplicatedStorage.Structures["skill-chart"])
-local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local text_counter = require(ReplicatedStorage.ClientModules.markdown["text-counter"])
 local tooltip = require(ReplicatedStorage.ClientModules.Components.tooltip)
+local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(ReplicatedStorage.ClientModules.Interface.wiggle)
-
--- skill-frontend.luau
 
 local module = {}
 
 local player = Players.LocalPlayer
-local profile = fetchProfile()
-
-local Events = ReplicatedStorage.Events
-
 local templates = ReplicatedStorage.Interfaces
-
 local player_gui = player.PlayerGui
-
 local skill_gui = player_gui.SkillTree
 local skill_canvas = skill_gui.CanvasGroup
 local skill_frame = skill_canvas.Frame
@@ -56,79 +47,126 @@ button_pool:Preload(100)
 
 local spinning_gradients = {} :: { UIGradient }
 
+local technique_order = {} :: { string }
+local skill_categories = {} :: { [string]: { [number]: any } }
+
+for _, skill in ipairs(skill_chart) do
+	local key = string.lower(skill.technique)
+	local category = skill_categories[key]
+
+	if not category then
+		category = {}
+		skill_categories[key] = category
+		table.insert(technique_order, skill.technique)
+	end
+
+	table.insert(category, skill)
+end
+
+for _, category in pairs(skill_categories) do
+	table.sort(category, function(left, right)
+		return (left.upgrade_number or 0) < (right.upgrade_number or 0)
+	end)
+end
+
 RunService.Heartbeat:Connect(function(delta)
+	if not displayorder:GetState(skill_canvas) then
+		return
+	end
+
 	if next(spinning_gradients) == nil then
 		return
 	end
 
-	for i, gradient in ipairs(spinning_gradients) do
+	for _, gradient in ipairs(spinning_gradients) do
 		gradient.Rotation += 30 * delta
 	end
 end)
 
-local function getTotalUpgrades(technique: string)
-	local total = 0
-
-	for i, skill in ipairs(skill_chart) do
-		if string.lower(skill.technique) == string.lower(technique) then
-			total += 1
-		end
-	end
-
-	if total == 0 then
-		warn("its possible that '" .. technique .. "' is not a valid technique.")
-	end
-
-	return total
+local function getProfileData()
+	return fetchProfile()
 end
 
-local function getTechniquesUnlocked(technique: string)
-	profile = fetchProfile()
+local function buildSkillSet(profile: typemarshaller.Profile?)
+	local unlocked = {} :: { [string]: boolean }
 
-	if not profile then
-		print("no player data to get techniques unlocked.")
-
-		return 1
+	if not profile or not profile.Data then
+		return unlocked
 	end
 
-	-- basically,
-	-- we allow for multiple skill names of the same name
-	-- inside the skill table.
-	-- let's use that to our advantage:
+	for _, skill_name in ipairs(profile.Data.skills or {}) do
+		unlocked[string.lower(skill_name)] = true
+	end
+
+	return unlocked
+end
+
+local function getTechniquesUnlocked(technique: string, profile: typemarshaller.Profile?)
+	if not profile or not profile.Data then
+		return 0
+	end
 
 	local total = 0
-
-	for i, skill_name in ipairs(profile.Data.skills) do
+	for _, skill_name in ipairs(profile.Data.skills or {}) do
 		if string.lower(skill_name) == string.lower(technique) then
 			total += 1
 		end
 	end
 
-	-- run a check
-	local total_upgrades = getTotalUpgrades(technique)
+	local total_upgrades = #skill_categories[string.lower(technique)]
 	if total > total_upgrades then
-		-- what happened??
-		warn("the player has unlocked more skills than allowed: ", total .. " > " .. total_upgrades)
+		warn("the player has unlocked more skills than allowed: ", total, ">", total_upgrades)
 	end
 
 	return total
 end
 
+local function getHighestUnlockedSkillName(technique: string, unlocked_set: { [string]: boolean })
+	local category = skill_categories[string.lower(technique)]
+	if not category then
+		return nil
+	end
+
+	local highest_name: string?
+	for _, skill in ipairs(category) do
+		if unlocked_set[string.lower(skill.name)] then
+			highest_name = skill.name
+		end
+	end
+
+	return highest_name
+end
+
+local function makeButtonText(skill: any)
+	local multiplier = skill.multiplier or 1.05
+	local formatted_multiplier = math.floor((multiplier - 1) * 100)
+
+	return string.format(
+		"<font size='16'>%s</font>\n<font transparency='0.5'>Lv. %s · +%s%%</font>",
+		skill.name,
+		skill.upgrade_number,
+		tostring(formatted_multiplier)
+	)
+end
+
+local TextService = game:GetService("TextService")
+
+local typewriter = require(ReplicatedStorage.ClientModules.markdown.typewriter)
+
+local function clearActiveVisuals()
+	table.clear(spinning_gradients)
+end
+
 function module:DisplaySpendings()
 	local label = spendings.Amount
-
 	label.Text = "..."
 
-	profile = fetchProfile()
-
+	local profile = getProfileData()
 	local affinity = tonumber(profile and profile.Data.affinity)
 
 	if affinity then
-		task.spawn(function()
-			local counter = text_counter.new(label, affinity, 3)
-
-			counter:Start(counter)
-		end)
+		local counter = text_counter.new(label, affinity, 3)
+		counter:Start(counter)
 	else
 		label.Text = "?"
 	end
@@ -137,146 +175,106 @@ function module:DisplaySpendings()
 end
 
 function module:LoadCatagories()
+	local last_scroll_position = holder.CanvasPosition
 	module:Unload()
 
-	local visited_techniques = {}
+	local profile = getProfileData()
+	local unlocked_set = buildSkillSet(profile)
 
-	for i, skill_data in ipairs(skill_chart) do
-		local technique = skill_data.technique
-
-		if table.find(visited_techniques, technique) then
+	for _, technique in ipairs(technique_order) do
+		local category = skill_categories[string.lower(technique)]
+		if not category or #category == 0 then
 			continue
 		end
 
-		table.insert(visited_techniques, technique)
+		local category_frame = catagory_pool:Get()
+		local title = category_frame.TextLabel
+		local total_upgrades = #category
+		local techniques_unlocked = getTechniquesUnlocked(technique, profile)
+		local highest_name = getHighestUnlockedSkillName(technique, unlocked_set) or "No upgrade unlocked"
 
-		local catagory = catagory_pool:Get()
+		local title_text = string.format(
+			"%s<br/><font size='14'><font transparency='0.5'>%d / %d Upgrades · %s</font></font>",
+			technique,
+			techniques_unlocked,
+			total_upgrades,
+			highest_name
+		)
 
-		local total_upgrades = getTotalUpgrades(technique)
-
-		local title = catagory.TextLabel
-
-		local title_str = "%s<br/><font size='14'><font transparency='0.5'>%s Upgrades - %s</font></font>"
-		--print(title_str)
-
-		local techniques_unlocked = getTechniquesUnlocked(technique)
-		local techniques_unlocked_str = tostring(techniques_unlocked)
-
-		-- get the name of the number of techniques unlocked.
-		-- e.g "Better Investment Oppertunity" instead of just "2"
-		for j, skill in ipairs(skill_chart) do
-			if
-				string.lower(skill.technique) == string.lower(technique)
-				and skill.upgrade_number == techniques_unlocked
-			then
-				techniques_unlocked_str = skill.name
-				--print(techniques_unlocked_str)
-				break
-			end
-		end
-
+		title.Text = ""
 		task.spawn(function()
-			title.Text = string.format(title_str :: any, technique, total_upgrades, techniques_unlocked_str)
+			typewriter.play(title, title_text, { cps = 45 })
 		end)
-		--print(title.Text)
 
-		for j, skill in ipairs(skill_chart) do
-			if j > getTotalUpgrades(skill.technique) then
-				-- we're somehow going overboard.
-				-- continue?
-				continue
-			end
-
+		local frame = category_frame.Frame
+		for index, skill in ipairs(category) do
 			local button = button_pool:Get()
-
 			shadow(button)
 
-			local info_str = "<font transparency='.5'>Lv. %s</font> > + %s"
-			--print("info str: ", info_str)
+			button.Text = makeButtonText(skill)
 
-			local upgrade_number = skill.upgrade_number
-			--print("upgrade #: ", upgrade_number)
+			-- Automatically scale the button width/height based on the skill name length.
+			-- Measure the visible name (first line) using TextService and adapt size.
+			local name_font = button.Font -- adjust if template uses a different font
+			local name_size_px =
+				TextService:GetTextSize(skill.name or "", 16, name_font, Vector2.new(2000, 2000))
+			local padding_x = 40 -- left/right padding
+			local padding_y = 18 -- top/bottom padding
+			local line_count_estimate = 2 -- name + subline
+			local width_px = math.clamp(math.ceil(name_size_px.X + padding_x), 140, 520)
+			local height_px = math.clamp(math.ceil(name_size_px.Y * line_count_estimate + padding_y), 44, 120)
 
-			-- the multiplier is like "1.05" or "1.2"
-			-- we want it like "5%" or "20%"
-			task.spawn(function()
-				local multiplier = skill.multiplier or 1.05
+			-- Apply absolute pixel sizing to the button
+			button.Size = UDim2.new(0, width_px, 0, height_px)
 
-				local formatted_multiplier = math.floor((multiplier - 1) * 100)
-				--print(tablekit.ToString(skill :: any), formatted_multiplier)
+			-- If the template includes a UIAspectRatioConstraint, update it to match new size
+			local aspect = button:FindFirstChildOfClass("UIAspectRatioConstraint")
+			if aspect then
+				aspect.AspectRatio = width_px / math.max(1, height_px)
+			end
 
-				button.Text = string.format(
-					info_str :: any,
-					upgrade_number,
-					formatted_multiplier,
-					tostring(upgrade_number) .. "%"
-				)
-			end)
-			--print(button.Text)
+			-- Scale the outline frame with the button and adjust its aspect ratio too
+			local outline = button:FindFirstChild("Outline")
+			if outline then
+				outline.Size = UDim2.new(1, 0, 1, 0)
 
-			task.spawn(function()
-				if upgrade_number > techniques_unlocked then
-					-- this skill is locked
-					--print("locked: ", skill.name)
+				button.UIPadding:Destroy() -- remove padding to let outline fit exactly
+				button.AutomaticSize = Enum.AutomaticSize.None -- disable automatic sizing to use our pixel dimensions
 
-					-- if we find the gradient spinning, we will stop it and hide the ui stroke.
-					local ui_stroke = button.Outline.UIStroke
-					ui_stroke.Enabled = false
-					local gradient = ui_stroke.UIGradient
-					gradient.Enabled = false
-
-					local index = table.find(spinning_gradients, gradient)
-					if index then
-						table.remove(spinning_gradients, index)
-					end
-				else
-					-- we will do a cool gradient spinning effect on the UIStroke.
-					local ui_stroke = button.Outline.UIStroke
-					ui_stroke.Enabled = true
-					local gradient = ui_stroke.UIGradient
-					gradient.Enabled = true
-
-					table.insert(spinning_gradients, gradient)
-					gradient.Destroying:Connect(function()
-						table.remove(spinning_gradients, table.find(spinning_gradients, gradient))
-					end)
+				local outline_aspect = outline:FindFirstChildOfClass("UIAspectRatioConstraint")
+				if outline_aspect then
+					outline_aspect.AspectRatio = width_px / math.max(1, height_px)
 				end
-			end)
+			end
 
-			-- since the UIListLayout is sorted by Name, we will use numbers to sort the buttons in the right order.
-			-- (including the connection visuals)
-			-- the connection visual should be in between the buttons, so we will use decimal numbers for them.
+			button.Name = string.format("%02d", skill.upgrade_number)
 
-			task.spawn(function()
-				button.Name = string.format("%02d", upgrade_number)
-			end)
+			local is_owned = unlocked_set[string.lower(skill.name)]
+			local is_available = skill.upgrade_number == techniques_unlocked + 1 and not is_owned
 
-			-- connection visuals
+			local ui_stroke = button.Outline.UIStroke
+			local gradient = ui_stroke.UIGradient
+			local visible = is_owned or is_available
+			ui_stroke.Enabled = visible
+			gradient.Enabled = visible
 
-			task.spawn(function()
-				future.Try(function()
-					if j < total_upgrades then
-						local connection_visual = connection_pool:Get()
-
-						connection_visual.Name = string.format("%02d.5", upgrade_number)
-						connection_visual.Visible = true
-						connection_visual.Parent = catagory.Frame
-					end
+			if visible then
+				table.insert(spinning_gradients, gradient)
+				gradient.Destroying:Connect(function()
+					table.remove(spinning_gradients, table.find(spinning_gradients, gradient))
 				end)
-			end)
+			end
 
-			-- Add clicking functionality
+			button.Interactable = is_owned or is_available
+
 			button.Activated:Connect(function()
-				button.Interactable = false -- hey pal, we dont want any errors.
-
-				if upgrade_number > techniques_unlocked then
-					-- Buy the skill
+				button.Interactable = false
+				if is_available then
 					Packet.BuySkill.send({ skill_name = skill.name })
 					task.delay(0.5, function()
 						module:LoadCatagories()
 						module:DisplaySpendings()
 					end)
-
 					audio:PlaySFX("click")
 				else
 					audio:PlaySFX("cancel")
@@ -284,10 +282,8 @@ function module:LoadCatagories()
 			end)
 
 			button.MouseButton2Click:Connect(function()
-				button.Interactable = false -- same here
-
-				if upgrade_number <= techniques_unlocked then
-					-- Sell the skill
+				button.Interactable = false
+				if is_owned then
 					Packet.SellSkill.send({ skill_name = skill.name })
 					task.delay(0.5, function()
 						module:LoadCatagories()
@@ -299,7 +295,7 @@ function module:LoadCatagories()
 				end
 			end)
 
-			tooltip.new(button, "RMB or swipe down to sell.")
+			tooltip.new(button, skill.description or "No description")
 
 			button.MouseEnter:Connect(function()
 				audio:PlaySFX("hover")
@@ -309,57 +305,60 @@ function module:LoadCatagories()
 				audio:PlaySFX("leave")
 			end)
 
-			-- for mobile (and maybe PC)
-			button.TouchSwipe:Connect(function(direction, delta)
-				if direction == Enum.SwipeDirection.Down then
-					if upgrade_number <= techniques_unlocked then
-						-- Sell the skill
-						Packet.SellSkill.send({ skill_name = skill.name })
-						task.delay(0.5, function()
-							module:LoadCatagories()
-							module:DisplaySpendings()
-						end)
-					end
+			button.TouchSwipe:Connect(function(direction, _)
+				if direction == Enum.SwipeDirection.Down and is_owned then
+					Packet.SellSkill.send({ skill_name = skill.name })
+					task.delay(0.5, function()
+						module:LoadCatagories()
+						module:DisplaySpendings()
+					end)
 				end
 			end)
 
-			button.Parent = catagory.Frame
-		end
+			button.Parent = frame
 
-		catagory.Parent = holder
-	end
-
-	-- expand the Holder CanvasSize to fit the catagories
-	-- note: the holder is a ScrollingFrame
-	task.spawn(function()
-		local layout = holder.UIListLayout
-		local padding = layout.Padding.Offset
-		local total_height = padding
-		for i, catagory in ipairs(holder:GetChildren()) do
-			if catagory:IsA("Frame") then
-				total_height += catagory.AbsoluteSize.Y + padding
+			if index < total_upgrades then
+				local connection_visual = connection_pool:Get()
+				connection_visual.Name = string.format("%02d.5", skill.upgrade_number)
+				connection_visual.Visible = true
+				connection_visual.Parent = frame
 			end
 		end
 
+		category_frame.Parent = holder
+	end
+
+	task.defer(function()
+		local layout = holder.UIListLayout
+		local padding = layout.Padding.Offset
+		local total_height = padding
+		for _, category in ipairs(holder:GetChildren()) do
+			if category:IsA("Frame") then
+				total_height += category.AbsoluteSize.Y + padding
+			end
+		end
 		holder.CanvasSize = UDim2.new(0, 0, 0, total_height)
 	end)
 
-	--print(tablekit.ToString(visited_techniques :: any))
+	holder.CanvasPosition = last_scroll_position
 end
 
 function module:Unload()
-	table.clear(spinning_gradients)
+	clearActiveVisuals()
 
-	for i, object in ipairs(catagory_pool:GetActiveObjects()) do
+	for _, object in ipairs(catagory_pool:GetActiveObjects()) do
 		object:Destroy()
 	end
-	for i, object in ipairs(connection_pool:GetActiveObjects()) do
+
+	for _, object in ipairs(connection_pool:GetActiveObjects()) do
 		object:Destroy()
 	end
-	for i, object in ipairs(button_pool:GetActiveObjects()) do
+
+	for _, object in ipairs(button_pool:GetActiveObjects()) do
 		object:Destroy()
 	end
+
+	holder.CanvasSize = UDim2.new(0, 0, 0, 0)
 end
 
 return module
-

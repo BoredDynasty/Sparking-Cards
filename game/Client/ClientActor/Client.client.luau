@@ -82,6 +82,10 @@ print("Client Requirements")
 local player = Players.LocalPlayer
 local profile = nil
 
+player.CharacterAdded:Connect(function(model)
+	flight.setup()
+end)
+
 local character = player.Character or player.CharacterAdded:Wait() :: typemarshaller.Character
 local humanoid = character.Humanoid
 
@@ -984,10 +988,6 @@ end
 
 -- over_shoulder:Enable()
 
-player.CharacterAdded:Connect(function(model)
-	flight.setup()
-end)
-
 Packet.ReplicateAnimation.listen(function(data)
 	animate.load(tonumber(data.identification))
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
@@ -1004,4 +1004,3 @@ Packet.CleanupCharacter.listen(function()
 end)
 
 print("Client has finished")
-

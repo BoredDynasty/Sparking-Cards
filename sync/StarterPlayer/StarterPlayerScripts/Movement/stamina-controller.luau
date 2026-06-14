@@ -3,7 +3,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
-local physical_bar = require(StarterPlayer.StarterPlayerScripts.Components["physical-bar"])
+local physical_bar = require(ReplicatedStorage.ClientModules.Components["physical-bar"])
 local trove = require(ReplicatedStorage.Packages.trove)
 
 -- stamina-controller.luau

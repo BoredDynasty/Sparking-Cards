@@ -49,6 +49,7 @@ Events:
 -- CONSTANTS
 
 local RUNSERVICE = game:GetService("RunService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local StarterPlayer = game:GetService("StarterPlayer")
 
 local UIS = game:GetService("UserInputService")
@@ -257,4 +258,3 @@ end
 --
 
 return SliderClass
-

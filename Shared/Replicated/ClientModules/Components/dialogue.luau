@@ -366,15 +366,11 @@ function module.start(dialogue: Dialogue)
 			end
 		end
 		if key.KeyCode == Enum.KeyCode.MouseLeftButton then
-			local position = self.instance.AbsolutePosition
-			local size = self.instance.AbsoluteSize
-			if bounds.inner(position, size, UserInputService:GetMouseLocation()) then
-				if self.typewriter:IsPlaying() then
-					self.typewriter:Skip()
-				else
-					if not self.buttonsShown then
-						module.advance_dialogue(self)
-					end
+			if self.typewriter:IsPlaying() then
+				self.typewriter:Skip()
+			else
+				if not self.buttonsShown then
+					module.advance_dialogue(self)
 				end
 			end
 		end
@@ -424,4 +420,3 @@ function module.Destroy(self: DialogueController)
 end
 
 return module
-

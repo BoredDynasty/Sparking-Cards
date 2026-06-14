@@ -8,6 +8,10 @@ local trove = require(ReplicatedStorage.Packages.trove)
 
 local controller = {}
 
+local player = game:GetService("Players").LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local humanoid = character:WaitForChild("Humanoid") :: Humanoid
+
 local _trove = trove.new()
 
 export type MovementController = {
@@ -44,5 +48,24 @@ function controller:Start()
 		debug.profileend()
 	end)
 end
+
+local died_conn = nil
+local function onCharacterAdded(new_character: Model)
+	if died_conn then
+		died_conn:Disconnect()
+	end
+
+	local humanoid = new_character:WaitForChild("Humanoid") :: Humanoid
+
+	died_conn = humanoid.Died:Connect(function()
+		for i, movement_controller in ipairs(movement_controllers) do
+			if movement_controller._trove then
+				movement_controller._trove:Clean()
+			end
+		end
+	end)
+end
+
+player.CharacterAdded:Connect(onCharacterAdded)
 
 return controller

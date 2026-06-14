@@ -457,4 +457,3 @@ function module:IsVisible()
 end
 
 return module
-
