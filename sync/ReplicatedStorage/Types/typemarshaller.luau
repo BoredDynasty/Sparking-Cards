@@ -311,8 +311,9 @@ export type OrionParameters = {
 }
 
 export type AttackType = "M1" | "Skill" | "Ultimate" | "Support"
+export type CooldownMap = { [AttackType]: number }
 
-export type AttackFunction = (Player) -> boolean
+export type AttackFunction = (Player, PlayerData?) -> boolean
 export type AttackModule = {
 	GetMaxCombo: () -> number,
 	moveset: {
@@ -325,6 +326,8 @@ export type PlayerData = {
 	damage_multiplier: number,
 	style: StyleModule,
 	profile: Profile,
+	combo_info: ComboData,
+	cooldowns: CooldownMap?,
 	card_name: string,
 }
 

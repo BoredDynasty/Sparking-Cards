@@ -1,6 +1,10 @@
 --!strict
 
-return function(root: BasePart, opponent_root: BasePart, range: number?, limit: number)
+return function(root: BasePart?, opponent_root: BasePart?, range: number?, limit: number?): boolean
+	if not root or not opponent_root then
+		return false
+	end
+
 	range = range or 5
 	limit = limit or 45
 
@@ -8,8 +12,11 @@ return function(root: BasePart, opponent_root: BasePart, range: number?, limit: 
 
 	local resultant = opponent_root.Position - root.Position
 	local distance = resultant.Magnitude
+	if distance <= 0 then
+		return true
+	end
 
-	local dot = look_vec:Dot(resultant.Unit)
+	local dot = math.clamp(look_vec:Dot(resultant.Unit), -1, 1)
 
 	local radii_angle = math.acos(dot) -- arc cosine of the dot product
 	local deg_angle = math.deg(radii_angle)

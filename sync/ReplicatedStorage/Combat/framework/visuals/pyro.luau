@@ -5,6 +5,8 @@ local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Workspace = game:GetService("Workspace")
 
+local ground_crack = require(ReplicatedStorage.Combat.framework.effects["ground-crack"])
+
 -- pyro visuals
 -- Shared visual helpers for the Pyro Katana moveset and reaction broadcasts.
 
@@ -44,6 +46,7 @@ local function find_in_server_storage(name: string): Instance?
 
 	local ok, server_storage = pcall(function()
 		return game:GetService("ServerStorage")
+		-- im sorry, i used ai for this
 	end)
 
 	if not ok then
@@ -80,6 +83,7 @@ local function prep_part(part: BasePart)
 	part.CanCollide = false
 	part.CanTouch = false
 	part.CanQuery = false
+	part.Transparency = 1
 end
 
 local function pivot(instance: Instance, cframe: CFrame)
@@ -98,6 +102,9 @@ local function pivot(instance: Instance, cframe: CFrame)
 end
 
 local function tint_emitters(instance: Instance, color: Color3)
+	return
+	-- the emitters are already colored.
+	--[[
 	for _, descendant in ipairs(instance:GetDescendants()) do
 		if descendant:IsA("ParticleEmitter") then
 			descendant.Color = ColorSequence.new(color, GOLD)
@@ -107,6 +114,7 @@ local function tint_emitters(instance: Instance, color: Color3)
 			descendant.Color = color
 		end
 	end
+	--]]
 end
 
 local function emit(instance: Instance, emit_count: number?)
@@ -153,11 +161,20 @@ local function spawn_asset(name: string, cframe: CFrame, lifetime: number?, emit
 	clone.Name = `_Pyro_{name}`
 	pivot(clone, cframe)
 	clone.Parent = get_visual_container()
-	emit(clone, emit_count)
+	emit(clone, if emit_count then emit_count else nil)
 
 	Debris:AddItem(clone, lifetime or 2)
 
 	return clone
+end
+
+local function get_asset(name: string): Instance?
+	local assets = find_asset(name)
+	if not assets then
+		return nil
+	end
+
+	return assets
 end
 
 local function make_flash_part(cframe: CFrame, size: Vector3, color: Color3, lifetime: number): BasePart
@@ -221,17 +238,19 @@ function module.skill_slash(character: Model, range: number)
 	end
 
 	local slash_cframe = root.CFrame * CFrame.new(0, 1.3, -(range * 0.45))
-	local asset = spawn_asset("Fire-Slash-01", slash_cframe, 2, 24)
+	local asset = spawn_asset("Fire-Slash-01", slash_cframe, 5, nil)
 	if asset then
-		tint_emitters(asset, FIRE)
+		--tint_emitters(asset, FIRE)
+		emit(asset)
 	else
 		make_flash_part(slash_cframe, Vector3.new(0.5, 8, range), FIRE, 0.35)
 	end
 end
 
 function module.ultimate(position: Vector3)
-	spawn_asset("Explosion-01", CFrame.new(position), 3, 45)
-	spawn_asset("Big-Crack-01", CFrame.new(position), 4, 20)
+	spawn_asset("Explosion-01", CFrame.new(position), 5, nil)
+
+	ground_crack.big_crack(CFrame.new(position))
 	make_sphere(position, 18, FIRE, 0.55)
 	make_sphere(position, 9, GOLD, 0.4)
 end
@@ -247,39 +266,61 @@ function module.heat_aura(player: Player, duration: number)
 		return
 	end
 
-	local aura = spawn_asset("Fire-Aura-01", root.CFrame, duration + 1, 18)
+	local aura = get_asset("Fire-Aura-01")
+	if aura then
+		-- the aura is currently in a rig right now.
+		-- with the particle emitters inside the limbs named "RL" for Right Leg, "LA" for Left Arm, etc. we can pivot those emitters to the correct limb based on the character's current rig type.
+		local limb_map: { [string]: string } = {
+			["RL"] = "Right Leg",
+			["LL"] = "Left Leg",
+			["RA"] = "Right Arm",
+			["LA"] = "Left Arm",
+		}
+
+		for emitter_name, limb_name in pairs(limb_map) do
+			local emitter = aura[limb_name]:FindFirstChild(emitter_name)
+
+			local limb = character:FindFirstChild(limb_name)
+			if emitter and limb then
+				emitter.Parent = limb
+			end
+		end
+	end
 	if not aura then
-		aura = spawn_asset("Shield-01", root.CFrame, duration + 1, 10)
+		aura = spawn_asset("Shield-01", root.CFrame, duration + 1, 50)
 	end
 
 	if aura then
 		tint_emitters(aura, FIRE)
 	end
 
-	local shield = make_sphere(root.Position, math.max(8, character:GetExtentsSize().Magnitude * 0.9), FIRE, duration)
+	local shield =
+		make_sphere(root.Position, math.max(8, character:GetExtentsSize().Magnitude * 0.9), FIRE, duration)
 	shield.Transparency = 0.62
 
-	local started = os.clock()
-	local connection: RBXScriptConnection?
-	connection = RunService.Heartbeat:Connect(function()
-		if not character.Parent or os.clock() - started > duration then
-			if connection then
-				connection:Disconnect()
-				connection = nil
+	if aura:IsA("BasePart") then
+		local started = os.clock()
+		local connection: RBXScriptConnection?
+		connection = RunService.Heartbeat:Connect(function()
+			if not character.Parent or os.clock() - started > duration then
+				if connection then
+					connection:Disconnect()
+					connection = nil
+				end
+
+				return
 			end
 
-			return
-		end
+			local current_root = get_root(character)
+			if current_root then
+				shield.CFrame = current_root.CFrame
 
-		local current_root = get_root(character)
-		if current_root then
-			shield.CFrame = current_root.CFrame
-
-			if aura then
-				pivot(aura, current_root.CFrame)
+				if aura then
+					pivot(aura, current_root.CFrame)
+				end
 			end
-		end
-	end)
+		end)
+	end
 end
 
 function module.reaction(payload: ReactionPayload)

@@ -32,7 +32,6 @@ local flight = require(ReplicatedStorage.Combat.framework.features.flight)
 local frame_rate = require(ReplicatedStorage.Utility["frame-rate"])
 local future = require(ReplicatedStorage.Packages.future)
 local glove = require(ReplicatedStorage.ClientModules.Gameplay.glove)
-local health_bar = require(ReplicatedStorage.ClientModules.Components["health-bar"])
 local health_pulse = require(ReplicatedStorage.ClientModules.Gameplay["health-pulse"])
 local hint = require(ReplicatedStorage.ClientModules.Components.hint)
 local hud = require(ReplicatedStorage.ClientModules.Components.hud)
@@ -54,6 +53,7 @@ local number_abbreviation = require(ReplicatedStorage.Modules.Serialization["num
 local object_zoom = require(ReplicatedStorage.ClientModules.Gameplay["object-zoom"])
 local observer = require(ReplicatedStorage.Utility.observer)
 local options_frontend = require(ReplicatedStorage.ClientModules.Components["options-frontend"])
+local over_shoulder = require(ReplicatedStorage.ClientModules.Camera["over-shoulder"])
 local party_frontend = require(ReplicatedStorage.ClientModules.Components["party-frontend"])
 local physical_bar = require(ReplicatedStorage.ClientModules.Components["physical-bar"])
 local pop = require(ReplicatedStorage.ClientModules.Interface.pop)
@@ -81,6 +81,10 @@ print("Client Requirements")
 
 local player = Players.LocalPlayer
 local profile = nil
+
+player.CharacterAdded:Connect(function(model)
+	flight.setup()
+end)
 
 local character = player.Character or player.CharacterAdded:Wait() :: typemarshaller.Character
 local humanoid = character.Humanoid
@@ -984,10 +988,6 @@ end
 
 -- over_shoulder:Enable()
 
-player.CharacterAdded:Connect(function(model)
-	flight.setup()
-end)
-
 Packet.ReplicateAnimation.listen(function(data)
 	animate.load(tonumber(data.identification))
 	animate.play(`rbxassetid://{data.identification}`, 0.25)
@@ -998,10 +998,13 @@ events.PlayAnimation.OnClientEvent:Connect(function(...)
 	animate.play(..., 0.25)
 end)
 
+events.EnableShiftlock.OnClientEvent:Connect(function()
+	over_shoulder:Enable()
+end)
+
 Packet.CleanupCharacter.listen(function()
 	music:Destroy()
 	hud:Clear()
 end)
 
 print("Client has finished")
-

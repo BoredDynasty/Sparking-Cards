@@ -2,7 +2,6 @@
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local StarterPlayer = game:GetService("StarterPlayer")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
 local _bounds = require(ReplicatedStorage.ClientModules.Utilities.bounds)
@@ -65,6 +64,7 @@ export type Button = {
 	text_button: typeof(pool:Get())?,
 	is_large: boolean,
 	initialized: boolean,
+	hovered: boolean,
 	default_size: UDim2,
 	default_color: Color3,
 	default_corner: UDim,
@@ -86,6 +86,7 @@ function module.new(name: string, callback: () -> (), icon: typemarshaller.Lucid
 		text_button = text_button,
 		is_large = is_large,
 		initialized = false,
+		hovered = false,
 		default_size = text_button.Size,
 		default_color = text_button.BackgroundColor3,
 		default_corner = text_button.UICorner and text_button.UICorner.CornerRadius or UDim.new(0.238, 0),
@@ -108,11 +109,130 @@ component3d:Enable()
 
 component3d.offset = CFrame.Angles(0, math.rad(7), 0) -- rotates 3D UI element 7 degrees on the Y axis to give a slight perspective effect
 
+local function update_button_visuals(button: Button, hovered: boolean, is_active: boolean)
+	local text_button = button.text_button
+	if not text_button then
+		return
+	end
+
+	local ui_corner = text_button.UICorner
+	local icon_image = text_button.ImageLabel
+	local default_corner = button.default_corner
+	local default_size = button.default_size
+	local default_color = button.default_color
+	local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
+	local active_color = default_color:Lerp(Color3.new(0, 0, 0), 0.2)
+
+	if is_active then
+		spr.stop(ui_corner)
+		spr.target(ui_corner, 0.7, 4.9, {
+			CornerRadius = UDim.new(1 / 8, 0),
+		})
+
+		spr.stop(icon_image, "Rotation")
+		spr.target(icon_image, 0.35, 8, {
+			Rotation = 15,
+		})
+
+		spr.stop(text_button, "BackgroundColor3")
+		spr.stop(text_button, "Size")
+		spr.target(text_button, 0.7, 5, {
+			Size = default_size + UDim2.fromOffset(10, 10),
+			BackgroundColor3 = active_color,
+		})
+
+		return
+	end
+
+	if hovered then
+		spr.stop(icon_image, "Rotation")
+		spr.target(icon_image, 0.35, 8, {
+			Rotation = 15,
+		})
+
+		spr.stop(text_button, "Size")
+		spr.stop(text_button, "BackgroundColor3")
+		spr.target(text_button, 0.8, 8, {
+			BackgroundColor3 = lighter_color,
+		})
+	else
+		spr.stop(ui_corner)
+		spr.target(ui_corner, 0.7, 4.9, {
+			CornerRadius = default_corner,
+		})
+
+		spr.stop(icon_image, "Rotation")
+		spr.target(icon_image, 0.35, 8, {
+			Rotation = 0,
+		})
+
+		spr.stop(text_button, "Size")
+		spr.stop(text_button, "BackgroundColor3")
+		spr.target(text_button, 0.8, 8, {
+			BackgroundColor3 = default_color,
+		})
+	end
+end
+
+local function activate_button(button: Button)
+	if module.is_processing then
+		audio:PlaySFX("cancel")
+		return
+	end
+
+	if button.reactor:Get() then
+		button.reactor:Set(false)
+		module.active_button = nil
+		return
+	end
+
+	if module.active_button and module.active_button ~= button then
+		module.active_button.reactor:Set(false)
+	end
+
+	module.is_processing = true
+
+	local function complete(success: boolean)
+		module.is_processing = false
+
+		if success then
+			module.active_button = button
+			audio:PlaySFX("click")
+			button.reactor:Set(true)
+		else
+			module.active_button = nil
+			audio:PlaySFX("cancel")
+			button.reactor:Set(false)
+		end
+	end
+
+	local success, callback_result = pcall(button.callback)
+	if not success then
+		warn("Hud button callback error:", callback_result)
+		complete(false)
+		return
+	end
+
+	local promise_candidate = callback_result :: any
+	if promise.is(promise_candidate) then
+		promise_candidate:andThen(function()
+			complete(true)
+		end, function(err)
+			warn("Hud button callback promise failed:", err)
+			complete(false)
+		end)
+	else
+		complete(true)
+	end
+end
+
 function module:Render()
 	local active_buttons = {} :: { [Instance]: boolean }
 
 	for _, button in ipairs(module.buttons) do
-		active_buttons[button.text_button] = true
+		if button.text_button then
+			active_buttons[button.text_button] = true
+		end
 	end
 
 	for _, child in ipairs(hud_background:GetChildren()) do
@@ -132,7 +252,11 @@ function module:Render()
 		local icon = button.icon and button.icon.IconName or "file"
 
 		local text_button = button.text_button
-		local ui_corner = text_button.UICorner
+		if not text_button then
+			continue
+		end
+
+		local _ui_corner = text_button.UICorner
 		local icon_image = text_button.ImageLabel
 
 		text_button.Parent = hud_background
@@ -155,45 +279,13 @@ function module:Render()
 		icon_image.Position = UDim2.fromScale(0.5, 0.5)
 		icon_image.AnchorPoint = Vector2.one / 2
 
-		local default_corner = button.default_corner
-		local default_size = text_button.Size
-		local default_color = button.default_color
-		local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
+		local _default_color = button.default_color
 
 		if not button.initialized then
 			button.initialized = true
 
 			text_button.Activated:Connect(function()
-				if module.is_processing then
-					audio:PlaySFX("cancel")
-					return
-				end
-
-				button.reactor:Set(not button.reactor:Get())
-			end)
-
-			text_button.MouseButton1Up:Connect(function()
-				if button.reactor:Get() then
-					audio:PlaySFX("cancel")
-					return
-				end
-
-				spr.stop(ui_corner)
-				spr.target(ui_corner, 0.7, 4.9, {
-					CornerRadius = default_corner,
-				})
-
-				spr.stop(icon_image, "Rotation")
-				spr.target(icon_image, 0.35, 8, {
-					Rotation = 0,
-				})
-
-				spr.stop(text_button, "Size")
-				spr.stop(text_button, "BackgroundColor3")
-				spr.target(text_button, 0.7, 6, {
-					Size = default_size,
-					BackgroundColor3 = default_color,
-				})
+				activate_button(button)
 			end)
 
 			text_button.MouseEnter:Connect(function()
@@ -207,41 +299,24 @@ function module:Render()
 					return
 				end
 
-				spr.stop(icon_image, "Rotation")
-				spr.target(icon_image, 0.35, 8, {
-					Rotation = 15,
-				})
-
-				spr.stop(text_button, "Size")
-				spr.stop(text_button, "BackgroundColor3")
-				spr.target(text_button, 0.8, 8, {
-					BackgroundColor3 = lighter_color,
-				})
+				button.hovered = true
+				update_button_visuals(button, true, false)
 				audio:PlaySFX("hover")
 			end)
 
 			text_button.MouseLeave:Connect(function()
+				button.hovered = false
 				if button.reactor:Get() then
-					audio:PlaySFX("cancel")
 					return
 				end
 
-				spr.stop(icon_image, "Rotation")
-				spr.target(icon_image, 0.35, 8, {
-					Rotation = 0,
-				})
-
-				spr.stop(text_button, "Size")
-				spr.stop(text_button, "BackgroundColor3")
-				spr.target(text_button, 0.8, 8, {
-					BackgroundColor3 = default_color,
-				})
+				update_button_visuals(button, false, false)
 				audio:PlaySFX("leave")
 			end)
 
 			button.reactor:Watch(function(current, _)
 				if current then
-					if module.is_processing or not button.limit(button.name) or not global_ratelimit() then
+					if not button.limit(button.name) or not global_ratelimit() then
 						audio:PlaySFX("cancel")
 						button.reactor:Set(false)
 						return
@@ -252,69 +327,10 @@ function module:Render()
 					end
 
 					module.active_button = button
-					module.is_processing = true
-
-					spr.stop(ui_corner)
-					spr.target(ui_corner, 0.7, 4.9, {
-						CornerRadius = UDim.new(1 / 8, 0),
-					})
-
-					spr.stop(icon_image, "Rotation")
-					spr.target(icon_image, 0.35, 8, {
-						Rotation = 15,
-					})
-
-					spr.stop(text_button, "BackgroundColor3")
-					spr.stop(text_button, "Size")
-					spr.target(text_button, 0.7, 5, {
-						Size = default_size + UDim2.fromOffset(10, 10),
-						BackgroundColor3 = default_color:Lerp(Color3.new(0, 0, 0), 0.2),
-					})
-
+					update_button_visuals(button, button.hovered, true)
 					ripple(text_button, 0.9)
-
-					audio:PlaySFX("click")
-
-					local function complete()
-						module.is_processing = false
-
-						if module.active_button == button then
-							module.active_button = nil
-						end
-					end
-
-					local success, callback_result = pcall(button.callback)
-					if not success then
-						warn("Hud button callback error:", callback_result)
-						complete()
-					else
-						local promise_candidate = callback_result :: any
-						if promise.is(promise_candidate) then
-							promise_candidate:andThen(complete, function(err)
-								warn("Hud button callback promise failed:", err)
-								complete()
-							end)
-						else
-							complete()
-						end
-					end
 				else
-					spr.stop(ui_corner)
-					spr.target(ui_corner, 0.7, 4.9, {
-						CornerRadius = default_corner,
-					})
-
-					spr.stop(icon_image, "Rotation")
-					spr.target(icon_image, 0.35, 8, {
-						Rotation = 0,
-					})
-
-					spr.stop(text_button, "Size")
-					spr.stop(text_button, "BackgroundColor3")
-					spr.target(text_button, 0.7, 6, {
-						Size = default_size,
-						BackgroundColor3 = default_color,
-					})
+					update_button_visuals(button, button.hovered, false)
 				end
 			end)
 		end
@@ -351,14 +367,7 @@ function module:Toggle(buttonName: string)
 	end
 
 	if button then
-		if button.reactor:Get() then
-			button.reactor:Set(false)
-		else
-			if module.active_button and module.active_button ~= button then
-				module.active_button.reactor:Set(false)
-			end
-			button.reactor:Set(true)
-		end
+		activate_button(button)
 	end
 end
 
@@ -371,8 +380,11 @@ function module:Clear()
 		end
 
 		if btn.text_button then
-			btn.text_button.Parent = nil
-			pool:Return(btn.text_button)
+			local pooled_button = btn.text_button
+			if pooled_button.Parent then
+				pooled_button.Parent = nil :: any
+			end
+			pool:Return(pooled_button)
 			btn.text_button = nil
 		end
 

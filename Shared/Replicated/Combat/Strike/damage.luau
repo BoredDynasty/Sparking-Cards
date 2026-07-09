@@ -26,7 +26,10 @@ local function remove_record(record: Damage)
 end
 
 local function get_reaction_multiplier(target: Player, target_character: Model): number
-	if target:GetAttribute("Reaction_Melt") == true or target_character:GetAttribute("Reaction_Melt") == true then
+	if
+		target:GetAttribute("Reaction_Melt") == true
+		or target_character:GetAttribute("Reaction_Melt") == true
+	then
 		return 1.5
 	end
 
@@ -34,7 +37,10 @@ local function get_reaction_multiplier(target: Player, target_character: Model):
 end
 
 local function get_heat_aura_multiplier(target: Player, target_character: Model): number
-	if target:GetAttribute("HeatAuraActive") == true or target_character:GetAttribute("HeatAuraActive") == true then
+	if
+		target:GetAttribute("HeatAuraActive") == true
+		or target_character:GetAttribute("HeatAuraActive") == true
+	then
 		return 0.75
 	end
 
@@ -61,6 +67,11 @@ function module:apply(parameters: Damage): boolean
 		return false
 	end
 
+	-- make sure the source isnt the target :sob:
+	if parameters.source and parameters.source == parameters.target then
+		return false
+	end
+
 	local final_amount = math.max(0, parameters.amount)
 	final_amount *= get_reaction_multiplier(parameters.target, target_character)
 	final_amount *= get_heat_aura_multiplier(parameters.target, target_character)
@@ -76,7 +87,11 @@ function module:apply(parameters: Damage): boolean
 	-- Visual effect
 	local target_root = target_character:FindFirstChild("HumanoidRootPart") :: BasePart?
 	if target_root then
-		damage_indicator(final_amount, Color3.fromHex("#ffffff"), target_root)
+		damage_indicator(
+			final_amount,
+			target_root,
+			if parameters.element == "Heal" then 4 else if parameters.amount >= 10 then 3 else 1
+		)
 	end
 
 	-- Store damage record

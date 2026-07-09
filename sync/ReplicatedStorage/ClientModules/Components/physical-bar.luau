@@ -123,8 +123,8 @@ function module.SetValue(self: PhysicalBar, value: number)
 
 	local scale = UDim2.fromScale(1, percentage)
 
-	spr.stop(bar_frame, "Size")
-	spr.target(bar_frame, 0.8, 4, {
+	spr.stop(inner_bar, "Size")
+	spr.target(inner_bar, 0.8, 4, {
 		Size = scale,
 	})
 end
@@ -188,4 +188,3 @@ function module.Destroy(self: PhysicalBar)
 end
 
 return module
-

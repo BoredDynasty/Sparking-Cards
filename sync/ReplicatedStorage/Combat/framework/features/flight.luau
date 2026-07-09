@@ -49,7 +49,7 @@ local function getCameraRelativeDirection()
 end
 
 function module.setup(character: typemarshaller.Character)
-	local primary_part = character.PrimaryPart or character:WaitForChild("HumanoidRootPart", 3)
+	local primary_part = character:WaitForChild("HumanoidRootPart", 3)
 	if not primary_part then
 		print("no root")
 		return

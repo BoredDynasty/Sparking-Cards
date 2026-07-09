@@ -54,12 +54,17 @@ end
 
 function pyro.moveset.M1(player: Player, ...)
 	local character = player.Character or player.CharacterAdded:Wait()
+
+	events.EnableShiftlock:FireClient(player)
+
 	local combat_data = events.GetPlayerCombatData:Invoke(player) :: typemarshaller.PlayerData
 
 	if not combat_data then
 		warn("Pyro M1 could not fetch combat data for", player)
 		return false
 	end
+
+	print("pyro m1 combo index:", combat_data.combo_info.CurrentCombo)
 
 	local combo_index = events.CallStyleFunction:Invoke(player, "Activate") :: number
 	visuals.m1_slash(character, combo_index or 1)
@@ -72,6 +77,8 @@ function pyro.moveset.Skill(player: Player, ...)
 	if not character then
 		return false
 	end
+
+	events.EnableShiftlock:FireClient(player)
 
 	playAnimation(player, getAnimationId("Skill"))
 	visuals.skill_slash(character, 10)
@@ -98,6 +105,8 @@ function pyro.moveset.Ultimate(player: Player, ...)
 	if not character then
 		return false
 	end
+
+	events.EnableShiftlock:FireClient(player)
 
 	playAnimation(player, getAnimationId("Ultimate"))
 
@@ -128,6 +137,8 @@ function pyro.moveset.Support(player: Player, ...)
 	if not character then
 		return false
 	end
+
+	events.EnableShiftlock:FireClient(player)
 
 	playAnimation(player, getAnimationId("Support"))
 

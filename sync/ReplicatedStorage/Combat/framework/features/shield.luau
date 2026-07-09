@@ -76,7 +76,7 @@ function module:Intercept(data: ShieldData)
 
 	incoming_data.amount = 0
 
-	damage_indicator(incoming_data.amount, Color3.new(0.164706, 0.552941, 0.921569), character.PrimaryPart)
+	damage_indicator(incoming_data.amount, character.PrimaryPart, 2)
 
 	-- TODO) add some sfx or some visuals
 end

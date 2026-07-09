@@ -20,6 +20,9 @@ local big_crack_pool = PoolerPlus:CreatePool("GroundCrackPool", function()
 	return assets["Big-Crack-01"]:Clone()
 end)
 
+crack_pool:AdaptivePreload()
+big_crack_pool:AdaptivePreload()
+
 local ray_params = RaycastParams.new()
 ray_params.FilterType = Enum.RaycastFilterType.Blacklist
 ray_params.IgnoreWater = true -- we'll add a splash effect later, but for now we just don't want cracks in water
@@ -73,7 +76,8 @@ function module.crack(position: CFrame)
 
 	for i, particle_emitter in pairs(crack:GetDescendants()) do
 		if particle_emitter:IsA("ParticleEmitter") then
-			task.spawn(particle_emitter.Emit, particle_emitter, 0.5)
+			local emit_count = particle_emitter:GetAttribute("EmitCount") :: number?
+			task.spawn(particle_emitter.Emit, particle_emitter, emit_count or 10)
 			particle_emitter.Enabled = false
 		end
 	end
@@ -95,7 +99,7 @@ function module.big_crack(position: CFrame)
 	-- find the ground below the position
 	local ground_position = findSolidGround(position.Position)
 	if not ground_position then
-		crack_pool:Return(crack)
+		big_crack_pool:Return(crack)
 		print("couldnt find solid ground")
 		return
 	end
@@ -105,13 +109,9 @@ function module.big_crack(position: CFrame)
 
 	for i, particle_emitter in pairs(crack:GetDescendants()) do
 		if particle_emitter:IsA("ParticleEmitter") then
-			task.spawn(function()
-				particle_emitter.Enabled = true
-
-				task.wait(4)
-
-				particle_emitter.Enabled = false
-			end)
+			local emit_count = particle_emitter:GetAttribute("EmitCount") :: number?
+			task.spawn(particle_emitter.Emit, particle_emitter, emit_count or 20)
+			particle_emitter.Enabled = false
 		end
 	end
 
