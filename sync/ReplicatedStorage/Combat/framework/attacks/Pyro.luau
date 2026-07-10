@@ -66,7 +66,7 @@ function pyro.moveset.M1(player: Player, ...)
 
 	print("pyro m1 combo index:", combat_data.combo_info.CurrentCombo)
 
-	local combo_index = events.CallStyleFunction:Invoke(player, "Activate") :: number
+	local combo_index = events.CallStyleFunction:Invoke(player, "Activate", combat_data) :: number
 	visuals.m1_slash(character, combo_index or 1)
 
 	return true

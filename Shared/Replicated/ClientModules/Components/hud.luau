@@ -4,12 +4,9 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local PoolerPlus = require(ReplicatedStorage.Dependencies.PoolerPlus)
-local _bounds = require(ReplicatedStorage.ClientModules.Utilities.bounds)
-local _future = require(ReplicatedStorage.Packages.future)
-local _sway = require(ReplicatedStorage.ClientModules.Interface.sway)
-local _tooltip = require(ReplicatedStorage.ClientModules.Components.tooltip)
-local _wiggle = require(ReplicatedStorage.ClientModules.Interface.wiggle)
 local audio = require(ReplicatedStorage.Modules.audio)
+local bounds = require(ReplicatedStorage.ClientModules.Utilities.bounds)
+local future = require(ReplicatedStorage.Packages.future)
 local lucide = require(ReplicatedStorage.Packages.lucide)
 local observer = require(ReplicatedStorage.Utility.observer)
 local promise = require(ReplicatedStorage.Packages.promise)
@@ -19,32 +16,24 @@ local screen_3d = require(ReplicatedStorage.ClientModules.Interface["screen-3d"]
 local shadow = require(ReplicatedStorage.ClientModules.Interface.shadow)
 local spr = require(ReplicatedStorage.Modules.spr)
 local state_machine = require(ReplicatedStorage.Utility["state-machine"])
+local sway = require(ReplicatedStorage.ClientModules.Interface.sway)
+local tooltip = require(ReplicatedStorage.ClientModules.Components.tooltip)
+const pop = require(ReplicatedStorage.ClientModules.Interface.pop)
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
+local wiggle = require(ReplicatedStorage.ClientModules.Interface.wiggle)
 
 -- hud.luau
 
 local player = Players.LocalPlayer
+local mouse = player:GetMouse()
+
+local hud_container = player.PlayerGui.Hud
+local hud_background = hud_container.Background
+
+hud_background.Position = UDim2.fromScale(0.52, 0.87)
 
 local module = {}
 module.buttons = {} :: { Button }
-module.horizontal_position = state_machine.new()
-
-local states = {
-	"left",
-	"right",
-	"center",
-}
-
-for i, state in ipairs(states) do
-	module.horizontal_position:RegisterState(state)
-end
-
-module.horizontal_position:Set("left")
-
-module.active_button = nil :: Button?
-module.is_processing = false
-
-local global_ratelimit = ratelimit(1, 3.3) :: ratelimit.Ratelimit<string>
 
 local pool = PoolerPlus:CreatePool("HudPool", function()
 	local templates = ReplicatedStorage.Interfaces
@@ -52,194 +41,34 @@ local pool = PoolerPlus:CreatePool("HudPool", function()
 	return templates.HudButton:Clone()
 end)
 
-pool:Preload(15)
-
-export type Button = {
+type Button = {
 	name: string,
 	callback: () -> (),
 	icon: typemarshaller.LucideIcon,
-	reactor: observer.Observer<boolean>,
-	limit: ratelimit.Ratelimit<string>,
-	hover_limit: ratelimit.Ratelimit<string>,
-	text_button: typeof(pool:Get())?,
+	limit: ratelimit.Ratelimit<any>,
+	text_button: typeof(pool:Get()),
 	is_large: boolean,
-	initialized: boolean,
-	hovered: boolean,
-	default_size: UDim2,
-	default_color: Color3,
-	default_corner: UDim,
-	default_aspect_ratio: number,
-	default_aspect_type: Enum.AspectType,
-	default_dominant_axis: Enum.DominantAxis,
 }
 
 function module.new(name: string, callback: () -> (), icon: typemarshaller.LucideIcon, is_large: boolean)
-	local text_button = pool:Get()
+	local btn = pool:Get()
 
-	local button = {
+	local tbl: Button = {
 		name = name,
 		callback = callback,
 		icon = icon,
-		reactor = observer.new(false) :: observer.Observer<boolean>,
-		limit = ratelimit(1, 3.5) :: ratelimit.Ratelimit<string>,
-		hover_limit = ratelimit(3, 0.9) :: ratelimit.Ratelimit<string>,
-		text_button = text_button,
+		limit = ratelimit(1, 1.5) :: ratelimit.Ratelimit<any>,
+		text_button = pool:Get(),
 		is_large = is_large,
-		initialized = false,
-		hovered = false,
-		default_size = text_button.Size,
-		default_color = text_button.BackgroundColor3,
-		default_corner = text_button.UICorner and text_button.UICorner.CornerRadius or UDim.new(0.238, 0),
-		default_aspect_ratio = text_button.AspectRatio.AspectRatio,
-		default_aspect_type = text_button.AspectRatio.AspectType,
-		default_dominant_axis = text_button.AspectRatio.DominantAxis,
-	} :: Button
+	}
 
-	table.insert(module.buttons, button)
-end
+	table.insert(module.buttons, tbl)
 
-local hud_container = player.PlayerGui.Hud
-local hud_background = hud_container.Background
-
-hud_background.Position = UDim2.fromScale(0.52, 0.87)
-
-local screen3d = screen_3d.new(hud_container, 5)
-local component3d = screen3d:GetComponent3D(hud_background)
-component3d:Enable()
-
-component3d.offset = CFrame.Angles(0, math.rad(7), 0) -- rotates 3D UI element 7 degrees on the Y axis to give a slight perspective effect
-
-local function update_button_visuals(button: Button, hovered: boolean, is_active: boolean)
-	local text_button = button.text_button
-	if not text_button then
-		return
-	end
-
-	local ui_corner = text_button.UICorner
-	local icon_image = text_button.ImageLabel
-	local default_corner = button.default_corner
-	local default_size = button.default_size
-	local default_color = button.default_color
-	local lighter_color = default_color:Lerp(Color3.new(1, 1, 1), 0.2)
-	local active_color = default_color:Lerp(Color3.new(0, 0, 0), 0.2)
-
-	if is_active then
-		spr.stop(ui_corner)
-		spr.target(ui_corner, 0.7, 4.9, {
-			CornerRadius = UDim.new(1 / 8, 0),
-		})
-
-		spr.stop(icon_image, "Rotation")
-		spr.target(icon_image, 0.35, 8, {
-			Rotation = 15,
-		})
-
-		spr.stop(text_button, "BackgroundColor3")
-		spr.stop(text_button, "Size")
-		spr.target(text_button, 0.7, 5, {
-			Size = default_size + UDim2.fromOffset(10, 10),
-			BackgroundColor3 = active_color,
-		})
-
-		return
-	end
-
-	if hovered then
-		spr.stop(icon_image, "Rotation")
-		spr.target(icon_image, 0.35, 8, {
-			Rotation = 15,
-		})
-
-		spr.stop(text_button, "Size")
-		spr.stop(text_button, "BackgroundColor3")
-		spr.target(text_button, 0.8, 8, {
-			BackgroundColor3 = lighter_color,
-		})
-	else
-		spr.stop(ui_corner)
-		spr.target(ui_corner, 0.7, 4.9, {
-			CornerRadius = default_corner,
-		})
-
-		spr.stop(icon_image, "Rotation")
-		spr.target(icon_image, 0.35, 8, {
-			Rotation = 0,
-		})
-
-		spr.stop(text_button, "Size")
-		spr.stop(text_button, "BackgroundColor3")
-		spr.target(text_button, 0.8, 8, {
-			BackgroundColor3 = default_color,
-		})
-	end
-end
-
-local function activate_button(button: Button)
-	if module.is_processing then
-		audio:PlaySFX("cancel")
-		return
-	end
-
-	if button.reactor:Get() then
-		button.reactor:Set(false)
-		module.active_button = nil
-		return
-	end
-
-	if module.active_button and module.active_button ~= button then
-		module.active_button.reactor:Set(false)
-	end
-
-	module.is_processing = true
-
-	local function complete(success: boolean)
-		module.is_processing = false
-
-		if success then
-			module.active_button = button
-			audio:PlaySFX("click")
-			button.reactor:Set(true)
-		else
-			module.active_button = nil
-			audio:PlaySFX("cancel")
-			button.reactor:Set(false)
-		end
-	end
-
-	local success, callback_result = pcall(button.callback)
-	if not success then
-		warn("Hud button callback error:", callback_result)
-		complete(false)
-		return
-	end
-
-	local promise_candidate = callback_result :: any
-	if promise.is(promise_candidate) then
-		promise_candidate:andThen(function()
-			complete(true)
-		end, function(err)
-			warn("Hud button callback promise failed:", err)
-			complete(false)
-		end)
-	else
-		complete(true)
-	end
+	return tbl
 end
 
 function module:Render()
-	local active_buttons = {} :: { [Instance]: boolean }
-
-	for _, button in ipairs(module.buttons) do
-		if button.text_button then
-			active_buttons[button.text_button] = true
-		end
-	end
-
-	for _, child in ipairs(hud_background:GetChildren()) do
-		if child:IsA("TextButton") and not active_buttons[child] then
-			child:Destroy()
-		end
-	end
+	module:Clear()
 
 	-- sort the table from how big the buttons are
 	-- smallest to biggest
@@ -252,90 +81,27 @@ function module:Render()
 		local icon = button.icon and button.icon.IconName or "file"
 
 		local text_button = button.text_button
-		if not text_button then
-			continue
-		end
-
-		local _ui_corner = text_button.UICorner
+		local ui_corner = text_button.UICorner
 		local icon_image = text_button.ImageLabel
 
-		text_button.Parent = hud_background
 		text_button.Name = button.name
-		text_button.LayoutOrder = i
+
 		text_button.AutoButtonColor = false
-
-		text_button.Size = if button.is_large then UDim2.fromScale(0.077, 1.036) else button.default_size
-
-		if button.is_large then
-			text_button.AspectRatio.AspectRatio = 1.513
-			text_button.AspectRatio.AspectType = Enum.AspectType.FitWithinMaxSize
-			text_button.AspectRatio.DominantAxis = Enum.DominantAxis.Width
-		else
-			text_button.AspectRatio.AspectRatio = button.default_aspect_ratio
-			text_button.AspectRatio.AspectType = button.default_aspect_type
-			text_button.AspectRatio.DominantAxis = button.default_dominant_axis
-		end
 
 		icon_image.Position = UDim2.fromScale(0.5, 0.5)
 		icon_image.AnchorPoint = Vector2.one / 2
 
-		local _default_color = button.default_color
+		local default_corner = UDim.new(0.238, 0)
 
-		if not button.initialized then
-			button.initialized = true
-
-			text_button.Activated:Connect(function()
-				activate_button(button)
-			end)
-
-			text_button.MouseEnter:Connect(function()
-				if not button.hover_limit(button.name) then
-					audio:PlaySFX("cancel")
-					return
-				end
-
-				if button.reactor:Get() then
-					audio:PlaySFX("cancel")
-					return
-				end
-
-				button.hovered = true
-				update_button_visuals(button, true, false)
-				audio:PlaySFX("hover")
-			end)
-
-			text_button.MouseLeave:Connect(function()
-				button.hovered = false
-				if button.reactor:Get() then
-					return
-				end
-
-				update_button_visuals(button, false, false)
-				audio:PlaySFX("leave")
-			end)
-
-			button.reactor:Watch(function(current, _)
-				if current then
-					if not button.limit(button.name) or not global_ratelimit() then
-						audio:PlaySFX("cancel")
-						button.reactor:Set(false)
-						return
-					end
-
-					if module.active_button and module.active_button ~= button then
-						module.active_button.reactor:Set(false)
-					end
-
-					module.active_button = button
-					update_button_visuals(button, button.hovered, true)
-					ripple(text_button, 0.9)
-				else
-					update_button_visuals(button, button.hovered, false)
-				end
-			end)
+		if button.is_large then
+			-- make the TextButton width larger.
+			text_button.Size = UDim2.fromScale(0.077, 1.036)
+			text_button.AspectRatio.AspectRatio = 1.513
+			text_button.AspectRatio.AspectType = Enum.AspectType.FitWithinMaxSize
+			text_button.AspectRatio.DominantAxis = Enum.DominantAxis.Width
 		end
 
-		task.defer(function()
+		task.spawn(function()
 			local default_icon = lucide.GetAsset(icon)
 
 			if default_icon then
@@ -347,71 +113,58 @@ function module:Render()
 			end
 		end)
 
-		if not text_button:FindFirstChild("ShadowLayers") then
-			shadow(text_button, Color3.new(), 0.5 + (i * 0.05), 16, 1, 1)
-		end
-	end
-end
+		local default_size = text_button.Size
+		local default_color = text_button.BackgroundColor3
 
-function module:Toggle(buttonName: string)
-	if module.is_processing then
-		return
-	end
+		-- the color of the button, but more *juicy*
+		local contrast_color = Color3.fromRGB(
+			math.clamp(default_color.R * 1.2, 0, 1),
+			math.clamp(default_color.G * 1.2, 0, 1),
+			math.clamp(default_color.B * 1.2, 0, 1)
+		)
 
-	local button: Button? = nil
-	for _, b in ipairs(module.buttons :: { Button }) do
-		if b.name == buttonName then
-			button = b
-			break
-		end
-	end
+		text_button.Activated:Connect(function()
+			if not button.limit() then
+				print("Button", button.name, "is on cooldown.")
+				return
+			end
 
-	if button then
-		activate_button(button)
+			button.callback()
+
+			-- lets do some fun effects here.
+			-- pop the size of the button and then shrink it back down to normal size.
+			pop(text_button, 1.2)
+			ripple(text_button, 0.9)
+			audio:PlaySFX("click")
+			--[[
+			spr.target(text_button, 0.2, 1.5, {
+				BackgroundColor3 = contrast_color,
+			})
+				--]]
+		end)
+
+		-- dynamic shadow transparency based on button index, so that buttons further down the list have a more transparent shadow, to create a sense of depth.
+		shadow(text_button, Color3.new(), 0.5 + (i * 0.05), 16, 1, 1)
+
+		text_button.Parent = hud_container
 	end
 end
 
 function module:Clear()
-	for i = #module.buttons, 1, -1 do
-		local btn = module.buttons[i]
-
-		if btn.reactor then
-			btn.reactor:Destroy()
+	for _, button in ipairs(hud_container:GetChildren()) do
+		local attribute = button:GetAttribute("NonDestroyable")
+		if button:IsA("TextButton") and not attribute then
+			button:Destroy() -- Clear existing buttons
 		end
-
-		if btn.text_button then
-			local pooled_button = btn.text_button
-			if pooled_button.Parent then
-				pooled_button.Parent = nil :: any
-			end
-			pool:Return(pooled_button)
-			btn.text_button = nil
-		end
-
-		if btn.limit.count_map[btn.name] then
-			btn.limit.count_map[btn.name] = nil
-		end
-
-		if btn.hover_limit.count_map[btn.name] then
-			btn.hover_limit.count_map[btn.name] = nil
-		end
-
-		table.remove(module.buttons, i)
-	end
-
-	module.active_button = nil
-	module.is_processing = false
-end
-
-function module:GetHorizontalAlignment()
-	if module.horizontal_position:Get() == "left" then
-		return Enum.HorizontalAlignment.Left
-	elseif module.horizontal_position:Get() == "right" then
-		return Enum.HorizontalAlignment.Right
-	else
-		return Enum.HorizontalAlignment.Center
 	end
 end
+
+function module:Destroy()
+	for _, button in ipairs(module.buttons) do
+		pool:Return(button.text_button)
+	end
+end
+
 
 local ui_scale = Instance.new("UIScale")
 ui_scale.Parent = hud_container
@@ -420,8 +173,6 @@ ui_scale.Scale = 1
 function module:Hide()
 	spr.stop(ui_scale)
 	spr.stop(hud_background, "Position")
-
-	module:SetAlignment("left")
 
 	spr.target(ui_scale, 0.4, 1.5, {
 		Scale = 1.25,
@@ -440,8 +191,6 @@ function module:Show()
 	hud_container.Enabled = true
 	hud_background.Position = UDim2.fromScale(0.5, 2)
 
-	module:SetAlignment("left")
-
 	ui_scale.Scale = 1.25
 	spr.stop(ui_scale)
 	spr.target(ui_scale, 0.5, 1.5, {
@@ -452,20 +201,6 @@ function module:Show()
 	spr.target(hud_background, 0.8, 3.5, {
 		Position = UDim2.fromScale(0.5, 0.922),
 	})
-end
-
-function module:SetAlignment(state: "left" | "right" | "center")
-	-- sadly, we cannot animate this.
-
-	module.horizontal_position:Set(state)
-
-	local alignment = module:GetHorizontalAlignment()
-
-	hud_background.UIListLayout.HorizontalAlignment = alignment
-end
-
-function module:IsVisible()
-	return hud_background.Visible
 end
 
 return module

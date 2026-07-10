@@ -71,6 +71,7 @@ local tablekit = require(ReplicatedStorage.Packages.tablekit)
 local timer = require(ReplicatedStorage.Modules.timer)
 local tooltip = require(ReplicatedStorage.ClientModules.Components.tooltip)
 local transition = require(ReplicatedStorage.ClientModules.Components.transitions)
+const health_bar = require(ReplicatedStorage.ClientModules.Components["health-bar"])
 local typemarshaller = require(ReplicatedStorage.Types.typemarshaller)
 local wiggle = require(ReplicatedStorage.ClientModules.Interface.wiggle)
 local windshake = require(ReplicatedStorage.Packages.windshake)
@@ -874,6 +875,10 @@ local function getAttackTypeFromKey(key: Enum.KeyCode): string?
 		attack_types[j] = i
 	end
 
+	if attack_types[key] then
+		print("Attack type for keybind", key.Name, "is", attack_types[key])
+	end
+
 	return attack_types[key]
 end
 
@@ -922,7 +927,7 @@ UserInputService.InputBegan:Connect(function(key, processed)
 end)
 
 mouse.LeftDown:Connect(function()
-	--invokeAttack(Enum.KeyCode.MouseLeftButton)
+	events.ExecuteAttack:InvokeServer("M1")
 end)
 
 glove:Apply(character)
@@ -941,7 +946,7 @@ do
 	local min_quality_level = 6
 	local min_quality_enum = Enum.SavedQualitySetting.QualityLevel6
 
-	local limit = ratelimit(2, 60) -- max 2 notifications per minute
+	local limit = ratelimit(1, 120) -- max 2 notifications per 2 minute
 
 	user_game_settings.Changed:Connect(function()
 		if not limit() then
@@ -1004,7 +1009,7 @@ end)
 
 Packet.CleanupCharacter.listen(function()
 	music:Destroy()
-	hud:Clear()
+	hud:Destroy()
 end)
 
 print("Client has finished")

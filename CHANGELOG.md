@@ -1,7 +1,7 @@
 # SPARKING CARDS! | Changelog
 
 > [!NOTE]
-> Instead of writing the **changelog** inside the main `README.md` file, I've moved it here!
+> Instead of writing the **changelog** inside `README.md`, I'm writing it here.
 
 > Handy, yeah?
 
@@ -18,6 +18,7 @@
 - Loadout (-)
 - Healthbar (-)
 - Round Interface
+- Statistics Interface (-)
 
 > [!IMPORTANT]
 > We are on **Beta Phase.**

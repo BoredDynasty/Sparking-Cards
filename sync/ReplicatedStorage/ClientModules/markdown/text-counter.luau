@@ -71,8 +71,6 @@ function module.Start(self: Counter)
 		self.value:Destroy()
 
 		self.label:SetAttribute("is_text_counting", false)
-
-		setmetatable(self, nil)
 	end)
 end
 
